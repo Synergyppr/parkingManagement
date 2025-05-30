@@ -1,6 +1,7 @@
 import { JSX } from "react";
 // lib/types/index.ts
 export interface Vehicle {
+  id: string;
   ticketNumber: string;
   phoneNumber: string;
   firstName: string;
@@ -11,14 +12,15 @@ export interface Vehicle {
   type: string;
   color: string;
   pin: string;
-  status: 'receive' | 'parked' | 'requested' | 'ready' | '';
+  status: "received" | "parked" | "requested" | "ready" | "";
   createdDateTime: string;
+  licensePlate?: string;
 }
 
 export interface TabItem {
   label: string;
   icon: JSX.Element;
-  key: 'receive' | 'parked' | 'requested' | 'ready';
+  key: "received" | "parked" | "requested" | "ready";
 }
 
 export interface VehicleActionButton {
