@@ -38,7 +38,7 @@ interface Property {
 
 interface TenantsProps {
   data: {
-    data: Tenant[];
+    data: Tenant[] | null;
   };
 }
 
