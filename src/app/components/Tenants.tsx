@@ -145,7 +145,7 @@ const Tenants = ({ data }: TenantsProps) => {
           <div>
             <h2 className="text-2xl font-semibold">Tenant List</h2>
             <p className="text-gray-300 text-xs">
-              {Number(tenants?.length)} records
+              {tenants?.length ?? 0} records
             </p>
           </div>
           <button

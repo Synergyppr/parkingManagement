@@ -251,7 +251,7 @@ const RequestCar = () => {
 
   if (!idFromUrl) {
     return (
-      <div className="min-h-[80vh] md:min-h-[87vh] flex items-center justify-center">
+      <div className="py-8 px-6 flex-1">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-500 mb-4">
             No Ticket ID Provided
