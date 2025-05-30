@@ -3,11 +3,11 @@ import React from "react";
 interface TabsProps {
   isSmallScreen: boolean;
   tabs: string[];
-  activeTab: any;
-  setActiveTab: any;
+  activeTab: string;
+  setActiveTab: (item: string) => void;
   setTransitionState: (state: string) => void;
   sessionKey?: string;
-  customOnTabChange?: (tab: any, i: number) => void;
+  customOnTabChange?: (tab: string, i: number) => void;
 }
 
 const Tabs: React.FC<TabsProps> = ({
@@ -22,7 +22,7 @@ const Tabs: React.FC<TabsProps> = ({
   const onTabChange = (item: string) => {
     setTransitionState("fade-out");
     setTimeout(() => {
-      setActiveTab(item);
+      setActiveTab(item as string);
       if (sessionKey) sessionStorage?.setItem(sessionKey, item);
       setTransitionState("fade-in");
     }, 300);
@@ -36,12 +36,12 @@ const Tabs: React.FC<TabsProps> = ({
           : ""
       } h-full bg-gray-800 pt-1 px-0 justify-between flex md:justify-start lg:justify-start gap-0 md:gap-1 lg:gap-1`}
     >
-      {tabs?.map((item: any, i: number) => (
+      {tabs?.map((item: string, i: number) => (
         <div
           onClick={() => {
             if (setActiveTab != null) onTabChange(item);
             else {
-              customOnTabChange && customOnTabChange(item, i);
+              customOnTabChange?.(item, i);
             }
           }}
           key={item}

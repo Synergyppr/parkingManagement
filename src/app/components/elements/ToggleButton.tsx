@@ -1,5 +1,5 @@
 interface ToggleButtonProps {
-  data: any;
+  data: unknown;
   onToggle: (value: boolean, name: string) => void;
   title?: string;
   name?: string;
@@ -20,7 +20,7 @@ const ToggleButton: React.FC<ToggleButtonProps> = ({
       )}
       <div
         className="relative flex items-center justify-between w-14 h-8 cursor-pointer"
-        onClick={() => onToggle(data, name || "")}
+        onClick={() => onToggle(data as boolean, name || "")}
       >
         <div
           className={`absolute w-full h-full rounded-full transition-all duration-300 ${
