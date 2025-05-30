@@ -271,7 +271,7 @@ const RequestCar = () => {
         Thank you for using API Valet Service!
       </h1>
       <div
-        className={`flex flex-col items-center justify-center bg-black h-full ${
+        className={`flex flex-col items-center justify-center h-full ${
           vehicleNotFound ? "md:mt-[20%]" : ""
         }`}
       >

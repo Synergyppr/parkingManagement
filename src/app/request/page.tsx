@@ -1,12 +1,11 @@
-import React from "react";
+import React, { Suspense } from "react";
 import RequestCar from "../components/RequestCar";
+import PageLoader from "../components/elements/PageLoader";
 
-async function Page() {
+export default function Page() {
   return (
-    <>
+    <Suspense fallback={<PageLoader />}>
       <RequestCar />
-    </>
+    </Suspense>
   );
 }
-
-export default Page;
