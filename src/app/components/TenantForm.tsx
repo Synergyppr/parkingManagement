@@ -64,7 +64,6 @@ export default function TenantForm({
       const response = await res.json();
       if (response?.result?.status === "200") {
         Swal.fire({
-          theme: "dark",
           icon: "success",
           title: `Tenant ${form?.id ? "updated" : "created"} successfully!`,
           showConfirmButton: false,
@@ -77,7 +76,6 @@ export default function TenantForm({
           response?.result?.message || "Something went wrong."
         );
         Swal.fire({
-          theme: "dark",
           icon: "error",
           title: "Error",
           text: response?.result?.message || "Something went wrong.",
@@ -86,7 +84,6 @@ export default function TenantForm({
     } catch (error) {
       console.error("Error:", error);
       Swal.fire({
-        theme: "dark",
         icon: "error",
         title: "Error",
         text: "An error occurred while processing your request.",
@@ -99,7 +96,7 @@ export default function TenantForm({
   };
 
   return (
-    <div className="p-4 md:p-6 min-w-full mx-auto space-y-4 rounded shadow text-gray-200 flex flex-col">
+    <div className="p-4 md:p-6 min-w-full mx-auto space-y-4 rounded shadow text-gray-800 flex flex-col">
       <div className="flex gap-2 text-blue-500 items-center">
         <FaBuilding className="w-5 h-5" />
         <h2 className="text-xl font-semibold tracking-tight relative top-[2px]">
@@ -113,7 +110,7 @@ export default function TenantForm({
         placeholder="Tenant Name"
         value={form?.name}
         onChange={handleChange}
-        className="border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full"
+        className="border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-400 tracking-tight w-full"
         required
       />
 
@@ -123,7 +120,7 @@ export default function TenantForm({
         placeholder="Tenant Type"
         value={form?.type}
         onChange={handleChange}
-        className="border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full"
+        className="border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-400 tracking-tight w-full"
         required
       />
 
@@ -132,7 +129,7 @@ export default function TenantForm({
         placeholder="Description (optional)"
         value={form?.description || ""}
         onChange={handleChange}
-        className="border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full"
+        className="border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-400 tracking-tight w-full"
       />
 
       <div className="w-full pt-0 relative flex gap-2">

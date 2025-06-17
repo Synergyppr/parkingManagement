@@ -16,14 +16,14 @@ const Tabs: React.FC<TabsProps> = ({
   activeTab,
   setActiveTab,
   setTransitionState,
-  sessionKey,
+  // sessionKey,
   customOnTabChange,
 }) => {
   const onTabChange = (item: string) => {
     setTransitionState("fade-out");
     setTimeout(() => {
       setActiveTab(item as string);
-      if (sessionKey) sessionStorage?.setItem(sessionKey, item);
+      // if (sessionKey) sessionStorage?.setItem(sessionKey, item);
       setTransitionState("fade-in");
     }, 300);
   };
@@ -34,7 +34,7 @@ const Tabs: React.FC<TabsProps> = ({
         isSmallScreen && tabs?.length > 3
           ? "overflow-x-auto overflow-y-hidden"
           : ""
-      } h-full bg-gray-800 pt-1 px-0 justify-between flex md:justify-start lg:justify-start gap-0 md:gap-1 lg:gap-1`}
+      } h-full bg-transparent pt-1 px-0 justify-between flex md:justify-start lg:justify-start gap-0 md:gap-1 lg:gap-1`}
     >
       {tabs?.map((item: string, i: number) => (
         <div
@@ -45,15 +45,15 @@ const Tabs: React.FC<TabsProps> = ({
             }
           }}
           key={item}
-          className={`py-[12px] px-3 md:px-5 lg:px-5 shadow-sm rounded-x rounded-t text-gray-200 cursor-pointer text-sm flex-1 z-1 border-t-[1px] border-l-[1px] border-r-[1px] border-b-0 ${
+          className={`py-[12px] px-3 md:px-5 lg:px-5 shadow-sm rounded-x rounded-t cursor-pointer text-sm flex-1 z-1 border-t-[1px] border-l-[1px] border-r-[1px] border-b-0 ${
             activeTab === item
-              ? `border-blue-600 text-gray-200 relative top-[1px] font-bold bg-gray-800`
-              : "border-gray-700/50 bg-transparent text-gray-200"
+              ? `border-blue-600 text-white relative top-[1px] font-bold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600/80`
+              : "border-gray-700/50 bg-transparent text-gray-800"
           }`}
         >
           <div
             className={`${
-              activeTab === item ? "text-gray-300" : ""
+              activeTab === item ? "text-white" : ""
             } m-auto flex flex-col justify-center h-full items-center capitalize`}
           >
             {item}

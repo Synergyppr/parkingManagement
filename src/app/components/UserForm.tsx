@@ -93,7 +93,6 @@ const UserformData = ({
     if (missingFields.length > 0) {
       const fieldNames = missingFields.map(([, label]) => label).join(", ");
       Swal.fire({
-        theme: "dark",
         icon: "warning",
         title: "Missing Fields",
         text: `Please fill in the following required fields: ${fieldNames}`,
@@ -134,7 +133,6 @@ const UserformData = ({
       if (result?.result?.status === "200") {
         setModalOpen(false);
         Swal.fire({
-          theme: "dark",
           icon: "success",
           title: `User ${formData.id ? "updated" : "created"} successfully!`,
           showConfirmButton: false,
@@ -143,7 +141,6 @@ const UserformData = ({
       } else {
         console.error("Submission failed:", result?.result?.message);
         Swal.fire({
-          theme: "dark",
           icon: "error",
           title: "Submission Failed",
           text: result?.result?.message || "Something went wrong.",
@@ -152,7 +149,6 @@ const UserformData = ({
     } catch (error) {
       console.error("Error submitting form:", error);
       Swal.fire({
-        theme: "dark",
         icon: "error",
         title: "An error occurred",
         text: "Please try again later.",
@@ -172,10 +168,8 @@ const UserformData = ({
     setFormData((prev) => ({ ...prev, isActive: !prev?.isActive }));
   };
 
-  const handleResetPin = () => {};
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 text-sm text-gray-200">
+    <form onSubmit={handleSubmit} className="space-y-4 text-sm text-gray-800">
       <div className="flex gap-2 text-blue-500 items-center">
         <FaUser className="w-5 h-5" />
         <h2 className="text-xl font-semibold tracking-tight relative top-[2px]">
@@ -262,7 +256,7 @@ const UserformData = ({
             name="role"
             value={formData.role}
             onChange={handleChange}
-            className="border-b border-gray-500 px-2 py-2 text-sm text-gray-300 placeholder-gray-700 w-full"
+            className="border-b border-gray-500 px-2 py-2 text-sm text-gray-800 placeholder-gray-400 w-full"
           >
             <option value="">Select Role</option>
             <option value={1}>Admin</option>
@@ -274,7 +268,7 @@ const UserformData = ({
             name="gender"
             value={formData.gender}
             onChange={handleChange}
-            className="border-b border-gray-500 px-2 py-2 text-sm text-gray-300 placeholder-gray-700 w-full"
+            className="border-b border-gray-500 px-2 py-2 text-sm text-gray-800 placeholder-gray-400 w-full"
           >
             <option value="">Select Gender</option>
             <option value="M">Male</option>
@@ -284,20 +278,31 @@ const UserformData = ({
         </div>
       </div>
 
-      <div className="flex justify-between gap-3 mb-0">
+      <div>
+        <input
+          type="text"
+          name="pin"
+          placeholder="PIN (Reset)"
+          value={formData.pin}
+          onChange={handleChange}
+          className="border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full"
+        />
+      </div>
+
+      <div className="flex justify-between gap-1 mb-0">
         <div className="w-full">
           <input
             type="datetime-local"
             name="dateOfBirthDateTime"
             value={formData.dateOfBirthDateTime}
             onChange={handleChange}
-            className="border-b border-gray-500 px-2 py-2 text-sm text-gray-300 placeholder-gray-700 w-full"
+            className="border-b border-gray-500 px-2 py-2 text-sm text-gray-800 placeholder-gray-400 w-full"
           />
         </div>
 
         {formData?.id && (
-          <div className="w-full pt-3 relative bottom-6 md:bottom-4 md:justify-end md:flex md:gap-2">
-            <div className="tracking-tight text-[10px] md:text-sm text-gray-200 float-left md:float-none relative left-3 md:left-0 md:top-2">
+          <div className="w-full pt-3 px-0 relative bottom-6 md:bottom-4 gap-0 md:justify-end md:flex md:gap-1">
+            <div className="tracking-tight text-[10px] md:text-sm text-gray-200 float-left md:float-none relative left-[-1px] md:left-0 md:top-2">
               {formData?.isActive ? "Active" : "Inactive"}
             </div>
             <div className="">
@@ -323,7 +328,7 @@ const UserformData = ({
         )}
       </div>
 
-      {formData?.id && (
+      {/* {formData?.id && (
         <div className="w-full">
           <p
             className="text-blue-600 underline ml-1 relative bottom-1"
@@ -332,7 +337,7 @@ const UserformData = ({
             Reset PIN
           </p>
         </div>
-      )}
+      )} */}
 
       <button
         type="submit"

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
 import { FaPencil, FaTrash } from "react-icons/fa6";
+import Header from "./Header";
 import TenantForm from "./TenantForm";
 import Modal from "./Modal";
 import UsersModalContent from "./UsersModalContent";
@@ -81,7 +82,6 @@ const Tenants = ({ data }: TenantsProps) => {
 
   const handleTenantDelete = async (tenantId: string) => {
     Swal.fire({
-      theme: "dark",
       title: "Delete Tenant",
       text: "You are about to delete this tenant. Are you sure?",
       icon: "warning",
@@ -136,110 +136,125 @@ const Tenants = ({ data }: TenantsProps) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center pt-20 px-4 overflow-y-auto mb-4 min-h-[81vh]">
-      <h1 className="text-4xl font-bold mb-4">Tenants</h1>
-      <p className="text-lg text-gray-600">Manage your tenants here.</p>
-
-      <div className="w-full max-w-5xl mt-8">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h2 className="text-2xl font-semibold">Tenant List</h2>
-            <p className="text-gray-300 text-xs">
-              {tenants?.length ?? 0} records
-            </p>
+    <>
+      <Header />
+      <div className="flex flex-col items-center justify-center overflow-y-auto pb-4 min-h-[85vh] bg-white">
+        <div
+          className="relative w-full py-20 text-center bg-cover bg-center"
+          style={{ backgroundImage: "url('/valet.jpg')" }}
+        >
+          <div className="absolute inset-0 bg-blue-800 opacity-20"></div>
+          <div className="relative z-10">
+            <h1 className="text-4xl font-bold mb-4 text-gray-800">Tenants</h1>
+            <p className="text-lg text-gray-200">Manage your tenants here</p>
           </div>
-          <button
-            onClick={handleOpenForCreate}
-            className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition-colors tracking-tight"
-          >
-            Add Tenant
-          </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tenants?.map((tenant) => (
-            <div
-              key={tenant?.id}
-              className="p-6 bg-white shadow-md rounded-lg border border-gray-200 hover:shadow-lg transition-shadow duration-200"
-            >
-              <div className="flex justify-between">
-                <h3 className="text-xl font-semibold text-gray-800">
-                  {tenant?.name}
-                </h3>
-                <div>
-                  <button
-                    onClick={() => handleOpenForEdit(tenant)}
-                    className="text-sm border-y-1 border-r-0 border-l-1 py-1 px-2 rounded-l-md border-gray-100 text-white bg-blue-600"
-                  >
-                    <FaPencil className="inline ml-1" />
-                  </button>
-
-                  <button
-                    onClick={() => handleTenantDelete(tenant?.id)}
-                    className="text-sm border-y-1 border-r-1 border-l-0 py-1 px-2 rounded-r-md border-gray-100 text-white bg-gray-600"
-                  >
-                    <FaTrash className="inline mr-1" />
-                  </button>
-                </div>
-              </div>
-
-              <p className="text-sm text-gray-500 mb-2">{tenant?.type}</p>
-              {tenant?.description && (
-                <p className="text-gray-600 text-sm mb-2">
-                  {tenant?.description}
-                </p>
-              )}
-
-              <button
-                onClick={() => getUsersByTenant(tenant?.id)}
-                className="text-blue-600 underline text-sm mb-2 hover:text-blue-800 block"
-              >
-                View Users
-              </button>
-
-              <button
-                onClick={() => getPropertiesByTenant(tenant?.id)}
-                className="text-blue-600 underline text-sm mb-2 hover:text-blue-800 block"
-              >
-                View Properties
-              </button>
-
-              <span
-                className={`inline-block px-3 py-1 text-xs rounded-full ${
-                  tenant.isActive
-                    ? "bg-green-100 text-green-800"
-                    : "bg-red-100 text-red-800"
-                }`}
-              >
-                {tenant?.isActive ? "Active" : "Inactive"}
-              </span>
+        <div className="w-full max-w-5xl mt-8 px-4">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h2 className="text-2xl font-semibold text-gray-800">
+                Tenant List
+              </h2>
+              <p className="text-gray-600 text-xs">
+                {tenants?.length ?? 0} records
+              </p>
             </div>
-          ))}
+            <button
+              onClick={handleOpenForCreate}
+              className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition-colors tracking-tight"
+            >
+              Add Tenant
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {tenants?.map((tenant) => (
+              <div
+                key={tenant?.id}
+                className="p-6 bg-white shadow-md rounded-lg border border-gray-200 hover:shadow-lg transition-shadow duration-200"
+              >
+                <div className="flex justify-between">
+                  <h3 className="text-xl font-semibold text-gray-800">
+                    {tenant?.name}
+                  </h3>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenForEdit(tenant)}
+                      className="cursor-pointer text-sm border-y-1 border-r-0 border-l-1 py-1 px-2 rounded-l-md border-gray-100 text-white bg-blue-600"
+                    >
+                      <FaPencil className="inline ml-1" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleTenantDelete(tenant?.id)}
+                      className="cursor-pointer text-sm border-y-1 border-r-1 border-l-0 py-1 px-2 rounded-r-md border-gray-100 text-white bg-gray-600"
+                    >
+                      <FaTrash className="inline mr-1" />
+                    </button>
+                  </div>
+                </div>
+
+                <p className="text-sm text-gray-500 mb-2">{tenant?.type}</p>
+                {tenant?.description && (
+                  <p className="text-gray-600 text-sm mb-2">
+                    {tenant?.description}
+                  </p>
+                )}
+
+                <button
+                  onClick={() => getUsersByTenant(tenant?.id)}
+                  className="cursor-pointer text-blue-600 underline text-sm mb-2 hover:text-blue-800 block"
+                >
+                  View Users
+                </button>
+
+                <button
+                  onClick={() => getPropertiesByTenant(tenant?.id)}
+                  className="cursor-pointer text-blue-600 underline text-sm mb-2 hover:text-blue-800 block"
+                >
+                  View Properties
+                </button>
+
+                <span
+                  className={`inline-block px-3 py-1 text-xs rounded-full ${
+                    tenant.isActive
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {tenant?.isActive ? "Active" : "Inactive"}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Tenant Modal */}
-      <Modal isOpen={isTenantModalOpen} onClose={handleCloseTenantModal}>
-        <TenantForm
-          initialData={selectedTenant || null}
-          handleCloseTenantModal={handleCloseTenantModal}
+        {/* Tenant Modal */}
+        <Modal isOpen={isTenantModalOpen} onClose={handleCloseTenantModal}>
+          <TenantForm
+            initialData={selectedTenant || null}
+            handleCloseTenantModal={handleCloseTenantModal}
+          />
+        </Modal>
+
+        <UsersModalContent
+          tenantId={selectedTenantId || ""}
+          users={users}
+          isOpen={isUserModalOpen}
+          onClose={handleCloseUserModal}
         />
-      </Modal>
 
-      <UsersModalContent
-        tenantId={selectedTenantId || ""}
-        users={users}
-        isOpen={isUserModalOpen}
-        onClose={handleCloseUserModal}
-      />
-
-      <PropertiesModalContent
-        tenantId={selectedTenantId || ""}
-        properties={properties}
-        isOpen={isPropertyModalOpen}
-        onClose={handleClosePropertyModal}
-      />
-    </div>
+        <PropertiesModalContent
+          tenantId={selectedTenantId || ""}
+          properties={properties}
+          isOpen={isPropertyModalOpen}
+          onClose={handleClosePropertyModal}
+        />
+      </div>
+    </>
   );
 };
 

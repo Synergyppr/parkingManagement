@@ -86,7 +86,7 @@ export default function PropertyForm({
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-xl mx-auto space-y-4 rounded shadow text-gray-200 flex flex-col">
+    <div className="p-4 md:p-6 max-w-xl mx-auto space-y-4 rounded shadow text-gray-800 flex flex-col">
       <div className="flex gap-2 text-blue-500 items-center">
         <FaBuilding className="w-5 h-5" />
         <h2 className="text-xl font-semibold tracking-tight relative top-[2px]">
@@ -100,7 +100,7 @@ export default function PropertyForm({
         placeholder="Property Name"
         value={form?.name}
         onChange={handleChange}
-        className="border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full"
+        className="border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-400 tracking-tight w-full"
         required
       />
 
@@ -110,7 +110,7 @@ export default function PropertyForm({
         placeholder="Address"
         value={form?.address}
         onChange={handleChange}
-        className="border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full"
+        className="border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-400 tracking-tight w-full"
         required
       />
 

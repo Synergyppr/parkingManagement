@@ -18,6 +18,8 @@ const CreateAndUpdatePropertyEndpoint =
 const DeletePropertyEndpoint = process.env.DELETE_PROPERTY_ENDPOINT + "";
 // Valet Tickets
 const GetValetTicketByEndpoint = process.env.GET_VALET_TICKET_BY_ENDPOINT + ""; // api/getTicket
+const GetTicketDetailsByTicketIdEndpoint =
+  process.env.GET_TICKET_DETAILS_BY_TICKET_ID_ENDPOINT + "";
 const GetVehicleByPatronTicketIdEndpoint =
   process.env.GET_VEHICLE_BY_PATRON_TICKET_ID_ENDPOINT + ""; // api/getVehicle/byTicketId
 const GetVehicleByPatronPhoneEndpoint =
@@ -25,6 +27,8 @@ const GetVehicleByPatronPhoneEndpoint =
 const CreateValetTicketEndpoint = process.env.CREATE_VALET_TICKET_ENDPOINT + ""; // api/vehicleCheckIn
 const UpdateValetTicketStatusEndpoint =
   process.env.UPDATE_VALET_TICKET_STATUS_ENDPOINT + ""; // api/vehicleStatus
+const CreatePatronRatingEndpoint =
+  process.env.CREATE_PATRON_RATING_ENDPOINT + ""; // api/patronRating
 
 const Endpoints = [
   {
@@ -76,6 +80,10 @@ const Endpoints = [
     endpoint: GetValetTicketByEndpoint,
   },
   {
+    name: "Get Ticket Details By Ticket ID",
+    endpoint: GetTicketDetailsByTicketIdEndpoint,
+  },
+  {
     name: "Get Vehicle By Patron Ticket ID",
     endpoint: GetVehicleByPatronTicketIdEndpoint,
   },
@@ -90,6 +98,10 @@ const Endpoints = [
   {
     name: "Update Valet Ticket Status",
     endpoint: UpdateValetTicketStatusEndpoint,
+  },
+  {
+    name: "Create Patron Rating",
+    endpoint: CreatePatronRatingEndpoint,
   },
 ];
 
@@ -117,7 +129,6 @@ export async function PostContentData(
     });
 
     data = await response.json();
-
   } catch (err) {
     if (err instanceof Error) {
       console.log(err.name);

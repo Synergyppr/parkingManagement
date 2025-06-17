@@ -1,23 +1,39 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { FaBell, FaBars } from "react-icons/fa";
+import { FaUser } from "react-icons/fa6";
+import { TbLogout2 } from "react-icons/tb";
+import { FaBars } from "react-icons/fa";
 import {
   IoHomeOutline,
   IoSettingsOutline,
   IoCarSportOutline,
 } from "react-icons/io5";
-
-import { FaUser } from "react-icons/fa6";
 import Modal from "@/app/components/Modal";
+import useAuthRedirect from "../lib/loginHook";
 
 export default function Header() {
   const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [openModal, setOpenModal] = useState<"none" | "notifications" | "menu">(
     "none"
   );
+
+  useAuthRedirect(); // Redirect if not logged in
+
+  useEffect(() => {
+    // Only runs in the browser
+    const loggedIn = localStorage.getItem("isLoggedIn") === "true";
+    setIsLoggedIn(loggedIn);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("authToken"); // if used
+    router.replace("/"); // Redirect to login
+  };
 
   const toggleModal = (type: "notifications" | "menu") => {
     setOpenModal((prev) => (prev === type ? "none" : type));
@@ -26,27 +42,26 @@ export default function Header() {
   const closeModal = () => setOpenModal("none");
 
   return (
-    <header className="w-full flex justify-between items-center p-4 bg-gradient-to-r from-blue-900 to-blue-800 text-white shadow-lg sticky top-0 z-50">
+    <header className="w-full flex justify-between items-center p-4 bg-gradient-to-r from-blue-900 to-blue-800 text-gray-800 shadow-lg sticky top-0 z-50">
       <Image
-        className="relative w-auto h-auto"
+        className="relative w-auto h-auto cursor-pointer"
         src="/synergy1.png"
         alt="Synergy Logo"
         width={180}
         height={37}
         priority
-        onClick={() => router.push("/")}
+        onClick={() => router.push("/123")}
       />
 
       <div className="flex gap-4 items-center relative">
-        <button onClick={() => router.push("/login")}>
-          <FaUser
-            className="text-white text-lg hover:scale-110 transition-transform duration-200 cursor-pointer"
-            onClick={() => router.push("/login")}
-          />
+        <button onClick={isLoggedIn ? handleLogout : () => router.push("/")}>
+          {isLoggedIn ? (
+            <TbLogout2 className="text-white text-lg hover:scale-110 transition-transform duration-200 cursor-pointer" />
+          ) : (
+            <FaUser className="text-white text-lg hover:scale-110 transition-transform duration-200 cursor-pointer" />
+          )}
         </button>
-        <button onClick={() => toggleModal("notifications")}>
-          <FaBell className="text-white text-lg hover:scale-110 transition-transform duration-200 cursor-pointer" />
-        </button>
+
         <button onClick={() => toggleModal("menu")}>
           <FaBars className="text-white text-lg hover:scale-110 transition-transform duration-200 cursor-pointer" />
         </button>
@@ -80,29 +95,29 @@ export default function Header() {
             placementX="end"
             placementY="start"
           >
-            <div className="text-gray-200">
+            <div className="text-gray-800">
               <nav className="flex flex-col space-y-2 gap-0">
                 <Link
                   href="/"
-                  className="hover:underline flex gap-3 items-center border-b-[0.5px] border-solid border-gray-700 pb-1"
+                  className="hover:underline flex gap-3 items-center border-b-[0.5px] border-solid border-gray-400 pb-1"
                 >
                   <IoHomeOutline />
                   Home
                 </Link>
-                <a
+                <Link
                   href="/tenants"
-                  className="hover:underline flex gap-3 items-center border-b-[0.5px] border-solid border-gray-700 pb-1"
+                  className="hover:underline flex gap-3 items-center border-b-[0.5px] border-solid border-gray-400 pb-1"
                 >
                   <IoSettingsOutline />
                   Manage Tenants
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/request"
-                  className="hover:underline flex gap-3 items-center border-b-[0.5px] border-solid border-gray-700 pb-1"
+                  className="hover:underline flex gap-3 items-center border-b-[0.5px] border-solid border-gray-400 pb-1"
                 >
                   <IoCarSportOutline />
                   Request Car
-                </a>
+                </Link>
               </nav>
             </div>
           </Modal>

@@ -42,6 +42,7 @@ export interface CarBrand {
 
 export interface VehicleApiResponse {
   tickets: Vehicle[];
+  readyTickets: Vehicle[];
   carBrands: CarBrand[];
   vehicleTypes: DropdownOption[];
   vehicleColors: DropdownOption[];
