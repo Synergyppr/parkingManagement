@@ -224,6 +224,10 @@ export default function HomePage() {
   //   console.log("unreadTicketIds:", unreadTicketIds);
   // }, [messagesByStatus]);
 
+  const isFormChanged = () => {
+    return JSON.stringify(form) !== JSON.stringify(initialForm);
+  };
+
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isFormChanged()) {
@@ -236,11 +240,8 @@ export default function HomePage() {
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, initialForm]);
-
-  const isFormChanged = () => {
-    return JSON.stringify(form) !== JSON.stringify(initialForm);
-  };
 
   const handleTabChange = (newTab: string) => {
     if (!isFormChanged()) {

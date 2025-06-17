@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import Swal from "sweetalert2";
 
 export default function SignUpPage() {
@@ -173,9 +174,9 @@ export default function SignUpPage() {
 
         <p className="text-xs text-gray-400 text-center">
           Already have an account?{" "}
-          <a href="/login" className="text-blue-500 hover:underline">
+          <Link href="/login" className="text-blue-500 hover:underline">
             Sign in
-          </a>
+          </Link>
         </p>
       </div>
     </div>
