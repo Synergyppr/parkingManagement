@@ -2,7 +2,7 @@ import { getUserProfile, validateUser } from "../../lib/userStoreApi";
 import { Session, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { DefaultSession, DefaultUser } from "next-auth";
+import { DefaultSession, DefaultUser, NextAuthOptions } from "next-auth";
 import { JWT } from "next-auth/jwt";
 
 declare module "next-auth" {
@@ -26,7 +26,7 @@ declare module "next-auth/jwt" {
   }
 }
 
-export const authOptions = {
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -37,12 +37,10 @@ export const authOptions = {
           placeholder: "John Smith",
         },
         password: { label: "Password", type: "password" },
-        propertyId: { label: "Property", type: "text" },
+        // propertyId: { label: "Property", type: "text" },
       },
       async authorize(
-        credentials:
-          | Record<"username" | "password" | "propertyId", string>
-          | undefined
+        credentials: Record<"username" | "password", string> | undefined
       ): Promise<User | null> {
         if (!credentials || !credentials.username || !credentials.password) {
           throw new Error("Please enter a username and password");
@@ -51,7 +49,7 @@ export const authOptions = {
         const user = await validateUser({
           username: credentials.username,
           password: credentials.password,
-          propertyId: credentials.propertyId,
+          // propertyId: credentials.propertyId,
         });
 
         if (!user) {
