@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import TabNavigation from "@/app/components/TabNavigation";
-import ReceiveForm from "@/app/components/ReceiveForm";
 import {
-  Vehicle,
-  VehicleApiResponse,
+  Ticket,
+  TicketResponseData,
   CarBrand,
   DropdownOption,
 } from "@/app/types";
@@ -16,20 +14,27 @@ import {
   generateLabelsMap,
 } from "../lib/carPartsLegend";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import TabNavigation from "@/app/components/TabNavigation";
+import ReceiveForm from "@/app/components/ReceiveForm";
 import Modal from "../components/Modal";
 import Swal from "sweetalert2";
 import ButtonLoader from "../components/elements/ButtonLoader";
 import CarVector from "../components/CarVector";
 import Tabs from "../components/elements/Tabs";
+import ValetTicketList from "../components/ValetTicketList";
+// import Log from "../components/Log";
 
 // ** DASHBOARD PAGE **
 
 export default function HomePage() {
+  const [form, setForm] = useState<Partial<Ticket>>({});
+  const [initialForm, setInitialForm] = useState<Partial<Ticket>>({});
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<string>("received");
   const [detailsActiveTab, setDetailsActiveTab] = useState<string>("Details");
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [readyVehicles, setReadyVehicles] = useState<Vehicle[]>([]);
+  const [vehicles, setVehicles] = useState<Ticket[]>([]); // Valet Tickets in status "parked" and "requested"
+  const [readyVehicles, setReadyVehicles] = useState<Ticket[]>([]); // Valet Tickets in status "ready"
   const [carBrands, setCarBrands] = useState<CarBrand[]>([]);
   const [vehicleTypes, setVehicleTypes] = useState<DropdownOption[]>([]);
   const [vehicleColors, setVehicleColors] = useState<DropdownOption[]>([]);
@@ -42,15 +47,12 @@ export default function HomePage() {
   const [showPin, setShowPin] = useState<boolean>(false);
   const [buttonLoader, setButtonLoader] = useState<boolean>(false);
   const [transitionState, setTransitionState] = useState<string>("fade-in");
-  const [form, setForm] = useState<Partial<Vehicle>>({});
-  const [initialForm, setInitialForm] = useState<Partial<Vehicle>>({});
-  const [messagesByStatus] = useState<
-    Record<string, { ticketId: string; message: string }[]>
-  >({}); // TODO: Finish implementing SignalR messages highlighting
   const [damagedParts, setDamagedParts] = useState<
     { partName: string; description: string; carView: string }[]
   >([]);
   const [ticketDetails, setTicketDetails] = useState<{
+    ticketId: string;
+    createdDateTime: string;
     patron?: {
       firstName: string;
       lastName: string;
@@ -81,7 +83,10 @@ export default function HomePage() {
 
   // Get unread ticketIds for current tab
   const unreadTicketIds =
-    messagesByStatus[activeTab]?.map((msg) => msg.ticketId) || [];
+    vehicles?.filter((msg) => activeTab === msg?.status && !msg?.isRead) || [];
+  const unreadRequestedTickets =
+    vehicles?.filter((msg) => msg?.status === "requested" && !msg?.isRead) ||
+    [];
 
   useAuthRedirect(); // will redirect if not logged in
 
@@ -95,9 +100,9 @@ export default function HomePage() {
       }),
     });
     const data = await res.json();
-    const result: VehicleApiResponse = data?.data;
+    const result: TicketResponseData = data?.data;
 
-    // console.log("Fetched data:", result);
+    // console.log("Get Valet Tickets Fetched data:", result);
     setVehicles(result?.tickets);
     setReadyVehicles(result?.readyTickets || []);
     setCarBrands(result?.carBrands);
@@ -121,6 +126,8 @@ export default function HomePage() {
       });
 
       const data = await res.json();
+
+      // console.log("Ticket details fetched:", data);
 
       if (data?.status === "200") {
         setTicketDetails(data?.data);
@@ -198,50 +205,26 @@ export default function HomePage() {
     }
   };
 
-  // TODO: Highlight new tickets
-  // useEffect(() => {
-  //   // Simulate receiving a new ticket (you'll replace this with your SignalR logic)
-  //   const timer = setTimeout(() => {
-  //     const newMessage = {
-  //       ticketId: "abc123", // match an actual vehicle ID in your data
-  //       message: "New vehicle received",
-  //     };
-
-  //     setMessagesByStatus((prev) => {
-  //       const prevMessages = prev["parked"] || []; // example: assume the tab is "parked"
-  //       return {
-  //         ...prev,
-  //         parked: [...prevMessages, newMessage],
-  //       };
-  //     });
-  //   }, 3000); // after 3s
-
-  //   return () => clearTimeout(timer);
-  // }, []);
-
-  // useEffect(() => {
-  //   console.log("messagesByStatus:", messagesByStatus);
-  //   console.log("unreadTicketIds:", unreadTicketIds);
-  // }, [messagesByStatus]);
-
   const isFormChanged = () => {
     return JSON.stringify(form) !== JSON.stringify(initialForm);
   };
 
+  const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+    if (isFormChanged()) {
+      e.preventDefault();
+      e.returnValue = ""; // Required for Chrome
+    }
+  };
+
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isFormChanged()) {
-        e.preventDefault();
-        e.returnValue = ""; // Required for Chrome
-      }
-    };
+    if (!hasUnsavedChanges) return;
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, initialForm]);
+  }, [form, initialForm, hasUnsavedChanges]);
 
   const handleTabChange = (newTab: string) => {
     if (!isFormChanged()) {
@@ -272,15 +255,6 @@ export default function HomePage() {
     setNextStatus(status);
     setOpenModal(true);
   };
-
-  const filteredVehicles =
-    activeTab === "ready"
-      ? readyVehicles
-      : vehicles?.filter((vehicle: Vehicle) => {
-          if (activeTab === "received")
-            return vehicle.status === "" || vehicle.status === "received";
-          return vehicle.status === activeTab;
-        });
 
   const closeModal = () => {
     setOpenModal(false);
@@ -358,6 +332,54 @@ export default function HomePage() {
     setDetailsActiveTab("Details");
   };
 
+  const markAsRead = async (ticket: {
+    ticketNumber: string;
+    notificationId: string;
+    isRead: boolean;
+  }) => {
+    if (!ticket?.ticketNumber || ticket?.isRead) return;
+
+    try {
+      const sendForm = {
+        id: ticket?.notificationId,
+      };
+
+      if (!ticket?.isRead) {
+        const res = await fetch("/api/notification/read", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(sendForm),
+        });
+
+        const data = await res.json();
+
+        if (data?.status === "200") {
+          fetchData(); // Refresh the data from the API
+        } else {
+        }
+        return;
+      }
+
+      // Update the unread status of the ticket
+      setVehicles((prevVehicles) =>
+        prevVehicles.map((vehicle) =>
+          vehicle?.ticketNumber === ticket?.ticketNumber
+            ? { ...vehicle, isRead: true }
+            : vehicle
+        )
+      );
+    } catch (error) {
+      console.error("Error marking ticket as read:", error);
+      Swal.fire({
+        title: "Error",
+        text: "Failed to mark ticket as read",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+      return;
+    }
+  };
+
   return (
     <section
       className="w-full overflow-y-auto min-h-[calc(100vh-86px)] relative z-0"
@@ -370,10 +392,11 @@ export default function HomePage() {
         selected={activeTab}
         onSelect={handleTabChange}
         fetchData={fetchData}
+        unreadTicketIds={unreadRequestedTickets}
       />
 
-      <div className="w-full max-w-screen-xl mx-auto mt-4 px-2 sm:px-4">
-        <div className="mt-4">
+      <div className="w-full max-w-screen-xl mx-auto mt-2 px-2">
+        <div>
           {activeTab === "received" && (
             <ReceiveForm
               carBrands={carBrands}
@@ -392,125 +415,15 @@ export default function HomePage() {
             </div>
           ) : (
             activeTab !== "received" && (
-              <div className="space-y-3 mb-2 overflow-y-auto">
-                {filteredVehicles?.length > 0 ? (
-                  filteredVehicles?.map((vehicle) => {
-                    const isUnread = unreadTicketIds.includes(vehicle.id);
-
-                    return (
-                      <div
-                        key={vehicle?.ticketNumber}
-                        className={`p-4 relative overflow-hidden transition-all duration-500 border rounded ${
-                          isUnread
-                            ? "bg-yellow-100 border-yellow-300"
-                            : "bg-slate-300"
-                        }`}
-                      >
-                        <div>
-                          <h4 className="font-semibold text-[#ef6c00] text-shadow-gray-800">
-                            {vehicle?.firstName} {vehicle?.lastName}
-                          </h4>
-                          <p
-                            className="text-sm text-gray-800"
-                            onClick={() =>
-                              navigator.clipboard.writeText(
-                                vehicle?.ticketNumber
-                              )
-                            }
-                            title="Click to copy"
-                          >
-                            <span className="font-bold tracking-tight">
-                              ID:
-                            </span>{" "}
-                            <span className="hover:text-blue-600 hover:underline cursor-pointer">
-                              #{vehicle?.ticketNumber}
-                            </span>
-                          </p>
-                        </div>
-                        <div className=" rounded-sm flex justify-between items-center">
-                          <div>
-                            {/* Decorative Circles */}
-                            <div className="absolute top-[-6px] left-[-6px]  w-4 h-4 bg-white/70 rounded-full" />
-                            <div className="absolute top-[-6px] right-[-6px] w-4 h-4 bg-white/70 rounded-full" />
-                            <div className="absolute bottom-[-6px] left-[-6px] w-4 h-4 bg-white/70 rounded-full" />
-                            <div className="absolute bottom-[-6px] right-[-6px] w-4 h-4 bg-white/70 rounded-full" />
-                            <div>
-                              <div className="flex gap-4 text-sm text-gray-800">
-                                <p>
-                                  <span className="font-bold tracking-tight">
-                                    Type:
-                                  </span>{" "}
-                                  {vehicle?.type}
-                                </p>
-                                <p>
-                                  <span className="font-bold tracking-tight">
-                                    Color:
-                                  </span>{" "}
-                                  {vehicle?.color}
-                                </p>
-                              </div>
-                              <div className="text-sm text-slate-500 capitalize">
-                                <p>
-                                  <span className="font-bold tracking-tight">
-                                    Time:{" "}
-                                  </span>
-                                  {new Date(
-                                    vehicle?.createdDateTime
-                                  ).toLocaleString([], {
-                                    year: "numeric",
-                                    month: "2-digit",
-                                    day: "2-digit",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </p>
-                              </div>
-                              {damagedParts && (
-                                <div
-                                  onClick={() =>
-                                    handleFetchTicketDetails(vehicle?.id)
-                                  }
-                                >
-                                  <p className="text-sm tracking-tight cursor-pointer text-blue-500 underline mt-1">
-                                    View ticket details
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          {activeTab != "ready" && (
-                            <div className="mt-auto">
-                              <button
-                                className="cursor-pointer my-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-6 font-semibold shadow-sm tracking-tight rounded"
-                                onClick={() =>
-                                  handleStatusChange(
-                                    vehicle?.id,
-                                    activeTab === "parked"
-                                      ? "requested"
-                                      : activeTab === "requested"
-                                      ? "ready"
-                                      : ""
-                                  )
-                                }
-                              >
-                                {activeTab === "parked"
-                                  ? "Request"
-                                  : activeTab === "requested"
-                                  ? "Ready"
-                                  : ""}
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="text-center text-gray-500 tracking-tight italic font-light">
-                    No vehicles in this status.
-                  </p>
-                )}
-              </div>
+              <ValetTicketList
+                vehicles={activeTab === "ready" ? readyVehicles : vehicles}
+                activeTab={activeTab}
+                unreadTicketIds={unreadTicketIds}
+                damagedParts={damagedParts}
+                handleFetchTicketDetails={handleFetchTicketDetails}
+                handleStatusChange={handleStatusChange}
+                markAsRead={markAsRead}
+              />
             )
           )}
         </div>
@@ -563,12 +476,13 @@ export default function HomePage() {
           </div>
         </div>
       </Modal>
+
       <Modal isOpen={ticketDetailsOpen} onClose={handleCloseTicketDetails}>
         <div>
           <div className="absolute top-6 left-6 text-lg font-semibold text-gray-800 mb-4 min-w-[272px] md:min-w-[87.5%]">
             <Tabs
               isSmallScreen={false}
-              tabs={["Details", "Damages"]}
+              tabs={["Details", "Damages", "Log"]}
               activeTab={detailsActiveTab}
               setActiveTab={setDetailsActiveTab}
               setTransitionState={setTransitionState}
@@ -599,6 +513,10 @@ export default function HomePage() {
                   <strong>Phone Number:</strong>{" "}
                   {ticketDetails?.patron?.phoneNumber || ""}
                 </p>
+                <p className="mb-2">
+                  <strong>Created On:</strong>{" "}
+                  {ticketDetails?.createdDateTime || ""}
+                </p>
                 <h4 className="text-lg font-semibold text-blue-500 tracking-tight mb-2">
                   Vehicle Information
                 </h4>
@@ -628,7 +546,7 @@ export default function HomePage() {
             )}
 
             {detailsActiveTab === "Damages" && (
-              <div>
+              <div className="relative">
                 <CarVector
                   noIncident={noIncident}
                   setNoIncident={setNoIncident}
@@ -636,51 +554,83 @@ export default function HomePage() {
                   setIncidentParts={setIncidentParts}
                   descriptions={descriptions}
                   setDescriptions={setDescriptions}
-                  licensePlate={form.licensePlate ?? ""}
+                  licensePlate={form?.licensePlate ?? ""}
                   findLinkedGroup={findLinkedGroup}
                   frontViewLabelsMap={frontViewLabelsMap}
                   rearViewLabelsMap={rearViewLabelsMap}
                   passengerViewLabelsMap={passengerViewLabelsMap}
                   driverViewLabelsMap={driverViewLabelsMap}
                   hideLabels={true}
+                  handleBeforeUnload={handleBeforeUnload}
+                  hasUnsavedChanges={hasUnsavedChanges}
+                  setHasUnsavedChanges={setHasUnsavedChanges}
                 />
-                <div>
-                  {damagedParts?.length > 0 && (
-                    <div className="text-center">
+
+                {damagedParts?.length > 0 ? (
+                  <div className="text-center my-3">
+                    <button
+                      className="text-blue-500 underline text-sm cursor-pointer"
+                      onClick={() =>
+                        setViewAllDamagedParts(!viewAllDamagedParts)
+                      }
+                    >
+                      {viewAllDamagedParts
+                        ? "Hide Description"
+                        : "View Full Description"}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-center mb-2 mt-1">
+                    <p className="text-gray-600 italic">No damages reported.</p>
+                  </div>
+                )}
+
+                {/* Overlay */}
+                {viewAllDamagedParts && (
+                  <div className="absolute inset-0 bg-white/90 z-20 p-3 rounded-md shadow-lg mt-[26px] flex flex-col h-[96%]">
+                    <h4 className="text-lg font-semibold text-blue-600 mb-3 text-center tracking-tight">
+                      Damaged Parts
+                    </h4>
+
+                    <div className="overflow-y-auto flex-1 pr-1">
+                      {damagedParts?.length > 0 ? (
+                        <ul className="list-disc pl-6 space-y-2 text-gray-800 text-sm custom-marker-orange">
+                          {damagedParts.map((part, index) => (
+                            <li key={index}>
+                              {part.partName.replace(/([A-Z])/g, " $1").trim()}
+                              {part.description && (
+                                <span className="text-gray-600 italic ml-1">
+                                  ({part.description})
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-gray-600 italic text-center">
+                          No damages reported.
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="text-center mt-4">
                       <button
-                        className="text-blue-500 underline mb-0 text-sm cursor-pointer py-1"
-                        onClick={() => {
-                          setDetailsActiveTab("Damages");
-                          setViewAllDamagedParts(!viewAllDamagedParts);
-                        }}
+                        onClick={() => setViewAllDamagedParts(false)}
+                        className="bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded cursor-pointer"
                       >
-                        {viewAllDamagedParts
-                          ? "Hide Damaged Parts"
-                          : "View Damaged Parts"}
+                        Close
                       </button>
                     </div>
-                  )}
+                  </div>
+                )}
+              </div>
+            )}
 
-                  {viewAllDamagedParts ? (
-                    damagedParts?.length > 0 ? (
-                      <ul className="list-disc pl-5 space-y-1 text-gray-700 pb-2">
-                        {damagedParts.map((part, index) => (
-                          <li key={index} className="text-sm">
-                            {part.partName}{" "}
-                            {part.description && (
-                              <span className="text-gray-600 italic">
-                                ({part.description})
-                              </span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-gray-600 italic">
-                        No damages reported.
-                      </p>
-                    )
-                  ) : null}
+            {/* {detailsActiveTab === "Log" && <Log logs={null} />} */}
+            {detailsActiveTab === "Log" && (
+              <div className="h-[200px] flex flex-col items-center text-center text-gray-600">
+                <div className="h-full w-full m-auto mt-[50px]">
+                  No log available.
                 </div>
               </div>
             )}

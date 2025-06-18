@@ -40,5 +40,9 @@ export default async function Page() {
     console.warn("Invalid data received from backend", response);
   }
 
-  return <Tenants data={{ data: tenants }} />;
+  return (
+    <div className="min-h-[100vh] flex flex-col">
+      <Tenants data={{ data: tenants }} />
+    </div>
+  );
 }

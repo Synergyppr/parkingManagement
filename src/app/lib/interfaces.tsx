@@ -22,10 +22,4 @@ export interface UpdateUserInterface {
   dateOfBirth: string;
   userIdentifier: string;
   location: string;
-  // addresses: AddressInterface[];
-  // phones: PhoneInterface[];
-  // emails: EmailInterface[];
-  // foodAllergies: FoodAllergyInterface[];
-  // foodPreferences: FoodPreferenceInterface[];
-  // specialRequests: SpecialRequestInterface[];
 }

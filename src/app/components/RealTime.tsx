@@ -34,7 +34,7 @@ const RealTimeComponent: React.FC<RealTimeComponentProps> = ({
     newConnection
       .start()
       .then(() => {
-        newConnection.on("ReceivedStatusUpdate", (receivedMessage: string) => {
+        newConnection.on("UpdateNotification", (receivedMessage: string) => {
           setMessages((prevMessages) => [
             ...prevMessages,
             { message: { status: receivedMessage } },

@@ -1,7 +1,8 @@
 "use client";
-
+import { useEffect, useRef, useState } from "react";
 import { TabItem } from "@/app/types";
 import { motion } from "framer-motion";
+import * as signalR from "@microsoft/signalr";
 import {
   FaCarSide,
   FaParking,
@@ -9,9 +10,8 @@ import {
   FaCheckCircle,
   FaDotCircle,
 } from "react-icons/fa";
-import { useEffect, useRef, useState } from "react";
-import * as signalR from "@microsoft/signalr";
 import { useClickOutside } from "@/app/lib/clientUtils";
+import { Ticket } from "@/app/types";
 
 const tabs: TabItem[] = [
   { label: "Received", icon: <FaCarSide />, key: "received" },
@@ -30,16 +30,20 @@ export default function TabNavigation({
   selected,
   onSelect,
   fetchData,
+  unreadTicketIds,
 }: {
   selected: string;
   onSelect: (key: string) => void;
   fetchData: () => void;
+  unreadTicketIds: Ticket[]; // Optional prop for unread ticket IDs
 }) {
   const [messagesByStatus, setMessagesByStatus] = useState<
     Record<string, ChatMessage[]>
   >({});
   const [openNotification, setOpenNotification] = useState(false); // Add the state for the notification popup
   const sectionRef = useRef<HTMLDivElement | null>(null);
+  const connectionRef = useRef<signalR.HubConnection | null>(null);
+  const propertyId = "A7E348D3-8DFB-4F71-8BC5-042BA75D53C7";
 
   useEffect(() => {
     const connection = new signalR.HubConnectionBuilder()
@@ -48,37 +52,47 @@ export default function TabNavigation({
       .withAutomaticReconnect()
       .build();
 
+    connectionRef.current = connection;
+
     connection
       .start()
       .then(() => {
         console.log("Connected to SignalR hub");
-        connection.on("ReceivedStatusUpdate", (message: ChatMessage) => {
-          // If the message is already an object, skip parsing
-          const parsed =
-            typeof message === "string" ? JSON.parse(message) : message;
 
-          // Update messages grouped by status
-          setMessagesByStatus((prev) => ({
-            ...prev,
-            [parsed.status]: [...(prev[parsed.status] || []), parsed],
-          }));
-
-          fetchData(); // Fetch data after receiving a new message
-        });
+        // Join the property group after connection is established
+        return connection.invoke("JoinPropertyGroup", propertyId);
+      })
+      .then(() => {
+        // console.log("Joined property group:", propertyId);
       })
       .catch((err) => console.error("Error connecting to SignalR hub:", err));
+
+    // ReceivedStatusUpdate
+    connection.on("UpdateNotification", (message: ChatMessage) => {
+      // console.log("UpdateNotification received:", message);
+      const parsed =
+        typeof message === "string" ? JSON.parse(message) : message;
+
+      setMessagesByStatus((prev) => ({
+        ...prev,
+        [parsed.status]: [...(prev[parsed.status] || []), parsed],
+      }));
+
+      fetchData();
+    });
 
     return () => {
       (async () => {
         try {
           await connection.stop();
+          console.log("SignalR connection stopped");
         } catch (err) {
           console.error("Error stopping SignalR connection:", err);
         }
       })();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [propertyId]);
 
   const handleSelect = (key: string) => {
     onSelect(key);
@@ -96,14 +110,14 @@ export default function TabNavigation({
   return (
     <div className="bg-slate-900 py-2 text-white relative">
       <div className="flex justify-around border-b-[0.5px] py-2 shadow-sm relative">
-        {tabs.map((tab) => {
-          const isActive = selected === tab.key;
-          const hasNewMessages = !!messagesByStatus[tab.key]?.length;
+        {tabs?.map((tab) => {
+          const isActive = selected === tab?.key;
+          // const hasNewMessages = !!messagesByStatus[tab.key]?.length;
 
           return (
             <button
-              key={tab.key}
-              onClick={() => handleSelect(tab.key)}
+              key={tab?.key}
+              onClick={() => handleSelect(tab?.key)}
               className={`cursor-pointer relative flex flex-col gap-1.5 items-center text-xs px-4 py-2 rounded-md transition-all duration-300 ${
                 isActive
                   ? "text-white font-semibold"
@@ -111,13 +125,15 @@ export default function TabNavigation({
               }`}
             >
               <div className="text-lg relative">
-                {tab.icon}
-                {hasNewMessages && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-slate-900" />
+                {tab?.icon}
+                {unreadTicketIds?.length > 0 && tab?.label === "Requested" && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-slate-900">
+                    {unreadTicketIds.length > 9 ? "9+" : unreadTicketIds.length}
+                  </span>
                 )}
               </div>
 
-              <span>{tab.label}</span>
+              <span>{tab?.label}</span>
 
               {isActive && (
                 <motion.div

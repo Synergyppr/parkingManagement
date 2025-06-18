@@ -19,6 +19,13 @@
   }
 }
 
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -31,4 +38,8 @@ body {
   background-color: #fff !important;
   box-shadow: none !important;
   filter: none !important;
+}
+
+.custom-marker-orange li::marker {
+  color: #ef6c00; /* Orange color */
 }

@@ -56,7 +56,8 @@ const RequestCar = () => {
     connection.start().then(() => {
       console.log("SignalR connected");
 
-      connection.on("ReceivedStatusUpdate", (data) => {
+      connection.on("UpdateNotification", (data) => {
+        // console.log("Received status update:", data);
         if (data.ticketId === ticketId) {
           // Optionally refetch full vehicle info, or just update locally
           setVehicleData((prev) => ({

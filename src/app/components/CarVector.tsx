@@ -1,10 +1,12 @@
 "use client";
 import React, { useState } from "react";
+import Swal from "sweetalert2";
 import { LuListVideo } from "react-icons/lu";
 import Modal from "./Modal";
 import LabelSelector from "./LabelSelector";
 import ViewReportModal from "./ViewReportModal";
 import { CiViewList } from "react-icons/ci";
+import { carParts } from "../lib/carPartsLegend";
 
 interface CarVectorProps {
   noIncident: boolean;
@@ -20,6 +22,9 @@ interface CarVectorProps {
   passengerViewLabelsMap: Record<string, string[]>;
   driverViewLabelsMap: Record<string, string[]>;
   hideLabels?: boolean; // Prop to control label visibility
+  handleBeforeUnload?: (e: BeforeUnloadEvent) => void; // Optional prop for beforeunload event
+  hasUnsavedChanges?: boolean; // Optional prop to track unsaved changes
+  setHasUnsavedChanges?: React.Dispatch<React.SetStateAction<boolean>>; // Optional prop to track unsaved changes
 }
 
 const CarVector: React.FC<CarVectorProps> = ({
@@ -36,7 +41,11 @@ const CarVector: React.FC<CarVectorProps> = ({
   passengerViewLabelsMap,
   driverViewLabelsMap,
   hideLabels, // New prop to control label visibility
+  handleBeforeUnload,
+  hasUnsavedChanges, // Optional prop for beforeunload event
+  setHasUnsavedChanges, // Optional prop to track unsaved changes
 }) => {
+  // const pathname = usePathname();
   const [showFrontModal, setShowFrontModal] = useState(false);
   const [showRearModal, setShowRearModal] = useState(false);
   const [showPassengerModal, setShowPassengerModal] = useState(false);
@@ -49,13 +58,30 @@ const CarVector: React.FC<CarVectorProps> = ({
     if (!partId) return;
 
     const group = findLinkedGroup(partId);
-    const isActive = incidentParts.includes(partId);
+    const isGroupActive = group.some((id) => incidentParts.includes(id));
 
     setIncidentParts((prevParts) =>
-      isActive
+      isGroupActive
         ? prevParts.filter((id) => !group.includes(id))
         : [...prevParts, ...group.filter((id) => !prevParts.includes(id))]
     );
+
+    // Open corresponding modal based on group, not just partId
+    if (Object.keys(carParts.frontViewCar).some((id) => group.includes(id))) {
+      setShowFrontModal(true);
+    } else if (
+      Object.keys(carParts.rearViewCar).some((id) => group.includes(id))
+    ) {
+      setShowRearModal(true);
+    } else if (
+      Object.keys(carParts.passengerViewCar).some((id) => group.includes(id))
+    ) {
+      setShowPassengerModal(true);
+    } else if (
+      Object.keys(carParts.driverViewCar).some((id) => group.includes(id))
+    ) {
+      setShowDriverModal(true);
+    }
   };
 
   const isHighlighted = (id: string) => incidentParts.includes(id);
@@ -84,6 +110,69 @@ const CarVector: React.FC<CarVectorProps> = ({
         });
       }
     };
+
+  const handleSaveIncidentParts = () => {
+    const missingDescriptions = incidentParts.some(
+      () => !Object.values(descriptions).some((desc) => desc.trim())
+    );
+
+    if (missingDescriptions) {
+      // alert("Please provide a description for all selected parts.");
+      return;
+    }
+
+    setHasUnsavedChanges?.(false);
+    // Remove the unload warning since the user is saving on purpose
+    if (handleBeforeUnload && hasUnsavedChanges) {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    }
+
+    if (showFrontModal) setShowFrontModal(false);
+    if (showRearModal) setShowRearModal(false);
+    if (showDriverModal) setShowDriverModal(false);
+    if (showPassengerModal) setShowPassengerModal(false);
+  };
+
+  const handleModalCloseWithConfirm = async (
+    view: "passenger" | "driver" | "front" | "rear"
+  ) => {
+    const result = await Swal.fire({
+      title: "Discard changes?",
+      text: "You have unsaved changes. Are you sure you want to discard them?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, discard",
+      cancelButtonText: "Cancel",
+    });
+
+    if (!result.isConfirmed) return;
+
+    const labelMap = {
+      passenger: passengerViewLabelsMap,
+      driver: driverViewLabelsMap,
+      front: frontViewLabelsMap,
+      rear: rearViewLabelsMap,
+    }[view];
+
+    const idsToRemove = Object.values(labelMap).flat();
+
+    setIncidentParts((prev) => prev.filter((id) => !idsToRemove.includes(id)));
+
+    setDescriptions((prev) => {
+      const updated = { ...prev };
+      for (const label in labelMap) {
+        delete updated[label];
+      }
+      return updated;
+    });
+
+    if (view === "passenger") setShowPassengerModal(false);
+    if (view === "driver") setShowDriverModal(false);
+    if (view === "front") setShowFrontModal(false);
+    if (view === "rear") setShowRearModal(false);
+  };
 
   const isReportAvailable = incidentParts.length > 0;
 
@@ -1166,69 +1255,80 @@ const CarVector: React.FC<CarVectorProps> = ({
           </g>
         </g>
       </svg>
-      <div className="flex gap-2 items-center absolute bottom-[-55px] right-2 text-gray-800 text-sm tracking-tight">
-        <div className="w-3 h-3 bg-blue-100 border-1 border-gray-800"></div>
-        Selectable area
-      </div>
-      <div className="flex gap-2 items-center absolute bottom-[-55px] left-2 text-gray-800 text-sm tracking-tight">
-        <div className="w-3 h-3 bg-orange-500 border-1 border-gray-800"></div>
-        Damaged area
-      </div>
 
-      <div
-        aria-disabled={!isReportAvailable}
-        onClick={() => {
-          if (isReportAvailable) setShowFullReportModal(true);
-        }}
-        className={`${
-          !isReportAvailable ? "opacity-50" : ""
-        } flex gap-[5px] items-center absolute bottom-[-81px] left-1 text-sm tracking-tight cursor-pointer text-gray-700`}
-      >
-        <CiViewList className="w-[14px] h-[14px] text-blue-600" />
-        <span className="relative tracking-tight">View Full Report</span>
-      </div>
-
-      <div
-        className={`${
-          isReportAvailable ? "opacity-50" : ""
-        } flex gap-2 absolute bottom-[-81px] right-2 text-blue-600 text-sm tracking-tight`}
-      >
-        <label className="flex items-center gap-[6px] cursor-pointer">
-          <input
-            type="checkbox"
-            id={"noIncident"}
-            checked={noIncident}
-            disabled={isReportAvailable}
-            onChange={() => {
-              if (isReportAvailable) return;
-              setNoIncident(!noIncident);
-            }}
-            className="sr-only peer"
-          />
-          <div
-            className={`w-3 h-3 border-1 transition-all duration-150 ${
-              noIncident ? "bg-orange-500 border-orange-600" : "border-gray-400"
-            } peer-focus:ring-2 peer-focus:ring-orange-400 flex items-center justify-center`}
-          >
-            {noIncident && (
-              <svg
-                className="w-3 h-3 text-white"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-                viewBox="0 0 24 24"
-              >
-                <path d="M5 13l4 4L19 7" />
-              </svg>
-            )}
+      {!hideLabels && (
+        <div>
+          <div className="flex gap-2 items-center absolute bottom-[-55px] right-2 text-gray-800 text-sm tracking-tight">
+            <div className="w-3 h-3 bg-blue-100 border-1 border-gray-800"></div>
+            Selectable area
           </div>
-          <span className="text-sm font-light text-gray-800 leading-relaxed relative top-[1px]">
-            No incident(s) to report
-          </span>
-        </label>
-      </div>
+          <div className="flex gap-2 items-center absolute bottom-[-55px] left-2 text-gray-800 text-sm tracking-tight">
+            <div className="w-3 h-3 bg-orange-500 border-1 border-gray-800"></div>
+            Damaged area
+          </div>
 
-      <Modal isOpen={showFrontModal} onClose={() => setShowFrontModal(false)}>
+          <div
+            aria-disabled={!isReportAvailable}
+            onClick={() => {
+              if (isReportAvailable) setShowFullReportModal(true);
+            }}
+            className={`${
+              !isReportAvailable ? "opacity-50" : ""
+            } flex gap-[5px] items-center absolute bottom-[-81px] left-1 text-sm tracking-tight cursor-pointer text-gray-700`}
+          >
+            <CiViewList className="w-[14px] h-[14px] text-blue-600" />
+            <span className="relative tracking-tight">View Full Report</span>
+          </div>
+
+          <div
+            className={`${
+              isReportAvailable ? "opacity-50" : ""
+            } flex gap-2 absolute bottom-[-81px] right-2 text-blue-600 text-sm tracking-tight`}
+          >
+            <label className="flex items-center gap-[6px] cursor-pointer">
+              <input
+                type="checkbox"
+                id={"noIncident"}
+                checked={noIncident}
+                disabled={isReportAvailable}
+                onChange={() => {
+                  if (isReportAvailable) return;
+                  setNoIncident(!noIncident);
+                }}
+                className="sr-only peer"
+              />
+              <div
+                className={`w-3 h-3 border-1 transition-all duration-150 ${
+                  noIncident
+                    ? "bg-orange-500 border-orange-600"
+                    : "border-gray-400"
+                } peer-focus:ring-2 peer-focus:ring-orange-400 flex items-center justify-center`}
+              >
+                {noIncident && (
+                  <svg
+                    className="w-3 h-3 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </div>
+              <span className="text-sm font-light text-gray-800 leading-relaxed relative top-[1px]">
+                No incident(s) to report
+              </span>
+            </label>
+          </div>
+        </div>
+      )}
+
+      <Modal
+        isOpen={showFrontModal}
+        onClose={() => setShowFrontModal(false)}
+        onRequestClose={() => handleModalCloseWithConfirm("front")}
+      >
         <LabelSelector
           labelsMap={frontViewLabelsMap}
           isLabelChecked={isLabelChecked(frontViewLabelsMap)}
@@ -1237,17 +1337,21 @@ const CarVector: React.FC<CarVectorProps> = ({
           setDescriptions={setDescriptions}
           descriptions={descriptions}
         />
-        {/* <div className="mt-4 flex justify-center">
+        <div className="mt-4 flex">
           <button
-            onClick={() => setShowFrontModal(false)}
-            className="mx-auto cursor-pointer ml-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-6 font-semibold shadow-md tracking-tight rounded"
+            onClick={handleSaveIncidentParts}
+            className="ml-auto cursor-pointer bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
           >
-            OK
+            Save
           </button>
-        </div> */}
+        </div>
       </Modal>
 
-      <Modal isOpen={showRearModal} onClose={() => setShowRearModal(false)}>
+      <Modal
+        isOpen={showRearModal}
+        onClose={() => setShowRearModal(false)}
+        onRequestClose={() => handleModalCloseWithConfirm("rear")}
+      >
         <LabelSelector
           labelsMap={rearViewLabelsMap}
           isLabelChecked={isLabelChecked(rearViewLabelsMap)}
@@ -1256,12 +1360,22 @@ const CarVector: React.FC<CarVectorProps> = ({
           setDescriptions={setDescriptions}
           descriptions={descriptions}
         />
+        <div className="mt-4 flex">
+          <button
+            onClick={handleSaveIncidentParts}
+            className="ml-auto cursor-pointer bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
+          >
+            Save
+          </button>
+        </div>
       </Modal>
 
       <Modal
         isOpen={showPassengerModal}
         onClose={() => setShowPassengerModal(false)}
+        onRequestClose={() => handleModalCloseWithConfirm("passenger")}
       >
+        handleModalCloseWithConfirm
         <LabelSelector
           labelsMap={passengerViewLabelsMap}
           isLabelChecked={isLabelChecked(passengerViewLabelsMap)}
@@ -1270,9 +1384,21 @@ const CarVector: React.FC<CarVectorProps> = ({
           setDescriptions={setDescriptions}
           descriptions={descriptions}
         />
+        <div className="mt-4 flex">
+          <button
+            onClick={handleSaveIncidentParts}
+            className="ml-auto cursor-pointer bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
+          >
+            Save
+          </button>
+        </div>
       </Modal>
 
-      <Modal isOpen={showDriverModal} onClose={() => setShowDriverModal(false)}>
+      <Modal
+        isOpen={showDriverModal}
+        onClose={() => setShowDriverModal(false)}
+        onRequestClose={() => handleModalCloseWithConfirm("driver")}
+      >
         <LabelSelector
           labelsMap={driverViewLabelsMap}
           isLabelChecked={isLabelChecked(driverViewLabelsMap)}
@@ -1281,6 +1407,14 @@ const CarVector: React.FC<CarVectorProps> = ({
           setDescriptions={setDescriptions}
           descriptions={descriptions}
         />
+        <div className="mt-4 flex">
+          <button
+            onClick={handleSaveIncidentParts}
+            className="ml-auto cursor-pointer bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
+          >
+            Save
+          </button>
+        </div>
       </Modal>
 
       <ViewReportModal

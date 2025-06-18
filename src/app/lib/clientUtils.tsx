@@ -20,6 +20,38 @@ export const useClickOutside = (
   }, [ref, callback]);
 };
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Helper function to format date
+export const formatDate = (dateTimeString: string | number | Date) => {
+  const date = new Date(dateTimeString);
+
+  if (isNaN(date.getTime())) {
+    return " ";
+  }
+
+  return `${
+    date.getMonth() + 1
+  }/${date.getDate()}/${date.getFullYear()} ${date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "numeric",
+    hour12: true,
+  })}`;
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const formatHour = (hour: string) => {
+  const date = new Date(hour);
+  return date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "numeric",
+    hour12: true,
+  });
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
 export const formatDateTimePicker = (dateTime: string) => {
   const date = new Date(dateTime);
   const year = date.getFullYear();

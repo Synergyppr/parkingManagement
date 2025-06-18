@@ -138,15 +138,22 @@ const Tenants = ({ data }: TenantsProps) => {
   return (
     <>
       <Header />
-      <div className="flex flex-col items-center justify-center overflow-y-auto pb-4 min-h-[85vh] bg-white">
+      <div className="flex flex-col items-start overflow-y-auto pb-4 min-h-[94vh] bg-white">
         <div
-          className="relative w-full py-20 text-center bg-cover bg-center"
+          className="relative w-full pt-0 pb-16 text-center bg-cover bg-center z-0 min-h-[30vh]"
           style={{ backgroundImage: "url('/valet.jpg')" }}
         >
-          <div className="absolute inset-0 bg-blue-800 opacity-20"></div>
-          <div className="relative z-10">
-            <h1 className="text-4xl font-bold mb-4 text-gray-800">Tenants</h1>
-            <p className="text-lg text-gray-200">Manage your tenants here</p>
+          {/* Darker overlay for more contrast */}
+          <div className="absolute inset-0 bg-blue-900 opacity-40"></div>
+
+          <div className="relative z-10 flex flex-col items-center justify-center h-full px-4">
+            {/* Title with larger size, white color, shadow for contrast */}
+            <h1 className="text-5xl font-extrabold text-white drop-shadow-lg mt-16 mb-2">
+              Tenants
+            </h1>
+            <p className="text-xl text-gray-100 drop-shadow-sm">
+              Manage your tenants here
+            </p>
           </div>
         </div>
 
@@ -172,27 +179,27 @@ const Tenants = ({ data }: TenantsProps) => {
             {tenants?.map((tenant) => (
               <div
                 key={tenant?.id}
-                className="p-6 bg-white shadow-md rounded-lg border border-gray-200 hover:shadow-lg transition-shadow duration-200"
+                className="p-6 bg-white shadow-md rounded-lg border border-gray-200 transition-shadow duration-200"
               >
                 <div className="flex justify-between">
                   <h3 className="text-xl font-semibold text-gray-800">
                     {tenant?.name}
                   </h3>
-                  <div>
+                  <div className="flex space-x-0">
                     <button
                       type="button"
                       onClick={() => handleOpenForEdit(tenant)}
-                      className="cursor-pointer text-sm border-y-1 border-r-0 border-l-1 py-1 px-2 rounded-l-md border-gray-100 text-white bg-blue-600"
+                      className="group cursor-pointer text-sm border-y-1 border-r-0 border-l-1 py-1 px-2 rounded-l-md border-gray-100 text-white bg-blue-600"
                     >
-                      <FaPencil className="inline ml-1" />
+                      <FaPencil className="inline ml-1 group-hover:animate-shake" />
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleTenantDelete(tenant?.id)}
-                      className="cursor-pointer text-sm border-y-1 border-r-1 border-l-0 py-1 px-2 rounded-r-md border-gray-100 text-white bg-gray-600"
+                      className="group cursor-pointer text-sm border-y-1 border-r-1 border-l-0 py-1 px-2 rounded-r-md border-gray-100 text-white bg-gray-600"
                     >
-                      <FaTrash className="inline mr-1" />
+                      <FaTrash className="inline mr-1 group-hover:animate-shake" />
                     </button>
                   </div>
                 </div>

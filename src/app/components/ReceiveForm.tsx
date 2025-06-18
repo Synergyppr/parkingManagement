@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
 import { v4 as uuidv4 } from "uuid";
-import { Vehicle, DropdownOption, CarBrand } from "../types";
+import { Ticket, DropdownOption, CarBrand } from "../types";
 import { FaEye, FaEyeSlash, FaUser, FaTicketAlt, FaCar } from "react-icons/fa";
 import { FaCarRear } from "react-icons/fa6";
 import { PiCarProfileFill } from "react-icons/pi";
@@ -25,10 +25,10 @@ interface ReceiveFormProps {
   vehicleTypes: DropdownOption[];
   vehicleColors: DropdownOption[];
   fetchData: () => void;
-  form: Partial<Vehicle>;
-  setForm: React.Dispatch<React.SetStateAction<Partial<Vehicle>>>;
-  initialForm: Partial<Vehicle>;
-  setInitialForm: React.Dispatch<React.SetStateAction<Partial<Vehicle>>>;
+  form: Partial<Ticket>;
+  setForm: React.Dispatch<React.SetStateAction<Partial<Ticket>>>;
+  initialForm: Partial<Ticket>;
+  setInitialForm: React.Dispatch<React.SetStateAction<Partial<Ticket>>>;
 }
 
 const frontViewLabelsMap = generateLabelsMap(carParts.frontViewCar);
@@ -102,7 +102,7 @@ export default function ReceiveForm({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev: Partial<Ticket>) => ({ ...prev, [name]: value }));
 
     if (name === "make") {
       const selectedBrand = carBrands.find((b) => b.id === parseInt(value));
@@ -114,7 +114,10 @@ export default function ReceiveForm({
     const randomSixDigit = Math.floor(
       100000 + Math.random() * 900000
     ).toString();
-    setForm((prev) => ({ ...prev, ticketNumber: randomSixDigit }));
+    setForm((prev: Partial<Ticket>) => ({
+      ...prev,
+      ticketNumber: randomSixDigit,
+    }));
   };
 
   const handleSubmit = async (e: { preventDefault: () => void }) => {
@@ -214,6 +217,8 @@ export default function ReceiveForm({
       damageStatus,
     };
 
+    // console.log("Submitting form:", sendForm);
+
     // return; // Uncomment this line to prevent actual submission during development
 
     try {
@@ -260,7 +265,7 @@ export default function ReceiveForm({
     }
   };
 
-  const fetchUserDataByPhone = async (phone: string) => {
+  const fetchUserDataByPhone = async (phone: string): Promise<void> => {
     try {
       const res = await fetch(`/api/getVehicle/byPhone`, {
         method: "POST",
@@ -351,7 +356,7 @@ export default function ReceiveForm({
     <div
       className={`${
         step === 3 ? "" : "lg:mt-16 py-4 sm:py-4 md:py-16"
-      } border-none shadow-none lg:border-1 lg:border-solid border-gray-300 rounded  bg-white/30 mb-2`}
+      } border-none lg:shadow-lg lg:border-1 lg:border-solid border-[e0f2ff] rounded-lg  lg:bg-white/30 mb-2`}
     >
       <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-6 transition-opacity duration-500 ease-in-out animate-fade-in min-h-full">
         {!submitted ? (
@@ -409,7 +414,7 @@ export default function ReceiveForm({
                           )}`;
                         }
 
-                        setForm((prev) => ({
+                        setForm((prev: Partial<Ticket>) => ({
                           ...prev,
                           phoneNumber: formatted,
                         }));
@@ -462,7 +467,10 @@ export default function ReceiveForm({
                         onChange={(e) => {
                           const val = e.target.value;
                           if (/^[a-zA-Z0-9]{0,6}$/.test(val)) {
-                            setForm((prev) => ({ ...prev, ticketNumber: val }));
+                            setForm((prev: Partial<Ticket>) => ({
+                              ...prev,
+                              ticketNumber: val,
+                            }));
                           }
                         }}
                         className="pl-8 border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-300 text-gray-700 tracking-tight w-full focus:ring-1 focus:ring-[#ef6c00] focus:rounded-sm focus:outline-none"
@@ -594,7 +602,10 @@ export default function ReceiveForm({
                       onChange={(e) => {
                         const val = e.target.value;
                         if (/^\d{0,4}$/.test(val)) {
-                          setForm((prev) => ({ ...prev, pin: val }));
+                          setForm((prev: Partial<Ticket>) => ({
+                            ...prev,
+                            pin: val,
+                          }));
                         }
                       }}
                       className="pl-8 border-b border-gray-500 px-2 py-2 pr-10 text-sm placeholder-gray-300 text-gray-700 tracking-tight w-full focus:ring-1 focus:ring-[#ef6c00] focus:rounded-sm focus:outline-none"

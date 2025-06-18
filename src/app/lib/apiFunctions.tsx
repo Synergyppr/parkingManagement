@@ -29,6 +29,9 @@ const UpdateValetTicketStatusEndpoint =
   process.env.UPDATE_VALET_TICKET_STATUS_ENDPOINT + ""; // api/vehicleStatus
 const CreatePatronRatingEndpoint =
   process.env.CREATE_PATRON_RATING_ENDPOINT + ""; // api/patronRating
+const ReadNotificationEndpoint = process.env.READ_NOTIFICATION_ENDPOINT + "";
+const UnreadNotificationEndpoint =
+  process.env.UNREAD_NOTIFICATION_ENDPOINT + "";
 
 const Endpoints = [
   {
@@ -102,6 +105,14 @@ const Endpoints = [
   {
     name: "Create Patron Rating",
     endpoint: CreatePatronRatingEndpoint,
+  },
+  {
+    name: "Read Notification",
+    endpoint: ReadNotificationEndpoint,
+  },
+  {
+    name: "Unread Notification",
+    endpoint: UnreadNotificationEndpoint,
   },
 ];
 

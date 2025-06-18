@@ -9,24 +9,36 @@ export default function Modal({
   children,
   placementY = "center",
   placementX = "center",
+  onRequestClose,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  onRequestClose?: () => void; // Handles confirmation instead of direct discard
   children: React.ReactNode;
   placementX?: "center" | "start" | "end";
   placementY?: "center" | "start" | "end";
 }) {
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        if (onRequestClose) {
+          onRequestClose();
+        } else {
+          onClose();
+        }
+      }
     };
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
-  }, [onClose]);
+  }, [onRequestClose, onClose]);
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
-      onClose();
+      if (onRequestClose) {
+        onRequestClose();
+      } else {
+        onClose();
+      }
     }
   };
 
@@ -49,7 +61,13 @@ export default function Modal({
           >
             <button
               className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 font-bold text-xl cursor-pointer"
-              onClick={onClose}
+              onClick={() => {
+                if (onRequestClose) {
+                  onRequestClose();
+                } else {
+                  onClose();
+                }
+              }}
             >
               ×
             </button>
