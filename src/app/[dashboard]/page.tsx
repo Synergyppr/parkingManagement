@@ -13,6 +13,7 @@ import {
   findLinkedGroup,
   generateLabelsMap,
 } from "../lib/carPartsLegend";
+import { formatDate } from "../lib/clientUtils";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import TabNavigation from "@/app/components/TabNavigation";
 import ReceiveForm from "@/app/components/ReceiveForm";
@@ -283,7 +284,29 @@ export default function HomePage() {
       const data = await res.json();
 
       if (data?.result?.status === "200") {
+        setVehicles([
+          ...vehicles.map((vehicle) => {
+            if (vehicle?.id === selectedTicketId) {
+              return {
+                ...vehicle,
+                status: nextStatus,
+                isRead: false, // Reset read status when status changes
+              };
+            }
+            return vehicle;
+          }),
+        ]);
+
+        console.log("Status updated successfully");
+
         await fetchData(); // refresh the data from the API
+
+        markAsRead(
+          vehicles?.find(
+            (vehicle) => vehicle?.id === selectedTicketId
+          ) as Ticket,
+          "changeStatus"
+        );
 
         setTimeout(() => {
           Swal.fire({
@@ -332,12 +355,21 @@ export default function HomePage() {
     setDetailsActiveTab("Details");
   };
 
-  const markAsRead = async (ticket: {
-    ticketNumber: string;
-    notificationId: string;
-    isRead: boolean;
-  }) => {
-    if (!ticket?.ticketNumber || ticket?.isRead) return;
+  const markAsRead = async (vehicle: Ticket, action: string) => {
+    setSelectedTicketId(vehicle?.id);
+
+    const ticket = {
+      ticketNumber: vehicle.ticketNumber,
+      notificationId: vehicle.notificationId,
+      isRead: vehicle.isRead,
+    };
+
+    if (action !== "view" && action !== "changeStatus") {
+      console.warn(`Unsupported action: ${action}`);
+      return;
+    }
+
+    if (!ticket?.ticketNumber) return;
 
     try {
       const sendForm = {
@@ -358,6 +390,26 @@ export default function HomePage() {
         } else {
         }
         return;
+      } else if (ticket?.isRead && action === "changeStatus") {
+        const res = await fetch("/api/notification/unread", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(sendForm),
+        });
+
+        const data = await res.json();
+
+        if (data?.status === "200") {
+          fetchData();
+        } else {
+          Swal.fire({
+            title: "Error",
+            text: data?.message || "Failed to mark ticket as unread",
+            icon: "error",
+            confirmButtonText: "OK",
+          });
+          return;
+        }
       }
 
       // Update the unread status of the ticket
@@ -515,7 +567,9 @@ export default function HomePage() {
                 </p>
                 <p className="mb-2">
                   <strong>Created On:</strong>{" "}
-                  {ticketDetails?.createdDateTime || ""}
+                  {ticketDetails?.createdDateTime
+                    ? formatDate(ticketDetails?.createdDateTime)
+                    : ""}
                 </p>
                 <h4 className="text-lg font-semibold text-blue-500 tracking-tight mb-2">
                   Vehicle Information
@@ -628,7 +682,7 @@ export default function HomePage() {
 
             {/* {detailsActiveTab === "Log" && <Log logs={null} />} */}
             {detailsActiveTab === "Log" && (
-              <div className="h-[200px] flex flex-col items-center text-center text-gray-600">
+              <div className="h-[300px] flex flex-col items-center text-center text-gray-600">
                 <div className="h-full w-full m-auto mt-[50px]">
                   No log available.
                 </div>

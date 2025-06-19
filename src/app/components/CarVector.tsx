@@ -66,22 +66,26 @@ const CarVector: React.FC<CarVectorProps> = ({
         : [...prevParts, ...group.filter((id) => !prevParts.includes(id))]
     );
 
+    setNoIncident(false);
+
     // Open corresponding modal based on group, not just partId
-    if (Object.keys(carParts.frontViewCar).some((id) => group.includes(id))) {
-      setShowFrontModal(true);
-    } else if (
-      Object.keys(carParts.rearViewCar).some((id) => group.includes(id))
-    ) {
-      setShowRearModal(true);
-    } else if (
-      Object.keys(carParts.passengerViewCar).some((id) => group.includes(id))
-    ) {
-      setShowPassengerModal(true);
-    } else if (
-      Object.keys(carParts.driverViewCar).some((id) => group.includes(id))
-    ) {
-      setShowDriverModal(true);
-    }
+    setTimeout(() => {
+      if (Object.keys(carParts.frontViewCar).some((id) => group.includes(id))) {
+        setShowFrontModal(true);
+      } else if (
+        Object.keys(carParts.rearViewCar).some((id) => group.includes(id))
+      ) {
+        setShowRearModal(true);
+      } else if (
+        Object.keys(carParts.passengerViewCar).some((id) => group.includes(id))
+      ) {
+        setShowPassengerModal(true);
+      } else if (
+        Object.keys(carParts.driverViewCar).some((id) => group.includes(id))
+      ) {
+        setShowDriverModal(true);
+      }
+    }, 500);
   };
 
   const isHighlighted = (id: string) => incidentParts.includes(id);
@@ -100,6 +104,8 @@ const CarVector: React.FC<CarVectorProps> = ({
           ? prevParts.filter((id) => !allIds.includes(id))
           : [...prevParts, ...allIds.filter((id) => !prevParts.includes(id))]
       );
+
+      setNoIncident(false);
 
       // Optional: clear description if unchecked
       if (isActive) {
@@ -1375,7 +1381,6 @@ const CarVector: React.FC<CarVectorProps> = ({
         onClose={() => setShowPassengerModal(false)}
         onRequestClose={() => handleModalCloseWithConfirm("passenger")}
       >
-        handleModalCloseWithConfirm
         <LabelSelector
           labelsMap={passengerViewLabelsMap}
           isLabelChecked={isLabelChecked(passengerViewLabelsMap)}

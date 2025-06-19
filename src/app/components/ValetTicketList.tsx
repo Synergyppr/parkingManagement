@@ -13,7 +13,7 @@ interface ValetTicketListProps {
     id: string,
     status: "" | "received" | "parked" | "requested" | "ready" | null
   ) => void;
-  markAsRead: (ticket: Ticket) => void;
+  markAsRead: (vehicle: Ticket, action: string) => void;
 }
 
 export default function ValetTicketList({
@@ -61,7 +61,7 @@ export default function ValetTicketList({
               )}
 
               <div
-                onClick={() => markAsRead(vehicle)}
+                onClick={() => markAsRead(vehicle, "view")}
                 className={`cursor-pointer p-4 relative overflow-hidden rounded-xl border-none shadow-lg transform transition-all duration-300 mx-1 hover:scale-[1.01]
               ${
                 !vehicle?.isRead && vehicle?.status == "requested"

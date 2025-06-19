@@ -300,7 +300,7 @@ const RequestCar = () => {
       className="min-h-[calc(100vh-50px)] p-6 mx-auto bg-white my-auto flex flex-col items-center justify-center"
     >
       <div>
-        <h1 className="w-full text-2xl font-bold mt-2 mb-0 text-center pt-4 pb-3 lg:py-6 bg-gradient-to-r from-blue-700 to-blue-500 text-white tracking-tight px-2 rounded-t-lg">
+        <h1 className="w-full text-2xl font-bold mt-2 mb-0 text-center pt-4 pb-3 px-3 lg:py-6 bg-gradient-to-r from-blue-700 to-blue-500 text-white tracking-tight rounded-t-lg">
           Thank you for using API Valet Service!
         </h1>
         <div

@@ -56,6 +56,7 @@ export default function ReceiveForm({
   const [noIncident, setNoIncident] = useState(false);
   const [incidentParts, setIncidentParts] = useState<string[]>([]);
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
+  const [missingFields, setMissingFields] = useState<string[]>([]);
 
   const buildDamageStatus = (
     incidentParts: string[],
@@ -146,7 +147,7 @@ export default function ReceiveForm({
       Swal.fire({
         icon: "warning",
         title: "Incident Report Required",
-        text: "Please complete the vehicle incident report. If there are no incidents, please check the box below before submission.",
+        text: "Please complete the vehicle incident report. If there are no incidents, please check the box above before submission.",
       });
       return;
     }
@@ -308,38 +309,39 @@ export default function ReceiveForm({
 
   // Handle next function. Validate that all fields are filled before proceeding
   const handleNext = () => {
+    const missing: string[] = [];
+
     if (step === 1) {
-      if (
-        !form?.phoneNumber ||
-        !form?.firstName ||
-        !form?.lastName ||
-        !form?.ticketNumber ||
-        !form?.placeToVisit
-      ) {
-        Swal.fire({
-          icon: "warning",
-          title: "Incomplete Form",
-          text: "Please fill all required fields.",
-        });
-        return;
-      }
+      if (!form?.phoneNumber) missing.push("phoneNumber");
+      if (!form?.firstName) missing.push("firstName");
+      if (!form?.lastName) missing.push("lastName");
+      if (!form?.ticketNumber) missing.push("ticketNumber");
+      if (!form?.placeToVisit) missing.push("placeToVisit");
     } else if (step === 2) {
-      if (
-        !form?.make ||
-        !form?.model ||
-        !form?.type ||
-        !form?.color ||
-        !form?.pin
-      ) {
-        Swal.fire({
-          icon: "warning",
-          title: "Incomplete Form",
-          text: "Please fill all required fields.",
-        });
-        return;
-      }
+      if (!form?.make) missing.push("make");
+      if (!form?.model) missing.push("model");
+      if (!form?.type) missing.push("type");
+      if (!form?.color) missing.push("color");
+      if (!form?.pin) missing.push("pin");
     }
 
+    if (missing.length > 0) {
+      setMissingFields(missing);
+
+      Swal.fire({
+        icon: "warning",
+        title: "Incomplete Form",
+        text: "Please fill all required fields.",
+      });
+
+      if (missing.length > 0) {
+        const firstMissing = document.querySelector(`[name="${missing[0]}"]`);
+        firstMissing?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return;
+    }
+
+    setMissingFields([]);
     setStep((prev) => prev + 1);
   };
 
@@ -350,6 +352,24 @@ export default function ReceiveForm({
     setIncidentParts([]);
     setDescriptions({});
     setInitialForm({});
+  };
+
+  const handleClearForm = () => {
+    Swal.fire({
+      title: "Clear Form",
+      text: "Are you sure you want to clear the form?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, clear it!",
+      cancelButtonText: "No, keep it",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setForm({});
+        setInitialForm({});
+        setModels([]);
+        setStep(1);
+      }
+    });
   };
 
   return (
@@ -389,7 +409,13 @@ export default function ReceiveForm({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Phone Number */}
                   <div className="relative">
-                    <IoPhonePortrait className="absolute left-2 top-1/2 transform -translate-y-1/2 text-blue-600" />
+                    <IoPhonePortrait
+                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
+                        missingFields.includes("phoneNumber")
+                          ? "text-red-600"
+                          : "text-blue-600"
+                      }`}
+                    />
                     <input
                       name="phoneNumber"
                       placeholder="Phone Number"
@@ -432,7 +458,13 @@ export default function ReceiveForm({
 
                   {/* First Name */}
                   <div className="relative">
-                    <FaUser className="absolute left-2 top-1/2 transform -translate-y-1/2 text-blue-600" />
+                    <FaUser
+                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
+                        missingFields.includes("firstName")
+                          ? "text-red-600"
+                          : "text-blue-600"
+                      }`}
+                    />
                     <input
                       name="firstName"
                       placeholder="First Name"
@@ -445,7 +477,13 @@ export default function ReceiveForm({
 
                   {/* Last Name */}
                   <div className="relative">
-                    <FaUser className="absolute left-2 top-1/2 transform -translate-y-1/2 text-blue-600" />
+                    <FaUser
+                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
+                        missingFields.includes("lastName")
+                          ? "text-red-600"
+                          : "text-blue-600"
+                      }`}
+                    />
                     <input
                       name="lastName"
                       placeholder="Last Name"
@@ -459,7 +497,13 @@ export default function ReceiveForm({
                   {/* Ticket Number with Auto */}
                   <div className="relative flex gap-2 items-center">
                     <div className="relative w-full">
-                      <FaTicketAlt className="absolute left-2 top-1/2 transform -translate-y-1/2 text-blue-600" />
+                      <FaTicketAlt
+                        className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
+                          missingFields.includes("ticketNumber")
+                            ? "text-red-600"
+                            : "text-blue-600"
+                        }`}
+                      />
                       <input
                         name="ticketNumber"
                         placeholder="Ticket Number"
@@ -489,7 +533,13 @@ export default function ReceiveForm({
 
                   {/* Place to Visit */}
                   <div className="relative">
-                    <MdLocationPin className="absolute left-2 top-1/2 transform -translate-y-1/2 text-blue-600" />
+                    <MdLocationPin
+                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
+                        missingFields.includes("placeToVisit")
+                          ? "text-red-600"
+                          : "text-blue-600"
+                      }`}
+                    />
                     <input
                       name="placeToVisit"
                       placeholder="Place to Visit"
@@ -506,7 +556,13 @@ export default function ReceiveForm({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Make */}
                   <div className="relative">
-                    <FaCar className="absolute left-2 top-1/2 transform -translate-y-1/2 text-blue-600" />
+                    <FaCar
+                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
+                        missingFields.includes("make")
+                          ? "text-red-600"
+                          : "text-blue-600"
+                      }`}
+                    />
                     <select
                       name="make"
                       onChange={handleChange}
@@ -524,7 +580,13 @@ export default function ReceiveForm({
 
                   {/* Model */}
                   <div className="relative">
-                    <FaCarRear className="absolute left-2 top-1/2 transform -translate-y-1/2 text-blue-600" />
+                    <FaCarRear
+                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
+                        missingFields.includes("model")
+                          ? "text-red-600"
+                          : "text-blue-600"
+                      }`}
+                    />
                     <select
                       name="model"
                       onChange={handleChange}
@@ -542,7 +604,13 @@ export default function ReceiveForm({
 
                   {/* Type */}
                   <div className="relative">
-                    <PiCarProfileFill className="absolute left-2 top-1/2 transform -translate-y-1/2 text-blue-600" />
+                    <PiCarProfileFill
+                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
+                        missingFields.includes("type")
+                          ? "text-red-600"
+                          : "text-blue-600"
+                      }`}
+                    />
                     <select
                       name="type"
                       onChange={handleChange}
@@ -560,7 +628,13 @@ export default function ReceiveForm({
 
                   {/* Color */}
                   <div className="relative">
-                    <BiSolidSprayCan className="absolute left-2 top-1/2 transform -translate-y-1/2 text-blue-600" />
+                    <BiSolidSprayCan
+                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
+                        missingFields.includes("color")
+                          ? "text-red-600"
+                          : "text-blue-600"
+                      }`}
+                    />
                     <select
                       name="color"
                       onChange={handleChange}
@@ -578,7 +652,9 @@ export default function ReceiveForm({
 
                   {/* License Plate */}
                   <div className="relative">
-                    <MdPin className="absolute left-2 top-1/2 transform -translate-y-1/2 text-blue-600" />
+                    <MdPin
+                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 text-blue-600`}
+                    />
                     <input
                       name="licensePlate"
                       placeholder="License Plate (optional)"
@@ -593,7 +669,13 @@ export default function ReceiveForm({
 
                   {/* PIN */}
                   <div className="relative w-full">
-                    <MdPassword className="absolute left-2 top-1/2 transform -translate-y-1/2 text-blue-600" />
+                    <MdPassword
+                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
+                        missingFields.includes("pin")
+                          ? "text-red-600"
+                          : "text-blue-600"
+                      }`}
+                    />
                     <input
                       type={showPin ? "text" : "password"}
                       name="pin"
@@ -646,11 +728,20 @@ export default function ReceiveForm({
             </form>
 
             <div className="flex justify-between mt-2">
+              {step === 1 && (
+                <button
+                  type="button"
+                  onClick={handleClearForm}
+                  className="cursor-pointer px-6 py-2 bg-gray-200/80 hover:bg-gray-400 text-blue-700 font-semibold rounded shadow-md"
+                >
+                  Clear
+                </button>
+              )}
               {step > 1 && (
                 <button
                   type="button"
                   onClick={() => setStep(step - 1)}
-                  className="cursor-pointer px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded shadow-md"
+                  className="cursor-pointer px-6 py-2 bg-gray-200/80 hover:bg-gray-400 text-blue-700 font-semibold rounded shadow-md"
                 >
                   Back
                 </button>
