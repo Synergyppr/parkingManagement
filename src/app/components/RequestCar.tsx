@@ -49,7 +49,7 @@ const RequestCar = () => {
     if (!ticketId) return;
 
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl("http://104.46.113.1:8080/notificationHub")
+      .withUrl("/api/notification/hub")
       .withAutomaticReconnect()
       .build();
 

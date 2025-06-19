@@ -59,16 +59,6 @@ export default function LoginForm() {
 
       localStorage.setItem("isLoggedIn", "true");
 
-      // setTimeout(() => {
-      //   Swal.fire({
-      //     icon: "success",
-      //     title: "Welcome!",
-      //     text: "Login successful.",
-      //     showConfirmButton: false,
-      //     timer: 500,
-      //   });
-      // }, 200);
-
       setTimeout(() => {
         setRedirecting(true);
       }, 500);

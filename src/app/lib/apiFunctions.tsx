@@ -32,6 +32,7 @@ const CreatePatronRatingEndpoint =
 const ReadNotificationEndpoint = process.env.READ_NOTIFICATION_ENDPOINT + "";
 const UnreadNotificationEndpoint =
   process.env.UNREAD_NOTIFICATION_ENDPOINT + "";
+const NotificationHubEndpoint = process.env.NOTIFICATION_HUB_ENDPOINT + "";
 
 const Endpoints = [
   {
@@ -113,6 +114,10 @@ const Endpoints = [
   {
     name: "Unread Notification",
     endpoint: UnreadNotificationEndpoint,
+  },
+  {
+    name: "Notification Hub",
+    endpoint: NotificationHubEndpoint,
   },
 ];
 
