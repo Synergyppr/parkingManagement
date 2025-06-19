@@ -26,8 +26,8 @@ const RealTimeComponent: React.FC<RealTimeComponentProps> = ({
 
   useEffect(() => {
     const newConnection = new signalR.HubConnectionBuilder()
-    .withUrl(process.env.NEXT_PUBLIC_NOTIFICATION_HUB_ENDPOINT || "")
-    .configureLogging(signalR.LogLevel.Information)
+      .withUrl("http://104.46.113.1:8080/notificationHub")
+      .configureLogging(signalR.LogLevel.Information)
       .withAutomaticReconnect()
       .build();
 

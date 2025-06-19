@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
 import { FaUser } from "react-icons/fa6";
 import { TbLogout2 } from "react-icons/tb";
 import { FaBars } from "react-icons/fa";
@@ -30,9 +31,20 @@ export default function Header() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
-    localStorage.removeItem("authToken"); // if used
-    router.replace("/"); // Redirect to login
+    Swal.fire({
+      title: "Log Out",
+      text: "Are you sure you want to log out?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes",
+      cancelButtonText: "Cancel",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.removeItem("isLoggedIn");
+        localStorage.removeItem("authToken"); // if used
+        router.replace("/"); // Redirect to login
+      }
+    });
   };
 
   const toggleModal = (type: "notifications" | "menu") => {

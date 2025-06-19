@@ -49,8 +49,8 @@ const RequestCar = () => {
     if (!ticketId) return;
 
     const connection = new signalR.HubConnectionBuilder()
-    .withUrl(process.env.NEXT_PUBLIC_NOTIFICATION_HUB_ENDPOINT || "")
-    .withAutomaticReconnect()
+      .withUrl("http://104.46.113.1:8080/notificationHub")
+      .withAutomaticReconnect()
       .build();
 
     connection.start().then(() => {
