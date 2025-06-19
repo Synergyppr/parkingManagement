@@ -49,8 +49,8 @@ const RequestCar = () => {
     if (!ticketId) return;
 
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl("/api/notification/hub")
-      .withAutomaticReconnect()
+    .withUrl(process.env.NEXT_PUBLIC_NOTIFICATION_HUB_ENDPOINT || "")
+    .withAutomaticReconnect()
       .build();
 
     connection.start().then(() => {

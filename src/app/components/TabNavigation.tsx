@@ -47,7 +47,7 @@ export default function TabNavigation({
 
   useEffect(() => {
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl("/api/notification/hub")
+      .withUrl(process.env.NEXT_PUBLIC_NOTIFICATION_HUB_ENDPOINT || "")
       .configureLogging(signalR.LogLevel.Information)
       .withAutomaticReconnect()
       .build();
@@ -59,7 +59,6 @@ export default function TabNavigation({
       .then(() => {
         console.log("Connected to SignalR hub");
 
-        // Join the property group after connection is established
         return connection.invoke("JoinPropertyGroup", propertyId);
       })
       .then(() => {
@@ -128,7 +127,9 @@ export default function TabNavigation({
                 {tab?.icon}
                 {unreadTicketIds?.length > 0 && tab?.label === "Requested" && (
                   <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-slate-900">
-                    {unreadTicketIds.length > 9 ? "9+" : unreadTicketIds.length}
+                    {unreadTicketIds?.length > 9
+                      ? "9+"
+                      : unreadTicketIds?.length}
                   </span>
                 )}
               </div>
