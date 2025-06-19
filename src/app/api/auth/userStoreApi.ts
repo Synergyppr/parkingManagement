@@ -15,13 +15,17 @@ export async function validateUser({
       location: propertyId,
     };
 
-    const response = await fetch("/api/proxy-login", {
+    // console.log("Login form data:", loginForm);
+
+    const response = await fetch("/api/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(loginForm),
     });
+
+    // console.log("Login response status:", response);
 
     if (response.status === 401) {
       return null;
