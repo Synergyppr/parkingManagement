@@ -3,16 +3,72 @@
 import { useState, useEffect, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
+import { validateUser } from "../api/auth/userStoreApi";
+import { useProperty } from "../context/PropertyContext";
+import { joinGroup } from "../lib/SignalRProvider";
 import FloatingLabelInput from "./elements/FloatingLabelInput";
 import PageLoader from "./elements/PageLoader";
-import { validateUser } from "../api/auth/userStoreApi";
 
 export default function LoginForm() {
+  const { setLatitude, setLongitude, setPropertyId } = useProperty();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [deviceType, setDeviceType] = useState("web");
+  const [ipAddress, setIpAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+  const [location, setLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          setLatitude(lat);
+          setLongitude(lng);
+          setLocation({ latitude: lat, longitude: lng });
+        },
+        (error) => {
+          console.warn("Geolocation error:", error);
+          setLocation(null);
+        }
+      );
+    }
+  }, [setLatitude, setLongitude]);
+
+  useEffect(() => {
+    // IP fetch
+    const fetchIpAddress = async () => {
+      try {
+        const response = await fetch("https://api.ipify.org?format=json");
+        const data = await response.json();
+        setIpAddress(data.ip);
+      } catch (error) {
+        console.error("Failed to fetch IP address:", error);
+      }
+    };
+
+    // Device detection
+    const detectDeviceType = () => {
+      const ua = navigator.userAgent.toLowerCase();
+
+      if (/mobile|android|iphone|ipod|blackberry|phone/.test(ua)) {
+        return "mobile";
+      } else if (/tablet|ipad/.test(ua)) {
+        return "tablet";
+      } else {
+        return "desktop";
+      }
+    };
+
+    fetchIpAddress();
+    setDeviceType(detectDeviceType());
+  }, []);
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
@@ -29,7 +85,7 @@ export default function LoginForm() {
       Swal.fire({
         icon: "warning",
         title: "Missing Fields",
-        text: "Please enter email, password, and property ID.",
+        text: "Please enter email and password.",
       });
       return;
     }
@@ -40,15 +96,20 @@ export default function LoginForm() {
       const result = await validateUser({
         username: email,
         password: password,
-        propertyId: "A7E348D3-8DFB-4F71-8BC5-042BA75D53C7",
+        device: deviceType,
+        location: ipAddress,
+        latitude: location?.latitude,
+        longitude: location?.longitude,
       });
 
-      if (result === null) {
+      if (result?.status != 200) {
         setLoading(false);
         Swal.fire({
           icon: "error",
           title: "Unauthorized",
-          text: "Invalid credentials. Please try again.",
+          text: result?.message
+            ? result?.message
+            : "Unexpected Error." + ` Please try again.`,
         });
         return;
       }
@@ -58,6 +119,12 @@ export default function LoginForm() {
       }
 
       localStorage.setItem("isLoggedIn", "true");
+      if (result?.data?.properties) {
+        const newPropertyId = result.data.properties?.[0]?.id;
+        setPropertyId(newPropertyId);
+        localStorage.setItem("propertyId", newPropertyId as string);
+        await joinGroup(newPropertyId);
+      }
 
       setTimeout(() => {
         setRedirecting(true);
@@ -122,7 +189,7 @@ export default function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white w-full py-3 font-semibold rounded shadow-md transition-colors"
+            className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 cursor-pointer text-white w-full py-3 font-semibold rounded shadow-md transition-colors"
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>

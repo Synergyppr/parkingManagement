@@ -2,11 +2,11 @@
 import React, { useState } from "react";
 import Swal from "sweetalert2";
 import { LuListVideo } from "react-icons/lu";
+import { CiViewList } from "react-icons/ci";
+import { carParts } from "../lib/carPartsLegend";
 import Modal from "./Modal";
 import LabelSelector from "./LabelSelector";
 import ViewReportModal from "./ViewReportModal";
-import { CiViewList } from "react-icons/ci";
-import { carParts } from "../lib/carPartsLegend";
 
 interface CarVectorProps {
   noIncident: boolean;
@@ -22,9 +22,11 @@ interface CarVectorProps {
   passengerViewLabelsMap: Record<string, string[]>;
   driverViewLabelsMap: Record<string, string[]>;
   hideLabels?: boolean; // Prop to control label visibility
-  handleBeforeUnload?: (e: BeforeUnloadEvent) => void; // Optional prop for beforeunload event
-  hasUnsavedChanges?: boolean; // Optional prop to track unsaved changes
+  // hasUnsavedChanges?: boolean; // Optional prop to track unsaved changes
   setHasUnsavedChanges?: React.Dispatch<React.SetStateAction<boolean>>; // Optional prop to track unsaved changes
+  saveClickedRef: React.RefObject<boolean>; // Optional ref to track if save was clicked
+  shouldBypassUnloadPromptRef?: React.RefObject<boolean>; // Optional ref to bypass unload prompt
+  isFormChanged?: () => boolean; // Optional function to check if the form has changed
 }
 
 const CarVector: React.FC<CarVectorProps> = ({
@@ -41,11 +43,11 @@ const CarVector: React.FC<CarVectorProps> = ({
   passengerViewLabelsMap,
   driverViewLabelsMap,
   hideLabels, // New prop to control label visibility
-  handleBeforeUnload,
-  hasUnsavedChanges, // Optional prop for beforeunload event
   setHasUnsavedChanges, // Optional prop to track unsaved changes
+  saveClickedRef, // Optional ref to track if save was clicked
+  shouldBypassUnloadPromptRef,
+  isFormChanged,
 }) => {
-  // const pathname = usePathname();
   const [showFrontModal, setShowFrontModal] = useState(false);
   const [showRearModal, setShowRearModal] = useState(false);
   const [showPassengerModal, setShowPassengerModal] = useState(false);
@@ -56,6 +58,7 @@ const CarVector: React.FC<CarVectorProps> = ({
     const target = e.target as SVGElement;
     const partId = target.id;
     if (!partId) return;
+    if (hideLabels) return; // If labels are hidden, do nothing
 
     const group = findLinkedGroup(partId);
     const isGroupActive = group.some((id) => incidentParts.includes(id));
@@ -117,31 +120,81 @@ const CarVector: React.FC<CarVectorProps> = ({
       }
     };
 
-  const handleSaveIncidentParts = () => {
-    const missingDescriptions = incidentParts.some(
-      () => !Object.values(descriptions).some((desc) => desc.trim())
-    );
+  const handleSaveIncidentParts = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
 
-    if (missingDescriptions) {
-      // alert("Please provide a description for all selected parts.");
+    // Combine all label maps into one map: id -> label
+    const idToLabelMap: Record<string, string> = {};
+    const allLabelMaps = [
+      frontViewLabelsMap,
+      rearViewLabelsMap,
+      passengerViewLabelsMap,
+      driverViewLabelsMap,
+    ];
+
+    allLabelMaps.forEach((labelMap) => {
+      for (const [label, ids] of Object.entries(labelMap)) {
+        ids.forEach((id) => {
+          idToLabelMap[id] = label;
+        });
+      }
+    });
+
+    // Track labels missing descriptions
+    const labelsWithMissingDescriptions = new Set<string>();
+
+    for (const id of incidentParts) {
+      const label = idToLabelMap[id];
+      const desc = descriptions[label];
+
+      if (!label || !desc || desc.trim() === "") {
+        labelsWithMissingDescriptions.add(label || `Unknown (id: ${id})`);
+      }
+    }
+
+    if (labelsWithMissingDescriptions.size > 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "Missing Descriptions",
+        html: `Please provide descriptions for the following labels:<br/><ul class="text-left ml-[22px] mt-2 text-[16px]">${Array.from(
+          labelsWithMissingDescriptions
+        )
+          .map(
+            (label) =>
+              `<li class="my-1"><span class="text-[#ef6c00] text-lg mr-2">•</span> ${label}</li>`
+          )
+          .join("")}</ul>`,
+      });
       return;
     }
 
-    setHasUnsavedChanges?.(false);
-    // Remove the unload warning since the user is saving on purpose
-    if (handleBeforeUnload && hasUnsavedChanges) {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+    if (saveClickedRef) {
+      saveClickedRef.current = true;
     }
+    setHasUnsavedChanges?.(false);
 
-    if (showFrontModal) setShowFrontModal(false);
-    if (showRearModal) setShowRearModal(false);
-    if (showDriverModal) setShowDriverModal(false);
-    if (showPassengerModal) setShowPassengerModal(false);
+    // Close all modals
+    setShowFrontModal(false);
+    setShowRearModal(false);
+    setShowDriverModal(false);
+    setShowPassengerModal(false);
   };
 
   const handleModalCloseWithConfirm = async (
-    view: "passenger" | "driver" | "front" | "rear"
+    view: "passenger" | "driver" | "front" | "rear" | "all"
   ) => {
+    if (isFormChanged && !isFormChanged()) {
+      if (shouldBypassUnloadPromptRef?.current !== undefined) {
+        shouldBypassUnloadPromptRef.current = true;
+      }
+      if (view === "passenger") setShowPassengerModal(false);
+      if (view === "driver") setShowDriverModal(false);
+      if (view === "front") setShowFrontModal(false);
+      if (view === "rear") setShowRearModal(false);
+      if (view === "all") setShowFullReportModal(false);
+      return;
+    }
+
     const result = await Swal.fire({
       title: "Discard changes?",
       text: "You have unsaved changes. Are you sure you want to discard them?",
@@ -155,12 +208,20 @@ const CarVector: React.FC<CarVectorProps> = ({
 
     if (!result.isConfirmed) return;
 
-    const labelMap = {
-      passenger: passengerViewLabelsMap,
-      driver: driverViewLabelsMap,
-      front: frontViewLabelsMap,
-      rear: rearViewLabelsMap,
-    }[view];
+    const labelMap =
+      view === "all"
+        ? {
+            frontView: frontViewLabelsMap,
+            rearView: rearViewLabelsMap,
+            passengerView: passengerViewLabelsMap,
+            driverView: driverViewLabelsMap,
+          }
+        : {
+            passenger: passengerViewLabelsMap,
+            driver: driverViewLabelsMap,
+            front: frontViewLabelsMap,
+            rear: rearViewLabelsMap,
+          }[view];
 
     const idsToRemove = Object.values(labelMap).flat();
 
@@ -178,6 +239,7 @@ const CarVector: React.FC<CarVectorProps> = ({
     if (view === "driver") setShowDriverModal(false);
     if (view === "front") setShowFrontModal(false);
     if (view === "rear") setShowRearModal(false);
+    if (view === "all") setShowFullReportModal(false);
   };
 
   const isReportAvailable = incidentParts.length > 0;
@@ -780,9 +842,9 @@ const CarVector: React.FC<CarVectorProps> = ({
           <g id="frontDoorPassangerSide">
             {/* Front Door */}
             <path
-              id="rightFrontDoor1"
+              id="rightFrontDoor"
               className={`cursor-pointer transition-colors ${
-                isHighlighted("rightFrontDoor1")
+                isHighlighted("rightFrontDoor")
                   ? "fill-orange-600"
                   : "fill-blue-100"
               }`}
@@ -794,9 +856,9 @@ const CarVector: React.FC<CarVectorProps> = ({
             />
             {/* Front Door Handle */}
             <rect
-              id="rightFrontHandle1"
+              id="rightFrontHandle"
               className={`cursor-pointer transition-colors ${
-                isHighlighted("rightFrontHandle1")
+                isHighlighted("rightFrontHandle")
                   ? "fill-orange-600"
                   : "fill-blue-100"
               }`}
@@ -814,9 +876,9 @@ const CarVector: React.FC<CarVectorProps> = ({
           <g id="backDoorPassengerSide">
             {/* Back Door */}
             <path
-              id="rightBackDoor1"
+              id="rightBackDoor"
               className={`cursor-pointer transition-colors ${
-                isHighlighted("rightBackDoor1")
+                isHighlighted("rightBackDoor")
                   ? "fill-orange-600"
                   : "fill-blue-100"
               }`}
@@ -828,9 +890,9 @@ const CarVector: React.FC<CarVectorProps> = ({
             />
             {/* Back Door Handle */}
             <rect
-              id="rightBackHandle1"
+              id="rightBackHandle"
               className={`cursor-pointer transition-colors ${
-                isHighlighted("rightBackHandle1")
+                isHighlighted("rightBackHandle")
                   ? "fill-orange-600"
                   : "fill-blue-100"
               }`}
@@ -1058,9 +1120,9 @@ const CarVector: React.FC<CarVectorProps> = ({
           <g>
             {/* Back Door */}
             <path
-              id="leftBackDoor1"
+              id="leftBackDoor"
               className={`cursor-pointer transition-colors ${
-                isHighlighted("leftBackDoor1")
+                isHighlighted("leftBackDoor")
                   ? "fill-orange-600"
                   : "fill-blue-100"
               }`}
@@ -1072,9 +1134,9 @@ const CarVector: React.FC<CarVectorProps> = ({
             />
             {/* Back Door Handle */}
             <rect
-              id="leftBackHandle1"
+              id="leftBackHandle"
               className={`cursor-pointer transition-colors ${
-                isHighlighted("leftBackHandle1")
+                isHighlighted("leftBackHandle")
                   ? "fill-orange-600"
                   : "fill-blue-100"
               }`}
@@ -1345,7 +1407,8 @@ const CarVector: React.FC<CarVectorProps> = ({
         />
         <div className="mt-4 flex">
           <button
-            onClick={handleSaveIncidentParts}
+            type="button"
+            onClick={(e) => handleSaveIncidentParts(e)}
             className="ml-auto cursor-pointer bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
           >
             Save
@@ -1368,7 +1431,8 @@ const CarVector: React.FC<CarVectorProps> = ({
         />
         <div className="mt-4 flex">
           <button
-            onClick={handleSaveIncidentParts}
+            type="button"
+            onClick={(e) => handleSaveIncidentParts(e)}
             className="ml-auto cursor-pointer bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
           >
             Save
@@ -1391,7 +1455,8 @@ const CarVector: React.FC<CarVectorProps> = ({
         />
         <div className="mt-4 flex">
           <button
-            onClick={handleSaveIncidentParts}
+            type="button"
+            onClick={(e) => handleSaveIncidentParts(e)}
             className="ml-auto cursor-pointer bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
           >
             Save
@@ -1414,7 +1479,8 @@ const CarVector: React.FC<CarVectorProps> = ({
         />
         <div className="mt-4 flex">
           <button
-            onClick={handleSaveIncidentParts}
+            type="button"
+            onClick={(e) => handleSaveIncidentParts(e)}
             className="ml-auto cursor-pointer bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
           >
             Save
@@ -1424,7 +1490,7 @@ const CarVector: React.FC<CarVectorProps> = ({
 
       <ViewReportModal
         isOpen={showFullReportModal}
-        onClose={() => setShowFullReportModal(false)}
+        onClose={setShowFullReportModal}
         allLabelMaps={{
           frontView: frontViewLabelsMap,
           rearView: rearViewLabelsMap,

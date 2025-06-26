@@ -61,6 +61,35 @@ export interface VehicleColor {
 
 /////////////////////////////////////////////////////////////////////
 
+export interface TicketDetails {
+  ticketId: string;
+  createdDateTime: string;
+  patron?: {
+    firstName: string;
+    lastName: string;
+    phoneNumber?: string;
+  };
+  destination?: string;
+  vehicle?: {
+    brand?: string;
+    model?: string;
+    type?: string;
+    color?: string;
+    licensePlate?: string;
+  };
+  ticketLogs?: {
+    id: string;
+    createdDateTime: string;
+    description: string;
+    loggedBy: string;
+    newValue: string;
+    oldValue: string;
+  }[];
+  damagedParts?: { partName: string; description: string; carView: string }[];
+}
+
+/////////////////////////////////////////////////////////////////////////
+
 export interface TabItem {
   label: string;
   icon: JSX.Element;

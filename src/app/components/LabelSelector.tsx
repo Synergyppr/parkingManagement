@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 interface Props {
   labelsMap: Record<string, string[]>;
@@ -17,11 +17,29 @@ const LabelSelector: React.FC<Props> = ({
   setDescriptions,
   descriptions,
 }) => {
+  const [localChecked, setLocalChecked] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const initialCheckedState: Record<string, boolean> = {};
+    Object.keys(labelsMap).forEach((label) => {
+      initialCheckedState[label] = isLabelChecked(label);
+    });
+    setLocalChecked(initialCheckedState);
+  }, [labelsMap, isLabelChecked]);
+
   const handleDescriptionChange = (label: string, value: string) => {
     setDescriptions((prev) => ({
       ...prev,
       [label]: value,
     }));
+  };
+
+  const handleToggle = (label: string) => {
+    setLocalChecked((prev) => ({
+      ...prev,
+      [label]: !prev[label],
+    }));
+    toggleLabel(label);
   };
 
   return (
@@ -30,13 +48,14 @@ const LabelSelector: React.FC<Props> = ({
         {title}
       </h2>
       <p className="mb-2 text-xs text-gray-600 italic">
-        <span className="text-red-600">**</span>A description is required for
+        <span className="text-red-600">**</span> A description is required for
         every car part marked as damaged.
       </p>
       <hr className="mb-2 border-gray-300" />
       <ul className="space-y-2">
         {Object.keys(labelsMap).map((label) => {
-          const isChecked = isLabelChecked(label);
+          const isChecked = localChecked[label] ?? isLabelChecked(label);
+
           return (
             <li key={label} className="flex flex-col gap-1">
               <label
@@ -47,11 +66,11 @@ const LabelSelector: React.FC<Props> = ({
                   type="checkbox"
                   id={label}
                   checked={isChecked}
-                  onChange={() => toggleLabel(label)}
-                  className="sr-only peer"
+                  onChange={() => handleToggle(label)}
+                  className="peer opacity-0 z-50"
                 />
                 <div
-                  className={`w-4 h-4 rounded border-2 transition-all duration-150 ${
+                  className={`relative right-[22px] w-4 h-4 rounded border-2 transition-all duration-150 ${
                     isChecked
                       ? "bg-orange-500 border-orange-600"
                       : "border-gray-400"
@@ -69,12 +88,11 @@ const LabelSelector: React.FC<Props> = ({
                     </svg>
                   )}
                 </div>
-                <span className="text-sm font-light text-gray-800 leading-relaxed">
+                <span className="relative right-[12px] text-sm font-light text-gray-800 leading-relaxed">
                   {label}
                 </span>
               </label>
 
-              {/* Conditional damage description field */}
               {isChecked && (
                 <textarea
                   required

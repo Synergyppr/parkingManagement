@@ -1,4 +1,5 @@
 // Tenants
+const LoginEndpoint = process.env.LOGIN_ENDPOINT + "";
 const GetTenantsEndpoint = process.env.GET_TENANTS_ENDPOINT + "";
 const CreateAndUpdateTenantEndpoint =
   process.env.CREATE_AND_UPDATE_TENANT_ENDPOINT + "";
@@ -33,8 +34,13 @@ const ReadNotificationEndpoint = process.env.READ_NOTIFICATION_ENDPOINT + "";
 const UnreadNotificationEndpoint =
   process.env.UNREAD_NOTIFICATION_ENDPOINT + "";
 const NotificationHubEndpoint = process.env.NOTIFICATION_HUB_ENDPOINT + "";
+const ValetTransactionEndpoint = process.env.VALET_TRANSACTION_ENDPOINT + "";
 
 const Endpoints = [
+  {
+    name: "Login",
+    endpoint: LoginEndpoint,
+  },
   {
     name: "Get Tenants",
     endpoint: GetTenantsEndpoint,
@@ -118,6 +124,10 @@ const Endpoints = [
   {
     name: "Notification Hub",
     endpoint: NotificationHubEndpoint,
+  },
+  {
+    name: "Valet Transaction",
+    endpoint: ValetTransactionEndpoint,
   },
 ];
 

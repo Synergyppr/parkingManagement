@@ -1,7 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Ticket } from "@/app/types";
+import Modal from "./Modal";
+import TransactionForm from "./TransactionForm";
 
 interface ValetTicketListProps {
   vehicles: Ticket[];
@@ -14,6 +16,17 @@ interface ValetTicketListProps {
     status: "" | "received" | "parked" | "requested" | "ready" | null
   ) => void;
   markAsRead: (vehicle: Ticket, action: string) => void;
+  showTransactionModal: boolean;
+  setShowTransactionModal: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedTicketId: string | null;
+  fetchData?: () => Promise<void>;
+}
+
+interface TransactionForm {
+  amount: number;
+  paymentMethod: string;
+  referenceNumber: string;
+  notes?: string | undefined;
 }
 
 export default function ValetTicketList({
@@ -24,20 +37,62 @@ export default function ValetTicketList({
   handleFetchTicketDetails,
   handleStatusChange,
   markAsRead,
+  showTransactionModal,
+  setShowTransactionModal,
+  selectedTicketId,
+  fetchData,
 }: ValetTicketListProps) {
-  //   const [clickLoader, setClickLoader] = React.useState<boolean>(false);
+  const [transactionForm, setTransactionForm] = useState<TransactionForm>({
+    amount: 0,
+    paymentMethod: "",
+    referenceNumber: "",
+    notes: "",
+  });
+  const [clickLoader, setClickLoader] = React.useState(false);
+  const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
+
+  React.useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+
+    if (clickLoader) {
+      window.addEventListener("mousemove", handleMouseMove);
+    } else {
+      window.removeEventListener("mousemove", handleMouseMove);
+    }
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, [clickLoader]);
+
+  const handleMarkAsRead = async (vehicle: Ticket, action: string) => {
+    if (activeTab !== "requested") return;
+
+    setClickLoader(true);
+    try {
+      await markAsRead(vehicle, action);
+    } finally {
+      setClickLoader(false);
+    }
+  };
 
   const filteredVehicles = (
     activeTab === "ready"
       ? vehicles
       : vehicles?.filter((vehicle: Ticket) => {
-          if (activeTab === "received")
+          if (activeTab === "received") {
             return vehicle.status === "" || vehicle.status === "received";
+          }
           return vehicle.status === activeTab;
         })
-  )?.sort((a, b) => {
-    return a.isRead === b.isRead ? 0 : a.isRead ? 1 : -1;
-  });
+  )
+    ?.slice()
+    .sort((a, b) => {
+      if (activeTab !== "requested") return 0;
+      return a.isRead === b.isRead ? 0 : a.isRead ? 1 : -1;
+    });
 
   return (
     <div className="space-y-3 mb-2 overflow-y-auto py-1 px-1">
@@ -61,7 +116,7 @@ export default function ValetTicketList({
               )}
 
               <div
-                onClick={() => markAsRead(vehicle, "view")}
+                onClick={() => handleMarkAsRead(vehicle, "view")}
                 className={`cursor-pointer p-4 relative overflow-hidden rounded-xl border-none shadow-lg transform transition-all duration-300 mx-1 hover:scale-[1.01]
               ${
                 !vehicle?.isRead && vehicle?.status == "requested"
@@ -96,20 +151,22 @@ export default function ValetTicketList({
                   </p>
                 </div>
 
-                <div className="rounded-sm flex justify-between items-center">
+                <div
+                  className={`rounded-sm flex justify-between items-center mt-0 relative`}
+                >
                   <div>
                     <div className="flex gap-4 text-sm text-gray-800">
                       <p>
                         <span className="font-bold tracking-tight">Type:</span>{" "}
                         {vehicle?.type}
                       </p>
-                      <p>
+                      <p className="capitalize">
                         <span className="font-bold tracking-tight">Color:</span>{" "}
                         {vehicle?.color}
                       </p>
                     </div>
 
-                    <div className="text-sm text-slate-500 capitalize">
+                    <div className="text-[13px] text-slate-500 capitalize mt-[0.5px]">
                       <p>
                         <span className="font-bold tracking-tight">Time: </span>
                         {new Date(vehicle?.createdDateTime).toLocaleString([], {
@@ -126,7 +183,7 @@ export default function ValetTicketList({
                       <div
                         onClick={() => handleFetchTicketDetails(vehicle?.id)}
                       >
-                        <p className="text-sm tracking-tight cursor-pointer text-blue-500 hover:text-blue-600 underline mt-1">
+                        <p className="text-sm tracking-tight cursor-pointer text-blue-500 hover:text-blue-600 underline mt-0">
                           View ticket details
                         </p>
                       </div>
@@ -134,8 +191,21 @@ export default function ValetTicketList({
                   </div>
 
                   {activeTab !== "ready" && (
-                    <div className="mt-auto">
+                    <div className="flex flex-col gap-1 mt-auto">
+                      {/* {activeTab == "requested" && (
+                        <button
+                          type="button"
+                          className="cursor-pointer my-auto bg-gradient-to-r from-gray-100 to-gray-200 hover:bg-gray-400 text-blue-700 shadow-mdtransform transition-all 
+                        duration-300 hover:scale-[1.01] py-2 px-6 font-semibold shadow-sm tracking-tight rounded"
+                          onClick={() =>
+                            handleStatusChange(vehicle?.id, "parked")
+                          }
+                        >
+                          Park
+                        </button>
+                      )} */}
                       <button
+                        type="button"
                         className="cursor-pointer my-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 transform transition-all 
                         duration-300 hover:scale-[1.01] text-white py-2 px-6 font-semibold shadow-sm tracking-tight rounded"
                         onClick={() =>
@@ -159,6 +229,17 @@ export default function ValetTicketList({
                   )}
                 </div>
               </div>
+              {clickLoader && (
+                <div
+                  className="fixed z-[9999] pointer-events-none border-blue-300"
+                  style={{
+                    top: `${mousePos.y + 40}px`,
+                    left: `${mousePos.x + 12}px`,
+                  }}
+                >
+                  <div className="w-4 h-4 border-2 border-blue-700  border-t-transparent rounded-full animate-spin bg-none" />
+                </div>
+              )}
             </React.Fragment>
           );
         })
@@ -166,6 +247,33 @@ export default function ValetTicketList({
         <p className="text-center text-gray-500 tracking-tight italic font-light">
           No vehicles in this status.
         </p>
+      )}
+      {activeTab !== "received" && filteredVehicles?.length > 0 && (
+        <div className="mt-0 mb-0 flex justify-center w-full mx-auto bg-opacity-50">
+          <div className="px-4 py-0 text-blue-500 text-sm font-medium tracking-wider rounded-sm w-full text-center mx-1 bg-opacity-10">
+            Total <span className="capitalize">{activeTab}</span> Vehicles:{" "}
+            <span className="font-semibold">{filteredVehicles?.length}</span>
+          </div>
+        </div>
+      )}
+      {selectedTicketId && (
+        <Modal
+          isOpen={showTransactionModal}
+          onClose={() => setShowTransactionModal(false)}
+        >
+          <div className="px-4 py-2">
+            <h3 className="text-xl font-semibold text-gray-800 mb-2 tracking-tighter text-center">
+              Transaction Details
+            </h3>
+            <TransactionForm
+              form={transactionForm}
+              setForm={setTransactionForm}
+              ticketId={selectedTicketId || ""}
+              setOpen={setShowTransactionModal}
+              fetchData={fetchData}
+            />
+          </div>
+        </Modal>
       )}
     </div>
   );

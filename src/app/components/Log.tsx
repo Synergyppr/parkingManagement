@@ -3,17 +3,17 @@ import { MdMail } from "react-icons/md";
 import { CiClock2 } from "react-icons/ci";
 import { formatDate, formatHour } from "@/app/lib/clientUtils";
 
+interface LogEntry {
+  createdDateTime: string;
+  loggedBy?: string;
+  description?: string;
+  oldValue?: string;
+  newValue?: string;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Log = ({ logs }: { logs: any[] }) => {
-  // TODO: Define a proper type for logs
   if (!logs || logs?.length === 0 || !Array.isArray(logs)) return null;
-  interface LogEntry {
-    createdDateTime: string;
-    loggedBy?: string;
-    description?: string;
-    oldValue?: string;
-    newValue?: string;
-  }
 
   const sortedLog = [...logs]?.sort((a: LogEntry, b: LogEntry) => {
     const formattedA = new Date(a.createdDateTime);
@@ -37,10 +37,9 @@ const Log = ({ logs }: { logs: any[] }) => {
     );
 
   return (
-    <div className="bg-[#eee]">
-      <div className="mt-0">
-        <div
-          className="card"
+    <div>
+      <div className="mt-6">
+        <div className="pt-2"
           style={{
             boxShadow:
               "0 0.46875rem 2.1875rem rgba(4,9,20,0.03), 0 0.9375rem 1.40625rem rgba(4,9,20,0.03), 0 0.25rem 0.53125rem rgba(4,9,20,0.05), 0 0.125rem 0.1875rem rgba(4,9,20,0.03)",
@@ -49,20 +48,21 @@ const Log = ({ logs }: { logs: any[] }) => {
             flexDirection: "column",
             minWidth: 0,
             wordWrap: "break-word",
-            backgroundColor: "#fff",
             backgroundClip: "border-box",
             borderWidth: "1px",
             borderStyle: "solid",
             borderColor: "rgba(26,54,126,0.125)",
             borderRadius: ".25rem",
+            background:
+              "radial-gradient(circle at center, #f8fafc 10%, #f1f5f9 90%)",
           }}
         >
           <div
-            className="card-body min-h-[93.5vh]"
-            style={{ flex: "1 1 auto", padding: "1.25rem" }}
+            className="min-h-[300px] overflow-y-auto ml-1.5 mr-2 overflow-x-hidden"
+            style={{ flex: "1 1 auto" }}
           >
             <div className="relative w-[100%] pt-[1.5rem] pb-[1rem] px-0">
-              <div className="absolute left-[42px] top-0 bottom-2 w-[2px] bg-[#e9ecef] rounded-full ml-[-1px]"></div>
+              <div className="absolute left-[42px] top-0 bottom-2 w-[2px] rounded-full ml-[-1px]"></div>
               {sortedLog?.reduce((acc, entry, index, array) => {
                 const prevEntry = array[index - 1];
                 const currentDate = extractDate(entry?.createdDateTime);
@@ -77,30 +77,30 @@ const Log = ({ logs }: { logs: any[] }) => {
                   acc.push(
                     <div
                       key={`date-${index}`}
-                      className="text-center mb-10 text-sky-700 tracking-tight font-semibold relative bottom-4 left-8"
+                      className="text-center mb-10 text-white tracking-tight font-semibold relative bottom-4"
                     >
-                      <div className="border-t-2 border-double border-sky-500 my-2 mx-4" />
-                      <div className=" py-2">
+                      {/* <div className="border-t-2 border-double border-blue-400 my-2 mx-4" /> */}
+                      <div className="bg-blue-500 py-2 px-2 rounded-sm shadow-sm">
                         {formatDate(entry?.createdDateTime).split(" ")[0]}
                       </div>
-                      <div className="border-t-2 border-double border-sky-500 my-2 mx-4" />
+                      {/* <div className="border-t-2 border-double border-blue-400 my-2 mx-4" /> */}
                     </div>
                   );
                 }
 
                 acc.push(
                   <div key={index} className="relative mb-[3rem] mt-6">
-                    <span className="text-white absolute left-[0px] top-[-38px] width-[100px] h-[26.5px] bg-red-600 shadow-sm rounded z-1 px-2 text-sm">
-                      <span className="relative top-1">
+                    <span className="text-white absolute left-[0px] top-[-38px] width-[100px] h-[26.5px] bg-orange-600/80 shadow-sm rounded-sm z-1 px-2 text-sm">
+                      <span className="relative top-1 font-bold">
                         {formatHour(entry?.createdDateTime)}
                       </span>
                     </span>
                     <span className="text-white absolute left-[30px] top-0 w-[25px] h-[25px] bg-[#003171] shadow-sm rounded-full z-1">
                       <MdMail className="m-auto relative top-1" />
                     </span>
-                    <div className="border-1 border-solid border-sky-500 rounded shadow-sm text-left relative ml-[70px] text-sm mb-10">
-                      <div className="border-b border-solid border-sky-500">
-                        <div className="overflow-hidden p-2">
+                    <div className="text-left relative ml-[70px] text-sm mb-10">
+                      <div className="text-xs bg-blue-300/80 rounded-t-lg shadow-lg">
+                        <div className="overflow-hidden p-2 text-gray-800 leading-4 rounded-b-sm">
                           <span className="font-bold text-[#003171] break-words pb-1 tracking-tight">
                             {entry?.loggedBy}
                           </span>{" "}
@@ -109,22 +109,26 @@ const Log = ({ logs }: { logs: any[] }) => {
                       </div>
 
                       {entry?.description?.startsWith(
-                        "Ticket status changed to"
+                        "Ticket status updated"
                       ) ? (
-                        <div className="px-2 py-1">
-                          <div className="flex gap-1 pt-2 pb-1">
-                            <div className="font-bold tracking-tight">
+                        <div className="px-2 py-1 text-gray-800 bg-white">
+                          <div className="flex gap-1 pt-1">
+                            <div className="font-md tracking-tight">
                               Old Status:{" "}
                             </div>{" "}
-                            <div className={`text-[.6rem]`}>
+                            <div
+                              className={`text-sm capitalize font-bold`}
+                            >
                               {entry?.oldValue}
                             </div>
                           </div>
                           <div className="flex gap-1 pb-1">
-                            <div className="font-bold tracking-tight">
+                            <div className="font-md tracking-tight">
                               New Status:{" "}
                             </div>{" "}
-                            <div className={`text-[.6rem]`}>
+                            <div
+                              className={`text-sm capitalize font-bold`}
+                            >
                               {entry?.newValue}
                             </div>
                           </div>
@@ -166,7 +170,9 @@ const Log = ({ logs }: { logs: any[] }) => {
                           <p></p>
                         </div>
                       ) : (
-                        <div className="py-2 px-2">{entry?.description}</div>
+                        <div className="py-2 px-2 text-gray-800 bg-white">
+                          {entry?.description}
+                        </div>
                       )}
                     </div>
                   </div>

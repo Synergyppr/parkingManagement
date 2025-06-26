@@ -14,9 +14,12 @@ import {
 } from "react-icons/io5";
 import Modal from "@/app/components/Modal";
 import useAuthRedirect from "../lib/loginHook";
+import { useProperty } from "../context/PropertyContext";
+import { leaveGroup } from "../lib/SignalRProvider";
 
 export default function Header() {
   const router = useRouter();
+  const { propertyId, setPropertyId } = useProperty();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [openModal, setOpenModal] = useState<"none" | "notifications" | "menu">(
     "none"
@@ -38,11 +41,15 @@ export default function Header() {
       showCancelButton: true,
       confirmButtonText: "Yes",
       cancelButtonText: "Cancel",
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
+        if (propertyId) {
+          await leaveGroup(propertyId); // 👈 Leave group on logout
+        }
         localStorage.removeItem("isLoggedIn");
-        localStorage.removeItem("authToken"); // if used
-        router.replace("/"); // Redirect to login
+        localStorage.removeItem("authToken");
+        setPropertyId(null); // Reset propertyId
+        router.replace("/");
       }
     });
   };

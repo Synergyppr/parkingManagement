@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "../globals.css";
-import Header from "@/app/components/Header";
 import { SignalRProvider } from "../lib/SignalRProvider";
 import { PropertyProvider } from "../context/PropertyContext";
 
@@ -15,9 +14,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="flex flex-col min-h-[100vh]">
+    <div>
       <PropertyProvider>
-        <Header />
         <SignalRProvider>
           <main>{children}</main>
         </SignalRProvider>

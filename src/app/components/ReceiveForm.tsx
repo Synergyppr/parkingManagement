@@ -1,24 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Swal from "sweetalert2";
 import { v4 as uuidv4 } from "uuid";
-import { Ticket, DropdownOption, CarBrand } from "../types";
-import { FaEye, FaEyeSlash, FaUser, FaTicketAlt, FaCar } from "react-icons/fa";
+import { FaUser, FaTicketAlt, FaCar } from "react-icons/fa";
 import { FaCarRear } from "react-icons/fa6";
 import { PiCarProfileFill } from "react-icons/pi";
 import { IoPhonePortrait } from "react-icons/io5";
 import { BiSolidSprayCan } from "react-icons/bi";
-import { RiAiGenerate2 } from "react-icons/ri";
 import { MdPin, MdPassword, MdLocationPin } from "react-icons/md";
-import { GoCheckCircleFill } from "react-icons/go";
+import { IoCheckmarkOutline } from "react-icons/io5";
 import { CiRedo } from "react-icons/ci";
+import { Ticket, DropdownOption, CarBrand } from "../types";
+import { useProperty } from "../context/PropertyContext";
+import { formatPhoneNumber } from "../lib/clientUtils";
 import {
   carParts,
   findLinkedGroup,
   generateLabelsMap,
 } from "../lib/carPartsLegend";
 import CarVector from "./CarVector";
+import FormInput from "./elements/FormInput";
 
 interface ReceiveFormProps {
   carBrands: CarBrand[];
@@ -29,6 +31,10 @@ interface ReceiveFormProps {
   setForm: React.Dispatch<React.SetStateAction<Partial<Ticket>>>;
   initialForm: Partial<Ticket>;
   setInitialForm: React.Dispatch<React.SetStateAction<Partial<Ticket>>>;
+  isFormChanged?: () => boolean;
+  shouldBypassUnloadPromptRef?: React.MutableRefObject<boolean>;
+  closeModal?: () => void;
+  modalType?: "none" | "report" | "incident";
 }
 
 const frontViewLabelsMap = generateLabelsMap(carParts.frontViewCar);
@@ -43,12 +49,13 @@ export default function ReceiveForm({
   fetchData,
   form,
   setForm,
-  // initialForm,
   setInitialForm,
+  isFormChanged,
+  shouldBypassUnloadPromptRef,
 }: ReceiveFormProps) {
+  const { propertyId, latitude, longitude } = useProperty();
+  const saveClickedRef = useRef(false);
   const [step, setStep] = useState<number>(1);
-  // const [form, setForm] = useState<Partial<Vehicle>>({});
-  // const [initialForm, setInitialForm] = useState<Partial<Vehicle>>({});
   const [models, setModels] = useState<DropdownOption[]>([]);
   const [loader, setLoader] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -57,6 +64,11 @@ export default function ReceiveForm({
   const [incidentParts, setIncidentParts] = useState<string[]>([]);
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
   const [missingFields, setMissingFields] = useState<string[]>([]);
+
+  useEffect(() => {
+    generateTicketNumber();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const buildDamageStatus = (
     incidentParts: string[],
@@ -112,12 +124,15 @@ export default function ReceiveForm({
   };
 
   const generateTicketNumber = () => {
-    const randomSixDigit = Math.floor(
-      100000 + Math.random() * 900000
-    ).toString();
+    // Generate a UUID, remove dashes, and take the first 6 alphanumeric characters
+    const alphanumericSix = uuidv4()
+      .replace(/-/g, "")
+      .substring(0, 6)
+      .toUpperCase(); // Optional: .toUpperCase() for readability
+
     setForm((prev: Partial<Ticket>) => ({
       ...prev,
-      ticketNumber: randomSixDigit,
+      ticketNumber: alphanumericSix,
     }));
   };
 
@@ -126,14 +141,11 @@ export default function ReceiveForm({
 
     if (
       !form?.phoneNumber ||
-      !form?.firstName ||
-      !form?.lastName ||
       !form?.make ||
       !form?.model ||
       !form?.type ||
       !form?.color ||
-      !form?.pin ||
-      !form?.placeToVisit
+      !form?.pin
     ) {
       Swal.fire({
         icon: "warning",
@@ -203,7 +215,9 @@ export default function ReceiveForm({
     }
 
     const sendForm = {
-      propertyId: "A7E348D3-8DFB-4F71-8BC5-042BA75D53C7",
+      latitude,
+      longitude,
+      propertyId: propertyId,
       firstName: form?.firstName,
       lastName: form?.lastName,
       phone: rawPhone,
@@ -287,8 +301,8 @@ export default function ReceiveForm({
           type: preFill?.type?.toString(),
           color: preFill?.color?.toString(),
           licensePlate: preFill?.licensePlate || "",
-          ticketNumber: "",
-          pin: "", // blank out PIN for security
+          ticketNumber: form?.ticketNumber,
+          pin: "",
         };
 
         setForm(initial);
@@ -307,16 +321,12 @@ export default function ReceiveForm({
     }
   };
 
-  // Handle next function. Validate that all fields are filled before proceeding
   const handleNext = () => {
     const missing: string[] = [];
 
     if (step === 1) {
       if (!form?.phoneNumber) missing.push("phoneNumber");
-      if (!form?.firstName) missing.push("firstName");
-      if (!form?.lastName) missing.push("lastName");
       if (!form?.ticketNumber) missing.push("ticketNumber");
-      if (!form?.placeToVisit) missing.push("placeToVisit");
     } else if (step === 2) {
       if (!form?.make) missing.push("make");
       if (!form?.model) missing.push("model");
@@ -375,10 +385,10 @@ export default function ReceiveForm({
   return (
     <div
       className={`${
-        step === 3 ? "" : "lg:mt-16 py-4 sm:py-4 md:py-16"
+        step === 3 ? "" : "py-4 lg:mt-16 md:py-16 sm:py-4 xs:py-4"
       } border-none lg:shadow-lg lg:border-1 lg:border-solid border-[e0f2ff] rounded-lg  lg:bg-white/30 mb-2`}
     >
-      <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-6 transition-opacity duration-500 ease-in-out animate-fade-in min-h-full">
+      <div className="p-2 sm:p-4 md:p-6 max-w-3xl mx-auto space-y-6 transition-opacity duration-500 ease-in-out animate-fade-in min-h-full">
         {!submitted ? (
           <>
             <div className="lg:mb-10 relative lg:bottom-4">
@@ -387,7 +397,7 @@ export default function ReceiveForm({
               </h2>
               {step < 3 && (
                 <p className="text-xs font-light text-center text-gray-700 mb-2">
-                  Please complete all fields below.
+                  Please complete all required fields below.
                 </p>
               )}
               {step === 3 && (
@@ -407,303 +417,193 @@ export default function ReceiveForm({
             <form className="mt-6">
               {step === 1 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Phone Number */}
-                  <div className="relative">
-                    <IoPhonePortrait
-                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
-                        missingFields.includes("phoneNumber")
-                          ? "text-red-600"
-                          : "text-blue-600"
-                      }`}
-                    />
-                    <input
-                      name="phoneNumber"
-                      placeholder="Phone Number"
-                      onChange={(e) => {
-                        const rawValue = e.target.value.replace(/\D/g, "");
-                        let formatted = rawValue;
-
-                        if (rawValue?.length <= 3) {
-                          formatted = rawValue;
-                        } else if (rawValue?.length <= 6) {
-                          formatted = `(${rawValue?.slice(
-                            0,
-                            3
-                          )}) ${rawValue?.slice(3)}`;
-                        } else {
-                          formatted = `(${rawValue?.slice(
-                            0,
-                            3
-                          )}) ${rawValue?.slice(3, 6)}-${rawValue?.slice(
-                            6,
-                            10
-                          )}`;
-                        }
-
+                  {/* Ticket Number with Auto */}
+                  <FormInput
+                    name="ticketNumber"
+                    placeholder="Ticket Number"
+                    value={form?.ticketNumber || ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^[a-zA-Z0-9]{0,6}$/.test(val)) {
                         setForm((prev: Partial<Ticket>) => ({
                           ...prev,
-                          phoneNumber: formatted,
+                          ticketNumber: val,
                         }));
+                      }
+                    }}
+                    icon={<FaTicketAlt />}
+                    required
+                    missing={missingFields.includes("ticketNumber")}
+                    onClear={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        ticketNumber: "",
+                      }))
+                    }
+                  />
 
-                        if (rawValue.length >= 10) {
-                          fetchUserDataByPhone(rawValue);
-                        }
-                      }}
-                      value={form?.phoneNumber || ""}
-                      maxLength={14}
-                      className="pl-8 border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-300 text-gray-700 tracking-tight w-full focus:ring-1 focus:ring-[#ef6c00] focus:rounded-sm focus:outline-none"
-                      required
-                    />
-                  </div>
+                  {/* Phone Number */}
+                  <FormInput
+                    name="phoneNumber"
+                    placeholder="Phone Number"
+                    value={form?.phoneNumber || ""}
+                    onChange={(e) => {
+                      const rawValue = e.target.value.replace(/\D/g, "");
+                      const formatted = formatPhoneNumber(rawValue);
 
+                      setForm((prev: Partial<Ticket>) => ({
+                        ...prev,
+                        phoneNumber: formatted,
+                      }));
+
+                      if (rawValue.length >= 10) {
+                        fetchUserDataByPhone(rawValue);
+                      }
+                    }}
+                    icon={<IoPhonePortrait />}
+                    required
+                    missing={missingFields.includes("phoneNumber")}
+                    onClear={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        phoneNumber: "",
+                      }))
+                    }
+                  />
                   {/* First Name */}
-                  <div className="relative">
-                    <FaUser
-                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
-                        missingFields.includes("firstName")
-                          ? "text-red-600"
-                          : "text-blue-600"
-                      }`}
-                    />
-                    <input
-                      name="firstName"
-                      placeholder="First Name"
-                      onChange={handleChange}
-                      value={form?.firstName || ""}
-                      className="pl-8 border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-300 text-gray-700 tracking-tight w-full focus:ring-1 focus:ring-[#ef6c00] focus:rounded-sm focus:outline-none"
-                      required
-                    />
-                  </div>
-
+                  <FormInput
+                    name="firstName"
+                    placeholder="First Name"
+                    icon={<FaUser />}
+                    value={form.firstName || ""}
+                    onChange={handleChange}
+                    onClear={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        firstName: "",
+                      }))
+                    }
+                  />
                   {/* Last Name */}
-                  <div className="relative">
-                    <FaUser
-                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
-                        missingFields.includes("lastName")
-                          ? "text-red-600"
-                          : "text-blue-600"
-                      }`}
-                    />
-                    <input
-                      name="lastName"
-                      placeholder="Last Name"
-                      onChange={handleChange}
-                      value={form?.lastName || ""}
-                      className="pl-8 border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-300 text-gray-700 tracking-tight w-full focus:ring-1 focus:ring-[#ef6c00] focus:rounded-sm focus:outline-none"
-                      required
-                    />
-                  </div>
-
-                  {/* Ticket Number with Auto */}
-                  <div className="relative flex gap-2 items-center">
-                    <div className="relative w-full">
-                      <FaTicketAlt
-                        className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
-                          missingFields.includes("ticketNumber")
-                            ? "text-red-600"
-                            : "text-blue-600"
-                        }`}
-                      />
-                      <input
-                        name="ticketNumber"
-                        placeholder="Ticket Number"
-                        value={form?.ticketNumber || ""}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (/^[a-zA-Z0-9]{0,6}$/.test(val)) {
-                            setForm((prev: Partial<Ticket>) => ({
-                              ...prev,
-                              ticketNumber: val,
-                            }));
-                          }
-                        }}
-                        className="pl-8 border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-300 text-gray-700 tracking-tight w-full focus:ring-1 focus:ring-[#ef6c00] focus:rounded-sm focus:outline-none"
-                        maxLength={6}
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={generateTicketNumber}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-500 focus:outline-none cursor-pointer"
-                      >
-                        <RiAiGenerate2 className="h-6 w-6" />
-                      </button>
-                    </div>
-                  </div>
-
+                  <FormInput
+                    name="lastName"
+                    placeholder="Last Name"
+                    icon={<FaUser />}
+                    value={form?.lastName || ""}
+                    onChange={handleChange}
+                    onClear={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        lastName: "",
+                      }))
+                    }
+                  />
                   {/* Place to Visit */}
-                  <div className="relative">
-                    <MdLocationPin
-                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
-                        missingFields.includes("placeToVisit")
-                          ? "text-red-600"
-                          : "text-blue-600"
-                      }`}
-                    />
-                    <input
-                      name="placeToVisit"
-                      placeholder="Place to Visit"
-                      onChange={handleChange}
-                      value={form.placeToVisit || ""}
-                      className="pl-8 border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-300 text-gray-700 tracking-tight w-full focus:ring-1 focus:ring-[#ef6c00] focus:rounded-sm focus:outline-none"
-                      required
-                    />
-                  </div>
+                  <FormInput
+                    name="placeToVisit"
+                    placeholder="Place to Visit"
+                    icon={<MdLocationPin />}
+                    onChange={handleChange}
+                    value={form.placeToVisit || ""}
+                    onClear={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        placeToVisit: "",
+                      }))
+                    }
+                  />
                 </div>
               )}
 
               {step === 2 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Make */}
-                  <div className="relative">
-                    <FaCar
-                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
-                        missingFields.includes("make")
-                          ? "text-red-600"
-                          : "text-blue-600"
-                      }`}
-                    />
-                    <select
-                      name="make"
-                      onChange={handleChange}
-                      className="pl-8 border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-300 text-gray-700 w-full focus:ring-1 focus:ring-[#ef6c00] focus:rounded-sm focus:outline-none"
-                      value={form.make || ""}
-                    >
-                      <option value="">Select Make</option>
-                      {carBrands?.map((brand) => (
-                        <option key={brand?.id} value={brand?.id}>
-                          {brand?.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <FormInput
+                    name="make"
+                    value={form.make || ""}
+                    onChange={handleChange}
+                    icon={<FaCar />}
+                    type="select"
+                    options={carBrands}
+                    missing={missingFields.includes("make")}
+                  />
 
                   {/* Model */}
-                  <div className="relative">
-                    <FaCarRear
-                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
-                        missingFields.includes("model")
-                          ? "text-red-600"
-                          : "text-blue-600"
-                      }`}
-                    />
-                    <select
-                      name="model"
-                      onChange={handleChange}
-                      className="pl-8 border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-300 text-gray-700 w-full focus:ring-1 focus:ring-[#ef6c00] focus:rounded-sm focus:outline-none"
-                      value={form.model || ""}
-                    >
-                      <option value="">Select Model</option>
-                      {models?.map((model) => (
-                        <option key={model?.id} value={model?.id}>
-                          {model?.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <FormInput
+                    name="model"
+                    value={form.model || ""}
+                    onChange={handleChange}
+                    icon={<FaCarRear />}
+                    type="select"
+                    options={models}
+                    missing={missingFields.includes("model")}
+                  />
 
                   {/* Type */}
-                  <div className="relative">
-                    <PiCarProfileFill
-                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
-                        missingFields.includes("type")
-                          ? "text-red-600"
-                          : "text-blue-600"
-                      }`}
-                    />
-                    <select
-                      name="type"
-                      onChange={handleChange}
-                      className="pl-8 border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-300 text-gray-700 w-full focus:ring-1 focus:ring-[#ef6c00] focus:rounded-sm focus:outline-none"
-                      value={form.type || ""}
-                    >
-                      <option value="">Select Type</option>
-                      {vehicleTypes?.map((type) => (
-                        <option key={type?.id} value={type?.id}>
-                          {type?.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <FormInput
+                    name="type"
+                    value={form.type || ""}
+                    onChange={handleChange}
+                    icon={<PiCarProfileFill />}
+                    type="select"
+                    options={vehicleTypes}
+                    missing={missingFields.includes("type")}
+                  />
 
                   {/* Color */}
-                  <div className="relative">
-                    <BiSolidSprayCan
-                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
-                        missingFields.includes("color")
-                          ? "text-red-600"
-                          : "text-blue-600"
-                      }`}
-                    />
-                    <select
-                      name="color"
-                      onChange={handleChange}
-                      className="pl-8 border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-300 text-gray-700 w-full focus:ring-1 focus:ring-[#ef6c00] focus:rounded-sm focus:outline-none"
-                      value={form.color || ""}
-                    >
-                      <option value="">Select Color</option>
-                      {vehicleColors?.map((color) => (
-                        <option key={color?.id} value={color?.id}>
-                          {color?.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <FormInput
+                    name="color"
+                    value={form.color || ""}
+                    onChange={handleChange}
+                    icon={<BiSolidSprayCan />}
+                    type="select"
+                    options={vehicleColors}
+                    missing={missingFields.includes("color")}
+                  />
 
                   {/* License Plate */}
-                  <div className="relative">
-                    <MdPin
-                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 text-blue-600`}
-                    />
-                    <input
-                      name="licensePlate"
-                      placeholder="License Plate (optional)"
-                      type="text"
-                      onChange={handleChange}
-                      value={form?.licensePlate || ""}
-                      className="pl-8 border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-300 text-gray-700 tracking-tight w-full focus:ring-1 focus:ring-[#ef6c00] focus:rounded-sm focus:outline-none"
-                      maxLength={8}
-                      pattern="[A-Z0-9]{0,4}"
-                    />
-                  </div>
+                  <FormInput
+                    name="licensePlate"
+                    placeholder="License Plate"
+                    icon={<MdPin />}
+                    onChange={handleChange}
+                    value={form?.licensePlate || ""}
+                    onClear={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        licensePlate: "",
+                      }))
+                    }
+                  />
 
                   {/* PIN */}
-                  <div className="relative w-full">
-                    <MdPassword
-                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
-                        missingFields.includes("pin")
-                          ? "text-red-600"
-                          : "text-blue-600"
-                      }`}
-                    />
-                    <input
-                      type={showPin ? "text" : "password"}
-                      name="pin"
-                      placeholder="PIN"
-                      value={form?.pin || ""}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (/^\d{0,4}$/.test(val)) {
-                          setForm((prev: Partial<Ticket>) => ({
-                            ...prev,
-                            pin: val,
-                          }));
-                        }
-                      }}
-                      className="pl-8 border-b border-gray-500 px-2 py-2 pr-10 text-sm placeholder-gray-300 text-gray-700 tracking-tight w-full focus:ring-1 focus:ring-[#ef6c00] focus:rounded-sm focus:outline-none"
-                      maxLength={4}
-                      inputMode="numeric"
-                      pattern="\d*"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPin((prev) => !prev)}
-                      className="cursor-pointer absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300 focus:outline-none"
-                    >
-                      {showPin ? <FaEyeSlash /> : <FaEye />}
-                    </button>
-                  </div>
+                  <FormInput
+                    name="pin"
+                    type="text"
+                    placeholder="PIN"
+                    icon={<MdPassword />}
+                    value={form?.pin || ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^\d{0,4}$/.test(val)) {
+                        setForm((prev: Partial<Ticket>) => ({
+                          ...prev,
+                          pin: val,
+                        }));
+                      }
+                    }}
+                    required
+                    showPasswordToggle
+                    showPassword={showPin}
+                    setShowPassword={setShowPin}
+                    missing={missingFields.includes("pin")}
+                    onClear={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        pin: "",
+                      }))
+                    }
+                  />
                 </div>
               )}
 
@@ -722,6 +622,9 @@ export default function ReceiveForm({
                     rearViewLabelsMap={rearViewLabelsMap}
                     passengerViewLabelsMap={passengerViewLabelsMap}
                     driverViewLabelsMap={driverViewLabelsMap}
+                    saveClickedRef={saveClickedRef}
+                    shouldBypassUnloadPromptRef={shouldBypassUnloadPromptRef}
+                    isFormChanged={isFormChanged}
                   />
                 </div>
               )}
@@ -731,8 +634,11 @@ export default function ReceiveForm({
               {step === 1 && (
                 <button
                   type="button"
+                  disabled={!isFormChanged}
                   onClick={handleClearForm}
-                  className="cursor-pointer px-6 py-2 bg-gray-200/80 hover:bg-gray-400 text-blue-700 font-semibold rounded shadow-md"
+                  className={`${
+                    isFormChanged ? "cursor-pointer hover:bg-gray-400" : ""
+                  } px-6 py-2 bg-gray-200/80  text-blue-700 font-semibold rounded shadow-md`}
                 >
                   Clear
                 </button>
@@ -768,21 +674,32 @@ export default function ReceiveForm({
             </div>
           </>
         ) : (
-          <div className="text-center animate-fade-in flex flex-col items-center h-full my-auto">
-            <div className="my-auto flex-1 shadow-md px-4 py-10 rounded-sm mt-[9vh] bg-slate-300/70 bg-opacity-10">
-              <div className="text-center mb-3">
-                <GoCheckCircleFill className="w-20 h-20 mx-auto text-blue-700 border-1 border-solid rounded-full" />
+          <div
+            className="text-center animate-fade-in flex flex-col items-center h-full md:my-auto mt-[2vh] justify-center w-full p-4 rounded-lg"
+            style={{
+              background: "radial-gradient(circle at center, #E2E8F0, #CBD5E1)",
+            }}
+          >
+            <div className="my-auto flex-1 px-4 py-10 rounded-sm bg-opacity-10">
+              <div
+                className="w-20 h-20 mb-5 mx-auto rounded-full p-3 flex items-center justify-center border border-orange-500 shadow-md"
+                style={{
+                  background: "linear-gradient(135deg, #ff9800, #ef6c00)", // vibrant orange gradient
+                }}
+              >
+                <IoCheckmarkOutline className="text-white w-20 h-20 mx-auto my-1" />
               </div>
-              <h2 className="text-2xl font-bold mb-3 text-blue-600 uppercase drop-shadow-[.5px_.5px_.5px_#2f68c4]">
-                <span className="text-[28px]">S</span>ubmitted!
-              </h2>
-              <p className="text-gray-600 mt-2 mb-6 leading-5 mx-2">
+
+              <h3 className="text-2xl font-semibold text-slate-700 text-center tracking-tighter leading-5 mb-3">
+                Vehicle Check-In Successful
+              </h3>
+              <p className="text-slate-600 mt-2 mb-6 leading-5 mx-2">
                 Your vehicle has been checked in and is being parked. Relax and
                 enjoy your visit — we’ve got it from here.
               </p>
               <button
                 onClick={handleSubmitAnother}
-                className="bg-blue-600 hover:bg-gray-600 text-white px-6 py-3 rounded-md transition-colors tracking-tight flex gap-2 items-center justify-center shadow-md w-full cursor-pointer"
+                className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white px-6 py-3 rounded-md transition-colors tracking-tight flex gap-2 items-center justify-center shadow-md w-full cursor-pointer"
               >
                 <CiRedo className="text-white" />
                 Submit Another Vehicle

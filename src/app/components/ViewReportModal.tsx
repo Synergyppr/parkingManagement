@@ -1,6 +1,5 @@
 "use client";
 import React, { useRef } from "react";
-
 import Modal from "./Modal";
 import FullIncidentReport from "./FullIncidentReport";
 
@@ -14,7 +13,7 @@ const ViewReportModal = ({
   incidentParts,
 }: {
   isOpen: boolean;
-  onClose: () => void;
+  onClose: (value: boolean) => void;
   allLabelMaps: LabelMaps;
   descriptions: Record<string, string>;
   incidentParts: string[];
@@ -70,7 +69,7 @@ const ViewReportModal = ({
   // };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={() => onClose(false)}>
       <div className="max-h-[70vh] overflow-y-auto p-2">
         <h2 className="text-2xl font-bold text-gray-900 tracking-tight mb-1">
           Full Incident Report

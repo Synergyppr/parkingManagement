@@ -33,6 +33,7 @@ export default function Modal({
   }, [onRequestClose, onClose]);
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
     if (e.target === e.currentTarget) {
       if (onRequestClose) {
         onRequestClose();

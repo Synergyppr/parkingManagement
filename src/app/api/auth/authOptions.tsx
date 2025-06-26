@@ -1,4 +1,4 @@
-import { getUserProfile, validateUser } from "../../lib/userStoreApi";
+import { validateUser } from "@/app/api/auth/userStoreApi";
 import { Session, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import jwt, { JwtPayload } from "jsonwebtoken";
@@ -37,34 +37,28 @@ export const authOptions: NextAuthOptions = {
           placeholder: "John Smith",
         },
         password: { label: "Password", type: "password" },
-        // propertyId: { label: "Property", type: "text" },
       },
       async authorize(
         credentials: Record<"username" | "password", string> | undefined
       ): Promise<User | null> {
-        if (!credentials || !credentials.username || !credentials.password) {
-          throw new Error("Please enter a username and password");
+        if (!credentials?.username || !credentials?.password) {
+          throw new Error("Please enter both username and password.");
         }
 
-        const user = await validateUser({
-          username: credentials.username,
-          password: credentials.password,
-          // propertyId: credentials.propertyId,
-        });
+        try {
+          const user = await validateUser({
+            username: credentials.username,
+            password: credentials.password,
+          });
 
-        if (!user) {
-          throw new Error(
-            "The password you entered is incorrect. Please try again."
-          );
+          return user; // must be defined if 200 OK
+        } catch (error: unknown) {
+          // This message gets passed to the frontend error query param
+          if (error instanceof Error) {
+            throw new Error(error.message || "Authentication failed.");
+          }
+          throw new Error("Authentication failed.");
         }
-
-        if (user === undefined) {
-          throw new Error(
-            "The account you are trying to access is either not validated or not found in our records."
-          );
-        }
-
-        return user;
       },
     }),
   ],
@@ -84,10 +78,6 @@ export const authOptions: NextAuthOptions = {
             token.id = decoded.unique_name?.[0] || null;
           }
         }
-      }
-
-      if (!token.profile && token.id) {
-        token.profile = await getUserProfile(token.id);
       }
 
       return token;

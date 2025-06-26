@@ -1,11 +1,11 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import * as signalR from "@microsoft/signalr";
+import Swal from "sweetalert2";
 import { RxCaretRight } from "react-icons/rx";
 import { BsStar, BsStarFill, BsStarHalf } from "react-icons/bs";
 import { IoCheckmarkOutline } from "react-icons/io5";
-import Swal from "sweetalert2";
+import { useSignalR } from "../lib/SignalRProvider";
 import StatusTimeline from "./StatusTimeline";
 import PageLoader from "./elements/PageLoader";
 import ButtonLoader from "./elements/ButtonLoader";
@@ -26,15 +26,44 @@ const RequestCar = () => {
     placeToVisit?: string;
     status?: string;
     patronId?: string;
+    notificationId?: string;
+    surveySubmitted?: boolean;
   } | null>(null);
   const [requested, setRequested] = useState(false);
   const [buttonLoader, setButtonLoader] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState(
+    Boolean(vehicleData?.surveySubmitted) || false
+  );
   const [hoveredStars, setHoveredStars] = useState(0);
   const [ratedStars, setRatedStars] = useState(0);
   const [comment, setComment] = useState("");
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
   const idFromUrl = searchParams.get("ticket");
+  const { registerNotificationHandler } = useSignalR();
+
+  useEffect(() => {
+    // Only register handler after component is mounted
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    registerNotificationHandler((notification: any) => {
+      // console.log("🔄 Real-time notification received:", notification);
+
+      if (notification.ticketId === ticketId && notification.status) {
+        setVehicleData((prev) => ({
+          ...prev!,
+          status: notification.status,
+        }));
+
+        if (
+          notification.status === "requested" ||
+          notification.status === "ready"
+        ) {
+          setRequested(true);
+        } else if (notification.status === "parked") {
+          setRequested(false);
+        }
+      }
+    });
+  }, [ticketId, registerNotificationHandler]);
 
   useEffect(() => {
     if (idFromUrl) {
@@ -44,34 +73,6 @@ const RequestCar = () => {
       fetchVehicleByTicket(idFromUrl);
     }
   }, [searchParams, idFromUrl]);
-
-  useEffect(() => {
-    if (!ticketId) return;
-
-    const connection = new signalR.HubConnectionBuilder()
-      .withUrl("http://104.46.113.1:8080/notificationHub")
-      .withAutomaticReconnect()
-      .build();
-
-    connection.start().then(() => {
-      console.log("SignalR connected");
-
-      connection.on("UpdateNotification", (data) => {
-        // console.log("Received status update:", data);
-        if (data.ticketId === ticketId) {
-          // Optionally refetch full vehicle info, or just update locally
-          setVehicleData((prev) => ({
-            ...prev!,
-            status: data.status, // updated status
-          }));
-        }
-      });
-    });
-
-    return () => {
-      connection.stop();
-    };
-  }, [ticketId]);
 
   useEffect(() => {
     if (
@@ -105,10 +106,39 @@ const RequestCar = () => {
     }
   };
 
-  const handleRequestCar = () => {
+  const updateVehicleStatus = async (status: string) => {
+    const sendForm = {
+      ticketId,
+      status,
+      isUserUpdate: true,
+      pin: "", // not needed for user updates
+    };
+
+    const res = await fetch("/api/vehicleStatus", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(sendForm),
+    });
+
+    return res.json();
+  };
+
+  const markNotificationAsUnread = async () => {
+    if (!vehicleData?.notificationId) return;
+
+    const res = await fetch("/api/notification/unread", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: vehicleData?.notificationId }),
+    });
+
+    return res.json();
+  };
+
+  const handleRequestCar = async () => {
     Swal.fire({
       title: "Request Vehicle",
-      text: "To help keep our valet service running smoothly, please only request your vehicle when you're ready to leave. If you'll be departing within the next 3–5 minutes, go ahead and place your request so we can bring your vehicle promptly.",
+      text: "Please only request your vehicle when you're ready to leave.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
@@ -117,114 +147,54 @@ const RequestCar = () => {
       cancelButtonText: "No, go back.",
       backdrop: `rgba(0,0,123,0.4)`,
     }).then(async (result) => {
-      if (result.isConfirmed) {
-        setButtonLoader(true);
+      if (!result.isConfirmed) return;
 
-        try {
-          const sendForm = {
-            ticketId: ticketId,
-            status: "requested",
-            isUserUpdate: true,
-            pin: "", // if isUserUpdate is true, pin is not required
-          };
+      setButtonLoader(true);
 
-          const res = await fetch("/api/vehicleStatus", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(sendForm),
-          });
+      try {
+        const data = await updateVehicleStatus("requested");
 
-          const data = await res.json();
-
-          if (data?.result?.status === "200") {
-            setTimeout(() => {
-              setRequested(true);
-              setVehicleData({ ...vehicleData, status: "requested" });
-              setButtonLoader(false);
-
-              setTimeout(() => {
-                ratingSectionRef.current?.scrollIntoView({
-                  behavior: "smooth",
-                });
-              }, 300);
-            }, 800);
-
-            setTimeout(() => {
-              Swal.fire({
-                backdrop: `rgba(0,0,123,0.4)`,
-                title: "Vehicle Requested",
-                text: "Your request has been received. Hang tight — your vehicle is on its way!",
-                icon: "success",
-              });
-            }, 800);
-          } else {
-            console.error("Error requesting vehicle:", data?.message);
-            Swal.fire({
-              title: "Error",
-              text: "There was an issue requesting your vehicle. Please try again.",
-              icon: "error",
-            });
-          }
-        } catch (error) {
-          console.error("Network error while requesting vehicle:", error);
-          Swal.fire({
-            title: "Network Error",
-            text: "Unable to connect to the server. Please check your internet connection and try again.",
-            icon: "error",
-          });
-        } finally {
-          setButtonLoader(false);
-        }
-      }
-    });
-  };
-
-  const returnVehicleToLot = async () => {
-    Swal.fire({
-      title: "Return Vehicle to Lot?",
-      text: "Are you sure you want to return the vehicle to the lot? This may delay your next request.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, return it",
-      cancelButtonText: "No, keep it requested",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        const sendForm = {
-          ticketId: ticketId,
-          status: "parked",
-          isUserUpdate: true,
-          pin: "", // if isUserUpdate is true, pin is not required
-        };
-
-        const res = await fetch("/api/vehicleStatus", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(sendForm),
-        });
-
-        const data = await res.json();
+        // console.log("Update Vehicle Status Result:", data);
 
         if (data?.result?.status === "200") {
-          setRequested(false);
-          setVehicleData((prev) => ({
-            ...prev!,
-            status: "parked", // Update status to parked
-          }));
-          Swal.fire({
-            icon: "success",
-            title: "Vehicle Returned",
-            text: "Your vehicle has been returned to the lot.",
-          });
+          // console.log("Vehicle status updated successfully");
+          const unreadResult = await markNotificationAsUnread();
+
+          // console.log("Unread Notification Result:", unreadResult);
+
+          if (unreadResult?.status === "200") {
+            setRequested(true);
+            setVehicleData({ ...vehicleData, status: "requested" });
+
+            setTimeout(() => {
+              ratingSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+
+              setTimeout(() => {
+                Swal.fire({
+                  backdrop: `rgba(0,0,123,0.4)`,
+                  title: "Vehicle Requested",
+                  text: "Your request has been received. Hang tight — your vehicle is on its way!",
+                  icon: "success",
+                });
+              }, 800);
+            }, 300);
+          }
         } else {
-          console.error("Error returning vehicle:", data?.message);
           Swal.fire({
             title: "Error",
-            text: "There was an issue returning your vehicle. Please try again.",
+            text: "There was an issue requesting your vehicle. Please try again.",
             icon: "error",
           });
         }
+      } catch (error) {
+        console.error("Request error:", error);
+        Swal.fire({
+          title: "Network Error",
+          text: "Unable to request vehicle. Please try again.",
+          icon: "error",
+        });
+      } finally {
+        setButtonLoader(false);
       }
     });
   };
@@ -256,6 +226,8 @@ const RequestCar = () => {
         comment: comment,
       };
 
+      // console.log("Submitting Rating:", sendForm);
+
       const res = await fetch("/api/patronRating", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -264,12 +236,15 @@ const RequestCar = () => {
 
       const data = await res.json();
 
+      // console.log("Rating Submission Result:", data);
+
       if (data?.status === "200") {
-        setVehicleNotFound(false);
         setSubmitted(true);
         setTimeout(() => {
           Swal.fire({
-            title: `Thanks for your feedback, ${vehicleData?.firstName}!`,
+            title: `Thanks for your feedback${
+              vehicleData?.firstName ? `, ${vehicleData?.firstName}` : ""
+            }!`,
             text: "We truly appreciate your rating and look forward to serving you again soon.",
             icon: "success",
             confirmButtonColor: "#3B82F6",
@@ -277,7 +252,6 @@ const RequestCar = () => {
         }, 700);
       } else {
         console.log("Error", data?.result?.message);
-        setVehicleNotFound(true);
       }
     } catch (error) {
       console.error("Failed to submit rating", error);
@@ -335,23 +309,28 @@ const RequestCar = () => {
             <div className="bg-slate-200 p-6 rounded-b-lg shadow-lg text-gray-800 w-full max-w-3xl md:px-[8%] lg:px-[10%]">
               <>
                 <div className="mb-6 text-justify">
-                  <p className="text-lg leading-relaxed ">
-                    Hello{" "}
-                    <strong>
-                      {vehicleData?.firstName} {vehicleData?.lastName},
-                    </strong>
-                  </p>
+                  {vehicleData?.firstName || vehicleData?.lastName ? (
+                    <p className="text-lg leading-relaxed">
+                      Hello{" "}
+                      <strong>
+                        {vehicleData?.firstName} {vehicleData?.lastName},
+                      </strong>
+                    </p>
+                  ) : (
+                    <p className="text-base leading-relaxed">Greetings,</p>
+                  )}
                   <p className="indent mt-2">
                     We’ve located your vehicle associated with ticket{"  "}
                     <strong className="italic text-[#ef6c00]">
                       {/* text-[#3B82F6] blue */}#
-                      {vehicleData?.ticketNumber?.substring(
+                      {/* {vehicleData?.ticketNumber?.substring(
                         vehicleData?.ticketNumber.length - 6,
                         vehicleData?.ticketNumber.length
-                      )}
+                      )} */}
+                      {vehicleData?.ticketNumber}
                     </strong>{" "}
                     —{" "}
-                    <strong className="text-[#ef6c00]">
+                    <strong className="text-[#ef6c00] capitalize">
                       {vehicleData?.color} {vehicleData?.make}{" "}
                       {vehicleData?.model}
                     </strong>{" "}
@@ -374,13 +353,24 @@ const RequestCar = () => {
                     currentStatus={vehicleData?.status as string}
                   />
 
+                  {/* <div className="mt-4 mx-auto w-[50%] bg-gradient-to-t to-blue-600 from-blue-700 via-blue-500 rounded px-6 py-4 shadow text-center">
+                    <p className="text-lg font-medium text-white">
+                      Total Paid:{" "}
+                      <span className="text-[#ef6c00] font-semibold">
+                        $0.00
+                      </span>
+                    </p>
+                  </div> */}
+
                   {vehicleData?.status === "received" ||
                   vehicleData?.status === "parked" ? (
                     <p className="indent mt-3">
-                      If you’ve finished your visit at{" "}
-                      <strong>{vehicleData?.placeToVisit}</strong> and are ready
-                      to leave, please click the button below to request your
-                      vehicle.
+                      If you’ve finished your visit{" "}
+                      {vehicleData?.placeToVisit &&
+                        " at " +
+                        <strong>{vehicleData?.placeToVisit}</strong>}{" "}
+                      and are ready to leave, please click the button below to
+                      request your vehicle.
                     </p>
                   ) : vehicleData?.status === "requested" ? (
                     <p className="indent mt-3">
@@ -391,8 +381,11 @@ const RequestCar = () => {
                   ) : vehicleData?.status === "ready" ? (
                     <p className="indent mt-3">
                       Your vehicle has been picked up. We hope you enjoyed your
-                      visit to <strong>{vehicleData?.placeToVisit}</strong> and
-                      look forward to seeing you again soon!
+                      visit{" "}
+                      {vehicleData?.placeToVisit &&
+                        " to " +
+                        <strong>{vehicleData?.placeToVisit}</strong>}{" "}
+                      and look forward to seeing you again soon!
                     </p>
                   ) : null}
 
@@ -403,12 +396,15 @@ const RequestCar = () => {
                       className={`${
                         requested
                           ? "bg-blue-600/20"
-                          : "bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-600 hover:to-blue-800"
-                      } text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-all duration-700`}
+                          : "bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-600 hover:to-blue-800 hover:bg-blue-700 transition-all duration-700"
+                      } text-white py-2 px-4 rounded-md`}
                     >
                       {requested ? (
                         <span className="flex gap-2 items-center justify-between">
-                          Vehicle Requested
+                          Vehicle{" "}
+                          {vehicleData?.status === "requested"
+                            ? "Requested"
+                            : "Picked-Up"}
                           <IoCheckmarkOutline className="w-5 h-5 text-blue-500" />
                         </span>
                       ) : buttonLoader ? (
@@ -421,16 +417,6 @@ const RequestCar = () => {
                       )}
                     </button>
                   </div>
-                  {requested && vehicleData?.status == "requested" && (
-                    <div className="text-center text-xs relative bottom-2">
-                      <p
-                        className="mt-4 text-blue-600 underline cursor-pointer"
-                        onClick={returnVehicleToLot}
-                      >
-                        Return the vehicle to the lot
-                      </p>
-                    </div>
-                  )}
                 </div>
 
                 {/* Rating Section */}
@@ -443,72 +429,110 @@ const RequestCar = () => {
                   >
                     <hr className="border-gray-300 my-4" />
 
-                    <h2 className="text-center text-lg text-gray-700 mb-2 font-bold tracking-tighter italic">
-                      How was your experience?
-                    </h2>
-                    <div className="flex justify-center space-x-1">
-                      {[...Array(5)]?.map((_, starIndex) => {
-                        const fullValue = starIndex + 1;
-                        const halfValue = starIndex + 0.5;
-
-                        return (
-                          <div key={starIndex} className="relative w-6 h-6">
-                            {/* Left Half */}
-                            <div
-                              className="absolute left-0 top-0 w-1/2 h-full z-10 cursor-pointer"
-                              onMouseEnter={() =>
-                                handleMouseEnter(starIndex, true)
-                              }
-                              onClick={() => handleStarClick(starIndex, true)}
-                            ></div>
-
-                            {/* Right Half */}
-                            <div
-                              className="absolute right-0 top-0 w-1/2 h-full z-10 cursor-pointer"
-                              onMouseEnter={() =>
-                                handleMouseEnter(starIndex, false)
-                              }
-                              onClick={() => handleStarClick(starIndex, false)}
-                            ></div>
-
-                            {/* Icon Layer */}
-                            <div className="z-0 flex justify-center items-center w-full h-full">
-                              {hoveredStars >= fullValue ? (
-                                <BsStarFill className="text-blue-600 w-5 h-5" />
-                              ) : hoveredStars >= halfValue ? (
-                                <BsStarHalf className="text-blue-600 w-5 h-5" />
-                              ) : (
-                                <BsStar className="text-primary w-5 h-5" />
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="mx-5">
-                      <textarea
-                        className="mt-4 w-full p-2 border border-gray-300 rounded"
-                        placeholder="Leave a comment (optional)"
-                        rows={3}
-                        disabled={submitted}
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                      ></textarea>
-                    </div>
-                    <div className="flex mt-4 justify-center">
-                      <button
-                        type="button"
-                        onClick={(e) => handleSubmitRating(e)}
-                        disabled={submitted}
-                        className={`${
-                          submitted
-                            ? "bg-blue-600/20 cursor-not-allowed"
-                            : "bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800"
-                        } transition-colors text-white px-3 py-2 w-[95%] font-semibold shadow-md tracking-tight rounded`}
+                    {vehicleData?.surveySubmitted ? (
+                      <div
+                        className="flex flex-col items-center justify-center mt-6 px-4 py-8 rounded shadow-inner transition-all duration-500 bg-opacity-80"
+                        style={{
+                          background:
+                            "radial-gradient(circle at center, #E2E8F0, #CBD5E1)",
+                        }}
                       >
-                        {submitted ? "Submitted" : "Submit Rating"}
-                      </button>
-                    </div>
+                        <div
+                          className="w-16 h-16 mb-3 rounded-full p-2 flex items-center justify-center border border-orange-500 shadow-md"
+                          style={{
+                            background:
+                              "linear-gradient(135deg, #ff9800, #ef6c00)", // vibrant orange gradient
+                          }}
+                        >
+                          <IoCheckmarkOutline className="text-white w-10 h-10" />
+                        </div>{" "}
+                        <h3 className="text-lg font-semibold text-slate-700 text-center tracking-tight leading-5">
+                          Thank you for your feedback
+                          {vehicleData?.firstName
+                            ? `, ${vehicleData.firstName}`
+                            : ""}
+                          !
+                        </h3>
+                        <p className="text-slate-600 text-sm text-center mt-1">
+                          We truly appreciate your rating and look forward to
+                          serving you again.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <h2 className="text-center text-lg text-gray-700 mb-2 font-bold tracking-tighter italic">
+                          How was your experience?
+                        </h2>
+                        <div className="flex justify-center space-x-1">
+                          {[...Array(5)]?.map((_, starIndex) => {
+                            const fullValue = starIndex + 1;
+                            const halfValue = starIndex + 0.5;
+
+                            return (
+                              <div key={starIndex} className="relative w-6 h-6">
+                                {/* Left Half */}
+                                <div
+                                  className="absolute left-0 top-0 w-1/2 h-full z-10 cursor-pointer"
+                                  onMouseEnter={() =>
+                                    handleMouseEnter(starIndex, true)
+                                  }
+                                  onClick={() =>
+                                    handleStarClick(starIndex, true)
+                                  }
+                                ></div>
+
+                                {/* Right Half */}
+                                <div
+                                  className="absolute right-0 top-0 w-1/2 h-full z-10 cursor-pointer"
+                                  onMouseEnter={() =>
+                                    handleMouseEnter(starIndex, false)
+                                  }
+                                  onClick={() =>
+                                    handleStarClick(starIndex, false)
+                                  }
+                                ></div>
+
+                                {/* Icon Layer */}
+                                <div className="z-0 flex justify-center items-center w-full h-full">
+                                  {hoveredStars >= fullValue ? (
+                                    <BsStarFill className="text-blue-600 w-5 h-5" />
+                                  ) : hoveredStars >= halfValue ? (
+                                    <BsStarHalf className="text-blue-600 w-5 h-5" />
+                                  ) : (
+                                    <BsStar className="text-primary w-5 h-5" />
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="mx-5">
+                          <textarea
+                            className="mt-4 w-full p-2 border border-gray-300 rounded"
+                            placeholder="Leave a comment (optional)"
+                            rows={3}
+                            disabled={submitted}
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                          ></textarea>
+                        </div>
+
+                        <div className="flex mt-4 justify-center">
+                          <button
+                            type="button"
+                            onClick={(e) => handleSubmitRating(e)}
+                            disabled={submitted}
+                            className={`${
+                              submitted
+                                ? "bg-blue-600/20 cursor-not-allowed"
+                                : "bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800"
+                            } transition-colors text-white px-3 py-2 w-[95%] font-semibold shadow-md tracking-tight rounded`}
+                          >
+                            Submit Rating
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </>

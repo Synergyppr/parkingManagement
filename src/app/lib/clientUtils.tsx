@@ -62,3 +62,21 @@ export const formatDateTimePicker = (dateTime: string) => {
   const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`;
   return formattedDate;
 };
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+export function formatPhoneNumber(value: string): string {
+  const rawValue = value.replace(/\D/g, "");
+
+  if (rawValue.length <= 3) {
+    return rawValue;
+  } else if (rawValue.length <= 6) {
+    return `(${rawValue.slice(0, 3)}) ${rawValue.slice(3)}`;
+  } else {
+    return `(${rawValue.slice(0, 3)}) ${rawValue.slice(3, 6)}-${rawValue.slice(
+      6,
+      10
+    )}`;
+  }
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////

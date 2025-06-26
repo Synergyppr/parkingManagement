@@ -6,5 +6,6 @@ export async function POST(req: Request) {
   const data = await req.json();
 
   const response = await PostContentData("Login", data);
+
   return NextResponse.json(response);
 }

@@ -1,82 +1,68 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import Swal from "sweetalert2";
 import {
   Ticket,
   TicketResponseData,
+  TicketDetails,
   CarBrand,
   DropdownOption,
 } from "@/app/types";
 import useAuthRedirect from "../lib/loginHook";
+import { useProperty } from "../context/PropertyContext";
 import {
   carParts,
   findLinkedGroup,
   generateLabelsMap,
 } from "../lib/carPartsLegend";
-import { formatDate } from "../lib/clientUtils";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
 import TabNavigation from "@/app/components/TabNavigation";
 import ReceiveForm from "@/app/components/ReceiveForm";
-import Modal from "../components/Modal";
-import Swal from "sweetalert2";
-import ButtonLoader from "../components/elements/ButtonLoader";
-import CarVector from "../components/CarVector";
-import Tabs from "../components/elements/Tabs";
+import TicketDetailsModal from "../components/TicketDetailsModal";
+import PinConfirmationModal from "../components/PinConfirmationModal";
 import ValetTicketList from "../components/ValetTicketList";
-// import Log from "../components/Log";
+import PageLoader from "../components/elements/PageLoader";
 
 // ** DASHBOARD PAGE **
-
 export default function HomePage() {
-  const [form, setForm] = useState<Partial<Ticket>>({});
+  const { propertyId, latitude, longitude } = useProperty();
+  const saveClickedRef = useRef(false);
+  const shouldBypassUnloadPromptRef = useRef(false);
+  const [form, setForm] = useState<Partial<Ticket>>({}); // Create Valet Ticket Form
   const [initialForm, setInitialForm] = useState<Partial<Ticket>>({});
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(true);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<string>("received");
-  const [detailsActiveTab, setDetailsActiveTab] = useState<string>("Details");
   const [vehicles, setVehicles] = useState<Ticket[]>([]); // Valet Tickets in status "parked" and "requested"
   const [readyVehicles, setReadyVehicles] = useState<Ticket[]>([]); // Valet Tickets in status "ready"
+  const [activeTab, setActiveTab] = useState<string>("received"); // Received, Parked, Requested, Ready
   const [carBrands, setCarBrands] = useState<CarBrand[]>([]);
   const [vehicleTypes, setVehicleTypes] = useState<DropdownOption[]>([]);
   const [vehicleColors, setVehicleColors] = useState<DropdownOption[]>([]);
-  const [openModal, setOpenModal] = useState<boolean>(false);
-  const [pin, setPin] = useState<string>("");
-  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [nextStatus, setNextStatus] = useState<
     "" | "received" | "parked" | "requested" | "ready" | null
   >(null);
-  const [showPin, setShowPin] = useState<boolean>(false);
-  const [buttonLoader, setButtonLoader] = useState<boolean>(false);
-  const [transitionState, setTransitionState] = useState<string>("fade-in");
-  const [damagedParts, setDamagedParts] = useState<
-    { partName: string; description: string; carView: string }[]
-  >([]);
-  const [ticketDetails, setTicketDetails] = useState<{
-    ticketId: string;
-    createdDateTime: string;
-    patron?: {
-      firstName: string;
-      lastName: string;
-      phoneNumber?: string;
-    };
-    destination?: string;
-    vehicle?: {
-      brand?: string;
-      model?: string;
-      type?: string;
-      color?: string;
-      licensePlate?: string;
-    };
-    damagedParts?: { partName: string; description: string; carView: string }[];
-  } | null>(null);
-  const [ticketDetailsOpen, setTicketDetailsOpen] = useState<boolean>(false);
-  const [viewAllDamagedParts, setViewAllDamagedParts] =
-    useState<boolean>(false);
-
   const [noIncident, setNoIncident] = useState(false);
   const [incidentParts, setIncidentParts] = useState<string[]>([]);
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
-
+  const [damagedParts, setDamagedParts] = useState<
+    { partName: string; description: string; carView: string }[]
+  >([]);
+  const [pin, setPin] = useState<string>(""); // PIN to change status
+  const [showPin, setShowPin] = useState<boolean>(false);
+  const [showPinConfirmationModal, setShowPinConfirmationModal] =
+    useState<boolean>(false); // Show/Hide PIN Confirmation Modal
+  const [showTransactionModal, setShowTransactionModal] =
+    useState<boolean>(false); // Show/Hide Transaction Modal
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [detailsActiveTab, setDetailsActiveTab] = useState<string>("Details"); // Ticket Modal Tabs - Details, Damages, Log
+  const [showTicketDetailsModal, setShowTicketDetailsModal] =
+    useState<boolean>(false);
+  const [viewAllDamagedParts, setViewAllDamagedParts] =
+    useState<boolean>(false); // Show/Hide text descriptions of damaged parts
+  const [ticketDetails, setTicketDetails] = useState<TicketDetails | null>(
+    null
+  );
+  const [, setHasUnsavedChanges] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [buttonLoader, setButtonLoader] = useState<boolean>(false);
+  const [transitionState, setTransitionState] = useState<string>("fade-in");
   const frontViewLabelsMap = generateLabelsMap(carParts.frontViewCar);
   const rearViewLabelsMap = generateLabelsMap(carParts.rearViewCar);
   const passengerViewLabelsMap = generateLabelsMap(carParts.passengerViewCar); // Right-Side View
@@ -85,36 +71,139 @@ export default function HomePage() {
   // Get unread ticketIds for current tab
   const unreadTicketIds =
     vehicles?.filter((msg) => activeTab === msg?.status && !msg?.isRead) || [];
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const unreadRequestedTickets =
     vehicles?.filter((msg) => msg?.status === "requested" && !msg?.isRead) ||
     [];
+
+  const formLicensePlate = ticketDetails?.vehicle?.licensePlate || "";
 
   useAuthRedirect(); // will redirect if not logged in
 
   const fetchData = async () => {
     // GetValetTicketsByPropertyId
-    const res = await fetch("/api/getTicket", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        propertyId: "A7E348D3-8DFB-4F71-8BC5-042BA75D53C7",
-      }),
-    });
-    const data = await res.json();
-    const result: TicketResponseData = data?.data;
+    if (!propertyId) {
+      // console.warn("No propertyId found, cannot fetch tickets.");
+      return;
+    }
+    try {
+      const res = await fetch("/api/getTicket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          propertyId,
+        }),
+      });
+      const data = await res.json();
+      const result: TicketResponseData = data?.data;
 
-    // console.log("Get Valet Tickets Fetched data:", result);
-    setVehicles(result?.tickets);
-    setReadyVehicles(result?.readyTickets || []);
-    setCarBrands(result?.carBrands);
-    setVehicleTypes(result?.vehicleTypes);
-    setVehicleColors(result?.vehicleColors);
-    setLoading(false);
+      // console.log("Get Valet Tickets Fetched data:", result);
+      setVehicles(result?.tickets);
+      setReadyVehicles(result?.readyTickets || []);
+      setCarBrands(result?.carBrands);
+      setVehicleTypes(result?.vehicleTypes);
+      setVehicleColors(result?.vehicleColors);
+      setLoading(false);
+    } catch (error) {
+      console.log("Failed to fetch valet tickets", error);
+      Swal.fire({
+        title: "Error",
+        text: (error as string) || "Failed to fetch valet tickets",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+    }
   };
 
   useEffect(() => {
+    // Update page title when unread count changes
+    const count = unreadRequestedTickets?.length;
+    document.title =
+      count > 0
+        ? `Valet Parking App (${count > 9 ? "9+" : count})`
+        : "Valet Parking App";
+  }, [unreadRequestedTickets]);
+
+  useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propertyId]);
+
+  // Utility function to remove ticketNumber from an object
+  const omitTicketNumber = (formObj: typeof form) => {
+    const newForm = { ...formObj };
+    delete newForm.ticketNumber;
+    return newForm;
+  };
+
+  const isFormChanged = () => {
+    return (
+      JSON.stringify(omitTicketNumber(form)) !==
+      JSON.stringify(omitTicketNumber(initialForm))
+    );
+  };
+
+  const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+    if (saveClickedRef.current || shouldBypassUnloadPromptRef.current) {
+      saveClickedRef.current = false;
+      shouldBypassUnloadPromptRef.current = false;
+      return;
+    }
+
+    if (isFormChanged()) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleTabChange = (newTab: string) => {
+    if (!isFormChanged()) {
+      setActiveTab(newTab);
+      return;
+    }
+
+    Swal.fire({
+      title: "Discard Changes?",
+      text: "You have unsaved changes. Are you sure you want to switch tabs and lose them?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, discard",
+      cancelButtonText: "Cancel",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setForm(initialForm); // reset the form
+        setActiveTab(newTab);
+      }
+    });
+  };
+
+  const handleStatusChange = (
+    id: string,
+    status: "" | "received" | "parked" | "requested" | "ready" | null
+  ) => {
+    setSelectedTicketId(id);
+    setNextStatus(status);
+    setTimeout(() => {
+      if (activeTab === "requested") {
+        setShowTransactionModal(true);
+        return;
+      } else setShowPinConfirmationModal(true);
+    }, 500);
+  };
+
+  const closePinModal = () => {
+    setShowPinConfirmationModal(false);
+    setPin("");
+  };
 
   const handleFetchTicketDetails = async (id: string) => {
     if (!id) return;
@@ -157,7 +246,7 @@ export default function HomePage() {
             const viewParts = viewMap[carView];
 
             if (!viewParts) {
-              console.warn(`Unknown carView: ${carView}`);
+              // console.warn(`Unknown carView: ${carView}`);
               return;
             }
 
@@ -186,7 +275,7 @@ export default function HomePage() {
         setIncidentParts(uniqueParts);
         setDescriptions(newDescriptions);
         setDamagedParts(damaged);
-        setTicketDetailsOpen(true);
+        setShowTicketDetailsModal(true);
       } else {
         Swal.fire({
           title: "Error",
@@ -206,63 +295,7 @@ export default function HomePage() {
     }
   };
 
-  const isFormChanged = () => {
-    return JSON.stringify(form) !== JSON.stringify(initialForm);
-  };
-
-  const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-    if (isFormChanged()) {
-      e.preventDefault();
-      e.returnValue = ""; // Required for Chrome
-    }
-  };
-
-  useEffect(() => {
-    if (!hasUnsavedChanges) return;
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, initialForm, hasUnsavedChanges]);
-
-  const handleTabChange = (newTab: string) => {
-    if (!isFormChanged()) {
-      setActiveTab(newTab);
-      return;
-    }
-
-    Swal.fire({
-      title: "Discard Changes?",
-      text: "You have unsaved changes. Are you sure you want to switch tabs and lose them?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Yes, discard",
-      cancelButtonText: "Cancel",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setForm(initialForm); // reset the form
-        setActiveTab(newTab);
-      }
-    });
-  };
-
-  const handleStatusChange = (
-    id: string,
-    status: "" | "received" | "parked" | "requested" | "ready" | null
-  ) => {
-    setSelectedTicketId(id);
-    setNextStatus(status);
-    setOpenModal(true);
-  };
-
-  const closeModal = () => {
-    setOpenModal(false);
-    setPin("");
-  };
-
-  const submitPinAndChangeStatus = async () => {
+  const handlePinSubmit = async () => {
     if (!selectedTicketId || !nextStatus || !pin) return;
 
     setButtonLoader(true);
@@ -272,6 +305,8 @@ export default function HomePage() {
       status: nextStatus,
       isUserUpdate: false,
       pin: pin,
+      latitude,
+      longitude,
     };
 
     try {
@@ -296,8 +331,6 @@ export default function HomePage() {
             return vehicle;
           }),
         ]);
-
-        console.log("Status updated successfully");
 
         await fetchData(); // refresh the data from the API
 
@@ -327,7 +360,7 @@ export default function HomePage() {
         }, 700);
       }
 
-      closeModal();
+      closePinModal();
     } catch (error) {
       console.error("Failed to update status", error);
       Swal.fire({
@@ -339,14 +372,14 @@ export default function HomePage() {
     } finally {
       setButtonLoader(false);
       setPin("");
-      setOpenModal(false);
+      setShowPinConfirmationModal(false);
       setSelectedTicketId(null);
       setNextStatus(null);
     }
   };
 
   const handleCloseTicketDetails = () => {
-    setTicketDetailsOpen(false);
+    setShowTicketDetailsModal(false);
     setTicketDetails(null);
     setViewAllDamagedParts(false);
     setIncidentParts([]);
@@ -376,7 +409,7 @@ export default function HomePage() {
         id: ticket?.notificationId,
       };
 
-      if (!ticket?.isRead) {
+      if (action === "view") {
         const res = await fetch("/api/notification/read", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -388,9 +421,17 @@ export default function HomePage() {
         if (data?.status === "200") {
           fetchData(); // Refresh the data from the API
         } else {
+          Swal.fire({
+            title: "Error",
+            text: data?.message || "Failed to mark ticket as read",
+            icon: "error",
+            confirmButtonText: "OK",
+          });
+          console.error("Error marking ticket as read:", data);
+          return;
         }
         return;
-      } else if (ticket?.isRead && action === "changeStatus") {
+      } else if (action === "changeStatus") {
         const res = await fetch("/api/notification/unread", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -434,7 +475,7 @@ export default function HomePage() {
 
   return (
     <section
-      className="w-full overflow-y-auto min-h-[calc(100vh-86px)] relative z-0"
+      className="overflow-y-auto overflow-x-hidden min-h-[calc(100vh-86px)] relative z-0"
       style={{
         background:
           "radial-gradient(circle at center, #ffffff 10%, #e0f2ff 90%)",
@@ -447,8 +488,9 @@ export default function HomePage() {
         unreadTicketIds={unreadRequestedTickets}
       />
 
-      <div className="w-full max-w-screen-xl mx-auto mt-2 px-2">
-        <div>
+      <div className="w-full max-w-screen-xl mx-auto mt-2">
+        <div className="px-2 md:px-4">
+          {/* Received Tab */}
           {activeTab === "received" && (
             <ReceiveForm
               carBrands={carBrands}
@@ -459,11 +501,14 @@ export default function HomePage() {
               setForm={setForm}
               initialForm={initialForm}
               setInitialForm={setInitialForm}
+              isFormChanged={isFormChanged}
+              shouldBypassUnloadPromptRef={shouldBypassUnloadPromptRef}
             />
           )}
+          {/* Parked, Requested and Ready Tabs */}
           {loading && activeTab !== "received" ? (
             <div className="flex items-center justify-center h-full">
-              <p className="text-gray-500 font-semibold">Loading...</p>
+              <PageLoader />
             </div>
           ) : (
             activeTab !== "received" && (
@@ -475,222 +520,55 @@ export default function HomePage() {
                 handleFetchTicketDetails={handleFetchTicketDetails}
                 handleStatusChange={handleStatusChange}
                 markAsRead={markAsRead}
+                showTransactionModal={showTransactionModal}
+                setShowTransactionModal={setShowTransactionModal}
+                selectedTicketId={selectedTicketId}
+                fetchData={fetchData}
               />
             )
           )}
         </div>
       </div>
 
-      <Modal isOpen={openModal} onClose={closeModal}>
-        <div className="space-y-4 text-gray-800">
-          <h4 className="tracking-tight leading-5">
-            Please enter your PIN to confirm the status change:
-          </h4>
+      {/* Modal for pin confirmation/authentication */}
+      <PinConfirmationModal
+        isOpen={showPinConfirmationModal}
+        onClose={() => setShowPinConfirmationModal(false)}
+        pin={pin}
+        setPin={setPin}
+        showPin={showPin}
+        setShowPin={setShowPin}
+        buttonLoader={buttonLoader}
+        onSubmit={handlePinSubmit}
+      />
 
-          <div className="relative w-full">
-            <input
-              type={showPin ? "text" : "password"}
-              name="pin"
-              placeholder="Enter PIN"
-              value={pin}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (/^\d{0,4}$/.test(val)) {
-                  setPin(val);
-                }
-              }}
-              className="border-b border-gray-500 px-2 py-2 pr-10 text-sm placeholder-gray-400 tracking-tight w-full"
-              maxLength={4}
-              inputMode="numeric"
-              pattern="\d*"
-              required
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowPin((prev) => !prev)}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:bg-opacity-50 focus:outline-none cursor-pointer"
-            >
-              {showPin ? <FaEyeSlash /> : <FaEye />}
-            </button>
-          </div>
-
-          <div className="flex">
-            <button
-              disabled={buttonLoader || !pin}
-              onClick={submitPinAndChangeStatus}
-              className={` ${
-                !pin ? "bg-blue-500/20" : "bg-blue-500"
-              } w-full text-white px-4 py-2 rounded hover:bg-blue-600 text-sm transition-colors duration-200`}
-            >
-              {buttonLoader ? <ButtonLoader /> : "Confirm"}
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal isOpen={ticketDetailsOpen} onClose={handleCloseTicketDetails}>
-        <div>
-          <div className="absolute top-6 left-6 text-lg font-semibold text-gray-800 mb-4 min-w-[272px] md:min-w-[87.5%]">
-            <Tabs
-              isSmallScreen={false}
-              tabs={["Details", "Damages", "Log"]}
-              activeTab={detailsActiveTab}
-              setActiveTab={setDetailsActiveTab}
-              setTransitionState={setTransitionState}
-            />
-          </div>
-          <div
-            className={`transition-opacity duration-300 ${
-              transitionState === "fade-out" ? "opacity-0" : "opacity-100"
-            }  border-b-1 border-x-1 border-solid border-gray-300`}
-          >
-            {detailsActiveTab === "Details" && (
-              <div className="space-y-3 text-sm md:text-base pt-10 p-4 text-gray-800">
-                <h4 className="text-lg font-semibold text-blue-500 tracking-tight mb-2">
-                  Guest Information
-                </h4>
-                <p className="mb-2">
-                  <strong>Name:</strong>{" "}
-                  {ticketDetails?.patron?.firstName +
-                    " " +
-                    ticketDetails?.patron?.lastName}
-                </p>
-                {ticketDetails?.destination && (
-                  <p className="mb-2">
-                    <strong>Destination:</strong> {ticketDetails?.destination}
-                  </p>
-                )}
-                <p className="mb-2">
-                  <strong>Phone Number:</strong>{" "}
-                  {ticketDetails?.patron?.phoneNumber || ""}
-                </p>
-                <p className="mb-2">
-                  <strong>Created On:</strong>{" "}
-                  {ticketDetails?.createdDateTime
-                    ? formatDate(ticketDetails?.createdDateTime)
-                    : ""}
-                </p>
-                <h4 className="text-lg font-semibold text-blue-500 tracking-tight mb-2">
-                  Vehicle Information
-                </h4>
-                <p className="mb-2">
-                  <strong className="tracking-tight">Brand:</strong>{" "}
-                  {ticketDetails?.vehicle?.brand || ""}
-                </p>
-                <p className="mb-2">
-                  <strong className="tracking-tight">Model:</strong>{" "}
-                  {ticketDetails?.vehicle?.model || ""}
-                </p>
-                <p className="mb-2">
-                  <strong className="tracking-tight">Type:</strong>{" "}
-                  {ticketDetails?.vehicle?.type || ""}
-                </p>
-                <p className="mb-2">
-                  <strong className="tracking-tight">Color:</strong>{" "}
-                  {ticketDetails?.vehicle?.color || ""}
-                </p>
-                {ticketDetails?.vehicle?.licensePlate && (
-                  <p className="mb-2">
-                    <strong className="tracking-tight">License Plate:</strong>{" "}
-                    {ticketDetails?.vehicle?.licensePlate}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {detailsActiveTab === "Damages" && (
-              <div className="relative">
-                <CarVector
-                  noIncident={noIncident}
-                  setNoIncident={setNoIncident}
-                  incidentParts={incidentParts}
-                  setIncidentParts={setIncidentParts}
-                  descriptions={descriptions}
-                  setDescriptions={setDescriptions}
-                  licensePlate={form?.licensePlate ?? ""}
-                  findLinkedGroup={findLinkedGroup}
-                  frontViewLabelsMap={frontViewLabelsMap}
-                  rearViewLabelsMap={rearViewLabelsMap}
-                  passengerViewLabelsMap={passengerViewLabelsMap}
-                  driverViewLabelsMap={driverViewLabelsMap}
-                  hideLabels={true}
-                  handleBeforeUnload={handleBeforeUnload}
-                  hasUnsavedChanges={hasUnsavedChanges}
-                  setHasUnsavedChanges={setHasUnsavedChanges}
-                />
-
-                {damagedParts?.length > 0 ? (
-                  <div className="text-center my-3">
-                    <button
-                      className="text-blue-500 underline text-sm cursor-pointer"
-                      onClick={() =>
-                        setViewAllDamagedParts(!viewAllDamagedParts)
-                      }
-                    >
-                      {viewAllDamagedParts
-                        ? "Hide Description"
-                        : "View Full Description"}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="text-center mb-2 mt-1">
-                    <p className="text-gray-600 italic">No damages reported.</p>
-                  </div>
-                )}
-
-                {/* Overlay */}
-                {viewAllDamagedParts && (
-                  <div className="absolute inset-0 bg-white/90 z-20 p-3 rounded-md shadow-lg mt-[26px] flex flex-col h-[96%]">
-                    <h4 className="text-lg font-semibold text-blue-600 mb-3 text-center tracking-tight">
-                      Damaged Parts
-                    </h4>
-
-                    <div className="overflow-y-auto flex-1 pr-1">
-                      {damagedParts?.length > 0 ? (
-                        <ul className="list-disc pl-6 space-y-2 text-gray-800 text-sm custom-marker-orange">
-                          {damagedParts.map((part, index) => (
-                            <li key={index}>
-                              {part.partName.replace(/([A-Z])/g, " $1").trim()}
-                              {part.description && (
-                                <span className="text-gray-600 italic ml-1">
-                                  ({part.description})
-                                </span>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-gray-600 italic text-center">
-                          No damages reported.
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="text-center mt-4">
-                      <button
-                        onClick={() => setViewAllDamagedParts(false)}
-                        className="bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded cursor-pointer"
-                      >
-                        Close
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* {detailsActiveTab === "Log" && <Log logs={null} />} */}
-            {detailsActiveTab === "Log" && (
-              <div className="h-[300px] flex flex-col items-center text-center text-gray-600">
-                <div className="h-full w-full m-auto mt-[50px]">
-                  No log available.
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </Modal>
+      {/* Ticket Details Modal */}
+      <TicketDetailsModal
+        isOpen={showTicketDetailsModal}
+        onClose={handleCloseTicketDetails}
+        ticketDetails={ticketDetails}
+        detailsActiveTab={detailsActiveTab}
+        setDetailsActiveTab={setDetailsActiveTab}
+        transitionState={transitionState}
+        setTransitionState={setTransitionState}
+        noIncident={noIncident}
+        setNoIncident={setNoIncident}
+        incidentParts={incidentParts}
+        setIncidentParts={setIncidentParts}
+        descriptions={descriptions}
+        setDescriptions={setDescriptions}
+        damagedParts={damagedParts}
+        viewAllDamagedParts={viewAllDamagedParts}
+        setViewAllDamagedParts={setViewAllDamagedParts}
+        formLicensePlate={formLicensePlate}
+        findLinkedGroup={findLinkedGroup}
+        frontViewLabelsMap={frontViewLabelsMap}
+        rearViewLabelsMap={rearViewLabelsMap}
+        passengerViewLabelsMap={passengerViewLabelsMap}
+        driverViewLabelsMap={driverViewLabelsMap}
+        setHasUnsavedChanges={setHasUnsavedChanges}
+        saveClickedRef={saveClickedRef}
+      />
     </section>
   );
 }
