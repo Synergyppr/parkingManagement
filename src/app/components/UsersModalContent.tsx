@@ -73,7 +73,6 @@ export default function UsersModalContent({
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           setTransitionState={setTransitionState}
-          sessionKey="users-tab"
         />
 
         {users?.filter((user) =>
