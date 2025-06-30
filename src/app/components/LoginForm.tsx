@@ -80,6 +80,8 @@ export default function LoginForm() {
         longitude: Number(longitude),
       });
 
+      // console.log("Login result:", result);
+
       if (result?.status != 200) {
         setLoading(false);
         Swal.fire({
@@ -96,6 +98,7 @@ export default function LoginForm() {
         throw new Error("Unexpected error occurred.");
       }
 
+      localStorage.setItem("propertyName", result?.data?.properties?.[0]?.name);
       localStorage.setItem("isLoggedIn", "true");
       if (result?.data?.properties) {
         const newPropertyId = result.data.properties?.[0]?.id;

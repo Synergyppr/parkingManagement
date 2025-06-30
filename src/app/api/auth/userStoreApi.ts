@@ -36,6 +36,8 @@ export async function validateUser({
       body: JSON.stringify(loginForm),
     });
 
+    // console.log("Login response:", response);
+
     // Only succeed if response is 200
     if (response.status === 200) {
       const data = await response.json();

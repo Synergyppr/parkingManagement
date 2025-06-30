@@ -55,6 +55,7 @@ export default function ReceiveForm({
 }: ReceiveFormProps) {
   const { propertyId, latitude, longitude } = useProperty();
   const saveClickedRef = useRef(false);
+  const [propertyName, setPropertyName] = useState<string>("");
   const [step, setStep] = useState<number>(1);
   const [models, setModels] = useState<DropdownOption[]>([]);
   const [loader, setLoader] = useState(false);
@@ -67,6 +68,8 @@ export default function ReceiveForm({
 
   useEffect(() => {
     generateTicketNumber();
+
+    setPropertyName(localStorage.getItem("propertyName") || "");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -397,7 +400,8 @@ export default function ReceiveForm({
               </h2>
               {step < 3 && (
                 <p className="text-xs font-light text-center text-gray-700 mb-2">
-                  Please complete all required fields below.
+                  Please complete all required fields below to park in{" "}
+                  {propertyName}.
                 </p>
               )}
               {step === 3 && (
