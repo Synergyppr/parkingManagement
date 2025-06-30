@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { FaEye, FaEyeSlash, FaUser } from "react-icons/fa";
-import { formatDateTimePicker } from "../lib/clientUtils";
+import { formatDatePicker } from "../lib/clientUtils";
 import ButtonLoader from "./elements/ButtonLoader";
 
 interface UserformDataProps {
@@ -22,8 +22,7 @@ export interface UserformData {
   firstName: string;
   lastName: string;
   gender: string;
-  identifier: string;
-  dateOfBirthDateTime: string;
+  dateOfBirth: string;
   isActive: boolean;
 }
 
@@ -41,24 +40,22 @@ const UserformData = ({
     firstName: initialData?.firstName || "",
     lastName: initialData?.lastName || "",
     gender: initialData?.gender || "",
-    identifier: initialData?.identifier || "",
-    dateOfBirthDateTime: initialData?.dateOfBirthDateTime || "",
+    dateOfBirth: initialData?.dateOfBirth || "",
     isActive: initialData?.isActive ?? true,
   });
   const [showPin, setShowPin] = useState(false);
   const [buttonLoader, setButtonLoader] = useState(false);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
 
   useEffect(() => {
-    // If dateOfBirthDateTime exists, format it to match the input type
-    if (initialData?.dateOfBirthDateTime) {
+    // If dateOfBirth exists, format it to match the input type
+    // console.log("Initial Data:", initialData);
+    if (initialData?.dateOfBirth) {
       setFormData((prev) => ({
         ...prev,
-        dateOfBirthDateTime: formatDateTimePicker(
-          initialData?.dateOfBirthDateTime as string
-        ),
+        dateOfBirth: formatDatePicker(initialData?.dateOfBirth as string),
       }));
     }
-    // console.log("Initial Data:", initialData);
   }, [initialData]);
 
   const handleChange = (
@@ -70,6 +67,7 @@ const UserformData = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // console.log("Submitting form with data:", formData);
 
     // Define the required fields for both creation and update
     const requiredFields: { [key: string]: string } = {
@@ -77,7 +75,7 @@ const UserformData = ({
       firstName: "First Name",
       lastName: "Last Name",
       gender: "Gender",
-      dateOfBirthDateTime: "Date of Birth",
+      dateOfBirth: "Date of Birth",
     };
 
     // If creating (no id), pin is also required
@@ -85,19 +83,24 @@ const UserformData = ({
       requiredFields["pin"] = "PIN";
     }
 
-    // Check for any empty fields
-    const missingFields = Object.entries(requiredFields).filter(
+    // Check for any empty required fields
+    const foundMissingFields = Object.entries(requiredFields).filter(
       ([key]) => !formData[key as keyof UserformData]
     );
 
-    if (missingFields.length > 0) {
-      const fieldNames = missingFields.map(([, label]) => label).join(", ");
+    if (foundMissingFields.length > 0) {
+      const missingKeys = foundMissingFields.map(([key]) => key);
+      setMissingFields(missingKeys);
       Swal.fire({
         icon: "warning",
         title: "Missing Fields",
-        text: `Please fill in the following required fields: ${fieldNames}`,
+        html: `<ul class="text-left">${foundMissingFields
+          .map(([, label]) => `<li>• ${label}</li>`)
+          .join("")}</ul>`,
       });
       return;
+    } else {
+      setMissingFields([]); // clear error highlights
     }
 
     setButtonLoader(true);
@@ -114,10 +117,11 @@ const UserformData = ({
       firstName: formData?.firstName?.trim(),
       lastName: formData?.lastName?.trim(),
       gender: formData?.gender,
-      identifier: formData?.identifier || "",
-      dateOfBirthDateTime: formData?.dateOfBirthDateTime,
+      dateOfBirth: formData?.dateOfBirth,
       isActive: formData?.isActive ?? true,
     };
+
+    // console.log("Submitting payload:", payload);
 
     try {
       const res = await fetch(endpoint, {
@@ -129,6 +133,8 @@ const UserformData = ({
       });
 
       const result = await res.json();
+
+      // console.log("Submission result:", result);
 
       if (result?.result?.status === "200") {
         setModalOpen(false);
@@ -169,7 +175,7 @@ const UserformData = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 text-sm text-gray-800">
+    <form className="space-y-4 text-sm text-gray-800">
       <div className="flex gap-2 text-blue-500 items-center">
         <FaUser className="w-5 h-5" />
         <h2 className="text-xl font-semibold tracking-tight relative top-[2px]">
@@ -184,7 +190,11 @@ const UserformData = ({
           placeholder="Username"
           value={formData?.userName}
           onChange={handleChange}
-          className="border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full"
+          className={`border-b px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full ${
+            missingFields.includes("userName")
+              ? "border-red-500"
+              : "border-gray-500"
+          }`}
           required
         />
       </div>
@@ -235,7 +245,11 @@ const UserformData = ({
           placeholder="First Name"
           value={formData.firstName}
           onChange={handleChange}
-          className="border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full"
+          className={`border-b px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full ${
+            missingFields.includes("firstName")
+              ? "border-red-500"
+              : "border-gray-500"
+          }`}
         />
       </div>
 
@@ -246,7 +260,11 @@ const UserformData = ({
           placeholder="Last Name"
           value={formData.lastName}
           onChange={handleChange}
-          className="border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full"
+          className={`border-b px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full ${
+            missingFields.includes("lastName")
+              ? "border-red-500"
+              : "border-gray-500"
+          }`}
         />
       </div>
 
@@ -256,7 +274,11 @@ const UserformData = ({
             name="role"
             value={formData.role}
             onChange={handleChange}
-            className="border-b border-gray-500 px-2 py-2 text-sm text-gray-800 placeholder-gray-400 w-full"
+            className={`border-b px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full ${
+              missingFields.includes("role")
+                ? "border-red-500"
+                : "border-gray-500"
+            }`}
           >
             <option value="">Select Role</option>
             <option value={1}>Admin</option>
@@ -268,44 +290,54 @@ const UserformData = ({
             name="gender"
             value={formData.gender}
             onChange={handleChange}
-            className="border-b border-gray-500 px-2 py-2 text-sm text-gray-800 placeholder-gray-400 w-full"
+            className={`border-b px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full ${
+              missingFields.includes("gender")
+                ? "border-red-500"
+                : "border-gray-500"
+            }`}
           >
             <option value="">Select Gender</option>
-            <option value="M">Male</option>
-            <option value="F">Female</option>
-            <option value="O">Other</option>
+            <option value="m">Male</option>
+            <option value="f">Female</option>
+            <option value="o">Other</option>
           </select>
         </div>
       </div>
 
-      <div>
-        <input
-          type="text"
-          name="pin"
-          placeholder="PIN (Reset)"
-          value={formData.pin}
-          onChange={handleChange}
-          className="border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full"
-        />
-      </div>
+      {formData?.id && (
+        <div>
+          <input
+            type="text"
+            name="pin"
+            placeholder="PIN (Reset)"
+            value={formData.pin}
+            onChange={handleChange}
+            className="border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full"
+          />
+        </div>
+      )}
 
-      <div className="flex justify-between gap-1 mb-0">
+      <div className="flex justify-between gap-1 mb-4">
         <div className="w-full">
           <input
-            type="datetime-local"
-            name="dateOfBirthDateTime"
-            value={formData.dateOfBirthDateTime}
+            type="date"
+            name="dateOfBirth"
+            value={formData.dateOfBirth}
             onChange={handleChange}
-            className="border-b border-gray-500 px-2 py-2 text-sm text-gray-800 placeholder-gray-400 w-full"
+            className={`border-b px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full ${
+              missingFields.includes("dateOfBirth")
+                ? "border-red-500"
+                : "border-gray-500"
+            }`}
           />
         </div>
 
         {formData?.id && (
-          <div className="w-full pt-3 px-0 relative bottom-6 md:bottom-4 gap-0 md:justify-end md:flex md:gap-1">
+          <div className="w-full px-0 relative gap-0 md:justify-end md:flex md:gap-1">
             <div className="tracking-tight text-[10px] md:text-sm text-gray-200 float-left md:float-none relative left-[-1px] md:left-0 md:top-2">
               {formData?.isActive ? "Active" : "Inactive"}
             </div>
-            <div className="">
+            <div className="float-right">
               <div
                 className="relative flex items-center justify-between w-14 h-8 cursor-pointer"
                 onClick={toggleIsActive}
@@ -328,21 +360,11 @@ const UserformData = ({
         )}
       </div>
 
-      {/* {formData?.id && (
-        <div className="w-full">
-          <p
-            className="text-blue-600 underline ml-1 relative bottom-1"
-            onClick={handleResetPin}
-          >
-            Reset PIN
-          </p>
-        </div>
-      )} */}
-
       <button
-        type="submit"
-        className={`w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${
-          formData?.id ? "mt-[-20px] md:mt-[2px]" : "mt-2"
+        type="button"
+        onClick={handleSubmit}
+        className={`cursor-pointer w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${
+          formData?.id ? "mt-[-20px] md:mt-[-12px]" : "mt-[-4px]"
         }`}
       >
         {buttonLoader ? (

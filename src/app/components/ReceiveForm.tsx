@@ -215,8 +215,8 @@ export default function ReceiveForm({
     }
 
     const sendForm = {
-      latitude,
-      longitude,
+      latitude: Number(latitude),
+      longitude: Number(longitude),
       propertyId: propertyId,
       firstName: form?.firstName,
       lastName: form?.lastName,
@@ -232,7 +232,7 @@ export default function ReceiveForm({
       damageStatus,
     };
 
-    // console.log("Submitting form:", sendForm);
+    console.log("Submitting form:", sendForm);
 
     // return; // Uncomment this line to prevent actual submission during development
 

@@ -62,29 +62,26 @@ export default function TicketDetailsModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <div>
-        <div className="absolute top-6 left-6 text-lg font-semibold text-gray-800 mb-4 min-w-full z-50">
-          <Tabs
-            isSmallScreen={false}
-            tabs={["Details", "Damages", "Log"]}
-            activeTab={detailsActiveTab}
-            setActiveTab={setDetailsActiveTab}
-            setTransitionState={setTransitionState}
-          />
-        </div>
+        <Tabs
+          isSmallScreen={false}
+          tabs={["Details", "Damages", "Log"]}
+          activeTab={detailsActiveTab}
+          setActiveTab={setDetailsActiveTab}
+          setTransitionState={setTransitionState}
+        />
 
         <div
           className={`transition-opacity duration-300 ${
             transitionState === "fade-out" ? "opacity-0" : "opacity-100"
-          } border-b-1 border-x-1 border-solid border-gray-300`}
+          } border-b-1 border-x-1 border-solid border-gray-30 bg-gradient-to-b to-amber-50/50 via-white`}
         >
           {detailsActiveTab === "Details" && (
-            <div className="space-y-4 text-sm md:text-base pt-10 px-4 pb-4 text-gray-800 bg-gradient-to-b to-amber-100 via-amber-100/50">
+            <div className="space-y-4 text-sm md:text-base pt-4 px-4 pb-4 text-gray-800 bg-gradient-to-b to-slate-200 via-slate-100/50">
               {/* Guest Info */}
               <div className="space-y-1">
                 <h4 className="text-lg font-semibold text-orange-500 tracking-tight mb-1 italic ml-[-2px]">
                   Guest Information
                 </h4>
-                {/* <hr className="border-t-[1px] border-slate-600/60 mb-2" /> */}
 
                 {ticketDetails?.patron && (
                   <>
@@ -127,7 +124,6 @@ export default function TicketDetailsModal({
                 <h4 className="text-lg font-semibold text-orange-500 tracking-tight mb-1 italic ml-[-2px]">
                   Vehicle Information
                 </h4>
-                {/* <hr className="border-t-[1px] border-slate-600/60 mb-2" /> */}
 
                 <p>
                   <strong className="tracking-tighter">Brand:</strong>{" "}
@@ -156,82 +152,90 @@ export default function TicketDetailsModal({
           )}
 
           {detailsActiveTab === "Damages" && (
-            <div className="relative bg-gradient-to-b to-amber-50/50 via-white">
-              <CarVector
-                noIncident={noIncident}
-                setNoIncident={
-                  setNoIncident as React.Dispatch<React.SetStateAction<boolean>>
-                }
-                incidentParts={incidentParts}
-                setIncidentParts={
-                  setIncidentParts as React.Dispatch<
-                    React.SetStateAction<string[]>
-                  >
-                }
-                descriptions={descriptions}
-                setDescriptions={
-                  setDescriptions as React.Dispatch<
-                    React.SetStateAction<Record<string, string>>
-                  >
-                }
-                licensePlate={formLicensePlate}
-                findLinkedGroup={findLinkedGroup}
-                frontViewLabelsMap={frontViewLabelsMap}
-                rearViewLabelsMap={rearViewLabelsMap}
-                passengerViewLabelsMap={passengerViewLabelsMap}
-                driverViewLabelsMap={driverViewLabelsMap}
-                hideLabels={true}
-                setHasUnsavedChanges={(value) =>
-                  setHasUnsavedChanges(value as boolean)
-                }
-                saveClickedRef={saveClickedRef}
-              />
+            <div>
+              <div className="relative mb-6">
+                <CarVector
+                  noIncident={noIncident}
+                  setNoIncident={
+                    setNoIncident as React.Dispatch<
+                      React.SetStateAction<boolean>
+                    >
+                  }
+                  incidentParts={incidentParts}
+                  setIncidentParts={
+                    setIncidentParts as React.Dispatch<
+                      React.SetStateAction<string[]>
+                    >
+                  }
+                  descriptions={descriptions}
+                  setDescriptions={
+                    setDescriptions as React.Dispatch<
+                      React.SetStateAction<Record<string, string>>
+                    >
+                  }
+                  licensePlate={formLicensePlate}
+                  findLinkedGroup={findLinkedGroup}
+                  frontViewLabelsMap={frontViewLabelsMap}
+                  rearViewLabelsMap={rearViewLabelsMap}
+                  passengerViewLabelsMap={passengerViewLabelsMap}
+                  driverViewLabelsMap={driverViewLabelsMap}
+                  hideLabels={true}
+                  setHasUnsavedChanges={(value) =>
+                    setHasUnsavedChanges(value as boolean)
+                  }
+                  saveClickedRef={saveClickedRef}
+                />
 
+                {viewAllDamagedParts && (
+                  <div className="absolute inset-0 bg-white/90 z-20 p-3 rounded-md shadow-lg flex flex-col h-[115%]">
+                    <h4 className="text-lg font-semibold text-blue-600 mb-1 text-center tracking-tighter">
+                      Incident Report
+                    </h4>
+                    <div className="overflow-y-auto flex-1 pr-2 space-y-2 text-gray-800">
+                      {damagedParts?.map((part, index) => (
+                        <div
+                          key={index}
+                          className="border border-gray-300 rounded p-2 bg-white"
+                        >
+                          <p className="text-sm font-semibold">
+                            {/* {part?.carView?.replace(/View$/, "")}{" "} */}
+                            <span className="font-normal">
+                              {part?.partName
+                                ?.replace(/([A-Z])/g, " $1")
+                                .trim()}
+                            </span>
+                          </p>
+                          <p className="text-sm text-orange-500">
+                            {part?.description}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-center pt-4">
+                      <button
+                        onClick={() => setViewAllDamagedParts(false)}
+                        className="cursor-pointer text-white bg-blue-500 px-4 py-1 rounded hover:bg-blue-600 text-sm transition-colors duration-200"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
               {damagedParts?.length > 0 && (
-                <div className="text-center my-3">
+                <div
+                  onClick={() => setViewAllDamagedParts(!viewAllDamagedParts)}
+                  className="text-center bg-blue-500 text-xs py-1 tracking-tight hover:bg-blue-600 cursor-pointer mt-4"
+                >
                   <button
-                    className="text-blue-500 underline text-sm cursor-pointer"
-                    onClick={() => setViewAllDamagedParts(!viewAllDamagedParts)}
+                    type="button"
+                    className="text-white text-sm cursor-pointer"
                   >
                     {viewAllDamagedParts
                       ? "Hide Description"
                       : "View Full Description"}
                   </button>
-                </div>
-              )}
-
-              {viewAllDamagedParts && (
-                <div className="absolute inset-0 bg-white/90 z-20 p-3 rounded-md shadow-lg mt-[26px] flex flex-col h-[96%]">
-                  <h4 className="text-lg font-semibold text-blue-600 mb-1 text-center tracking-tighter">
-                    Incident Report
-                  </h4>
-                  <div className="overflow-y-auto flex-1 pr-2 space-y-2 text-gray-800">
-                    {damagedParts?.map((part, index) => (
-                      <div
-                        key={index}
-                        className="border border-gray-300 rounded p-2 bg-white"
-                      >
-                        <p className="text-sm font-semibold">
-                          {/* {part?.carView?.replace(/View$/, "")}{" "} */}
-                          <span className="font-normal">
-                            {part?.partName?.replace(/([A-Z])/g, " $1").trim()}
-                          </span>
-                        </p>
-                        <p className="text-sm text-orange-500">
-                          {part?.description}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex justify-center pt-4">
-                    <button
-                      onClick={() => setViewAllDamagedParts(false)}
-                      className="cursor-pointer text-white bg-blue-500 px-4 py-1 rounded hover:bg-blue-600 text-sm transition-colors duration-200"
-                    >
-                      Close
-                    </button>
-                  </div>
                 </div>
               )}
             </div>

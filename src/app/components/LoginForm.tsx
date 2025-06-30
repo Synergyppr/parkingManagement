@@ -10,7 +10,7 @@ import FloatingLabelInput from "./elements/FloatingLabelInput";
 import PageLoader from "./elements/PageLoader";
 
 export default function LoginForm() {
-  const { setLatitude, setLongitude, setPropertyId } = useProperty();
+  const { setPropertyId, latitude, longitude } = useProperty();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,28 +18,6 @@ export default function LoginForm() {
   const [ipAddress, setIpAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
-  const [location, setLocation] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
-
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          setLatitude(lat);
-          setLongitude(lng);
-          setLocation({ latitude: lat, longitude: lng });
-        },
-        (error) => {
-          console.warn("Geolocation error:", error);
-          setLocation(null);
-        }
-      );
-    }
-  }, [setLatitude, setLongitude]);
 
   useEffect(() => {
     // IP fetch
@@ -98,8 +76,8 @@ export default function LoginForm() {
         password: password,
         device: deviceType,
         location: ipAddress,
-        latitude: location?.latitude,
-        longitude: location?.longitude,
+        latitude: Number(latitude),
+        longitude: Number(longitude),
       });
 
       if (result?.status != 200) {

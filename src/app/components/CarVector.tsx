@@ -242,14 +242,23 @@ const CarVector: React.FC<CarVectorProps> = ({
     if (view === "all") setShowFullReportModal(false);
   };
 
+  const openModal = (view: "passenger" | "driver" | "front" | "rear") => {
+    if (hideLabels) return;
+
+    if (view === "passenger") setShowPassengerModal(true);
+    if (view === "driver") setShowDriverModal(true);
+    if (view === "front") setShowFrontModal(true);
+    if (view === "rear") setShowRearModal(true);
+  };
+
   const isReportAvailable = incidentParts.length > 0;
 
   return (
     <>
-      {!hideLabels && (
+      {!hideLabels ? (
         <div>
           <div
-            onClick={() => setShowFrontModal(true)}
+            onClick={() => openModal("front")}
             className="flex gap-2 absolute top-6 left-16 lg:left-20 lg:top-10 text-orange-500 tracking-tighter text-sm font-bold drop-shadow-[.2px_.2px_.2px_#000] cursor-pointer hover:underline"
           >
             Front View
@@ -257,25 +266,53 @@ const CarVector: React.FC<CarVectorProps> = ({
           </div>
 
           <div
-            onClick={() => setShowRearModal(true)}
+            onClick={() => openModal("rear")}
             className="flex gap-2 absolute top-6 right-12 lg:right-20 lg:top-10 text-orange-500 tracking-tighter text-sm font-bold drop-shadow-[.2px_.2px_.2px_#000] cursor-pointer hover:underline"
           >
             Rear View
             <LuListVideo className="relative top-[2.5px]" />
           </div>
           <div
-            onClick={() => setShowPassengerModal(true)}
+            onClick={() => openModal("passenger")}
             className="flex gap-2 absolute top-[42%] left-16 lg:left-20 lg:top-[43%] text-orange-500 tracking-tighter text-sm font-bold drop-shadow-[.2px_.2px_.2px_#000] cursor-pointer hover:underline"
           >
             Passenger (Right-Side) View
             <LuListVideo className="relative top-[2.5px]" />
           </div>
           <div
-            onClick={() => setShowDriverModal(true)}
+            onClick={() => openModal("driver")}
             className="flex gap-2 absolute bottom-[-10px] right-20 lg:right-20 text-orange-500 tracking-tighter text-sm font-bold drop-shadow-[.2px_.2px_.2px_#000] cursor-pointer hover:underline"
           >
             Driver (Left-Side) View
             <LuListVideo className="relative top-[2.5px]" />
+          </div>
+        </div>
+      ) : (
+        <div>
+          <div
+            onClick={() => openModal("front")}
+            className="flex gap-2 absolute top-6 left-10 lg:left-20 lg:top-10 text-orange-500 tracking-tighter text-sm font-bold drop-shadow-[.2px_.2px_.2px_#000]"
+          >
+            Front View
+          </div>
+
+          <div
+            onClick={() => openModal("rear")}
+            className="flex gap-2 absolute top-6 right-10 lg:right-20 lg:top-10 text-orange-500 tracking-tighter text-sm font-bold drop-shadow-[.2px_.2px_.2px_#000]"
+          >
+            Rear View
+          </div>
+          <div
+            onClick={() => openModal("passenger")}
+            className="flex gap-2 absolute top-[42%] left-[30%] lg:left-20 lg:top-[43%] text-orange-500 tracking-tighter text-sm font-bold drop-shadow-[.2px_.2px_.2px_#000]"
+          >
+            Passenger View
+          </div>
+          <div
+            onClick={() => openModal("driver")}
+            className="flex gap-2 absolute bottom-[-10px] left-[35%] lg:right-20 text-orange-500 tracking-tighter text-sm font-bold drop-shadow-[.2px_.2px_.2px_#000]"
+          >
+            Driver View
           </div>
         </div>
       )}

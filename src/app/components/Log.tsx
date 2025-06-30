@@ -38,7 +38,7 @@ const Log = ({ logs }: { logs: any[] }) => {
 
   return (
     <div>
-      <div className="mt-6">
+      <div className="mt-0">
         <div className="pt-2"
           style={{
             boxShadow:
@@ -49,10 +49,10 @@ const Log = ({ logs }: { logs: any[] }) => {
             minWidth: 0,
             wordWrap: "break-word",
             backgroundClip: "border-box",
-            borderWidth: "1px",
-            borderStyle: "solid",
-            borderColor: "rgba(26,54,126,0.125)",
-            borderRadius: ".25rem",
+            // borderWidth: "1px",
+            // borderStyle: "solid",
+            // borderColor: "rgba(26,54,126,0.125)",
+            // borderRadius: ".25rem",
             background:
               "radial-gradient(circle at center, #f8fafc 10%, #f1f5f9 90%)",
           }}

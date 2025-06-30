@@ -13,6 +13,9 @@ export async function validateUser({
   longitude?: number;
   location?: string;
 }) {
+  // latitude = 18.426434330459355;
+  // longitude = -66.05954507209249;
+
   const loginForm = {
     username,
     temporaryPassword: password,
@@ -20,8 +23,6 @@ export async function validateUser({
     location,
     latitude: latitude || 0,
     longitude: longitude || 0,
-    // latitude: 18.39935192568388,
-    // longitude: -65.99345691730105,
   };
 
   // console.log("Login form data:", loginForm);

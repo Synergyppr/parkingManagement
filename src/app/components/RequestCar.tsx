@@ -5,12 +5,14 @@ import Swal from "sweetalert2";
 import { RxCaretRight } from "react-icons/rx";
 import { BsStar, BsStarFill, BsStarHalf } from "react-icons/bs";
 import { IoCheckmarkOutline } from "react-icons/io5";
-import { useSignalR } from "../lib/SignalRProvider";
+import { useSignalR, joinGroup, leaveGroup } from "../lib/SignalRProvider";
+import { useProperty } from "../context/PropertyContext";
 import StatusTimeline from "./StatusTimeline";
 import PageLoader from "./elements/PageLoader";
 import ButtonLoader from "./elements/ButtonLoader";
 
 const RequestCar = () => {
+  const { propertyId, setPropertyId } = useProperty();
   const ratingSectionRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
   const [ticketId, setTicketId] = useState("");
@@ -93,9 +95,26 @@ const RequestCar = () => {
 
       const data = await res.json();
 
+      // console.log("Vehicle Data by Ticket ID:", data);
+
       if (data?.result?.status === "200") {
         setVehicleData(data?.result?.data);
         setVehicleNotFound(false);
+        setPropertyId(data?.result?.data?.propertyId);
+      } else if (
+        data?.result?.status === "200" &&
+        data?.result?.data?.propertyId
+      ) {
+        let prevPropertyId = propertyId || sessionStorage.getItem("propertyId");
+        const newPropertyId = data.result.data.propertyId;
+        if (prevPropertyId && prevPropertyId !== newPropertyId) {
+          await leaveGroup(prevPropertyId);
+        }
+
+        await joinGroup(newPropertyId);
+        prevPropertyId = newPropertyId;
+        sessionStorage.setItem("propertyId", newPropertyId);
+        setPropertyId(newPropertyId);
       } else {
         console.log("Error", data?.result?.message);
         setVehicleNotFound(true);

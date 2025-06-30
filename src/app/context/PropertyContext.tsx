@@ -1,44 +1,57 @@
-// app/context/PropertyContext.tsx
-
+// context/PropertyContext.tsx
 "use client";
+import { createContext, useContext, useState, useEffect } from "react";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
-
-type PropertyContextType = {
+interface PropertyContextType {
   propertyId: string | null;
-  setPropertyId: (id: string | null) => void;
   latitude: number | null;
   longitude: number | null;
-  setLatitude: (lat: number | null) => void;
-  setLongitude: (lng: number | null) => void;
-};
+  setPropertyId: (id: string | null) => void;
+}
 
-const PropertyContext = createContext<PropertyContextType | undefined>(
-  undefined
-);
+const PropertyContext = createContext<PropertyContextType>({
+  propertyId: null,
+  latitude: null,
+  longitude: null,
+  setPropertyId: () => {},
+});
 
 export const PropertyProvider = ({
   children,
 }: {
   children: React.ReactNode;
 }) => {
-  const [propertyId, setPropertyIdState] = useState<string | null>(null);
+  const [propertyId, setPropertyId] = useState<string | null>(null);
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
 
-  // const tempPropertyId = "a7e348d3-8dfb-4f71-8bc5-042ba75d53c7";
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLatitude(position.coords.latitude);
+          setLongitude(position.coords.longitude);
+        },
+        (error) => {
+          console.error("Geolocation error:", error.message);
+        }
+      );
+    } else {
+      console.warn("Geolocation not supported by browser.");
+    }
+  }, []);
 
   useEffect(() => {
     const storedId =
       sessionStorage.getItem("propertyId") ||
       localStorage.getItem("propertyId");
     if (storedId) {
-      setPropertyIdState(storedId);
+      setPropertyId(storedId);
     }
   }, [propertyId]);
 
-  const setPropertyId = (id: string | null) => {
-    setPropertyIdState(id);
+  const handlePropertyId = (id: string | null) => {
+    setPropertyId(id);
     if (id) {
       localStorage.setItem("propertyId", propertyId as string);
     } else {
@@ -50,11 +63,9 @@ export const PropertyProvider = ({
     <PropertyContext.Provider
       value={{
         propertyId,
-        setPropertyId,
         latitude,
         longitude,
-        setLatitude,
-        setLongitude,
+        setPropertyId: handlePropertyId,
       }}
     >
       {children}
@@ -62,10 +73,4 @@ export const PropertyProvider = ({
   );
 };
 
-export const useProperty = (): PropertyContextType => {
-  const context = useContext(PropertyContext);
-  if (!context) {
-    throw new Error("useProperty must be used within a PropertyProvider");
-  }
-  return context;
-};
+export const useProperty = () => useContext(PropertyContext);

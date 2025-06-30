@@ -26,8 +26,7 @@ interface UserFormData {
   firstName: string;
   lastName: string;
   gender: string;
-  identifier: string;
-  dateOfBirthDateTime: string;
+  dateOfBirth: string;
   isActive: boolean;
 }
 
@@ -57,23 +56,28 @@ export default function UsersModalContent({
             Users
           </h2>
           <button
+            type="button"
             onClick={() => {
               setSelectedUser(null);
               setIsUserFormOpen(true);
             }}
-            className="cursor-pointer px-2.5 py-1 rounded-lg text-sm bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600/80 hover:shadow-md delay-300 duration-700 transition-colors text-white"
+            className="cursor-pointer px-2.5 py-1 rounded-lg text-sm bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-700/80 hover:shadow-md duration-700 transition-colors text-white"
           >
             <FaPlus className="inline w-3 h-3" />
           </button>
         </div>
 
-        <Tabs
-          isSmallScreen={false}
-          tabs={["Active", "Inactive"]}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          setTransitionState={setTransitionState}
-        />
+        <div className="overflow-x-auto w-full">
+          <div className="flex w-full">
+            <Tabs
+              isSmallScreen={false}
+              tabs={["Active", "Inactive"]}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              setTransitionState={setTransitionState}
+            />
+          </div>
+        </div>
 
         {users?.filter((user) =>
           activeTab === "Active" ? user?.isActive : !user?.isActive
@@ -109,13 +113,13 @@ export default function UsersModalContent({
                       </strong>{" "}
                       {user?.userName}
                     </p>
-                    <p>
+                    <p className="capitalize">
                       <strong className="text-gray-800 tracking-tight">
                         Role:
                       </strong>{" "}
                       {user?.role}
                     </p>
-                    <p>
+                    <p className="capitalize">
                       <strong className="text-gray-800 tracking-tight">
                         Gender:
                       </strong>{" "}
@@ -154,13 +158,12 @@ export default function UsersModalContent({
                             firstName: user?.fullName?.split(" ")[0] || "",
                             lastName: user?.fullName?.split(" ")[1] || "",
                             gender: user?.gender,
-                            identifier: user?.identifier,
-                            dateOfBirthDateTime: "",
+                            dateOfBirth: "",
                             isActive: user?.isActive,
                           });
                           setIsUserFormOpen(true);
                         }}
-                        className="text-sm py-1 px-3 rounded-md text-white bg-blue-600"
+                        className="text-sm py-1 px-3 rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-300 hover:shadow-md cursor-pointer"
                       >
                         <FaPencil className="inline" />
                       </button>

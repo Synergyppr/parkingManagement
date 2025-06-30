@@ -29,11 +29,11 @@ const Tabs: React.FC<TabsProps> = ({
     <div
       className={`${
         isSmallScreen && tabs?.length > 3
-          ? "overflow-x-auto overflow-y-hidden"
+          ? "overflow-x-auto"
           : ""
-      } h-full bg-transparent pt-1 px-0 justify-between flex md:justify-start lg:justify-start gap-0`}
+      } flex-1 h-full bg-transparent pt-1 px-0 justify-between flex md:justify-start lg:justify-start gap-0 overflow-y-hidden`}
     >
-      <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap bg-transparent pt-1 px-0 gap-0 md:gap-0 w-[85%] md:w-[87.5%]">
+      <div className="flex w-full">
         {tabs?.map((item, i) => (
           <div
             key={item}
@@ -42,7 +42,7 @@ const Tabs: React.FC<TabsProps> = ({
                 ? onTabChange(item)
                 : customOnTabChange?.(item, i)
             }
-            className={`flex-1 py-[12px] px-4 shadow-sm rounded-x rounded-t cursor-pointer text-sm min-w-max z-10 ${
+            className={`flex-1 py-[12px] px-4 shadow-sm rounded-x rounded-t cursor-pointer text-sm text-center z-10 ${
               activeTab === item
                 ? `border-blue-600 text-white relative top-[1px] font-bold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600/80`
                 : "border-slate-700/50 border-[.5px] text-gray-800 bg-slate-200"
