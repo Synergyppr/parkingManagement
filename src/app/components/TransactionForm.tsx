@@ -18,9 +18,9 @@ interface TransactionFormProps {
   ticketId?: string;
   missingFields?: string[];
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  fetchData?: () => Promise<void>; // Optional function to refresh data
-  latitude?: number; // Optional latitude prop
-  longitude?: number; // Optional longitude prop
+  fetchData?: () => Promise<void>;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface TransactionForm {

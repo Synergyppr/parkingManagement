@@ -94,19 +94,24 @@ export default function LoginForm() {
           text: result?.message
             ? result?.message
             : "Unexpected Error." + ` Please try again.`,
+          html: `<pre style="text-align: left; white-space: pre-wrap;">${JSON.stringify(
+            sentForm,
+            null,
+            2
+          )}</pre>`,
         });
         return;
       }
 
       // Successful login
       Swal.fire({
-        title: "Form Sent",
+        title: "Form Succesfully Sent",
         html: `<pre style="text-align: left; white-space: pre-wrap;">${JSON.stringify(
           sentForm,
           null,
           2
         )}</pre>`,
-        icon: "warning",
+        icon: "success",
         showCancelButton: true,
         confirmButtonText: "Continue",
         cancelButtonText: "Cancel",

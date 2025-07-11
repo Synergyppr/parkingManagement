@@ -308,6 +308,11 @@ export default function ReceiveForm({
           icon: "error",
           title: "Submission Failed",
           text: result?.message || "Something went wrong. Please try again.",
+          html: `<pre style="text-align: left; white-space: pre-wrap;">${JSON.stringify(
+            sendForm,
+            null,
+            2
+          )}</pre>`,
         });
       }
     } catch (error) {
