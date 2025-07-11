@@ -49,11 +49,11 @@ const UserformData = ({
 
   useEffect(() => {
     // If dateOfBirth exists, format it to match the input type
-    // console.log("Initial Data:", initialData);
     if (initialData?.dateOfBirth) {
       setFormData((prev) => ({
         ...prev,
         dateOfBirth: formatDatePicker(initialData?.dateOfBirth as string),
+        // dateOfBirth: initialData?.dateOfBirth as string,
       }));
     }
   }, [initialData]);

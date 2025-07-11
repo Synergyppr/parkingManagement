@@ -15,6 +15,7 @@ interface User {
   identifier: string;
   isActive: boolean;
   createdDateTime: string;
+  dateOfBirth?: string;
 }
 
 interface UserFormData {
@@ -125,6 +126,12 @@ export default function UsersModalContent({
                       </strong>{" "}
                       {user?.gender}
                     </p>
+                    <p className="capitalize">
+                      <strong className="text-gray-800 tracking-tight">
+                        Date of Birth:
+                      </strong>{" "}
+                      {user?.dateOfBirth}
+                    </p>
                     {user?.identifier && (
                       <p>
                         <strong className="text-gray-800 tracking-tight">
@@ -158,7 +165,7 @@ export default function UsersModalContent({
                             firstName: user?.fullName?.split(" ")[0] || "",
                             lastName: user?.fullName?.split(" ")[1] || "",
                             gender: user?.gender,
-                            dateOfBirth: "",
+                            dateOfBirth: user?.dateOfBirth || "",
                             isActive: user?.isActive,
                           });
                           setIsUserFormOpen(true);

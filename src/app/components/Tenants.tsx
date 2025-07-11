@@ -63,6 +63,7 @@ const Tenants = ({ data }: TenantsProps) => {
 
     const data = await res.json();
     const result = data?.result?.data;
+
     setUsers(result || []);
     setIsUserModalOpen(true);
   };
@@ -157,7 +158,7 @@ const Tenants = ({ data }: TenantsProps) => {
           </div>
         </div>
 
-        <div className="w-full max-w-5xl mt-8 px-4">
+        <div className="w-full max-w-full mt-8 px-4">
           <div className="flex justify-between items-center mb-4">
             <div>
               <h2 className="text-2xl font-semibold text-gray-800">

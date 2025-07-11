@@ -74,6 +74,7 @@ const RequestCar = () => {
       // Fetch vehicle data using ticket ID on load
       fetchVehicleByTicket(idFromUrl);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, idFromUrl]);
 
   useEffect(() => {
@@ -157,29 +158,43 @@ const RequestCar = () => {
   const handleRequestCar = async () => {
     Swal.fire({
       title: "Request Vehicle",
-      text: "Please only request your vehicle when you're ready to leave.",
+      text: "Please only request your vehicle when you're ready to leave. To keep wait times short, we ask that you pick up your vehicle within 3–5 minutes of requesting it.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, request it!",
-      cancelButtonText: "No, go back.",
+      confirmButtonText: "Proceed",
+      cancelButtonText: "Cancel",
       backdrop: `rgba(0,0,123,0.4)`,
     }).then(async (result) => {
       if (!result.isConfirmed) return;
+
+      const willCharge = await Swal.fire({
+        title: "Confirm Submission",
+        html: `
+          <p>This request will send an automated text message.</p>
+          <p><strong>Message and data rates may apply.</strong></p>
+          <p class="mt-2 text-gray-500 text-sm">Do you want to continue?</p>
+        `,
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, submit",
+        cancelButtonText: "Cancel",
+      });
+
+      if (!willCharge.isConfirmed) {
+        return;
+      }
 
       setButtonLoader(true);
 
       try {
         const data = await updateVehicleStatus("requested");
 
-        // console.log("Update Vehicle Status Result:", data);
-
         if (data?.result?.status === "200") {
-          // console.log("Vehicle status updated successfully");
           const unreadResult = await markNotificationAsUnread();
-
-          // console.log("Unread Notification Result:", unreadResult);
 
           if (unreadResult?.status === "200") {
             setRequested(true);
@@ -244,8 +259,6 @@ const RequestCar = () => {
         rating: ratedStars,
         comment: comment,
       };
-
-      // console.log("Submitting Rating:", sendForm);
 
       const res = await fetch("/api/patronRating", {
         method: "POST",
@@ -385,9 +398,11 @@ const RequestCar = () => {
                   vehicleData?.status === "parked" ? (
                     <p className="indent mt-3">
                       If you’ve finished your visit{" "}
-                      {vehicleData?.placeToVisit &&
-                        " at " +
-                        <strong>{vehicleData?.placeToVisit}</strong>}{" "}
+                      {vehicleData?.placeToVisit && (
+                        <span>
+                          at <strong>{vehicleData?.placeToVisit}</strong>
+                        </span>
+                      )}{" "}
                       and are ready to leave, please click the button below to
                       request your vehicle.
                     </p>

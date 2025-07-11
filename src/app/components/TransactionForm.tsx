@@ -19,6 +19,8 @@ interface TransactionFormProps {
   missingFields?: string[];
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   fetchData?: () => Promise<void>; // Optional function to refresh data
+  latitude?: number; // Optional latitude prop
+  longitude?: number; // Optional longitude prop
 }
 
 interface TransactionForm {
@@ -35,6 +37,8 @@ export default function TransactionForm({
   missingFields = [],
   setOpen,
   fetchData,
+  latitude,
+  longitude,
 }: TransactionFormProps) {
   const [loader, setLoader] = useState(false);
 
@@ -79,8 +83,11 @@ export default function TransactionForm({
     }
 
     setLoader(true);
-
+    // const latitude = 18.426434330459355;
+    // const longitude = -66.05954507209249;
     const sendForm = {
+      latitude: latitude,
+      longitude: longitude,
       ticketId: ticketId,
       amount: Number(form?.amount) || 0, // Ensure amount is a number
       paymentMethod: form?.paymentMethod,

@@ -19,6 +19,9 @@ const tailwindConfig = {
         blue: colors.blue,
         // Add only the colors you use; this avoids Tailwind's default color functions (oklch)
       },
+      screens: {
+        'xs': '375px',
+      },
     },
   },
 };

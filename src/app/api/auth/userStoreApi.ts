@@ -1,24 +1,24 @@
 export async function validateUser({
   username,
-  password,
+  temporaryPassword,
   device,
   latitude,
   longitude,
   location,
 }: {
   username: string;
-  password: string;
+  temporaryPassword: string;
   device?: string;
   latitude?: number;
   longitude?: number;
   location?: string;
 }) {
-  // latitude = 18.426434330459355;
-  // longitude = -66.05954507209249;
+  // const latitude = 18.426434330459355;
+  // const longitude = -66.05954507209249;
 
   const loginForm = {
     username,
-    temporaryPassword: password,
+    temporaryPassword: temporaryPassword,
     device,
     location,
     latitude: latitude || 0,
@@ -35,8 +35,6 @@ export async function validateUser({
       },
       body: JSON.stringify(loginForm),
     });
-
-    // console.log("Login response:", response);
 
     // Only succeed if response is 200
     if (response.status === 200) {

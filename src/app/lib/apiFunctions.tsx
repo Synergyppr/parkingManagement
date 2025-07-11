@@ -21,6 +21,8 @@ const DeletePropertyEndpoint = process.env.DELETE_PROPERTY_ENDPOINT + "";
 const GetValetTicketByEndpoint = process.env.GET_VALET_TICKET_BY_ENDPOINT + ""; // api/getTicket
 const GetTicketDetailsByTicketIdEndpoint =
   process.env.GET_TICKET_DETAILS_BY_TICKET_ID_ENDPOINT + "";
+const GetTicketReportEndpoint =
+  process.env.GET_VALET_TICKET_REPORT_ENDPOINT + "";
 const GetVehicleByPatronTicketIdEndpoint =
   process.env.GET_VEHICLE_BY_PATRON_TICKET_ID_ENDPOINT + ""; // api/getVehicle/byTicketId
 const GetVehicleByPatronPhoneEndpoint =
@@ -92,6 +94,10 @@ const Endpoints = [
   {
     name: "Get Ticket Details By Ticket ID",
     endpoint: GetTicketDetailsByTicketIdEndpoint,
+  },
+  {
+    name: "Get Ticket Report",
+    endpoint: GetTicketReportEndpoint,
   },
   {
     name: "Get Vehicle By Patron Ticket ID",

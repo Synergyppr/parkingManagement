@@ -217,6 +217,9 @@ export default function ReceiveForm({
       damageStatus = {}; // or `null` or `undefined`
     }
 
+    // const latitude1 = 18.426434330459355;
+    // const longitude1 = -66.05954507209249;
+
     const sendForm = {
       latitude: Number(latitude),
       longitude: Number(longitude),
@@ -235,7 +238,7 @@ export default function ReceiveForm({
       damageStatus,
     };
 
-    console.log("Submitting form:", sendForm);
+    // console.log("Submitting form:", sendForm);
 
     // return; // Uncomment this line to prevent actual submission during development
 
@@ -251,18 +254,54 @@ export default function ReceiveForm({
       if (result?.status === "200") {
         await fetchData(); // refresh the data from the API
 
-        Swal.fire({
-          icon: "success",
-          title: "Success",
-          text: "Vehicle checked in successfully!",
-          showConfirmButton: false,
-          timer: 1500,
+        const willCharge = await Swal.fire({
+          title: "Are You Sure?",
+          html: `
+            <p>This form submission will trigger a text message to the visitor.</p>
+            <p><strong>You may incur a small charge.</strong></p>
+            <p class="mt-2 text-gray-500 text-sm">Do you wish to proceed?</p>
+          `,
+          icon: "info",
+          showCancelButton: true,
+          confirmButtonColor: "#3085d6",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Yes, submit",
+          cancelButtonText: "Cancel",
         });
-        setSubmitted(true);
-        setForm({});
-        setIncidentParts([]);
-        setDescriptions({});
-        setInitialForm({});
+
+        if (!willCharge.isConfirmed) {
+          setLoader(false);
+          return;
+        }
+
+        // Successful login
+        Swal.fire({
+          title: "Form Sent",
+          html: `<pre style="text-align: left; white-space: pre-wrap;">${JSON.stringify(
+            sendForm,
+            null,
+            2
+          )}</pre>`,
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "Continue",
+          cancelButtonText: "Cancel",
+        }).then(async (response) => {
+          if (response.isConfirmed) {
+            // Swal.fire({
+            //   icon: "success",
+            //   title: "Success",
+            //   text: "Vehicle checked in successfully!",
+            //   showConfirmButton: false,
+            //   timer: 1500,
+            // });
+            setSubmitted(true);
+            setForm({});
+            setIncidentParts([]);
+            setDescriptions({});
+            setInitialForm({});
+          } //
+        }); //
       } else {
         console.error("Error: Unexpected response:", result);
         Swal.fire({
@@ -388,8 +427,8 @@ export default function ReceiveForm({
   return (
     <div
       className={`${
-        step === 3 ? "" : "py-4 lg:mt-16 md:py-16 sm:py-4 xs:py-4"
-      } border-none lg:shadow-lg lg:border-1 lg:border-solid border-[e0f2ff] rounded-lg  lg:bg-white/30 mb-2`}
+        step === 3 ? "" : "py-4 lg:mt-[7%] md:py-16 sm:py-4 xs:py-4"
+      } border-none rounded-lg  mb-2`}
     >
       <div className="p-2 sm:p-4 md:p-6 max-w-3xl mx-auto space-y-6 transition-opacity duration-500 ease-in-out animate-fade-in min-h-full">
         {!submitted ? (

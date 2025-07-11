@@ -20,6 +20,8 @@ interface ValetTicketListProps {
   setShowTransactionModal: React.Dispatch<React.SetStateAction<boolean>>;
   selectedTicketId: string | null;
   fetchData?: () => Promise<void>;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface TransactionForm {
@@ -41,6 +43,8 @@ export default function ValetTicketList({
   setShowTransactionModal,
   selectedTicketId,
   fetchData,
+  latitude,
+  longitude,
 }: ValetTicketListProps) {
   const [transactionForm, setTransactionForm] = useState<TransactionForm>({
     amount: 0,
@@ -96,6 +100,14 @@ export default function ValetTicketList({
 
   return (
     <div className="space-y-3 mb-2 overflow-y-auto py-1 px-1">
+      {activeTab !== "received" && filteredVehicles?.length > 0 && (
+        <div className="mt-0 mb-0 flex justify-center w-full mx-auto bg-opacity-50">
+          <div className="px-4 pb-2 text-blue-500 text-sm font-medium tracking-wider rounded-sm w-full text-center mx-1 bg-opacity-10">
+            Total <span className="capitalize">{activeTab}</span> Vehicles:{" "}
+            <span className="font-semibold">{filteredVehicles?.length}</span>
+          </div>
+        </div>
+      )}
       {filteredVehicles?.length > 0 ? (
         filteredVehicles.map((vehicle, index) => {
           const isFirstRead =
@@ -248,14 +260,7 @@ export default function ValetTicketList({
           No vehicles in this status.
         </p>
       )}
-      {activeTab !== "received" && filteredVehicles?.length > 0 && (
-        <div className="mt-0 mb-0 flex justify-center w-full mx-auto bg-opacity-50">
-          <div className="px-4 py-0 text-blue-500 text-sm font-medium tracking-wider rounded-sm w-full text-center mx-1 bg-opacity-10">
-            Total <span className="capitalize">{activeTab}</span> Vehicles:{" "}
-            <span className="font-semibold">{filteredVehicles?.length}</span>
-          </div>
-        </div>
-      )}
+
       {selectedTicketId && (
         <Modal
           isOpen={showTransactionModal}
@@ -271,6 +276,8 @@ export default function ValetTicketList({
               ticketId={selectedTicketId || ""}
               setOpen={setShowTransactionModal}
               fetchData={fetchData}
+              latitude={latitude}
+              longitude={longitude}
             />
           </div>
         </Modal>

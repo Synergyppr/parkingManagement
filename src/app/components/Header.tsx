@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import { FaUser } from "react-icons/fa6";
-import { TbLogout2 } from "react-icons/tb";
+import { TbLogout2, TbCar } from "react-icons/tb";
 import { FaBars } from "react-icons/fa";
 import {
   IoHomeOutline,
@@ -48,6 +48,9 @@ export default function Header() {
         }
         localStorage.removeItem("isLoggedIn");
         localStorage.removeItem("authToken");
+        localStorage.removeItem("propertyId");
+        sessionStorage.removeItem("propertyId");
+        sessionStorage.removeItem("propertyName");
         setPropertyId(null); // Reset propertyId
         router.replace("/");
       }
@@ -136,6 +139,13 @@ export default function Header() {
                 >
                   <IoCarSportOutline />
                   Request Car
+                </Link>
+                <Link
+                  href="/location"
+                  className="hover:underline flex gap-3 items-center border-b-[0.5px] border-solid border-gray-400 pb-1"
+                >
+                  <TbCar />
+                  Location
                 </Link>
               </nav>
             </div>

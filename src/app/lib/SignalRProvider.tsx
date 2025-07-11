@@ -43,11 +43,14 @@ export const SignalRProvider = ({
     notificationHandlerRef.current = handler;
   };
 
+  const notificationSound =
+    typeof Audio !== "undefined" ? new Audio("/notification.mp3") : null;
+
   useEffect(() => {
     const connectToSignalR = async () => {
       const connection = new signalR.HubConnectionBuilder()
         .withUrl(
-          "https://synergywebdev-bwfcdbhnghctbqa6.eastus-01.azurewebsites.net/notificationhub"
+          "https://synergymwprod-hdbrdrhpawachjbx.eastus-01.azurewebsites.net/notificationhub"
         )
         .withAutomaticReconnect()
         .build();
@@ -56,6 +59,14 @@ export const SignalRProvider = ({
 
       connection.on("UpdateNotification", (notification: Notification) => {
         // console.log("📨 Notification received SignalR:", notification);
+        if (notificationSound) {
+          console.log("🔔 Playing notification sound");
+          setTimeout(() => {
+            notificationSound.play().catch((err) => {
+              console.warn("🔇 Unable to play sound:", err);
+            });
+          }, 1000);
+        }
         notificationHandlerRef.current?.(notification);
       });
 
@@ -81,6 +92,7 @@ export const SignalRProvider = ({
     return () => {
       connectionRef.current?.stop();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [propertyId]);
 
   useEffect(() => {

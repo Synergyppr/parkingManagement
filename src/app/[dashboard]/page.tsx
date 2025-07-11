@@ -98,7 +98,6 @@ export default function HomePage() {
       const data = await res.json();
       const result: TicketResponseData = data?.data;
 
-      // console.log("Get Valet Tickets Fetched data:", result);
       setVehicles(result?.tickets);
       setReadyVehicles(result?.readyTickets || []);
       setCarBrands(result?.carBrands);
@@ -300,14 +299,20 @@ export default function HomePage() {
 
     setButtonLoader(true);
 
+    // const latitude = 18.426434330459355;
+    // const longitude = -66.05954507209249;
+
     const sendForm = {
       ticketId: selectedTicketId,
       status: nextStatus,
       isUserUpdate: false,
       pin: pin,
-      latitude,
-      longitude,
+      propertyId: propertyId,
+      latitude: latitude,
+      longitude: longitude,
     };
+
+    // console.log("Sending status change request:", sendForm);
 
     try {
       const res = await fetch("/api/vehicleStatus", {
@@ -317,6 +322,8 @@ export default function HomePage() {
       });
 
       const data = await res.json();
+
+      // console.log("Status change response:", data);
 
       if (data?.result?.status === "200") {
         setVehicles([
@@ -524,6 +531,8 @@ export default function HomePage() {
                 setShowTransactionModal={setShowTransactionModal}
                 selectedTicketId={selectedTicketId}
                 fetchData={fetchData}
+                latitude={latitude as number}
+                longitude={longitude as number}
               />
             )
           )}

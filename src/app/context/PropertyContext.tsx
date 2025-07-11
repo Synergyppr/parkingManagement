@@ -7,6 +7,8 @@ interface PropertyContextType {
   latitude: number | null;
   longitude: number | null;
   setPropertyId: (id: string | null) => void;
+  setLatitude: (lat: number | null) => void;
+  setLongitude: (lng: number | null) => void;
 }
 
 const PropertyContext = createContext<PropertyContextType>({
@@ -14,6 +16,8 @@ const PropertyContext = createContext<PropertyContextType>({
   latitude: null,
   longitude: null,
   setPropertyId: () => {},
+  setLatitude: () => {},
+  setLongitude: () => {},
 });
 
 export const PropertyProvider = ({
@@ -66,6 +70,8 @@ export const PropertyProvider = ({
         latitude,
         longitude,
         setPropertyId: handlePropertyId,
+        setLatitude,
+        setLongitude,
       }}
     >
       {children}

@@ -70,19 +70,23 @@ export default function LoginForm() {
 
     setLoading(true);
 
+    const sentForm = {
+      username: email,
+      temporaryPassword: password,
+      device: deviceType,
+      location: ipAddress,
+      latitude: Number(latitude),
+      longitude: Number(longitude),
+    };
+
     try {
-      const result = await validateUser({
-        username: email,
-        password: password,
-        device: deviceType,
-        location: ipAddress,
-        latitude: Number(latitude),
-        longitude: Number(longitude),
-      });
+      const result = await validateUser(sentForm);
 
       // console.log("Login result:", result);
 
-      if (result?.status != 200) {
+      if (!result) {
+        throw new Error("Unexpected error occurred.");
+      } else if (result?.status != 200) {
         setLoading(false);
         Swal.fire({
           icon: "error",
@@ -94,26 +98,39 @@ export default function LoginForm() {
         return;
       }
 
-      if (!result) {
-        throw new Error("Unexpected error occurred.");
-      }
+      // Successful login
+      Swal.fire({
+        title: "Form Sent",
+        html: `<pre style="text-align: left; white-space: pre-wrap;">${JSON.stringify(
+          sentForm,
+          null,
+          2
+        )}</pre>`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Continue",
+        cancelButtonText: "Cancel",
+      }).then(async (response) => {
+        if (response.isConfirmed) {
+          localStorage.setItem("propertyName", result?.data?.property?.name);
+          localStorage.setItem("isLoggedIn", "true");
+          if (result?.data?.property) {
+            const newPropertyId = result?.data?.property?.id;
 
-      localStorage.setItem("propertyName", result?.data?.properties?.[0]?.name);
-      localStorage.setItem("isLoggedIn", "true");
-      if (result?.data?.properties) {
-        const newPropertyId = result.data.properties?.[0]?.id;
-        setPropertyId(newPropertyId);
-        localStorage.setItem("propertyId", newPropertyId as string);
-        await joinGroup(newPropertyId);
-      }
+            setPropertyId(newPropertyId);
+            localStorage.setItem("propertyId", newPropertyId as string);
+            await joinGroup(newPropertyId);
+          }
 
-      setTimeout(() => {
-        setRedirecting(true);
-      }, 500);
+          setTimeout(() => {
+            setRedirecting(true);
+          }, 500);
 
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 1200);
+          setTimeout(() => {
+            router.push("/dashboard");
+          }, 1200);
+        } //
+      }); //
     } catch (error) {
       console.error("Login error:", error);
       setLoading(false);
