@@ -48,7 +48,7 @@ export const authOptions: NextAuthOptions = {
         try {
           const user = await validateUser({
             username: credentials.username,
-            password: credentials.password,
+            temporaryPassword: credentials.password,
           });
 
           return user; // must be defined if 200 OK
