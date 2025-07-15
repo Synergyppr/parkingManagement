@@ -23,13 +23,15 @@ const Report = () => {
 
   const getReportData = async () => {
     const sendForm = {
-      propertyId,
+      propertyId: propertyId,
       pageNumber,
       pageSize: PAGE_SIZE,
       filters: {
         search: search.trim(),
       },
     };
+
+    // console.log("Fetching report data with:", sendForm);
 
     const res = await fetch("/api/report/get", {
       method: "POST",
@@ -38,6 +40,8 @@ const Report = () => {
     });
 
     const data = await res.json();
+
+    // console.log("Report data received:", data);
     const result = data?.result?.data || [];
     const total = data?.result?.total || result.length;
 
@@ -46,7 +50,10 @@ const Report = () => {
   };
 
   useEffect(() => {
-    getReportData();
+    if (propertyId)
+      setTimeout(() => {
+        getReportData();
+      }, 1000);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, pageNumber]);
 

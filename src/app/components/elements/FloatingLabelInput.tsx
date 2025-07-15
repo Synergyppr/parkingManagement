@@ -11,6 +11,7 @@ const FloatingLabelInput = ({
   onChange,
   maxLength,
   disabled,
+  autoComplete,
 }: {
   id: string;
   name: string;
@@ -20,6 +21,7 @@ const FloatingLabelInput = ({
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   maxLength?: number;
   disabled?: boolean;
+  autoComplete?: string;
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -40,6 +42,7 @@ const FloatingLabelInput = ({
         placeholder=" "
         maxLength={maxLength}
         disabled={disabled}
+        autoComplete={autoComplete}
         className={`w-full text-gray-800 px-3 py-2 pr-10 border border-gray-400 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 ${
           disabled ? "bg-gray-200 cursor-not-allowed" : ""
         } bg-white autofill:bg-white autofill:shadow-[inset_0_0_0px_1000px_white]`}

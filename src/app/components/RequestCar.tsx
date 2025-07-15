@@ -101,6 +101,7 @@ const RequestCar = () => {
       if (data?.result?.status === "200") {
         setVehicleData(data?.result?.data);
         setVehicleNotFound(false);
+        // console.log("Vehicle Data:", data?.result?.data);
         setPropertyId(data?.result?.data?.propertyId);
       } else if (
         data?.result?.status === "200" &&

@@ -36,6 +36,10 @@ export const SignalRProvider = ({
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const notificationHandlerRef =
     useRef<(notification: Notification) => void | null>(null);
+  const previousPropertyIdRef = useRef<string | null>(null);
+
+  const notificationSound =
+    typeof Audio !== "undefined" ? new Audio("/notification.mp3") : null;
 
   const registerNotificationHandler = (
     handler: (notification: Notification) => void
@@ -43,9 +47,7 @@ export const SignalRProvider = ({
     notificationHandlerRef.current = handler;
   };
 
-  const notificationSound =
-    typeof Audio !== "undefined" ? new Audio("/notification.mp3") : null;
-
+  // Establish SignalR connection once
   useEffect(() => {
     const connectToSignalR = async () => {
       const connection = new signalR.HubConnectionBuilder()
@@ -58,15 +60,15 @@ export const SignalRProvider = ({
       globalConnection = connection;
 
       connection.on("UpdateNotification", (notification: Notification) => {
-        // console.log("📨 Notification received SignalR:", notification);
         if (notificationSound) {
-          console.log("🔔 Playing notification sound");
+          // console.log("🔔 Playing notification sound");
           setTimeout(() => {
             notificationSound.play().catch((err) => {
               console.warn("🔇 Unable to play sound:", err);
             });
           }, 1000);
         }
+
         notificationHandlerRef.current?.(notification);
       });
 
@@ -74,11 +76,11 @@ export const SignalRProvider = ({
         await connection.start();
         // console.log("✅ Connected to SignalR hub");
 
+        // Join initial group if propertyId exists
         if (propertyId) {
-          // console.log("Joining SignalR group with propertyId:", propertyId);
           await connection.invoke("JoinPropertyGroup", propertyId);
-        } else {
-          // console.warn("❗ No propertyId available, skipping group join.");
+          previousPropertyIdRef.current = propertyId;
+          // console.log("✅ Joined group:", propertyId);
         }
 
         connectionRef.current = connection;
@@ -90,21 +92,48 @@ export const SignalRProvider = ({
     connectToSignalR();
 
     return () => {
-      connectionRef.current?.stop();
+      const connection = connectionRef.current;
+      const prevId = previousPropertyIdRef.current;
+
+      if (connection && connection.state === "Connected" && prevId) {
+        connection
+          .invoke("LeavePropertyGroup", prevId)
+          .catch((err) =>
+            console.error("❌ Failed to leave group on unmount:", err)
+          );
+      }
+
+      connection?.stop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [propertyId]);
+  }, []);
 
+  // Handle group change when propertyId changes
   useEffect(() => {
-    // console.log("📦 Property ID changed:", propertyId);
-    if (propertyId && connectionRef.current?.state === "Connected") {
-      connectionRef.current
-        .invoke("JoinPropertyGroup", propertyId)
-        .then(() => {
-          // console.log("✅ Rejoined group:", propertyId);
-        })
-        .catch((err) => console.error("❌ Rejoin failed:", err));
-    }
+    const updateGroup = async () => {
+      const connection = connectionRef.current;
+      const prevId = previousPropertyIdRef.current;
+
+      if (!connection || connection.state !== "Connected") return;
+
+      try {
+        if (prevId && prevId !== propertyId) {
+          await connection.invoke("LeavePropertyGroup", prevId);
+          // console.log("👋 Left previous group:", prevId);
+        }
+
+        if (propertyId && propertyId !== prevId) {
+          await connection.invoke("JoinPropertyGroup", propertyId);
+          // console.log("✅ Joined new group:", propertyId);
+        }
+
+        previousPropertyIdRef.current = propertyId;
+      } catch (err) {
+        console.error("❌ Failed to update SignalR group:", err);
+      }
+    };
+
+    updateGroup();
   }, [propertyId]);
 
   return (
@@ -122,19 +151,20 @@ export const SignalRProvider = ({
 
 export const useSignalR = () => {
   const context = useContext(SignalRContext);
-  if (!context)
-    throw new Error("useSignalR must be used within SignalRProvider");
+  if (!context) {
+    throw new Error("useSignalR must be used within a SignalRProvider");
+  }
   return context;
 };
 
-// Exportable join and leave functions
+// Exportable join and leave group utilities
 let globalConnection: signalR.HubConnection | null = null;
 
 export const joinGroup = async (groupId: string) => {
   try {
     if (globalConnection && globalConnection.state === "Connected") {
       await globalConnection.invoke("JoinPropertyGroup", groupId);
-      // console.log("✅ Joined SignalR group:", groupId);
+      // console.log("✅ Manually joined SignalR group:", groupId);
     }
   } catch (error) {
     console.error("❌ Failed to join group:", error);
@@ -145,7 +175,7 @@ export const leaveGroup = async (groupId: string) => {
   try {
     if (globalConnection && globalConnection.state === "Connected") {
       await globalConnection.invoke("LeavePropertyGroup", groupId);
-      // console.log("👋 Left SignalR group:", groupId);
+      // console.log("👋 Manually left SignalR group:", groupId);
     }
   } catch (error) {
     console.error("❌ Failed to leave group:", error);

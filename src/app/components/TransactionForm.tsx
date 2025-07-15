@@ -21,6 +21,7 @@ interface TransactionFormProps {
   fetchData?: () => Promise<void>;
   latitude?: number;
   longitude?: number;
+  locationMode?: "live" | "manual";
 }
 
 interface TransactionForm {
@@ -39,6 +40,7 @@ export default function TransactionForm({
   fetchData,
   latitude,
   longitude,
+  locationMode,
 }: TransactionFormProps) {
   const [loader, setLoader] = useState(false);
 
@@ -53,7 +55,7 @@ export default function TransactionForm({
     const alphanumericSix = uuidv4()
       .replace(/-/g, "")
       .substring(0, 6)
-      .toUpperCase(); // Optional: .toUpperCase() for readability
+      .toUpperCase();
 
     setForm((prev: typeof form) => ({
       ...prev,
@@ -83,68 +85,82 @@ export default function TransactionForm({
     }
 
     setLoader(true);
-    // const latitude = 18.426434330459355;
-    // const longitude = -66.05954507209249;
-    const sendForm = {
-      latitude: latitude,
-      longitude: longitude,
-      ticketId: ticketId,
-      amount: Number(form?.amount) || 0, // Ensure amount is a number
-      paymentMethod: form?.paymentMethod,
-      referenceNumber: form?.referenceNumber,
-      notes: form?.notes,
-    };
 
-    // console.log("Submitting form:", sendForm);
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      const { latitude: userLat, longitude: userLng } = position.coords;
 
-    // return; // Uncomment this line to prevent actual submission during development
+      const sendForm = {
+        latitude: locationMode === "manual" ? latitude : userLat,
+        longitude: locationMode === "manual" ? longitude : userLng,
+        ticketId: ticketId,
+        amount: Number(form?.amount) || 0, // Ensure amount is a number
+        paymentMethod: form?.paymentMethod,
+        referenceNumber: form?.referenceNumber,
+        notes: form?.notes,
+      };
 
-    try {
-      const res = await fetch("/api/valetTransaction", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(sendForm),
-      });
+      // console.log("Submitting form:", sendForm);
 
-      const result = await res.json();
+      // return; // Uncomment this line to prevent actual submission during development
 
-      // console.log("Response from API:", result);
-
-      if (result?.result?.status == "200") {
-        setOpen(false);
-        await fetchData?.(); // refresh the data from the API
-
-        Swal.fire({
-          icon: "success",
-          title: "Success",
-          text: "Transaction successful!",
-          showConfirmButton: false,
-          timer: 1500,
+      try {
+        const res = await fetch("/api/valetTransaction", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(sendForm),
         });
-        setForm({
-          amount: 0,
-          paymentMethod: "",
-          referenceNumber: "",
-          notes: "",
-        });
-      } else {
-        console.error("Error: Unexpected response:", result);
+
+        const result = await res.json();
+
+        // console.log("Response from API:", result);
+
+        if (result?.result?.status == "200") {
+          setOpen(false);
+          await fetchData?.(); // refresh the data from the API
+
+          Swal.fire({
+            icon: "success",
+            title: "Success",
+            text: "Transaction successful!",
+            showConfirmButton: false,
+            timer: 1500,
+          });
+          setForm({
+            amount: 0,
+            paymentMethod: "",
+            referenceNumber: "",
+            notes: "",
+          });
+        } else {
+          console.error("Error: Unexpected response:", result);
+          Swal.fire({
+            icon: "error",
+            title: "Submission Failed",
+            text: result?.message || "Something went wrong. Please try again.",
+          });
+        }
+      } catch (error) {
+        console.error("Error submitting form:", error);
         Swal.fire({
           icon: "error",
           title: "Submission Failed",
-          text: result?.message || "Something went wrong. Please try again.",
+          text: "Something went wrong. Please try again.",
         });
+      } finally {
+        setLoader(false);
       }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Submission Failed",
-        text: "Something went wrong. Please try again.",
-      });
-    } finally {
-      setLoader(false);
-    }
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      (error: unknown) => {
+        console.error("Geolocation error:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Location Error",
+          text: "Unable to retrieve your location. Please allow location access and try again.",
+        });
+        setLoader(false);
+      };
+    });
   };
 
   return (

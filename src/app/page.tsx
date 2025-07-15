@@ -21,6 +21,7 @@ export default async function LoginPage() {
           className="w-full h-full object-cover"
           width={50}
           height={50}
+          priority
         />
         <div className="absolute inset-0 bg-blue-900 opacity-60" />
       </div>

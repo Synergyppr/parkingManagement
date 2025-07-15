@@ -81,6 +81,7 @@ export default function LoginForm() {
 
     try {
       const result = await validateUser(sentForm);
+      const json = JSON.stringify(sentForm, null, 2); // with indentation preserved
 
       // console.log("Login result:", result);
 
@@ -91,37 +92,37 @@ export default function LoginForm() {
         Swal.fire({
           icon: "error",
           title: "Unauthorized",
-          text: result?.message
-            ? result?.message
-            : "Unexpected Error." + ` Please try again.`,
-          html: `<pre style="text-align: left; white-space: pre-wrap;">${JSON.stringify(
-            sentForm,
-            null,
-            2
-          )}</pre>`,
+          html: `
+          <div style="text-align: left;">
+            <p>${result?.message}</p>
+            <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 4px; white-space: pre-wrap; font-size: 12px;">${json}</pre>
+          </div>
+        `,
         });
         return;
       }
 
       // Successful login
       Swal.fire({
-        title: "Form Succesfully Sent",
-        html: `<pre style="text-align: left; white-space: pre-wrap;">${JSON.stringify(
-          sentForm,
-          null,
-          2
-        )}</pre>`,
+        title: "Form Successfully Sent",
+        html: `
+          <div style="text-align: left;">
+            <p>You are in <strong>${
+              result?.data?.property?.name || "Unknown Property"
+            }</strong>!</p>
+            <pre style="background-color: #f4f4f4; padding: 10px; border-radius: 4px; white-space: pre-wrap; font-size: 12px;">${json}</pre>
+          </div>
+        `,
         icon: "success",
-        showCancelButton: true,
         confirmButtonText: "Continue",
-        cancelButtonText: "Cancel",
       }).then(async (response) => {
         if (response.isConfirmed) {
           localStorage.setItem("propertyName", result?.data?.property?.name);
           localStorage.setItem("isLoggedIn", "true");
+
+          // console.log("Property data", result?.data);
           if (result?.data?.property) {
             const newPropertyId = result?.data?.property?.id;
-
             setPropertyId(newPropertyId);
             localStorage.setItem("propertyId", newPropertyId as string);
             await joinGroup(newPropertyId);
@@ -171,6 +172,7 @@ export default function LoginForm() {
             label="Email"
             type="email"
             value={email}
+            autoComplete="email"
             onChange={(e: { target: { value: SetStateAction<string> } }) =>
               setEmail(e.target.value)
             }
@@ -182,6 +184,7 @@ export default function LoginForm() {
             label="Password"
             type="password"
             value={password}
+            autoComplete="current-password"
             onChange={(e: { target: { value: SetStateAction<string> } }) =>
               setPassword(e.target.value)
             }

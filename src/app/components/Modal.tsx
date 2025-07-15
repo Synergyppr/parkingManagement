@@ -10,6 +10,7 @@ export default function Modal({
   placementY = "center",
   placementX = "center",
   onRequestClose,
+  size,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -17,6 +18,7 @@ export default function Modal({
   children: React.ReactNode;
   placementX?: "center" | "start" | "end";
   placementY?: "center" | "start" | "end";
+  size?: "sm" | "md" | "lg" | "xl"; // Optional size prop for future use
 }) {
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -54,7 +56,18 @@ export default function Modal({
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="bg-gray-200 text-white p-6 rounded-lg shadow-2xl max-h-[80vh] w-80 sm:w-96 relative mt-12"
+            className={`bg-gray-200 text-white p-6 rounded-lg shadow-2xl relative
+              ${
+                size === "sm"
+                  ? "w-64"
+                  : size === "md"
+                  ? "w-80"
+                  : size === "lg"
+                  ? "w-96"
+                  : size === "xl"
+                  ? "w-full max-w-4xl"
+                  : ""
+              }`}
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}

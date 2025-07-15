@@ -13,6 +13,15 @@ export async function validateUser({
   longitude?: number;
   location?: string;
 }) {
+  // CHV
+  // const latitude = 18.458770636752906;
+  // const longitude = -66.0760822589064;
+
+  //new - closer to condado
+  // const latitude = 18.459051035458092;
+  // const longitude = -66.07700161860517;
+
+  // 250
   // const latitude = 18.426434330459355;
   // const longitude = -66.05954507209249;
 

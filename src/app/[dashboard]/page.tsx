@@ -10,6 +10,7 @@ import {
 } from "@/app/types";
 import useAuthRedirect from "../lib/loginHook";
 import { useProperty } from "../context/PropertyContext";
+import { useSignalR } from "../lib/SignalRProvider";
 import {
   carParts,
   findLinkedGroup,
@@ -24,7 +25,15 @@ import PageLoader from "../components/elements/PageLoader";
 
 // ** DASHBOARD PAGE **
 export default function HomePage() {
-  const { propertyId, latitude, longitude } = useProperty();
+  const { registerNotificationHandler } = useSignalR();
+  const {
+    propertyId,
+    latitude,
+    longitude,
+    locationMode,
+    setPropertyId,
+    setPropertyName,
+  } = useProperty();
   const saveClickedRef = useRef(false);
   const shouldBypassUnloadPromptRef = useRef(false);
   const [form, setForm] = useState<Partial<Ticket>>({}); // Create Valet Ticket Form
@@ -84,7 +93,8 @@ export default function HomePage() {
   const fetchData = async () => {
     // GetValetTicketsByPropertyId
     if (!propertyId) {
-      // console.warn("No propertyId found, cannot fetch tickets.");
+      setVehicles([]);
+      setReadyVehicles([]);
       return;
     }
     try {
@@ -95,6 +105,7 @@ export default function HomePage() {
           propertyId,
         }),
       });
+
       const data = await res.json();
       const result: TicketResponseData = data?.data;
 
@@ -116,6 +127,14 @@ export default function HomePage() {
   };
 
   useEffect(() => {
+    // Register the SignalR notification handler
+    registerNotificationHandler(() => {
+      fetchData(); // Refetch tickets when a notification is received
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [registerNotificationHandler]);
+
+  useEffect(() => {
     // Update page title when unread count changes
     const count = unreadRequestedTickets?.length;
     document.title =
@@ -124,10 +143,24 @@ export default function HomePage() {
         : "Valet Parking App";
   }, [unreadRequestedTickets]);
 
+  const resetPropertyData = () => {
+    setPropertyName("");
+    sessionStorage.removeItem("propertyName");
+    localStorage.removeItem("propertyName");
+    setPropertyId("");
+    sessionStorage.removeItem("propertyId");
+    localStorage.removeItem("propertyId");
+  };
+
   useEffect(() => {
+    if (locationMode === "live") {
+      setVehicles([]);
+      setReadyVehicles([]);
+      resetPropertyData();
+    }
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [propertyId]);
+  }, [propertyId, locationMode]);
 
   // Utility function to remove ticketNumber from an object
   const omitTicketNumber = (formObj: typeof form) => {
@@ -299,90 +332,101 @@ export default function HomePage() {
 
     setButtonLoader(true);
 
-    // const latitude = 18.426434330459355;
-    // const longitude = -66.05954507209249;
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      const { latitude: userLat, longitude: userLng } = position.coords;
 
-    const sendForm = {
-      ticketId: selectedTicketId,
-      status: nextStatus,
-      isUserUpdate: false,
-      pin: pin,
-      propertyId: propertyId,
-      latitude: latitude,
-      longitude: longitude,
-    };
+      const sendForm = {
+        ticketId: selectedTicketId,
+        status: nextStatus,
+        isUserUpdate: false,
+        pin: pin,
+        propertyId: propertyId,
+        latitude: locationMode === "manual" ? latitude : userLat,
+        longitude: locationMode === "manual" ? longitude : userLng,
+      };
 
-    // console.log("Sending status change request:", sendForm);
+      // console.log("Sending status change request:", sendForm);
 
-    try {
-      const res = await fetch("/api/vehicleStatus", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(sendForm),
-      });
+      try {
+        const res = await fetch("/api/vehicleStatus", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(sendForm),
+        });
 
-      const data = await res.json();
+        const data = await res.json();
 
-      // console.log("Status change response:", data);
+        // console.log("Status change response:", data);
 
-      if (data?.result?.status === "200") {
-        setVehicles([
-          ...vehicles.map((vehicle) => {
-            if (vehicle?.id === selectedTicketId) {
-              return {
-                ...vehicle,
-                status: nextStatus,
-                isRead: false, // Reset read status when status changes
-              };
-            }
-            return vehicle;
-          }),
-        ]);
+        if (data?.result?.status === "200") {
+          setVehicles([
+            ...vehicles.map((vehicle) => {
+              if (vehicle?.id === selectedTicketId) {
+                return {
+                  ...vehicle,
+                  status: nextStatus,
+                  isRead: false, // Reset read status when status changes
+                };
+              }
+              return vehicle;
+            }),
+          ]);
 
-        await fetchData(); // refresh the data from the API
+          await fetchData(); // refresh the data from the API
 
-        markAsRead(
-          vehicles?.find(
-            (vehicle) => vehicle?.id === selectedTicketId
-          ) as Ticket,
-          "changeStatus"
-        );
+          markAsRead(
+            vehicles?.find(
+              (vehicle) => vehicle?.id === selectedTicketId
+            ) as Ticket,
+            "changeStatus"
+          );
 
-        setTimeout(() => {
-          Swal.fire({
-            title: "Success",
-            text: data.result.message,
-            icon: "success",
-            confirmButtonText: "OK",
-          });
-        }, 700);
-      } else {
-        setTimeout(() => {
-          Swal.fire({
-            title: "Error",
-            text: data?.result?.message || "Failed to update status",
-            icon: "error",
-            confirmButtonText: "OK",
-          });
-        }, 700);
+          setTimeout(() => {
+            Swal.fire({
+              title: "Success",
+              text: data.result.message,
+              icon: "success",
+              confirmButtonText: "OK",
+            });
+          }, 700);
+        } else {
+          setTimeout(() => {
+            Swal.fire({
+              title: "Error",
+              text: data?.result?.message || "Failed to update status",
+              icon: "error",
+              confirmButtonText: "OK",
+            });
+          }, 700);
+        }
+
+        closePinModal();
+      } catch (error) {
+        console.error("Failed to update status", error);
+        Swal.fire({
+          title: "Error",
+          text: (error as string) || "Failed to update status",
+          icon: "error",
+          confirmButtonText: "OK",
+        });
+      } finally {
+        setButtonLoader(false);
+        setPin("");
+        setShowPinConfirmationModal(false);
+        setSelectedTicketId(null);
+        setNextStatus(null);
       }
-
-      closePinModal();
-    } catch (error) {
-      console.error("Failed to update status", error);
-      Swal.fire({
-        title: "Error",
-        text: (error as string) || "Failed to update status",
-        icon: "error",
-        confirmButtonText: "OK",
-      });
-    } finally {
-      setButtonLoader(false);
-      setPin("");
-      setShowPinConfirmationModal(false);
-      setSelectedTicketId(null);
-      setNextStatus(null);
-    }
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      (error: unknown) => {
+        console.error("Geolocation error:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Location Error",
+          text: "Unable to retrieve your location. Please allow location access and try again.",
+        });
+        setButtonLoader(false);
+      };
+    });
   };
 
   const handleCloseTicketDetails = () => {
@@ -533,6 +577,7 @@ export default function HomePage() {
                 fetchData={fetchData}
                 latitude={latitude as number}
                 longitude={longitude as number}
+                locationMode={locationMode}
               />
             )
           )}

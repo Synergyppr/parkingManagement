@@ -52,10 +52,11 @@ export default function ReceiveForm({
   setInitialForm,
   isFormChanged,
   shouldBypassUnloadPromptRef,
-}: ReceiveFormProps) {
-  const { propertyId, latitude, longitude } = useProperty();
+}:
+ReceiveFormProps) {
+  const { propertyId, latitude, longitude, propertyName, locationMode } =
+    useProperty();
   const saveClickedRef = useRef(false);
-  const [propertyName, setPropertyName] = useState<string>("");
   const [step, setStep] = useState<number>(1);
   const [models, setModels] = useState<DropdownOption[]>([]);
   const [loader, setLoader] = useState(false);
@@ -68,8 +69,6 @@ export default function ReceiveForm({
 
   useEffect(() => {
     generateTicketNumber();
-
-    setPropertyName(localStorage.getItem("propertyName") || "");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -131,7 +130,7 @@ export default function ReceiveForm({
     const alphanumericSix = uuidv4()
       .replace(/-/g, "")
       .substring(0, 6)
-      .toUpperCase(); // Optional: .toUpperCase() for readability
+      .toUpperCase();
 
     setForm((prev: Partial<Ticket>) => ({
       ...prev,
@@ -214,117 +213,127 @@ export default function ReceiveForm({
     });
 
     if (Object.keys(damageStatus).length === 0) {
-      damageStatus = {}; // or `null` or `undefined`
+      damageStatus = {};
     }
 
-    // const latitude1 = 18.426434330459355;
-    // const longitude1 = -66.05954507209249;
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      const { latitude: userLat, longitude: userLng } = position.coords;
+      const sendForm = {
+        latitude: locationMode === "manual" ? latitude : userLat,
+        longitude: locationMode === "manual" ? longitude : userLng,
+        propertyId: propertyId,
+        firstName: form?.firstName,
+        lastName: form?.lastName,
+        phone: rawPhone,
+        pin: form?.pin,
+        makeId: parseInt(form?.make || "0"),
+        modelId: parseInt(form?.model || "0"),
+        typeId: parseInt(form?.type || "0"),
+        colorId: parseInt(form?.color || "0"),
+        licensePlate: form?.licensePlate || "",
+        ticketNumber: form?.ticketNumber || uuidv4().slice(0, 6),
+        destination: form?.placeToVisit,
+        damageStatus,
+      };
 
-    const sendForm = {
-      latitude: Number(latitude),
-      longitude: Number(longitude),
-      propertyId: propertyId,
-      firstName: form?.firstName,
-      lastName: form?.lastName,
-      phone: rawPhone,
-      pin: form?.pin,
-      makeId: parseInt(form?.make || "0"),
-      modelId: parseInt(form?.model || "0"),
-      typeId: parseInt(form?.type || "0"),
-      colorId: parseInt(form?.color || "0"),
-      licensePlate: form?.licensePlate || "",
-      ticketNumber: form?.ticketNumber || uuidv4().slice(0, 6),
-      destination: form?.placeToVisit,
-      damageStatus,
-    };
+      // console.log("Submitting form:", sendForm);
 
-    // console.log("Submitting form:", sendForm);
+      // return; // Uncomment this line to prevent actual submission during development
 
-    // return; // Uncomment this line to prevent actual submission during development
+      try {
+        const res = await fetch("/api/vehicleCheckIn", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sendForm }),
+        });
 
-    try {
-      const res = await fetch("/api/vehicleCheckIn", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sendForm }),
-      });
+        const result = await res.json();
 
-      const result = await res.json();
+        if (result?.status === "200") {
+          await fetchData(); // refresh the data from the API
 
-      if (result?.status === "200") {
-        await fetchData(); // refresh the data from the API
-
-        const willCharge = await Swal.fire({
-          title: "Are You Sure?",
-          html: `
+          const willCharge = await Swal.fire({
+            title: "Are You Sure?",
+            html: `
             <p>This form submission will trigger a text message to the visitor.</p>
             <p><strong>You may incur a small charge.</strong></p>
             <p class="mt-2 text-gray-500 text-sm">Do you wish to proceed?</p>
           `,
-          icon: "info",
-          showCancelButton: true,
-          confirmButtonColor: "#3085d6",
-          cancelButtonColor: "#d33",
-          confirmButtonText: "Yes, submit",
-          cancelButtonText: "Cancel",
-        });
+            icon: "info",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, submit",
+            cancelButtonText: "Cancel",
+          });
 
-        if (!willCharge.isConfirmed) {
-          setLoader(false);
-          return;
+          if (!willCharge.isConfirmed) {
+            setLoader(false);
+            return;
+          }
+
+          // Successful login
+          Swal.fire({
+            title: "Form Sent",
+            html: `<pre style="text-align: left; white-space: pre-wrap;">${JSON.stringify(
+              sendForm,
+              null,
+              2
+            )}</pre>`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Continue",
+            cancelButtonText: "Cancel",
+          }).then(async (response) => {
+            if (response.isConfirmed) {
+              // Swal.fire({
+              //   icon: "success",
+              //   title: "Success",
+              //   text: "Vehicle checked in successfully!",
+              //   showConfirmButton: false,
+              //   timer: 1500,
+              // });
+              setSubmitted(true);
+              setForm({});
+              setIncidentParts([]);
+              setDescriptions({});
+              setInitialForm({});
+            } //
+          }); //
+        } else {
+          console.error("Error: Unexpected response:", result);
+          Swal.fire({
+            icon: "error",
+            title: "Submission Failed",
+            text: result?.message || "Something went wrong. Please try again.",
+            html: `<pre style="text-align: left; white-space: pre-wrap;">${JSON.stringify(
+              sendForm,
+              null,
+              2
+            )}</pre>`,
+          });
         }
-
-        // Successful login
-        Swal.fire({
-          title: "Form Sent",
-          html: `<pre style="text-align: left; white-space: pre-wrap;">${JSON.stringify(
-            sendForm,
-            null,
-            2
-          )}</pre>`,
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonText: "Continue",
-          cancelButtonText: "Cancel",
-        }).then(async (response) => {
-          if (response.isConfirmed) {
-            // Swal.fire({
-            //   icon: "success",
-            //   title: "Success",
-            //   text: "Vehicle checked in successfully!",
-            //   showConfirmButton: false,
-            //   timer: 1500,
-            // });
-            setSubmitted(true);
-            setForm({});
-            setIncidentParts([]);
-            setDescriptions({});
-            setInitialForm({});
-          } //
-        }); //
-      } else {
-        console.error("Error: Unexpected response:", result);
+      } catch (error) {
+        console.error("Error submitting form:", error);
         Swal.fire({
           icon: "error",
           title: "Submission Failed",
-          text: result?.message || "Something went wrong. Please try again.",
-          html: `<pre style="text-align: left; white-space: pre-wrap;">${JSON.stringify(
-            sendForm,
-            null,
-            2
-          )}</pre>`,
+          text: "Something went wrong. Please try again.",
         });
+      } finally {
+        setLoader(false);
       }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Submission Failed",
-        text: "Something went wrong. Please try again.",
-      });
-    } finally {
-      setLoader(false);
-    }
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      (error: unknown) => {
+        console.error("Geolocation error:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Location Error",
+          text: "Unable to retrieve your location. Please allow location access and try again.",
+        });
+        setLoader(false);
+      };
+    });
   };
 
   const fetchUserDataByPhone = async (phone: string): Promise<void> => {
@@ -437,7 +446,7 @@ export default function ReceiveForm({
     >
       <div className="p-2 sm:p-4 md:p-6 max-w-3xl mx-auto space-y-6 transition-opacity duration-500 ease-in-out animate-fade-in min-h-full">
         {!submitted ? (
-          <>
+          <div>
             <div className="lg:mb-10 relative lg:bottom-4">
               <h2 className="text-[23px] font-bold bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent tracking-tight text-center mb-1">
                 Vehicle Receipt Form
@@ -445,7 +454,12 @@ export default function ReceiveForm({
               {step < 3 && (
                 <p className="text-xs font-light text-center text-gray-700 mb-2">
                   Please complete all required fields below to park in{" "}
-                  {propertyName}.
+                  {propertyName ? (
+                    propertyName
+                  ) : (
+                    <span className="italic">[ designated property ]</span>
+                  )}
+                  .
                 </p>
               )}
               {step === 3 && (
@@ -713,14 +727,14 @@ export default function ReceiveForm({
                 <button
                   onClick={handleSubmit}
                   type="button"
-                  disabled={loader}
+                  disabled={loader || !propertyId}
                   className="cursor-pointer ml-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-6 font-semibold shadow-sm tracking-tight rounded"
                 >
                   {loader ? "Submitting..." : "Submit"}
                 </button>
               )}
             </div>
-          </>
+          </div>
         ) : (
           <div
             className="text-center animate-fade-in flex flex-col items-center h-full md:my-auto mt-[2vh] justify-center w-full p-4 rounded-lg"
