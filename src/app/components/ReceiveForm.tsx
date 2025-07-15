@@ -52,8 +52,7 @@ export default function ReceiveForm({
   setInitialForm,
   isFormChanged,
   shouldBypassUnloadPromptRef,
-}:
-ReceiveFormProps) {
+}: ReceiveFormProps) {
   const { propertyId, latitude, longitude, propertyName, locationMode } =
     useProperty();
   const saveClickedRef = useRef(false);
@@ -400,10 +399,10 @@ ReceiveFormProps) {
         text: "Please fill all required fields.",
       });
 
-      if (missing.length > 0) {
-        const firstMissing = document.querySelector(`[name="${missing[0]}"]`);
-        firstMissing?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
+      // if (missing.length > 0) {
+      //   const firstMissing = document.querySelector(`[name="${missing[0]}"]`);
+      //   firstMissing?.scrollIntoView({ behavior: "smooth", block: "center" });
+      // }
       return;
     }
 
