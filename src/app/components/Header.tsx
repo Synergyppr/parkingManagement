@@ -127,7 +127,6 @@ export default function Header() {
     } else {
       setIsOutOfArea(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latitude, longitude, propertyId]);
 
   useEffect(() => {
@@ -175,6 +174,7 @@ export default function Header() {
         localStorage.clear();
         sessionStorage.clear();
         setPropertyId("");
+        setPropertyName("");
         router.replace("/");
       }
     });
