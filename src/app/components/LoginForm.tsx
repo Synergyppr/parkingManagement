@@ -11,6 +11,7 @@ import PageLoader from "./elements/PageLoader";
 export default function LoginForm() {
   const {
     setPropertyId,
+    setPropertyName,
     latitude,
     longitude,
     requestLocation,
@@ -154,15 +155,18 @@ export default function LoginForm() {
         confirmButtonText: "Continue",
       }).then(async (response) => {
         if (response.isConfirmed) {
-          localStorage.setItem("propertyName", result?.data?.property?.name);
-          localStorage.setItem("isLoggedIn", "true");
-
-          // console.log("Property data", result?.data);
           if (result?.data?.property) {
-            const newPropertyId = result?.data?.property?.id;
-            setPropertyId(newPropertyId);
-            localStorage.setItem("propertyId", newPropertyId as string);
-            await joinGroup(newPropertyId);
+            const propertyId = result?.data?.property?.id;
+            const propertyName = result?.data?.property?.name;
+            sessionStorage.setItem("propertyId", propertyId as string);
+            localStorage.setItem("propertyId", propertyId as string);
+            setPropertyId(propertyId as string);
+            localStorage.setItem("propertyName", propertyName);
+            sessionStorage.setItem("propertyName", propertyName);
+            setPropertyName(propertyName);
+            localStorage.setItem("isLoggedIn", "true");
+            await joinGroup(propertyId);
+            // console.log("Context was set.");
           }
 
           setTimeout(() => {

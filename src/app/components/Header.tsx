@@ -123,28 +123,22 @@ export default function Header() {
     if (!inside || !propertyId) {
       setIsOutOfArea(true);
       leaveGroup(propertyId);
-      resetPropertyData();
+      // resetPropertyData();
     } else {
       setIsOutOfArea(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latitude, longitude, propertyId]);
 
-  const resetPropertyData = () => {
-    setPropertyName("");
-    sessionStorage.removeItem("propertyName");
-    localStorage.removeItem("propertyName");
-    setPropertyId("");
-    sessionStorage.removeItem("propertyId");
-    localStorage.removeItem("propertyId");
-  };
-
   useEffect(() => {
+    // console.log("Property ID:", propertyId);
+    // console.log("Property Name:", propertyName);
     if (!propertyId && !propertyName) {
       setIsOutOfArea(true);
-      resetPropertyData();
+      // resetPropertyData();
+    } else {
+      setIsOutOfArea(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [propertyId, propertyName]);
 
   useEffect(() => {
@@ -152,20 +146,20 @@ export default function Header() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (isOutOfArea) {
-      resetPropertyData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOutOfArea]);
+  // useEffect(() => {
+  //   if (isOutOfArea) {
+  //     resetPropertyData();
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [isOutOfArea]);
 
-  useEffect(() => {
-    if (locationMode === "live") {
-      leaveGroup(propertyId as string);
-      resetPropertyData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locationMode]);
+  // useEffect(() => {
+  //   if (locationMode === "live" && !propertyId) {
+  //     leaveGroup(propertyId as string);
+  //     resetPropertyData();
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [locationMode]);
 
   const handleLogout = () => {
     Swal.fire({

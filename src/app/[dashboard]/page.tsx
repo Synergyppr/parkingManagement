@@ -31,8 +31,9 @@ export default function HomePage() {
     latitude,
     longitude,
     locationMode,
-    setPropertyId,
-    setPropertyName,
+    // setPropertyId,
+    // setPropertyName,
+    requestLocation,
   } = useProperty();
   const saveClickedRef = useRef(false);
   const shouldBypassUnloadPromptRef = useRef(false);
@@ -143,20 +144,21 @@ export default function HomePage() {
         : "Valet Parking App";
   }, [unreadRequestedTickets]);
 
-  const resetPropertyData = () => {
-    setPropertyName("");
-    sessionStorage.removeItem("propertyName");
-    localStorage.removeItem("propertyName");
-    setPropertyId("");
-    sessionStorage.removeItem("propertyId");
-    localStorage.removeItem("propertyId");
-  };
+  // const resetPropertyData = () => {
+  //   setPropertyName("");
+  //   sessionStorage.removeItem("propertyName");
+  //   localStorage.removeItem("propertyName");
+  //   setPropertyId("");
+  //   sessionStorage.removeItem("propertyId");
+  //   localStorage.removeItem("propertyId");
+  // };
 
   useEffect(() => {
     if (locationMode === "live") {
       setVehicles([]);
       setReadyVehicles([]);
-      resetPropertyData();
+      // resetPropertyData();
+      requestLocation(); // Request user's location
     }
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps

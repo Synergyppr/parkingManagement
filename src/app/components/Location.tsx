@@ -184,7 +184,7 @@ const Location = () => {
         setPropertyId(newProperty.id);
         setPropertyName(newProperty.name);
       } else {
-        setPropertyId(null);
+        setPropertyId("");
         setPropertyName("Outside Range");
       }
 
@@ -267,7 +267,7 @@ const Location = () => {
           setPropertyId(newProperty.id);
           setPropertyName(newProperty.name);
         } else {
-          setPropertyId(null);
+          setPropertyId("");
           setPropertyName("Outside Range");
         }
 
