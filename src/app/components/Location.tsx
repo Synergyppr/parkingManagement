@@ -70,8 +70,9 @@ const Location = () => {
     longitude,
     setLatitude,
     setLongitude,
-    setPropertyId,
+    // propertyId,
     propertyName,
+    setPropertyId,
     setPropertyName,
     locationMode,
     setLocationMode,
@@ -111,13 +112,51 @@ const Location = () => {
       if (e.latLng) {
         const lat = e.latLng.lat();
         const lng = e.latLng.lng();
+
         setLatitude(lat);
         setLongitude(lng);
         setManualLat(lat.toString());
         setManualLng(lng.toString());
+
+        let foundProperty = null;
+
+        for (const prop of Object.values(predefinedProperties)) {
+          const R = 6371e3; // meters
+          const dLat = (prop.lat - lat) * (Math.PI / 180);
+          const dLng = (prop.lng - lng) * (Math.PI / 180);
+          const a =
+            Math.sin(dLat / 2) ** 2 +
+            Math.cos(lat * (Math.PI / 180)) *
+              Math.cos(prop.lat * (Math.PI / 180)) *
+              Math.sin(dLng / 2) ** 2;
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          const distance = R * c;
+
+          if (distance <= prop.radius) {
+            foundProperty = prop;
+            break;
+          }
+        }
+
+        if (foundProperty) {
+          setPropertyId(foundProperty.id);
+          setPropertyName(foundProperty.name);
+          setMessage(`You are within ${foundProperty.name}.`);
+        } else {
+          setPropertyId("");
+          setPropertyName("");
+          setMessage("You are outside all known properties.");
+        }
       }
     },
-    [setLatitude, setLongitude]
+    [
+      setLatitude,
+      setLongitude,
+      setManualLat,
+      setManualLng,
+      setPropertyId,
+      setPropertyName,
+    ]
   );
 
   const interpolate = (start: number, end: number, factor: number) => {
@@ -135,6 +174,8 @@ const Location = () => {
     let currentStep = 0;
 
     let previousPropertyId: string | null = start.id; // Start inside plaza250
+
+    setMessage(`Starting simulation from ${start.name} to ${end.name}.`);
 
     const interval = setInterval(() => {
       const factor = currentStep / steps;
@@ -185,7 +226,7 @@ const Location = () => {
         setPropertyName(newProperty.name);
       } else {
         setPropertyId("");
-        setPropertyName("Outside Range");
+        setPropertyName("");
       }
 
       currentStep++;
@@ -193,7 +234,7 @@ const Location = () => {
         clearInterval(interval);
         setSimulationInProgress(false);
       }
-    }, 200);
+    }, 100);
   };
 
   const simulateDriveFromCocToLaConcha = () => {
@@ -210,6 +251,8 @@ const Location = () => {
     let currentSegment = 0;
     let currentStep = 0;
     let previousPropertyId: string | null = route[0].id;
+
+    setMessage(`Starting simulation from ${route[0].id}.`);
 
     const moveAlongRoute = () => {
       if (currentSegment >= route.length - 1) return;
@@ -309,26 +352,7 @@ const Location = () => {
           >
             Switch to {locationMode === "live" ? "Manual" : "Live"}
           </button>
-          {/* <div className="flex gap-1 items-center">
-            <ToggleButton
-              data={locationMode === "live"}
-              onToggle={(value) => {
-                const newMode = value ? "live" : "manual";
-                setLocationMode(newMode === "live" ? "manual" : "live");
-                setMessage("Location mode switched to " + newMode);
 
-                if (newMode === "live") {
-                  requestLocation();
-                }
-              }}
-              // title="Location Mode"
-              name="locationMode"
-              value={locationMode === "live"}
-            />
-            <p className="text-gray-800">
-              Switch to {locationMode === "live" ? "Manual" : "Live"}
-            </p>
-          </div> */}
           {locationMode === "live" && (
             <div className="flex items-center">
               <GoDotFill className="text-red-500 text-lg blinking-dot" />

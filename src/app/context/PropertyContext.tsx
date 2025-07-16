@@ -71,9 +71,7 @@ export const PropertyProvider = ({
     if (storedId) setPropertyId(storedId);
     if (storedName) setPropertyName(storedName);
 
-    if (storedId && storedName) {
-      setLocationMode("manual");
-    } else {
+    if (!storedId && !storedName) {
       setLocationMode("live");
       sessionStorage.removeItem("propertyName");
       localStorage.removeItem("propertyName");

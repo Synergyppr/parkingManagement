@@ -120,14 +120,16 @@ export default function Header() {
       longitude,
       prop.radius as number
     );
-    if (!inside || !propertyId) {
+    if (!inside) {
       setIsOutOfArea(true);
-      leaveGroup(propertyId);
-      // resetPropertyData();
+      if (propertyId) leaveGroup(propertyId);
+      setPropertyName("");
+      setPropertyId("");
     } else {
       setIsOutOfArea(false);
     }
-  }, [latitude, longitude, propertyId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latitude, longitude]);
 
   useEffect(() => {
     // console.log("Property ID:", propertyId);

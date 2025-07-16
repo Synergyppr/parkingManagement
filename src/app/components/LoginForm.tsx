@@ -165,8 +165,7 @@ export default function LoginForm() {
             sessionStorage.setItem("propertyName", propertyName);
             setPropertyName(propertyName);
             localStorage.setItem("isLoggedIn", "true");
-            await joinGroup(propertyId);
-            // console.log("Context was set.");
+            if (propertyId) await joinGroup(propertyId);
           }
 
           setTimeout(() => {
