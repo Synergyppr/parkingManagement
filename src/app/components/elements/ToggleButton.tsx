@@ -14,7 +14,7 @@ const ToggleButton: React.FC<ToggleButtonProps> = ({
   value,
 }) => {
   return (
-    <div>
+    <div className="text-gray-800">
       {title && (
         <div className="font-bold tracking-tight mt-4 mb-2">{title}</div>
       )}

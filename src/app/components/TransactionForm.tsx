@@ -22,6 +22,7 @@ interface TransactionFormProps {
   latitude?: number;
   longitude?: number;
   locationMode?: "live" | "manual";
+  propertyId?: string | null;
 }
 
 interface TransactionForm {
@@ -41,6 +42,7 @@ export default function TransactionForm({
   latitude,
   longitude,
   locationMode,
+  propertyId,
 }: TransactionFormProps) {
   const [loader, setLoader] = useState(false);
 
@@ -241,8 +243,10 @@ export default function TransactionForm({
           <button
             onClick={handleSubmit}
             type="button"
-            disabled={loader}
-            className="w-full cursor-pointer ml-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-6 font-semibold shadow-sm tracking-tight rounded"
+            disabled={loader || !propertyId}
+            className={`${
+              loader || !propertyId ? "" : "hover:to-blue-800"
+            } w-full cursor-pointer ml-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 transition-colors text-white py-2 px-6 font-semibold shadow-sm tracking-tight rounded`}
           >
             {loader ? "Submitting..." : "Submit"}
           </button>

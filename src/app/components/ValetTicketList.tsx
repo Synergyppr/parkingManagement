@@ -23,6 +23,7 @@ interface ValetTicketListProps {
   latitude?: number;
   longitude?: number;
   locationMode?: "live" | "manual";
+  propertyId?: string | null;
 }
 
 interface TransactionForm {
@@ -47,6 +48,7 @@ export default function ValetTicketList({
   latitude,
   longitude,
   locationMode,
+  propertyId,
 }: ValetTicketListProps) {
   const [transactionForm, setTransactionForm] = useState<TransactionForm>({
     amount: 0,
@@ -281,6 +283,7 @@ export default function ValetTicketList({
               latitude={latitude}
               longitude={longitude}
               locationMode={locationMode}
+              propertyId={propertyId}
             />
           </div>
         </Modal>

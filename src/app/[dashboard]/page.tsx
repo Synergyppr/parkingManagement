@@ -578,6 +578,7 @@ export default function HomePage() {
                 latitude={latitude as number}
                 longitude={longitude as number}
                 locationMode={locationMode}
+                propertyId={propertyId}
               />
             )
           )}
@@ -594,6 +595,7 @@ export default function HomePage() {
         setShowPin={setShowPin}
         buttonLoader={buttonLoader}
         onSubmit={handlePinSubmit}
+        propertyId={propertyId}
       />
 
       {/* Ticket Details Modal */}

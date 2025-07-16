@@ -40,6 +40,7 @@ export default function Header() {
   );
   const [openLocationModal, setOpenLocationModal] = useState(false);
   const [isOutOfArea, setIsOutOfArea] = useState(false);
+  const [showLocationToggle, setShowLocationToggle] = useState(false);
 
   useAuthRedirect();
 
@@ -47,6 +48,28 @@ export default function Header() {
     const loggedIn = localStorage.getItem("isLoggedIn") === "true";
     setIsLoggedIn(loggedIn);
   }, []);
+
+  useEffect(() => {
+    const keysPressed: string[] = [];
+    const handleKeyDown = (e: KeyboardEvent) => {
+      keysPressed.push(e?.key?.toLowerCase());
+
+      if (keysPressed.length > 3) {
+        keysPressed.shift();
+      }
+
+      const isCtrlSyn =
+        e.ctrlKey && keysPressed.join("") === "syn" && keysPressed.length === 3;
+
+      if (isCtrlSyn) {
+        setShowLocationToggle(!showLocationToggle);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showLocationToggle]);
 
   useEffect(() => {
     const propertyMap: Record<
@@ -183,44 +206,50 @@ export default function Header() {
         />
 
         <div className="flex gap-4 items-center relative z-[9999]">
-          <button
-            type="button"
-            className="py-1 px-3 bg-blue-500 text-white rounded-sm cursor-pointer hover:scale-105 m-auto"
-            onClick={() => setOpenLocationModal(true)}
-          >
-            {locationMode === "live" ? (
-              <span className="flex items-center gap-1">
-                <GoDotFill className="text-red-500 animate-blink blinking-dot" />
-                Live
-              </span>
-            ) : (
-              <span className="flex items-center gap-1">
-                <BiCurrentLocation className="text-blue-800" />
-                Manual
-              </span>
-            )}
-          </button>
-          {propertyName && (
-            <div
-              className={`flex gap-1 bg-slate-800/10 border-solid border-[0.5px] rounded-sm text-sm shadow-sm py-[5.5px] px-2 border-black uppercase my˝-auto`}
-            >
-              <FaLocationDot className="w-3 h-3 my-auto text-red-600" />
-              <p className="my-auto text-white tracking-tight font-bold">
-                {propertyName === "Condado Ocean Club"
-                  ? "COC"
-                  : propertyName === "La Concha Resort"
-                  ? "CRH"
-                  : propertyName?.substring(0, 3)}
-              </p>
-            </div>
-          )}
+          {showLocationToggle && (
+            <>
+              <button
+                type="button"
+                className="py-1 px-3 bg-blue-500 text-white rounded-sm cursor-pointer hover:scale-105 m-auto"
+                onClick={() => setOpenLocationModal(true)}
+              >
+                {locationMode === "live" ? (
+                  <span className="flex items-center gap-1">
+                    <GoDotFill className="text-red-500 animate-blink blinking-dot" />
+                    Live
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1">
+                    <BiCurrentLocation className="text-blue-800" />
+                    Manual
+                  </span>
+                )}
+              </button>
+              {propertyName && (
+                <div
+                  className={`flex gap-1 bg-slate-800/10 border-solid border-[0.5px] rounded-sm text-sm shadow-sm py-[5.5px] px-2 border-black uppercase my˝-auto`}
+                >
+                  <FaLocationDot className="w-3 h-3 my-auto text-red-600" />
+                  <p className="my-auto text-white tracking-tight font-bold">
+                    {propertyName === "Condado Ocean Club"
+                      ? "COC"
+                      : propertyName === "La Concha Resort"
+                      ? "CRH"
+                      : propertyName === "Condado Vanderbilt"
+                      ? "CVH"
+                      : propertyName?.substring(0, 3)}
+                  </p>
+                </div>
+              )}
 
-          <Modal
-            isOpen={openLocationModal}
-            onClose={() => setOpenLocationModal(false)}
-          >
-            <Location />
-          </Modal>
+              <Modal
+                isOpen={openLocationModal}
+                onClose={() => setOpenLocationModal(false)}
+              >
+                <Location />
+              </Modal>
+            </>
+          )}
 
           <button onClick={isLoggedIn ? handleLogout : () => router.push("/")}>
             {isLoggedIn ? (

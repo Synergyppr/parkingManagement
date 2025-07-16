@@ -11,6 +11,7 @@ interface PinConfirmationModalProps {
   setShowPin: (val: boolean) => void;
   buttonLoader: boolean;
   onSubmit: () => void;
+  propertyId?: string | null;
 }
 
 export default function PinConfirmationModal({
@@ -22,6 +23,7 @@ export default function PinConfirmationModal({
   setShowPin,
   buttonLoader,
   onSubmit,
+  propertyId,
 }: PinConfirmationModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
@@ -60,10 +62,12 @@ export default function PinConfirmationModal({
 
         <div className="flex">
           <button
-            disabled={buttonLoader || !pin}
+            disabled={buttonLoader || !pin || !propertyId}
             onClick={onSubmit}
             className={` ${
-              !pin ? "bg-blue-500/20" : "bg-blue-500 hover:bg-blue-600 cursor-pointer"
+              !pin || !propertyId
+                ? "bg-blue-500/20"
+                : "bg-blue-500 hover:bg-blue-600 cursor-pointer"
             } w-full text-white px-4 py-2 rounded text-sm transition-colors duration-200`}
           >
             {buttonLoader ? <ButtonLoader /> : "Confirm"}

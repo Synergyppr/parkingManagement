@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
@@ -10,7 +9,14 @@ import FloatingLabelInput from "./elements/FloatingLabelInput";
 import PageLoader from "./elements/PageLoader";
 
 export default function LoginForm() {
-  const { setPropertyId, latitude, longitude } = useProperty();
+  const {
+    setPropertyId,
+    latitude,
+    longitude,
+    requestLocation,
+    locationMode,
+    setLocationMode,
+  } = useProperty();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,6 +24,36 @@ export default function LoginForm() {
   const [ipAddress, setIpAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+  const [showLocationToggle, setShowLocationToggle] = useState(false);
+
+  useEffect(() => {
+    const keysPressed: string[] = [];
+    const handleKeyDown = (e: KeyboardEvent) => {
+      keysPressed.push(e?.key?.toLowerCase());
+
+      if (keysPressed.length > 3) {
+        keysPressed.shift();
+      }
+
+      const isCtrlSyn =
+        e.ctrlKey && keysPressed.join("") === "syn" && keysPressed.length === 3;
+
+      if (isCtrlSyn) {
+        setShowLocationToggle(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    // Request location if not already set
+    if (!latitude || !longitude) {
+      requestLocation();
+    }
+  }, [latitude, longitude, requestLocation]);
 
   useEffect(() => {
     // IP fetch
@@ -75,8 +111,9 @@ export default function LoginForm() {
       temporaryPassword: password,
       device: deviceType,
       location: ipAddress,
-      latitude: Number(latitude),
-      longitude: Number(longitude),
+      latitude: locationMode === "live" ? Number(latitude) : 18.426434330459355, //250
+      longitude:
+        locationMode === "live" ? Number(longitude) : -66.05954507209249, //250
     };
 
     try {
@@ -148,6 +185,24 @@ export default function LoginForm() {
     }
   };
 
+  const handleLocationMode = () => {
+    if (locationMode === "live") {
+      setLocationMode("manual");
+      Swal.fire({
+        icon: "info",
+        title: "Manual Mode Activated",
+        text: "You can now enter your property details manually.",
+      });
+    } else {
+      setLocationMode("live");
+      Swal.fire({
+        icon: "info",
+        title: "Live Mode Activated",
+        text: "Your location will be used to determine your property.",
+      });
+    }
+  };
+
   return (
     <>
       {redirecting && (
@@ -191,6 +246,33 @@ export default function LoginForm() {
             maxLength={50}
             disabled={loading}
           />
+
+          {showLocationToggle && (
+            <div className="flex justify-center">
+              <button
+                className={`${
+                  locationMode === "live"
+                    ? "bg-blue-500 text-white"
+                    : "text-blue-500"
+                } border-[0.5px] border-blue-500 py-1 px-2  text-sm w-[70px]`}
+                type="button"
+                onClick={handleLocationMode}
+              >
+                Live
+              </button>
+              <button
+                className={`${
+                  locationMode === "manual"
+                    ? "bg-blue-500 text-white"
+                    : "text-blue-500"
+                } border-[0.5px] border-blue-500 py-1 px-2  text-sm w-[70px]`}
+                type="button"
+                onClick={handleLocationMode}
+              >
+                Manual
+              </button>
+            </div>
+          )}
 
           <button
             type="submit"

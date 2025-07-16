@@ -9,6 +9,7 @@ import {
 } from "@react-google-maps/api";
 import { GoDotFill } from "react-icons/go";
 import { FaMinus, FaPlus } from "react-icons/fa";
+// import ToggleButton from "./elements/ToggleButton";
 
 const mapContainerStyle = {
   width: "100%",
@@ -291,7 +292,7 @@ const Location = () => {
   const currentLng = longitude ?? centerDefault.lng;
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center min-w-full lg:min-w-[400px]">
       <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-2xl space-y-4">
         <div className="mb-4 mx-auto flex justify-between">
           <button
@@ -308,7 +309,26 @@ const Location = () => {
           >
             Switch to {locationMode === "live" ? "Manual" : "Live"}
           </button>
+          {/* <div className="flex gap-1 items-center">
+            <ToggleButton
+              data={locationMode === "live"}
+              onToggle={(value) => {
+                const newMode = value ? "live" : "manual";
+                setLocationMode(newMode === "live" ? "manual" : "live");
+                setMessage("Location mode switched to " + newMode);
 
+                if (newMode === "live") {
+                  requestLocation();
+                }
+              }}
+              // title="Location Mode"
+              name="locationMode"
+              value={locationMode === "live"}
+            />
+            <p className="text-gray-800">
+              Switch to {locationMode === "live" ? "Manual" : "Live"}
+            </p>
+          </div> */}
           {locationMode === "live" && (
             <div className="flex items-center">
               <GoDotFill className="text-red-500 text-lg blinking-dot" />
