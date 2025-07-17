@@ -64,7 +64,7 @@ const Location = () => {
       { name: string; lat: number; lng: number; id: string; radius: number }
     >
   >({});
-  const [simulatedPath, setSimulatedPath] = useState<
+  const [, setSimulatedPath] = useState<
     google.maps.LatLngLiteral[]
   >([]);
   const [plannedPath, setPlannedPath] = useState<google.maps.LatLngLiteral[]>(
