@@ -35,6 +35,7 @@ export interface Ticket {
   notificationId: string;
   isRead: boolean;
   licensePlate?: string;
+  damagedParts?: string[];
   pin: string;
 }
 

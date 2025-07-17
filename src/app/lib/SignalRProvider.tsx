@@ -172,6 +172,7 @@ export const joinGroup = async (groupId: string) => {
 };
 
 export const leaveGroup = async (groupId: string) => {
+  if (!groupId) return;
   try {
     if (globalConnection && globalConnection.state === "Connected") {
       await globalConnection.invoke("LeavePropertyGroup", groupId);

@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import Modal from "./Modal";
 import PropertyForm from "./PropertyForm";

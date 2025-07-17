@@ -8,7 +8,8 @@ import {
   CarBrand,
   DropdownOption,
 } from "@/app/types";
-import useAuthRedirect from "../lib/loginHook";
+import useAuthRedirect from "../hooks/loginHook";
+import usePropertyListener from "../hooks/usePropertyListener";
 import { useProperty } from "../context/PropertyContext";
 import { useSignalR } from "../lib/SignalRProvider";
 import {
@@ -26,15 +27,8 @@ import PageLoader from "../components/elements/PageLoader";
 // ** DASHBOARD PAGE **
 export default function HomePage() {
   const { registerNotificationHandler } = useSignalR();
-  const {
-    propertyId,
-    latitude,
-    longitude,
-    locationMode,
-    // setPropertyId,
-    // setPropertyName,
-    requestLocation,
-  } = useProperty();
+  const { propertyId, latitude, longitude, locationMode, requestLocation } =
+    useProperty();
   const saveClickedRef = useRef(false);
   const shouldBypassUnloadPromptRef = useRef(false);
   const [form, setForm] = useState<Partial<Ticket>>({}); // Create Valet Ticket Form
@@ -90,6 +84,7 @@ export default function HomePage() {
   const formLicensePlate = ticketDetails?.vehicle?.licensePlate || "";
 
   useAuthRedirect(); // will redirect if not logged in
+  usePropertyListener(); // listen for property changes based on user's location
 
   const fetchData = async () => {
     // GetValetTicketsByPropertyId
@@ -144,20 +139,10 @@ export default function HomePage() {
         : "Valet Parking App";
   }, [unreadRequestedTickets]);
 
-  // const resetPropertyData = () => {
-  //   setPropertyName("");
-  //   sessionStorage.removeItem("propertyName");
-  //   localStorage.removeItem("propertyName");
-  //   setPropertyId("");
-  //   sessionStorage.removeItem("propertyId");
-  //   localStorage.removeItem("propertyId");
-  // };
-
   useEffect(() => {
     if (locationMode === "live") {
-      setVehicles([]);
-      setReadyVehicles([]);
-      // resetPropertyData();
+      // setVehicles([]);
+      // setReadyVehicles([]);
       requestLocation(); // Request user's location
     }
     fetchData();

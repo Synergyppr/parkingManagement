@@ -49,6 +49,7 @@ export default function ReceiveForm({
   fetchData,
   form,
   setForm,
+  initialForm,
   setInitialForm,
   isFormChanged,
   shouldBypassUnloadPromptRef,
@@ -357,6 +358,7 @@ export default function ReceiveForm({
           color: preFill?.color?.toString(),
           licensePlate: preFill?.licensePlate || "",
           ticketNumber: form?.ticketNumber,
+          damagedParts: preFill?.damagedParts || [],
           pin: "",
         };
 
@@ -399,10 +401,6 @@ export default function ReceiveForm({
         text: "Please fill all required fields.",
       });
 
-      // if (missing.length > 0) {
-      //   const firstMissing = document.querySelector(`[name="${missing[0]}"]`);
-      //   firstMissing?.scrollIntoView({ behavior: "smooth", block: "center" });
-      // }
       return;
     }
 
@@ -686,12 +684,15 @@ export default function ReceiveForm({
                     saveClickedRef={saveClickedRef}
                     shouldBypassUnloadPromptRef={shouldBypassUnloadPromptRef}
                     isFormChanged={isFormChanged}
+                    damagedParts={initialForm?.damagedParts || []}
                   />
                 </div>
               )}
             </form>
 
-            <div className="flex justify-between mt-2">
+            <div
+              className={`${step === 3 ? "mt-4" : "mt-2"} flex justify-between`}
+            >
               {step === 1 && (
                 <button
                   type="button"

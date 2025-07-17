@@ -14,6 +14,7 @@ export default function LoginForm() {
     setPropertyName,
     latitude,
     longitude,
+    setPredefinedProperties,
     requestLocation,
     locationMode,
     setLocationMode,
@@ -121,6 +122,11 @@ export default function LoginForm() {
       const result = await validateUser(sentForm);
       const json = JSON.stringify(sentForm, null, 2); // with indentation preserved
 
+      setPredefinedProperties(result?.data?.properties || []);
+      localStorage.setItem(
+        "properties",
+        JSON.stringify(result?.data?.properties || [])
+      );
       // console.log("Login result:", result);
 
       if (!result) {

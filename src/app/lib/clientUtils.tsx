@@ -113,3 +113,117 @@ export function isWithinRadius(
   return R * c <= radiusMeters;
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const interpolate = (start: number, end: number, factor: number) => {
+  return start + (end - start) * factor;
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+type LatLng = google.maps.LatLngLiteral;
+
+type Property = {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  radius: number;
+};
+
+type SimulationOptions = {
+  route: LatLng[]; // Can be [A, B] or [A, B, C...]
+  predefinedProperties?: Record<string, Property>; // Optional for future use
+  setLatitude: (lat: number) => void;
+  setLongitude: (lng: number) => void;
+  setManualLat: (lat: string) => void;
+  setManualLng: (lng: string) => void;
+  simulationInProgress: boolean;
+  setSimulationInProgress: (val: boolean) => void;
+  setMessage: (msg: string) => void;
+  setSimulatedPath: React.Dispatch<
+    React.SetStateAction<google.maps.LatLngLiteral[]>
+  >;
+  logLabel?: string; // Optional debug label
+};
+
+export const simulateDrive = ({
+  route,
+  // predefinedProperties,
+  setLatitude,
+  setLongitude,
+  setManualLat,
+  setManualLng,
+  simulationInProgress,
+  setSimulationInProgress,
+  setMessage,
+  setSimulatedPath, // ✅ Add here
+}: // logLabel = "Custom",
+SimulationOptions & {
+  setSimulatedPath: React.Dispatch<
+    React.SetStateAction<google.maps.LatLngLiteral[]>
+  >;
+}) => {
+  if (simulationInProgress || route.length < 2) return;
+
+  setSimulatedPath([]); // clear path before starting
+  setSimulationInProgress(true);
+  let currentSegment = 0;
+  let currentStep = 0;
+  const steps = 100;
+
+  const simulateSegment = () => {
+    if (currentSegment >= route.length - 1) {
+      setSimulationInProgress(false);
+      setMessage("Simulation completed.");
+      return;
+    }
+
+    const start = route[currentSegment];
+    const end = route[currentSegment + 1];
+
+    const interval = setInterval(() => {
+      const factor = currentStep / steps;
+      const lat = interpolate(start.lat, end.lat, factor);
+      const lng = interpolate(start.lng, end.lng, factor);
+
+      const position = { lat, lng };
+      setLatitude(lat);
+      setLongitude(lng);
+      setManualLat(lat.toString());
+      setManualLng(lng.toString());
+      setSimulatedPath((prev) => [...prev, position]); // ✅ Track path
+
+      currentStep++;
+      if (currentStep > steps) {
+        clearInterval(interval);
+        currentSegment++;
+        currentStep = 0;
+        simulateSegment(); // move to next
+      }
+    }, 100);
+  };
+
+  simulateSegment();
+};
+
+export const generateInterpolatedPath = (
+  route: google.maps.LatLngLiteral[],
+  steps = 100
+): google.maps.LatLngLiteral[] => {
+  const path: google.maps.LatLngLiteral[] = [];
+
+  for (let i = 0; i < route.length - 1; i++) {
+    const start = route[i];
+    const end = route[i + 1];
+
+    for (let step = 0; step <= steps; step++) {
+      const factor = step / steps;
+      path.push({
+        lat: interpolate(start.lat, end.lat, factor),
+        lng: interpolate(start.lng, end.lng, factor),
+      });
+    }
+  }
+
+  return path;
+};

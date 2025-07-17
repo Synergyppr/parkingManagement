@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { LuListVideo } from "react-icons/lu";
 import { CiViewList } from "react-icons/ci";
@@ -22,11 +22,12 @@ interface CarVectorProps {
   passengerViewLabelsMap: Record<string, string[]>;
   driverViewLabelsMap: Record<string, string[]>;
   hideLabels?: boolean; // Prop to control label visibility
-  // hasUnsavedChanges?: boolean; // Optional prop to track unsaved changes
   setHasUnsavedChanges?: React.Dispatch<React.SetStateAction<boolean>>; // Optional prop to track unsaved changes
   saveClickedRef: React.RefObject<boolean>; // Optional ref to track if save was clicked
   shouldBypassUnloadPromptRef?: React.RefObject<boolean>; // Optional ref to bypass unload prompt
   isFormChanged?: () => boolean; // Optional function to check if the form has changed
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  damagedParts?: any[]; // Optional prop for damaged parts
 }
 
 const CarVector: React.FC<CarVectorProps> = ({
@@ -47,12 +48,56 @@ const CarVector: React.FC<CarVectorProps> = ({
   saveClickedRef, // Optional ref to track if save was clicked
   shouldBypassUnloadPromptRef,
   isFormChanged,
+  damagedParts,
 }) => {
   const [showFrontModal, setShowFrontModal] = useState(false);
   const [showRearModal, setShowRearModal] = useState(false);
   const [showPassengerModal, setShowPassengerModal] = useState(false);
   const [showDriverModal, setShowDriverModal] = useState(false);
   const [showFullReportModal, setShowFullReportModal] = useState(false);
+
+  useEffect(() => {
+    if (!damagedParts || damagedParts.length === 0) return;
+
+    const allLabelsMap = {
+      ...frontViewLabelsMap,
+      ...rearViewLabelsMap,
+      ...passengerViewLabelsMap,
+      ...driverViewLabelsMap,
+    };
+
+    const normalizeLabel = (raw: string) =>
+      raw.replace(/([A-Z])/g, " $1").trim();
+
+    const newIncidentParts = new Set<string>();
+    const newDescriptions: Record<string, string> = {};
+
+    damagedParts.forEach((damage) => {
+      const { partName, description } = damage;
+
+      const label = normalizeLabel(partName); // "LeftFrontDoor" → "Left Front Door"
+      const ids = allLabelsMap[label];
+
+      if (!ids) {
+        console.warn(`No IDs found for label: ${label}`);
+        return;
+      }
+
+      ids.forEach((id) => newIncidentParts.add(id));
+
+      if (!newDescriptions[label]) {
+        newDescriptions[label] = description;
+      } else if (!newDescriptions[label].includes(description)) {
+        newDescriptions[label] += `, ${description}`;
+      }
+    });
+
+    setIncidentParts(Array.from(newIncidentParts));
+    setDescriptions((prev) => ({ ...prev, ...newDescriptions }));
+    setNoIncident(false);
+    setHasUnsavedChanges?.(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [damagedParts]);
 
   const handlePartClick = (e: React.MouseEvent<SVGSVGElement>) => {
     const target = e.target as SVGElement;

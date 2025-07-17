@@ -1,25 +1,20 @@
 "use client";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import { FaUser, FaLocationDot } from "react-icons/fa6";
-import { TbLogout2, TbCar } from "react-icons/tb";
+import { TbLogout2 } from "react-icons/tb";
 import { FaBars } from "react-icons/fa";
-import {
-  IoHomeOutline,
-  IoSettingsOutline,
-  IoCarSportOutline,
-} from "react-icons/io5";
 import { GoDotFill } from "react-icons/go";
 import { BiCurrentLocation } from "react-icons/bi";
 import Modal from "@/app/components/Modal";
-import useAuthRedirect from "../lib/loginHook";
+import OffCanvas from "./OffCanvas";
+import useAuthRedirect from "../hooks/loginHook";
 import { useProperty } from "../context/PropertyContext";
 import { leaveGroup } from "../lib/SignalRProvider";
 import Location from "./Location";
-import { isWithinRadius } from "../lib/clientUtils";
+import usePropertyListener from "../hooks/usePropertyListener";
 
 export default function Header() {
   const router = useRouter();
@@ -28,16 +23,12 @@ export default function Header() {
     setPropertyId,
     propertyName,
     setPropertyName,
-    latitude,
-    longitude,
     locationMode,
     requestLocation,
   } = useProperty();
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [openModal, setOpenModal] = useState<"none" | "notifications" | "menu">(
-    "none"
-  );
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [openLocationModal, setOpenLocationModal] = useState(false);
   const [isOutOfArea, setIsOutOfArea] = useState(false);
   const [showLocationToggle, setShowLocationToggle] = useState(false);
@@ -71,96 +62,20 @@ export default function Header() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [showLocationToggle]);
 
-  useEffect(() => {
-    const propertyMap: Record<
-      string,
-      { lat: number; lng: number; logo: string; radius?: number }
-    > = {
-      "a7e348d3-8dfb-4f71-8bc5-042ba75d53c7": {
-        lat: 18.426434,
-        lng: -66.059545,
-        logo: "/250.jpeg",
-        radius: 100, // in meters
-      },
-      "b2aa6b8f-29b2-4fc3-a040-09af828d1a8d": {
-        lat: 18.423993,
-        lng: -66.058527,
-        logo: "/270.png",
-        radius: 100,
-      },
-      "5acdd1ec-392d-4d28-80e6-8adbd08e09cd": {
-        lat: 18.459366,
-        lng: -66.07728,
-        logo: "/coc.png",
-        radius: 65,
-      },
-      "f82ce385-c8e4-4c09-8b08-b01bf9676dc7": {
-        lat: 18.45877,
-        lng: -66.076082,
-        logo: "/cvh.png",
-        radius: 65,
-      },
-      "d3f5afa9-73c4-4bfa-8309-02ab93165f46": {
-        lat: 18.457303,
-        lng: -66.073427,
-        logo: "/laconcha.png",
-        radius: 100,
-      },
-    };
-
-    if (!propertyId || latitude == null || longitude == null) return;
-
-    const prop = propertyMap[propertyId];
-    if (!prop) return;
-
-    const inside = isWithinRadius(
-      prop.lat,
-      prop.lng,
-      latitude,
-      longitude,
-      prop.radius as number
-    );
-    if (!inside) {
-      setIsOutOfArea(true);
-      if (propertyId) leaveGroup(propertyId);
-      setPropertyName("");
-      setPropertyId("");
-    } else {
-      setIsOutOfArea(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [latitude, longitude]);
+  usePropertyListener();
 
   useEffect(() => {
-    // console.log("Property ID:", propertyId);
-    // console.log("Property Name:", propertyName);
     if (!propertyId && !propertyName) {
       setIsOutOfArea(true);
-      // resetPropertyData();
     } else {
       setIsOutOfArea(false);
     }
-  }, [propertyId, propertyName]);
+  }, [propertyId, propertyName, locationMode]);
 
   useEffect(() => {
     requestLocation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // useEffect(() => {
-  //   if (isOutOfArea) {
-  //     resetPropertyData();
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [isOutOfArea]);
-
-  // useEffect(() => {
-  //   if (locationMode === "live" && !propertyId) {
-  //     leaveGroup(propertyId as string);
-  //     resetPropertyData();
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [locationMode]);
 
   const handleLogout = () => {
     Swal.fire({
@@ -182,11 +97,9 @@ export default function Header() {
     });
   };
 
-  const toggleModal = (type: "notifications" | "menu") => {
-    setOpenModal((prev) => (prev === type ? "none" : type));
+  const toggleModal = () => {
+    setIsMenuOpen(true);
   };
-
-  const closeModal = () => setOpenModal("none");
 
   return (
     <>
@@ -206,16 +119,16 @@ export default function Header() {
             <>
               <button
                 type="button"
-                className="py-1 px-3 bg-blue-500 text-white rounded-sm cursor-pointer hover:scale-105 m-auto"
+                className="py-1 px-2 md:px-3 bg-blue-500 text-white rounded-sm cursor-pointer hover:scale-105 m-auto"
                 onClick={() => setOpenLocationModal(true)}
               >
                 {locationMode === "live" ? (
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1 text-xs md:text-sm lg:text-sm">
                     <GoDotFill className="text-red-500 animate-blink blinking-dot" />
                     Live
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1 text-xs md:text-sm lg:text-sm">
                     <BiCurrentLocation className="text-blue-800" />
                     Manual
                   </span>
@@ -223,7 +136,7 @@ export default function Header() {
               </button>
               {propertyName && (
                 <div
-                  className={`flex gap-1 bg-slate-800/10 border-solid border-[0.5px] rounded-sm text-sm shadow-sm py-[5.5px] px-2 border-black uppercase my˝-auto`}
+                  className={`hidden md:flex lg:flex gap-1 bg-slate-800/10 border-solid border-[0.5px] rounded-sm text-sm shadow-sm py-[5.5px] px-2 border-black uppercase my˝-auto`}
                 >
                   <FaLocationDot className="w-3 h-3 my-auto text-red-600" />
                   <p className="my-auto text-white tracking-tight font-bold">
@@ -247,7 +160,10 @@ export default function Header() {
             </>
           )}
 
-          <button onClick={isLoggedIn ? handleLogout : () => router.push("/")}>
+          <button
+            className="cursor-pointer"
+            onClick={isLoggedIn ? handleLogout : () => router.push("/")}
+          >
             {isLoggedIn ? (
               <TbLogout2 className="text-white text-lg hover:scale-110 transition-transform" />
             ) : (
@@ -255,49 +171,11 @@ export default function Header() {
             )}
           </button>
 
-          <button onClick={() => toggleModal("menu")}>
+          <button className="cursor-pointer" onClick={() => toggleModal()}>
             <FaBars className="text-white text-lg hover:scale-110 transition-transform" />
           </button>
 
-          <div className="absolute right-0 top-12 z-[9999]">
-            <Modal
-              isOpen={openModal === "menu"}
-              onClose={closeModal}
-              placementX="end"
-              placementY="start"
-            >
-              <nav className="flex flex-col space-y-2 text-gray-800">
-                <Link
-                  href="/"
-                  className="flex gap-2 items-center border-b border-gray-300 pb-1"
-                >
-                  <IoHomeOutline />
-                  Home
-                </Link>
-                <Link
-                  href="/tenants"
-                  className="flex gap-2 items-center border-b border-gray-300 pb-1"
-                >
-                  <IoSettingsOutline />
-                  Manage Tenants
-                </Link>
-                <Link
-                  href="/request"
-                  className="flex gap-2 items-center border-b border-gray-300 pb-1"
-                >
-                  <IoCarSportOutline />
-                  Request Car
-                </Link>
-                <Link
-                  href="/location"
-                  className="flex gap-2 items-center border-b border-gray-300 pb-1"
-                >
-                  <TbCar />
-                  Location
-                </Link>
-              </nav>
-            </Modal>
-          </div>
+          <OffCanvas isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
         </div>
       </header>
 

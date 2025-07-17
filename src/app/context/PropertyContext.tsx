@@ -1,29 +1,45 @@
 "use client";
 import { createContext, useContext, useState, useEffect } from "react";
 
+interface Property {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  radius: number;
+}
+
 interface PropertyContextType {
-  propertyId: string | null;
-  propertyName: string | null;
+  propertyId: string;
+  propertyName: string;
   latitude: number | null;
   longitude: number | null;
+  predefinedProperties: Record<string, Property>;
+  isOutOfArea: boolean;
   setPropertyId: (id: string | null) => void;
   setPropertyName: (name: string | null) => void;
   setLatitude: (lat: number | null) => void;
   setLongitude: (lng: number | null) => void;
+  setPredefinedProperties: (properties: Property[]) => void;
+  setIsOutOfArea: (value: boolean) => void;
   locationMode: "live" | "manual";
   setLocationMode: (mode: "live" | "manual") => void;
   requestLocation: () => void;
 }
 
 const PropertyContext = createContext<PropertyContextType>({
-  propertyId: null,
-  propertyName: null,
+  propertyId: "",
+  propertyName: "",
   latitude: null,
   longitude: null,
+  predefinedProperties: {},
+  isOutOfArea: false,
   setPropertyId: () => {},
   setPropertyName: () => {},
   setLatitude: () => {},
   setLongitude: () => {},
+  setPredefinedProperties: () => {},
+  setIsOutOfArea: () => {},
   locationMode: "live",
   setLocationMode: () => {},
   requestLocation: () => {},
@@ -39,6 +55,46 @@ export const PropertyProvider = ({
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
   const [locationMode, setLocationMode] = useState<"live" | "manual">("live");
+  const [predefinedProperties, setPredefinedProperties] = useState<
+    Record<string, Property>
+  >({});
+  const [isOutOfArea, setIsOutOfArea] = useState<boolean>(false);
+
+  const handleSetPredefinedProperties = (properties: Property[]) => {
+    const record = properties.reduce((acc, prop) => {
+      acc[prop.id] = {
+        id: prop.id,
+        name: prop.name,
+        lat: prop.lat,
+        lng: prop.lng,
+        radius: prop.radius,
+      };
+      return acc;
+    }, {} as Record<string, Property>);
+    setPredefinedProperties(record);
+  };
+
+  useEffect(() => {
+    const storedId =
+      sessionStorage.getItem("propertyId") ||
+      localStorage.getItem("propertyId");
+    const storedName =
+      sessionStorage.getItem("propertyName") ||
+      localStorage.getItem("propertyName");
+    const storedProperties = localStorage.getItem("properties");
+
+    if (storedId) setPropertyId(storedId);
+    if (storedName) setPropertyName(storedName);
+
+    if (storedProperties) {
+      try {
+        const rawArray = JSON.parse(storedProperties);
+        setPredefinedProperties(rawArray);
+      } catch (error) {
+        console.error("Error parsing stored properties:", error);
+      }
+    }
+  }, []);
 
   const requestLocation = () => {
     if (navigator.geolocation) {
@@ -53,30 +109,6 @@ export const PropertyProvider = ({
       );
     }
   };
-
-  useEffect(() => {
-    const storedId =
-      sessionStorage.getItem("propertyId") ||
-      localStorage.getItem("propertyId");
-
-    if (!storedId) {
-      sessionStorage.removeItem("propertyName");
-      localStorage.removeItem("propertyName");
-    }
-
-    const storedName =
-      sessionStorage.getItem("propertyName") ||
-      localStorage.getItem("propertyName");
-
-    if (storedId) setPropertyId(storedId);
-    if (storedName) setPropertyName(storedName);
-
-    if (!storedId && !storedName) {
-      setLocationMode("live");
-      sessionStorage.removeItem("propertyName");
-      localStorage.removeItem("propertyName");
-    }
-  }, []);
 
   const handlePropertyId = (id: string | null) => {
     setPropertyId(id);
@@ -100,17 +132,31 @@ export const PropertyProvider = ({
     }
   };
 
+  const handleSetIsOutOfArea = (value: boolean) => {
+    setIsOutOfArea(value);
+    // if (value) {
+    //   localStorage.removeItem("propertyId");
+    //   sessionStorage.removeItem("propertyId");
+    //   setPropertyId(null);
+    //   setPropertyName(null);
+    // }
+  };
+
   return (
     <PropertyContext.Provider
       value={{
-        propertyId,
-        propertyName,
+        propertyId: propertyId ?? "",
+        propertyName: propertyName ?? "",
         latitude,
         longitude,
+        predefinedProperties,
+        isOutOfArea,
         setPropertyId: handlePropertyId,
         setPropertyName: handlePropertyName,
         setLatitude,
         setLongitude,
+        setPredefinedProperties: handleSetPredefinedProperties,
+        setIsOutOfArea: handleSetIsOutOfArea,
         locationMode,
         setLocationMode,
         requestLocation,
