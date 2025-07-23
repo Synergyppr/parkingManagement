@@ -65,8 +65,8 @@ const CarVector: React.FC<CarVectorProps> = ({
       ...driverViewLabelsMap,
     };
 
-    const normalizeLabel = (raw: string): string | undefined => {
-      if (raw.length < 1) return undefined;
+    const normalizeLabel = (raw: string): string => {
+      if (typeof raw !== "string" || raw?.length < 1) return "";
       return raw?.replace(/([A-Z])/g, " $1")?.trim();
     };
 
@@ -78,7 +78,7 @@ const CarVector: React.FC<CarVectorProps> = ({
 
       const label = normalizeLabel(partName); // "LeftFrontDoor" → "Left Front Door"
       if (!partName || !label) {
-        console.warn("Invalid part name or label:", partName);
+        // console.warn("Invalid part name or label:", partName);
         return;
       }
       const ids = allLabelsMap[label];
