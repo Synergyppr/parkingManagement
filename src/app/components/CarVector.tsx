@@ -26,7 +26,8 @@ interface CarVectorProps {
   saveClickedRef: React.RefObject<boolean>;
   shouldBypassUnloadPromptRef?: React.RefObject<boolean>;
   isFormChanged?: () => boolean;
-  damagedParts?: { partName: string; description: string }[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  damagedParts?: { partName: string; description: string }[] | any[];
 }
 
 const CarVector: React.FC<CarVectorProps> = ({
@@ -56,7 +57,12 @@ const CarVector: React.FC<CarVectorProps> = ({
   const [showFullReportModal, setShowFullReportModal] = useState(false);
 
   useEffect(() => {
-    if (!damagedParts || damagedParts.length === 0) return;
+    if (
+      !damagedParts ||
+      damagedParts?.length === 0 ||
+      damagedParts?.[0]?.partName?.length < 1
+    )
+      return;
 
     const allLabelsMap = {
       ...frontViewLabelsMap,
@@ -65,15 +71,16 @@ const CarVector: React.FC<CarVectorProps> = ({
       ...driverViewLabelsMap,
     };
 
-    const normalizeLabel = (raw: string): string => {
-      if (typeof raw !== "string" || raw?.length < 1) return "";
+    const normalizeLabel = (raw: string): string | undefined => {
+      if (typeof raw !== "string" && (raw as string)?.length < 1)
+        return undefined;
       return raw?.replace(/([A-Z])/g, " $1")?.trim();
     };
 
     const newIncidentParts = new Set<string>();
     const newDescriptions: Record<string, string> = {};
 
-    damagedParts.forEach((damage) => {
+    damagedParts?.forEach((damage) => {
       const { partName, description } = damage;
 
       const label = normalizeLabel(partName); // "LeftFrontDoor" → "Left Front Door"
@@ -92,12 +99,12 @@ const CarVector: React.FC<CarVectorProps> = ({
 
       if (!newDescriptions[label]) {
         newDescriptions[label] = description;
-      } else if (!newDescriptions[label].includes(description)) {
+      } else if (!newDescriptions[label]?.includes(description)) {
         newDescriptions[label] += `, ${description}`;
       }
     });
 
-    setIncidentParts(Array.from(newIncidentParts));
+    setIncidentParts(Array?.from(newIncidentParts));
     setDescriptions((prev) => ({ ...prev, ...newDescriptions }));
     setNoIncident(false);
     setHasUnsavedChanges?.(true);
@@ -105,57 +112,59 @@ const CarVector: React.FC<CarVectorProps> = ({
   }, [damagedParts]);
 
   const handlePartClick = (e: React.MouseEvent<SVGSVGElement>) => {
-    const target = e.target as SVGElement;
-    const partId = target.id;
+    const target = e?.target as SVGElement;
+    const partId = target?.id;
     if (!partId) return;
     if (hideLabels) return; // If labels are hidden, do nothing
 
     const group = findLinkedGroup(partId);
-    const isGroupActive = group.some((id) => incidentParts.includes(id));
+    const isGroupActive = group.some((id) => incidentParts?.includes(id));
 
     setIncidentParts((prevParts) =>
       isGroupActive
         ? prevParts.filter((id) => !group.includes(id))
-        : [...prevParts, ...group.filter((id) => !prevParts.includes(id))]
+        : [...prevParts, ...group.filter((id) => !prevParts?.includes(id))]
     );
 
     setNoIncident(false);
 
     // Open corresponding modal based on group, not just partId
     setTimeout(() => {
-      if (Object.keys(carParts.frontViewCar).some((id) => group.includes(id))) {
+      if (
+        Object.keys(carParts.frontViewCar).some((id) => group?.includes(id))
+      ) {
         setShowFrontModal(true);
       } else if (
-        Object.keys(carParts.rearViewCar).some((id) => group.includes(id))
+        Object.keys(carParts.rearViewCar).some((id) => group?.includes(id))
       ) {
         setShowRearModal(true);
       } else if (
-        Object.keys(carParts.passengerViewCar).some((id) => group.includes(id))
+        Object.keys(carParts.passengerViewCar).some((id) => group?.includes(id))
       ) {
         setShowPassengerModal(true);
       } else if (
-        Object.keys(carParts.driverViewCar).some((id) => group.includes(id))
+        Object.keys(carParts.driverViewCar).some((id) => group?.includes(id))
       ) {
         setShowDriverModal(true);
       }
     }, 500);
   };
 
-  const isHighlighted = (id: string) => incidentParts.includes(id);
+  const isHighlighted = (id: string) => incidentParts?.includes(id);
 
   const isLabelChecked =
     (labelsMap: Record<string, string[]>) => (label: string) =>
-      labelsMap[label]?.some((id) => incidentParts.includes(id));
+      labelsMap[label]?.some((id) => incidentParts?.includes(id));
 
   const toggleLabel =
     (labelsMap: Record<string, string[]>) => (label: string) => {
-      const allIds = labelsMap[label].flatMap(findLinkedGroup);
+      const allIds = labelsMap[label]?.flatMap(findLinkedGroup);
       const isActive = isLabelChecked(labelsMap)(label);
 
       setIncidentParts((prevParts) =>
         isActive
-          ? prevParts.filter((id) => !allIds.includes(id))
-          : [...prevParts, ...allIds.filter((id) => !prevParts.includes(id))]
+          ? prevParts.filter((id) => !allIds?.includes(id))
+          : [...prevParts, ...allIds?.filter((id) => !prevParts?.includes(id))]
       );
 
       setNoIncident(false);
