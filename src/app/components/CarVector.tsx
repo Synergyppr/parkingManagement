@@ -22,8 +22,8 @@ interface CarVectorProps {
   passengerViewLabelsMap: Record<string, string[]>;
   driverViewLabelsMap: Record<string, string[]>;
   hideLabels?: boolean;
-  setHasUnsavedChanges?: React.Dispatch<React.SetStateAction<boolean>>; 
-  saveClickedRef: React.RefObject<boolean>; 
+  setHasUnsavedChanges?: React.Dispatch<React.SetStateAction<boolean>>;
+  saveClickedRef: React.RefObject<boolean>;
   shouldBypassUnloadPromptRef?: React.RefObject<boolean>;
   isFormChanged?: () => boolean;
   damagedParts?: { partName: string; description: string }[];
@@ -42,8 +42,8 @@ const CarVector: React.FC<CarVectorProps> = ({
   rearViewLabelsMap,
   passengerViewLabelsMap,
   driverViewLabelsMap,
-  hideLabels, 
-  setHasUnsavedChanges, 
+  hideLabels,
+  setHasUnsavedChanges,
   saveClickedRef,
   shouldBypassUnloadPromptRef,
   isFormChanged,
@@ -65,8 +65,10 @@ const CarVector: React.FC<CarVectorProps> = ({
       ...driverViewLabelsMap,
     };
 
-    const normalizeLabel = (raw: string) =>
-      raw.replace(/([A-Z])/g, " $1").trim();
+    const normalizeLabel = (raw: string): string | undefined => {
+      if (raw.length < 1) return undefined;
+      return raw?.replace(/([A-Z])/g, " $1")?.trim();
+    };
 
     const newIncidentParts = new Set<string>();
     const newDescriptions: Record<string, string> = {};
@@ -75,6 +77,10 @@ const CarVector: React.FC<CarVectorProps> = ({
       const { partName, description } = damage;
 
       const label = normalizeLabel(partName); // "LeftFrontDoor" → "Left Front Door"
+      if (!partName || !label) {
+        console.warn("Invalid part name or label:", partName);
+        return;
+      }
       const ids = allLabelsMap[label];
 
       if (!ids) {
@@ -82,7 +88,7 @@ const CarVector: React.FC<CarVectorProps> = ({
         return;
       }
 
-      ids.forEach((id) => newIncidentParts.add(id));
+      ids.forEach((id) => newIncidentParts?.add(id));
 
       if (!newDescriptions[label]) {
         newDescriptions[label] = description;
