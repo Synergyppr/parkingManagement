@@ -8,7 +8,7 @@ export default function TenantFormWrapper({
   data,
   onClose,
   refresh,
-  initialData,
+  // initialData,
 }: {
   data?: Tenant | null;
   onClose: () => void;

@@ -9,7 +9,7 @@ import {
 } from "react-icons/io5";
 import { TbReportSearch } from "react-icons/tb";
 import { CgProfile } from "react-icons/cg";
-import { GrMapLocation } from "react-icons/gr";
+// import { GrMapLocation } from "react-icons/gr";
 
 export default function OffCanvas({
   setIsMenuOpen,

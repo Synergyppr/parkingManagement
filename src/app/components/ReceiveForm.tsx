@@ -684,7 +684,9 @@ export default function ReceiveForm({
                     saveClickedRef={saveClickedRef}
                     shouldBypassUnloadPromptRef={shouldBypassUnloadPromptRef}
                     isFormChanged={isFormChanged}
-                    damagedParts={initialForm?.damagedParts || []}
+                    damagedParts={(initialForm?.damagedParts || []).map(
+                      (part) => ({ partName: part as string, description: "" })
+                    )}
                   />
                 </div>
               )}
