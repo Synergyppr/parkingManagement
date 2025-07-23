@@ -1,3 +1,5 @@
+// PropertyContext.tsx
+
 "use client";
 import { createContext, useContext, useState, useEffect } from "react";
 
@@ -82,7 +84,6 @@ export const PropertyProvider = ({
       sessionStorage.getItem("propertyName") ||
       localStorage.getItem("propertyName");
     const storedProperties = localStorage.getItem("properties");
-
     if (storedId) setPropertyId(storedId);
     if (storedName) setPropertyName(storedName);
 

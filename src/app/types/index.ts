@@ -113,3 +113,42 @@ export interface CarBrand {
   name: string;
   models: DropdownOption[];
 }
+
+///////////////////////////////////////////////////////////////////////////
+
+export interface UserForm {
+  id?: string;
+  tenantId?: string;
+  userName: string;
+  fullName?: string;
+  firstName?: string;
+  lastName?: string;
+  role: number | string;
+  gender: string;
+  dateOfBirth: string;
+  isActive: boolean;
+  pin: string;
+  identifier?: string;
+  createdDateTime?: string;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+export interface Tenant {
+  id?: string;
+  name: string;
+  type: string;
+  description?: string;
+  isActive: boolean;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+export interface Property {
+  id: string;
+  tenant: string;
+  name: string;
+  address: string;
+  createdAtDateTime: string;
+  isActive: boolean;
+}

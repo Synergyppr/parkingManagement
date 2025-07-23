@@ -1,11 +1,15 @@
 "use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useProperty } from "../context/PropertyContext";
 import {
   IoHomeOutline,
   IoSettingsOutline,
   IoCarSportOutline,
 } from "react-icons/io5";
-import { useProperty } from "../context/PropertyContext";
+import { TbReportSearch } from "react-icons/tb";
+import { CgProfile } from "react-icons/cg";
+import { GrMapLocation } from "react-icons/gr";
 
 export default function OffCanvas({
   setIsMenuOpen,
@@ -14,6 +18,7 @@ export default function OffCanvas({
   setIsMenuOpen: (isOpen: boolean) => void;
   isMenuOpen: boolean;
 }) {
+  const pathname = usePathname();
   const { propertyName } = useProperty();
 
   return (
@@ -36,34 +41,107 @@ export default function OffCanvas({
           </button>
         </div>
         <nav className="flex flex-col gap-1 py-4 px-2 text-blue-900 font-medium">
-          <Link
-            href="/"
-            onClick={() => setIsMenuOpen(false)}
-            className="flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded"
-          >
-            <IoHomeOutline /> Home
-          </Link>
-          <Link
-            href="/tenants"
-            onClick={() => setIsMenuOpen(false)}
-            className="flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded"
-          >
-            <IoSettingsOutline /> Manage Tenants
-          </Link>
-          <Link
-            href="/request"
-            onClick={() => setIsMenuOpen(false)}
-            className="flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded"
-          >
-            <IoCarSportOutline /> Request Car
-          </Link>
-          <Link
-            href="/report"
-            onClick={() => setIsMenuOpen(false)}
-            className="flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded"
-          >
-            <IoCarSportOutline /> Report
-          </Link>
+          <div className="flex gap-3 mb-4 mt-1 mx-1">
+            <div className="">
+              <CgProfile className="w-12 h-12" />
+            </div>
+            <div className="my-auto">
+              <p>User</p>
+              <p className="text-xs text-gray-500">Admin</p>
+            </div>
+          </div>
+
+          <hr className="border-slate-300 my-0 mx-1" />
+
+          {/* <div className="mb-2 mt-2">
+            <h3 className="text-sm text-gray-800 font-semibold mb-2 px-2">
+              Super Admin
+            </h3>
+            <Link
+              href="/tenants"
+              onClick={() => setIsMenuOpen(false)}
+              className={`${
+                pathname.includes("tenants")
+                  ? "bg-slate-200 font-bold shadow-inner"
+                  : ""
+              } flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded`}
+            >
+              <IoSettingsOutline /> Manage Tenants
+            </Link>
+            <Link
+              href="/tenants"
+              onClick={() => setIsMenuOpen(false)}
+              className={`${
+                pathname.includes("location")
+                  ? "bg-slate-200 font-bold shadow-inner"
+                  : ""
+              } flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded`}
+            >
+              <GrMapLocation /> Location Testing
+            </Link>
+          </div>
+
+          <hr className="border-slate-300 my-0 mx-1" /> */}
+
+          {/* Employee Section */}
+          <div className="mb-2 mt-2">
+            <h3 className="text-sm text-gray-800 font-semibold mb-2 px-2">
+              Employee
+            </h3>
+            <Link
+              href="/dashboard"
+              onClick={() => setIsMenuOpen(false)}
+              className={`${
+                pathname.includes("dashboard")
+                  ? "bg-slate-200 font-bold shadow-inner"
+                  : ""
+              } flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded`}
+            >
+              <IoHomeOutline /> Home
+            </Link>
+            <Link
+              href="/tenants"
+              onClick={() => setIsMenuOpen(false)}
+              className={`${
+                pathname.includes("tenants")
+                  ? "bg-slate-200 font-bold shadow-inner"
+                  : ""
+              } flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded`}
+            >
+              <IoSettingsOutline /> Tenant Configuration
+            </Link>
+            <Link
+              href="/report"
+              onClick={() => setIsMenuOpen(false)}
+              className={`${
+                pathname.includes("report")
+                  ? "bg-slate-200 font-bold shadow-inner"
+                  : ""
+              } flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded`}
+            >
+              <TbReportSearch /> Report
+            </Link>
+          </div>
+
+          <hr className="border-slate-300 my-0 mx-1" />
+
+          {/* Client Section */}
+          <div className="mt-2">
+            <h3 className="text-sm text-gray-800 font-semibold mb-2 px-2">
+              Client
+            </h3>
+            <Link
+              href="/request"
+              onClick={() => setIsMenuOpen(false)}
+              className={`${
+                pathname.includes("request")
+                  ? "bg-slate-200 font-bold shadow-inner"
+                  : ""
+              } flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded`}
+            >
+              <IoCarSportOutline /> Request Car
+            </Link>
+          </div>
         </nav>
       </div>
 

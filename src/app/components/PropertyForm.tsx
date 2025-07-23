@@ -1,11 +1,15 @@
+// ModalPropertyForm.tsx
 "use client";
 import { useState } from "react";
 import { FaBuilding } from "react-icons/fa6";
+import ModalInput from "./elements/ModalInput";
+import { useProperty } from "../context/PropertyContext";
+import Swal from "sweetalert2";
 
 interface Property {
   id?: string;
   tenantId?: string;
-  tenant?: string;
+  // tenant?: string;
   name: string;
   address: string;
   createdAtDateTime: string;
@@ -14,19 +18,20 @@ interface Property {
 
 interface PropertyFormProps {
   tenantId?: string;
-  initialData?: Property | null; // For edit mode
-  onSuccess?: () => void; // Callback after successful submit
-  setModalOpen: (isOpen: boolean) => void; // For modal usage
+  initialData?: Property | null;
+  onSuccess?: () => void;
+  setModalOpen: (isOpen: boolean) => void;
 }
 
-export default function PropertyForm({
+export default function ModalPropertyForm({
   tenantId,
   initialData,
   onSuccess,
   setModalOpen,
 }: PropertyFormProps) {
+  const { latitude, longitude } = useProperty();
   const [form, setForm] = useState<Property>({
-    tenantId: "",
+    tenantId: tenantId,
     name: "",
     address: "",
     createdAtDateTime:
@@ -43,7 +48,7 @@ export default function PropertyForm({
   };
 
   const handleSubmit = async () => {
-    if (!form?.name || !form?.address || !form?.tenantId) {
+    if (!form?.name || !form?.address) {
       alert("Please fill in all required fields.");
       return;
     }
@@ -51,11 +56,29 @@ export default function PropertyForm({
     const method = "POST";
     const endpoint = "/api/properties/createAndUpdate";
 
-    const payload = {
-      ...form,
-      tenantId: tenantId || form?.tenantId,
-      isActive: form?.isActive ?? true,
-    };
+    let payload;
+
+    if (form.id) {
+      payload = {
+        id: form.id,
+        tenantId: tenantId || form?.tenantId,
+        name: form.name,
+        address: form.address,
+        latitude: 18.457076,
+        longitude: -66.074113,
+      };
+    } else {
+      payload = {
+        ...form,
+        tenantId: tenantId || form?.tenantId,
+        isActive: form?.isActive ?? true,
+        latitude: latitude || 0,
+        longitude: longitude || 0,
+        radiusMeters: 100,
+      };
+    }
+
+    console.log("createAndUpdate properties Submitting payload:", payload);
 
     const res = await fetch(endpoint, {
       method,
@@ -67,50 +90,55 @@ export default function PropertyForm({
 
     const result = await res.json();
 
-    if (result?.status === "200") {
-      setModalOpen(false);
-    }
+    console.log("createAndUpdate properties Submission result:", result);
 
-    if (res.ok) {
-      alert(`Property ${form?.id ? "updated" : "created"} successfully!`);
+    if (result?.result?.status === "200") {
+      setModalOpen(false);
+      Swal.fire({
+        icon: "success",
+        title: `Property ${form?.id ? "updated" : "created"} successfully!`,
+        showConfirmButton: false,
+        timer: 1500,
+      });
       onSuccess?.();
     } else {
       const error = await res.text();
       console.error("Error:", error);
-      alert("Something went wrong.");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error || "Something went wrong.",
+      });
     }
   };
+
   const toggleIsActive = () => {
     setForm((prev) => ({ ...prev, isActive: !prev?.isActive }));
   };
 
   return (
     <div className="p-4 md:p-6 max-w-xl mx-auto space-y-4 rounded shadow text-gray-800 flex flex-col">
-      <div className="flex gap-2 text-blue-500 items-center">
+      <div className="flex gap-2 text-blue-500 items-center mb-6">
         <FaBuilding className="w-5 h-5" />
         <h2 className="text-xl font-semibold tracking-tight relative top-[2px]">
           {form?.id ? "Update Property" : "Create Property"}
         </h2>
       </div>
 
-      <input
-        type="text"
+      <ModalInput
+        id="name"
         name="name"
-        placeholder="Property Name"
+        label="Property Name"
         value={form?.name}
         onChange={handleChange}
-        className="border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-400 tracking-tight w-full"
-        required
       />
 
-      <input
-        type="text"
+      <ModalInput
+        id="address"
         name="address"
-        placeholder="Address"
+        label="Address"
         value={form?.address}
         onChange={handleChange}
-        className="border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-400 tracking-tight w-full"
-        required
       />
 
       {form?.id && (
@@ -140,7 +168,7 @@ export default function PropertyForm({
 
       <button
         onClick={handleSubmit}
-        className="bg-blue-600 hover:bg-blue-700 text-white p-3 w-full rounded-md font-semibold shadow"
+        className="bg-blue-600 hover:bg-blue-700 text-white p-3 w-full rounded-md font-semibold shadow cursor-pointer transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {form?.id ? "Update" : "Create"} Property
       </button>

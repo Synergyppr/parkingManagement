@@ -1,13 +1,6 @@
 import { GetContentData } from "../lib/apiFunctions";
+import { Tenant } from "../types";
 import Tenants from "../components/Tenants";
-
-interface Tenant {
-  id: string;
-  name: string;
-  type: string;
-  description?: string;
-  isActive?: boolean;
-}
 
 function isTenant(obj: unknown): obj is Tenant {
   if (typeof obj !== "object" || obj === null) return false;
@@ -41,8 +34,8 @@ export default async function Page() {
   }
 
   return (
-    <div className="min-h-[100vh] flex flex-col">
-      <Tenants data={{ data: tenants }} />
+    <div>
+      <Tenants data={{ data: tenants as Tenant[] }} />
     </div>
   );
 }

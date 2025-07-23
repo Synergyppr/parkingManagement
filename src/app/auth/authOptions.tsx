@@ -1,4 +1,4 @@
-import { validateUser } from "@/app/api/auth/userStoreApi";
+import { validateUser } from "@/app/auth/userStoreApi";
 import { Session, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import jwt, { JwtPayload } from "jsonwebtoken";

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useProperty } from "../context/PropertyContext";
 import {
   GoogleMap,
@@ -8,10 +8,18 @@ import {
   useLoadScript,
   Polyline,
 } from "@react-google-maps/api";
-import { simulateDrive, generateInterpolatedPath } from "../lib/clientUtils";
+import {
+  simulateDrive,
+  generateInterpolatedPath,
+  handlePlay,
+  handlePause,
+  handleStop,
+} from "../lib/clientUtils";
 import usePropertyListener from "../hooks/usePropertyListener";
 import { GoDotFill } from "react-icons/go";
 import { FaMinus, FaPlus } from "react-icons/fa";
+import { FaPlay, FaPause, FaStop } from "react-icons/fa6";
+import { BsFillFastForwardFill, BsFillRewindFill } from "react-icons/bs";
 import { CollapsibleSection } from "./CollapsibleSection";
 
 const mapContainerStyle = {
@@ -23,6 +31,21 @@ const centerDefault = {
   lat: 18.426434,
   lng: -66.059545,
 };
+
+interface SimulationOptions {
+  route: google.maps.LatLngLiteral[];
+  setLatitude: (lat: number) => void;
+  setLongitude: (lng: number) => void;
+  setManualLat: (lat: string) => void;
+  setManualLng: (lng: string) => void;
+  simulationInProgress: boolean;
+  setSimulationInProgress: (inProgress: boolean) => void;
+  setMessage: (message: string) => void;
+  setSimulatedPath: React.Dispatch<
+    React.SetStateAction<google.maps.LatLngLiteral[]>
+  >;
+  onComplete: () => void;
+}
 
 const Location = () => {
   const {
@@ -64,12 +87,38 @@ const Location = () => {
       { name: string; lat: number; lng: number; id: string; radius: number }
     >
   >({});
-  const [, setSimulatedPath] = useState<
-    google.maps.LatLngLiteral[]
-  >([]);
+  const [, setSimulatedPath] = useState<google.maps.LatLngLiteral[]>([]);
   const [plannedPath, setPlannedPath] = useState<google.maps.LatLngLiteral[]>(
     []
   );
+  const [currentSimulationLabel, setCurrentSimulationLabel] = useState<
+    string | null
+  >(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const mapRef = useRef<HTMLDivElement | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const [simulationState, setSimulationState] = useState({
+    route: [] as google.maps.LatLngLiteral[],
+    currentSegment: 0,
+    currentStep: 0,
+  });
+  const [delay, setDelay] = useState(100); // Default to 100ms
+  const [eta, setEta] = useState<string | null>(null);
+
+  const existingProps: SimulationOptions = {
+    route: simulationState.route, // or your selected predefined route
+    setLatitude,
+    setLongitude,
+    setManualLat,
+    setManualLng,
+    simulationInProgress,
+    setSimulationInProgress,
+    setMessage,
+    setSimulatedPath,
+    onComplete: () => {
+      setCurrentSimulationLabel(null);
+    },
+  };
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
@@ -81,6 +130,13 @@ const Location = () => {
     if (latitude !== null) setManualLat(latitude.toString());
     if (longitude !== null) setManualLng(longitude.toString());
   }, [latitude, longitude]);
+
+  useEffect(() => {
+    const mapElement = document.getElementById("map-container");
+    if (mapElement) {
+      mapElement.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [simulationInProgress]);
 
   const keyMap = {
     "250": "plaza250",
@@ -175,6 +231,37 @@ const Location = () => {
     [setLatitude, setLongitude, setManualLat, setManualLng]
   );
 
+  const getSpeedInfo = (delay: number) => {
+    // These are arbitrary values; feel free to tweak them
+    let label = "";
+    let bg = "";
+    let mph = 0;
+
+    if (delay <= 50) {
+      label = "Very Fast";
+      bg = "bg-green-600 text-white";
+      mph = 60;
+    } else if (delay <= 100) {
+      label = "Fast";
+      bg = "bg-green-400 text-white";
+      mph = 45;
+    } else if (delay <= 200) {
+      label = "Normal";
+      bg = "bg-yellow-400 text-black";
+      mph = 30;
+    } else if (delay <= 300) {
+      label = "Slow";
+      bg = "bg-orange-500 text-white";
+      mph = 15;
+    } else {
+      label = "Very Slow";
+      bg = "bg-red-600 text-white";
+      mph = 5;
+    }
+
+    return { label, bg, mph };
+  };
+
   if (loadError) return <div>Error loading map</div>;
   if (!isLoaded) return <div>Loading map...</div>;
 
@@ -193,7 +280,7 @@ const Location = () => {
               setMessage("Location mode switched to " + newMode);
               if (newMode === "live") requestLocation();
             }}
-            className="text-lg px-3 py-1 bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600"
+            className="text-lg px-3 py-1 bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600 mt-[-3px] ml-[-2px]"
           >
             Switch to {locationMode === "live" ? "Manual" : "Live"}
           </button>
@@ -218,6 +305,7 @@ const Location = () => {
                 onClick={() => {
                   const route = [properties?.plaza250, properties?.plaza270];
                   setPlannedPath(generateInterpolatedPath(route));
+                  setCurrentSimulationLabel("250 → 270");
                   simulateDrive({
                     route: route,
                     setLatitude,
@@ -229,13 +317,23 @@ const Location = () => {
                     setMessage,
                     setSimulatedPath,
                     logLabel: "250 → 270",
+                    onComplete: () => setCurrentSimulationLabel(null),
+                    setSimulationState,
+                    intervalRef,
+                    currentSegment: 0,
+                    currentStep: 0,
+                    delay,
+                    setEta,
                   });
                 }}
                 disabled={simulationInProgress}
-                className={`text-sm px-3 py-1.5 rounded-md cursor-pointer transition ${
-                  simulationInProgress
+                className={`text-sm px-3 py-1.5 rounded-md transition ${
+                  simulationInProgress && currentSimulationLabel === "250 → 270"
+                    ? "text-purple-600 bg-white border-purple-600 border-1 rounded-sm cursor-not-allowed"
+                    : simulationInProgress &&
+                      currentSimulationLabel !== "250 → 270"
                     ? "bg-gray-300 text-white cursor-not-allowed"
-                    : "bg-purple-600 text-white hover:bg-purple-700"
+                    : "bg-purple-600 text-white hover:bg-purple-700 cursor-pointer"
                 }`}
               >
                 Simulate Drive: 250 → 270
@@ -248,6 +346,7 @@ const Location = () => {
                     properties?.laConcha,
                   ];
                   setPlannedPath(generateInterpolatedPath(route));
+                  setCurrentSimulationLabel("COC → CVH → La Concha");
                   simulateDrive({
                     route: route?.map((p) => ({ lat: p.lat, lng: p.lng })),
                     setLatitude,
@@ -258,15 +357,26 @@ const Location = () => {
                     setSimulationInProgress,
                     setMessage,
                     predefinedProperties,
-                    setSimulatedPath, // ✅ NEW
+                    setSimulatedPath,
                     logLabel: "COC → CVH → La Concha",
+                    onComplete: () => setCurrentSimulationLabel(null),
+                    setSimulationState,
+                    intervalRef,
+                    currentSegment: 0,
+                    currentStep: 0,
+                    delay,
+                    setEta,
                   });
                 }}
                 disabled={simulationInProgress}
-                className={`text-sm px-3 py-1.5 rounded-md cursor-pointer transition ${
-                  simulationInProgress
+                className={`text-sm px-3 py-1.5 rounded-md transition ${
+                  simulationInProgress &&
+                  currentSimulationLabel === "COC → CVH → La Concha"
+                    ? "text-teal-600 bg-white border-teal-600 border-1 rounded-sm cursor-not-allowed"
+                    : simulationInProgress &&
+                      currentSimulationLabel !== "COC → CVH → La Concha"
                     ? "bg-gray-300 text-white cursor-not-allowed"
-                    : "bg-teal-600 text-white hover:bg-teal-700"
+                    : "bg-teal-600 text-white hover:bg-teal-700 cursor-pointer"
                 }`}
               >
                 Simulate Drive: COC → CVH → La Concha
@@ -320,6 +430,11 @@ const Location = () => {
                     properties[pointB as string],
                   ];
                   setPlannedPath(generateInterpolatedPath(route));
+                  setCurrentSimulationLabel(
+                    `${properties[pointA as string]} → ${
+                      properties[pointB as string]
+                    }`
+                  );
                   simulateDrive({
                     route: route,
                     setLatitude,
@@ -330,7 +445,16 @@ const Location = () => {
                     setSimulationInProgress,
                     setMessage,
                     setSimulatedPath,
-                    logLabel: "250 → 270",
+                    logLabel: `${properties[pointA as string]} → ${
+                      properties[pointB as string]
+                    }`,
+                    onComplete: () => setCurrentSimulationLabel(null),
+                    setSimulationState,
+                    intervalRef,
+                    currentSegment: 0,
+                    currentStep: 0,
+                    delay,
+                    setEta,
                   });
                 }}
                 disabled={!pointA || !pointB || simulationInProgress}
@@ -372,6 +496,9 @@ const Location = () => {
                   if (pointACoords && pointBCoords) {
                     const route = [pointACoords, pointBCoords];
                     setPlannedPath(generateInterpolatedPath(route));
+                    setCurrentSimulationLabel(
+                      `${pointACoords} → ${pointBCoords}`
+                    );
                     simulateDrive({
                       route: route,
                       setLatitude,
@@ -382,7 +509,14 @@ const Location = () => {
                       setSimulationInProgress,
                       setMessage,
                       setSimulatedPath,
-                      logLabel: "250 → 270",
+                      logLabel: `${pointACoords} → ${pointBCoords}`,
+                      onComplete: () => setCurrentSimulationLabel(null),
+                      setSimulationState,
+                      intervalRef,
+                      currentSegment: 0,
+                      currentStep: 0,
+                      delay,
+                      setEta,
                     });
                   }
                 }}
@@ -411,6 +545,7 @@ const Location = () => {
             <div className="flex flex-wrap justify-start gap-2 mb-4">
               {Object.entries(properties).map(([key, prop]) => (
                 <button
+                  disabled={simulationInProgress}
                   key={key}
                   onClick={() => {
                     setLatitude(prop.lat as number);
@@ -427,9 +562,11 @@ const Location = () => {
                   }}
                   className={`${
                     propertyName === prop.name
-                      ? "border-green-500 bg-white text-green-500 hover:text-white"
-                      : "border-green-500 bg-green-500 text-white hover:text-white"
-                  } text-sm px-3 py-1 border-1 border-solid rounded-md cursor-pointer hover:bg-green-600`}
+                      ? "border-green-500 bg-white text-green-500 hover:text-white hover:bg-green-600 cursor-pointer"
+                      : simulationInProgress
+                      ? "cursor-not-allowed border-green-500 bg-green-500 text-white hover:text-white"
+                      : "border-green-500 bg-green-500 text-white hover:text-white hover:bg-green-600 cursor-pointer"
+                  } text-sm px-3 py-1 border-1 border-solid rounded-md`}
                 >
                   {prop.name}
                 </button>
@@ -529,7 +666,7 @@ const Location = () => {
         )}
 
         {/* Coordinates Display */}
-        <div className="text-gray-700 text-sm">
+        <div className="text-gray-700 text-sm mb-1">
           <p>
             <strong>Current Latitude:</strong>{" "}
             {latitude !== null ? latitude.toFixed(6) : "N/A"}
@@ -541,10 +678,125 @@ const Location = () => {
         </div>
 
         {/* Message */}
-        {message && <p className="text-green-600 text-sm mt-0">{message}</p>}
+        {message && <p className={`text-green-600 text-sm mt-0 mb-2`}>{message}</p>}
+
+        {locationMode === "manual" && (
+          <div className="flex justify-between mt-0">
+            <div className="flex items-center gap-1 my-auto h-full">
+              {/* Play Button */}
+              <button
+                type="button"
+                onClick={() =>
+                  handlePlay({
+                    isPaused,
+                    setIsPaused,
+                    existingProps,
+                    simulationState,
+                    setSimulationState,
+                    intervalRef,
+                    setPlannedPath,
+                    properties,
+                    delay,
+                  })
+                }
+                className={`${
+                  !isPaused
+                    ? "cursor-not-allowed border-gray-300 text-gray-500 bg-gray-100"
+                    : "cursor-pointer bg-purple-500 text-white"
+                } px-2 py-1 rounded-md border`}
+                disabled={!isPaused}
+              >
+                <FaPlay className="inline-block" />
+              </button>
+
+              {/* Pause Button */}
+              <button
+                onClick={() =>
+                  handlePause({
+                    setIsPaused,
+                    setSimulationInProgress,
+                    intervalRef,
+                  })
+                }
+                className={`${
+                  !simulationInProgress || isPaused
+                    ? "cursor-not-allowed border-gray-300 text-gray-500 bg-gray-100"
+                    : "cursor-pointer bg-purple-500 text-white"
+                } px-2 py-1 rounded-md border`}
+                disabled={!simulationInProgress || isPaused}
+              >
+                <FaPause className="inline-block" />
+              </button>
+
+              {/* Stop Button */}
+              {/* Fix functionality */}
+              {/* <button
+                className={`${
+                  !simulationInProgress
+                    ? "cursor-not-allowed border-gray-300 text-gray-500 bg-gray-100"
+                    : "cursor-pointer bg-purple-500 text-white"
+                } px-2 py-1 rounded-md border`}
+                disabled={!simulationInProgress}
+                onClick={() =>
+                  handleStop({
+                    setSimulationInProgress,
+                    setMessage,
+                    intervalRef,
+                    setSimulatedPath,
+                    setSimulationState,
+                    setPlannedPath,
+                    onComplete: () => {
+                      setCurrentSimulationLabel(null);
+                    },
+                  })
+                }
+              >
+                <FaStop className="inline-block" />
+              </button> */}
+            </div>
+            {/* TODO: Finish functionality */}
+            {/* <div className="flex items-center gap-1 my-auto h-full">
+              <button
+                onClick={() => setDelay((prev) => prev + 50)}
+                className={`${
+                  !simulationInProgress || isPaused
+                    ? "cursor-not-allowed border-gray-300 text-gray-500 bg-gray-100"
+                    : "cursor-pointer bg-purple-500 text-white"
+                } px-2 py-2 rounded-md border`}
+                disabled={!simulationInProgress || isPaused}
+              >
+                <BsFillRewindFill />
+              </button>
+
+              {(() => {
+                const { bg, mph } = getSpeedInfo(delay);
+                return (
+                  <div
+                    className={`px-4 py-2 rounded-md font-semibold text-sm ${bg} text-shadow-[.2px_.2px_.2px_#000]`}
+                    title={`${delay}ms delay`}
+                  >
+                    {mph} mph
+                  </div>
+                );
+              })()}
+
+              <button
+                onClick={() => setDelay((prev) => Math.max(prev - 50, 10))}
+                className={`${
+                  !simulationInProgress || isPaused
+                    ? "cursor-not-allowed border-gray-300 text-gray-500 bg-gray-100"
+                    : "cursor-pointer bg-purple-500 text-white"
+                } px-2 py-2 rounded-md border`}
+                disabled={!simulationInProgress || isPaused}
+              >
+                <BsFillFastForwardFill />
+              </button>
+            </div> */}
+          </div>
+        )}
 
         {/* Map */}
-        <div className="mt-0">
+        <div id="map-container" className="mt-0" ref={mapRef}>
           {properties && (
             <GoogleMap
               onClick={(e) => {
@@ -643,6 +895,11 @@ const Location = () => {
                 />
               ))}
             </GoogleMap>
+          )}
+          {eta && (
+            <div className="text-sm text-green-600 mt-2 flex justify-end font-bold">
+              <span className="font-medium">ETA: </span>{" "} {eta}
+            </div>
           )}
         </div>
       </div>

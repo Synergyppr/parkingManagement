@@ -1,41 +1,20 @@
 "use client";
-
-import { useState } from "react";
-import Swal from "sweetalert2";
+import { useState, useEffect } from "react";
+import {
+  handleTenantDelete,
+  getUsersByTenant,
+  getPropertiesByTenant,
+} from "../helpers/propertyHelpers";
+import { Tenant, UserForm as UserFormType, Property } from "../types";
 import { FaPencil, FaTrash } from "react-icons/fa6";
-import Header from "./Header";
-import TenantForm from "./TenantForm";
+import { PiUsersThreeFill } from "react-icons/pi";
+import { BsFillBuildingsFill } from "react-icons/bs";
+import { formatDateOfBirth } from "../lib/clientUtils";
 import Modal from "./Modal";
-import UsersModalContent from "./UsersModalContent";
-import PropertiesModalContent from "./PropertiesModalContent";
-
-interface Tenant {
-  id: string;
-  name: string;
-  type: string;
-  description?: string;
-  isActive?: boolean;
-}
-
-interface User {
-  id: string;
-  role: string;
-  userName: string;
-  fullName: string;
-  gender: string;
-  identifier: string;
-  isActive: boolean;
-  createdDateTime: string;
-}
-
-interface Property {
-  id: string;
-  tenant: string;
-  name: string;
-  address: string;
-  createdAtDateTime: string;
-  isActive: boolean;
-}
+import TenantForm from "./TenantForm";
+import ListModal from "./ListModal";
+import PropertyForm from "./PropertyForm";
+import UserForm from "./UserForm";
 
 interface TenantsProps {
   data: {
@@ -45,80 +24,38 @@ interface TenantsProps {
 
 const Tenants = ({ data }: TenantsProps) => {
   const tenants = data?.data;
+  const [tenantData, setTenantData] = useState(data?.data);
   const [isTenantModalOpen, setIsTenantModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [selectedTenantId, setSelectedTenantId] = useState<string>("");
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserFormType[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [seeMore, setSeeMore] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const getUsersByTenant = async (tenantId: string) => {
-    setSelectedTenantId(tenantId);
-    const res = await fetch("/api/users/getUsers", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: tenantId }),
-    });
-
-    const data = await res.json();
-    const result = data?.result?.data;
-
-    setUsers(result || []);
-    setIsUserModalOpen(true);
+  const refresh = () => {
+    return;
   };
 
-  const getPropertiesByTenant = async (tenantId: string) => {
-    const res = await fetch("/api/properties/getProperties", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: tenantId }),
-    });
+  useEffect(() => {
+    if (tenantData) {
+      // console.log("Tenant Data", tenantData);
+      setTenantData(tenantData);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    const data = await res.json();
-    const result = data?.result?.data;
-    setProperties(result || []);
-    setIsPropertyModalOpen(true);
-  };
-
-  const handleTenantDelete = async (tenantId: string) => {
-    Swal.fire({
-      title: "Delete Tenant",
-      text: "You are about to delete this tenant. Are you sure?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!",
-      cancelButtonText: "No, go back",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        const res = await fetch(`/api/tenants/delete`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(tenantId),
-        });
-
-        const result = await res.json();
-
-        if (result) {
-          alert("Tenant deleted successfully!");
-        } else {
-          alert("Failed to delete tenant.");
-        }
-      }
-    });
-  };
-
-  const handleOpenForCreate = () => {
-    setSelectedTenant(null);
-    setIsTenantModalOpen(true);
-  };
-
-  const handleOpenForEdit = (tenant: Tenant) => {
-    setSelectedTenant(tenant);
-    setSelectedTenantId(tenant?.id);
-    setIsTenantModalOpen(true);
+  const handleOpenTenantModal = (tenant: Tenant | null) => {
+    if (!tenant || tenant === null || !tenant.id) {
+      setSelectedTenant(null);
+      setIsTenantModalOpen(true);
+    } else {
+      setSelectedTenant(tenant);
+      setSelectedTenantId(tenant?.id);
+      setIsTenantModalOpen(true);
+    }
   };
 
   const handleCloseTenantModal = () => {
@@ -138,8 +75,13 @@ const Tenants = ({ data }: TenantsProps) => {
 
   return (
     <>
-      <Header />
-      <div className="flex flex-col items-start overflow-y-auto pb-4 min-h-[94vh] bg-white">
+      <div
+        style={{
+          background:
+            "radial-gradient(circle at center, #86b2f9 10%, #e0f2ff 90%)",
+        }}
+        className="flex flex-col items-start overflow-y-auto pb-4 min-h-[94vh] bg-white"
+      >
         <div
           className="relative w-full pt-0 pb-16 text-center bg-cover bg-center z-0 min-h-[30vh]"
           style={{ backgroundImage: "url('/valet.jpg')" }}
@@ -152,25 +94,25 @@ const Tenants = ({ data }: TenantsProps) => {
             <h1 className="text-5xl font-extrabold text-white drop-shadow-lg mt-16 mb-2">
               Tenants
             </h1>
-            <p className="text-xl text-gray-100 drop-shadow-sm">
-              Manage your tenants here
+            <p className="text-lg text-gray-100 drop-shadow-sm">
+              Configure your tenants and manage their properties and users.
             </p>
           </div>
         </div>
 
-        <div className="w-full max-w-full mt-8 px-4">
+        <div className="w-full max-w-full mt-8 px-6">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h2 className="text-2xl font-semibold text-gray-800">
+              <h2 className="text-2xl font-semibold text-gray-900 text-shadow-[.2px_.2px_.2px_#3b82f6]">
                 Tenant List
               </h2>
               <p className="text-gray-600 text-xs">
-                {tenants?.length ?? 0} records
+                {tenants?.length ?? 0} record(s)
               </p>
             </div>
             <button
-              onClick={handleOpenForCreate}
-              className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition-colors tracking-tight"
+              onClick={() => handleOpenTenantModal(null)}
+              className="cursor-pointer ml-auto bg-gradient-to-r from-blue-500 to-blue-600 hover:scale-102 hover:bg-opacity-80 transition duration-500 text-white py-2 px-6 font-semibold shadow-sm tracking-tight rounded"
             >
               Add Tenant
             </button>
@@ -179,62 +121,119 @@ const Tenants = ({ data }: TenantsProps) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {tenants?.map((tenant) => (
               <div
-                key={tenant?.id}
-                className="p-6 bg-white shadow-md rounded-lg border border-gray-200 transition-shadow duration-200"
+                key={tenant.id}
+                className="rounded-2xl shadow-md overflow-hidden bg-white text-gray-800 relative"
+                onClick={() => {
+                  if (!selectedTenantId) {
+                    setSelectedTenantId(tenant?.id as string);
+                  }
+                }}
               >
-                <div className="flex justify-between">
-                  <h3 className="text-xl font-semibold text-gray-800">
-                    {tenant?.name}
-                  </h3>
-                  <div className="flex space-x-0">
+                {/* Card Header */}
+                <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-700 to-blue-500 text-white">
+                  <div>
+                    <h3 className="text-lg font-bold">{tenant?.name}</h3>
+                    <p className="text-sm text-white/80">{tenant?.type}</p>
+                  </div>
+                  <div className="flex gap-2">
                     <button
-                      type="button"
-                      onClick={() => handleOpenForEdit(tenant)}
-                      className="group cursor-pointer text-sm border-y-1 border-r-0 border-l-1 py-1 px-2 rounded-l-md border-gray-100 text-white bg-blue-600"
+                      onClick={() => handleOpenTenantModal(tenant)}
+                      className="p-2 rounded hover:bg-white/20 transition cursor-pointer"
+                      title="Edit Tenant"
                     >
-                      <FaPencil className="inline ml-1 group-hover:animate-shake" />
+                      <FaPencil className="w-4 h-4" />
                     </button>
-
                     <button
-                      type="button"
-                      onClick={() => handleTenantDelete(tenant?.id)}
-                      className="group cursor-pointer text-sm border-y-1 border-r-1 border-l-0 py-1 px-2 rounded-r-md border-gray-100 text-white bg-gray-600"
+                      onClick={() => handleTenantDelete(tenant?.id as string)}
+                      className="p-2 rounded hover:bg-white/20 transition cursor-pointer"
+                      title="Delete Tenant"
                     >
-                      <FaTrash className="inline mr-1 group-hover:animate-shake" />
+                      <FaTrash className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
-                <p className="text-sm text-gray-500 mb-2">{tenant?.type}</p>
-                {tenant?.description && (
-                  <p className="text-gray-600 text-sm mb-2">
-                    {tenant?.description}
-                  </p>
-                )}
+                {/* Card Body */}
+                <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 min-h-full">
+                  {/* Description */}
+                  {tenant.description && (
+                    <div className="leading-[14px]">
+                      <p className="text-sm text-gray-700 mb-4 inline">
+                        {tenant?.description?.length > 130 && !seeMore
+                          ? tenant?.description?.slice(0, 130) + "..."
+                          : tenant?.description}
+                      </p>
+                      {tenant?.description?.length > 130 ? (
+                        !seeMore ? (
+                          <span
+                            className="text-xs hover:underline text-blue-500 inline ml-2 cursor-pointer"
+                            onClick={() => setSeeMore(true)}
+                          >
+                            See More
+                          </span>
+                        ) : (
+                          <span
+                            className="text-xs hover:underline text-blue-500 inline ml-2 cursor-pointer"
+                            onClick={() => setSeeMore(false)}
+                          >
+                            See Less
+                          </span>
+                        )
+                      ) : null}
+                    </div>
+                  )}
 
-                <button
-                  onClick={() => getUsersByTenant(tenant?.id)}
-                  className="cursor-pointer text-blue-600 underline text-sm mb-2 hover:text-blue-800 block"
-                >
-                  View Users
-                </button>
+                  {/* Actions */}
+                  <div className="flex gap-4 mt-2">
+                    <div
+                      onClick={() => {
+                        if (!loading)
+                          getUsersByTenant(
+                            tenant?.id as string,
+                            setLoading,
+                            setSelectedTenantId,
+                            setUsers,
+                            setIsUserModalOpen
+                          );
+                      }}
+                      className={`${
+                        loading ? "cursor-not-allowed" : "cursor-pointer "
+                      } bg-orange-500 hover:bg-orange-600 rounded-xl p-3 transition transform hover:scale-105 shadow-md flex items-center justify-center`}
+                      title="View Users"
+                    >
+                      <PiUsersThreeFill className="w-6 h-6 text-white" />
+                    </div>
+                    <div
+                      onClick={() => {
+                        if (!loading)
+                          getPropertiesByTenant(
+                            tenant?.id as string,
+                            setSelectedTenantId,
+                            setLoading,
+                            setProperties,
+                            setIsPropertyModalOpen
+                          );
+                      }}
+                      className={`${
+                        loading ? "cursor-not-allowed" : "cursor-pointer "
+                      } bg-orange-500 hover:bg-orange-600 rounded-xl p-3 transition transform hover:scale-105 shadow-md flex items-center justify-center`}
+                      title="View Properties"
+                    >
+                      <BsFillBuildingsFill className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
 
-                <button
-                  onClick={() => getPropertiesByTenant(tenant?.id)}
-                  className="cursor-pointer text-blue-600 underline text-sm mb-2 hover:text-blue-800 block"
-                >
-                  View Properties
-                </button>
-
-                <span
-                  className={`inline-block px-3 py-1 text-xs rounded-full ${
-                    tenant.isActive
-                      ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
-                  }`}
-                >
-                  {tenant?.isActive ? "Active" : "Inactive"}
-                </span>
+                  {/* Status Badge */}
+                  <span
+                    className={`absolute bottom-4 right-4 px-3 py-1 text-xs font-semibold rounded-full ${
+                      tenant.isActive
+                        ? "bg-green-200 text-green-800"
+                        : "bg-red-200 text-red-800"
+                    }`}
+                  >
+                    {tenant?.isActive ? "Active" : "Inactive"}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
@@ -243,23 +242,122 @@ const Tenants = ({ data }: TenantsProps) => {
         {/* Tenant Modal */}
         <Modal isOpen={isTenantModalOpen} onClose={handleCloseTenantModal}>
           <TenantForm
-            initialData={selectedTenant || null}
-            handleCloseTenantModal={handleCloseTenantModal}
+            data={selectedTenant || null}
+            onClose={handleCloseTenantModal}
+            refresh={refresh}
+            initialData={tenantData || []}
           />
         </Modal>
 
-        <UsersModalContent
-          tenantId={selectedTenantId || ""}
-          users={users}
+        {/* Reusable User Modal */}
+        <ListModal
+          title="Users"
           isOpen={isUserModalOpen}
           onClose={handleCloseUserModal}
+          entities={users}
+          tenantId={selectedTenantId}
+          refresh={() =>
+            getUsersByTenant(
+              selectedTenantId,
+              setLoading,
+              setSelectedTenantId,
+              setUsers,
+              setIsUserModalOpen
+            )
+          }
+          FormComponent={({ data, onClose }) => (
+            <UserForm
+              tenantId={selectedTenantId as string}
+              data={(data as UserFormType) || null}
+              refresh={refresh}
+              setModalOpen={onClose}
+            />
+          )}
+          filterFn={(user, activeTab) => {
+            if (activeTab === "Active") return user.isActive;
+            if (activeTab === "Inactive") return !user.isActive;
+            return true;
+          }}
+          renderItem={(user, onEdit) => (
+            <div className="p-4 rounded shadow bg-white text-sm space-y-1 text-gray-800">
+              <p>
+                <strong>Name:</strong> {user?.fullName}
+              </p>
+              <p>
+                <strong>Username:</strong> {user?.userName}
+              </p>
+              <p>
+                <strong>Gender:</strong>{" "}
+                <span className="uppercase">{user?.gender}</span>
+              </p>
+              <p>
+                <strong>DOB:</strong> {formatDateOfBirth(user?.dateOfBirth)}
+              </p>
+              <button
+                onClick={() => onEdit(user)}
+                className="mt-2 text-xs px-3 py-1 bg-blue-500 text-white rounded cursor-pointer"
+              >
+                Edit
+              </button>
+            </div>
+          )}
         />
 
-        <PropertiesModalContent
-          tenantId={selectedTenantId || ""}
-          properties={properties}
+        {/* Reusable Property Modal */}
+        <ListModal
+          title="Properties"
           isOpen={isPropertyModalOpen}
           onClose={handleClosePropertyModal}
+          entities={properties}
+          tenantId={selectedTenantId}
+          refresh={() => {
+            if (!selectedTenantId) return;
+            getPropertiesByTenant(
+              selectedTenantId,
+              setSelectedTenantId,
+              setLoading,
+              setProperties,
+              setIsPropertyModalOpen
+            );
+          }}
+          FormComponent={({ data, onClose }) => (
+            <PropertyForm
+              initialData={data}
+              setModalOpen={onClose}
+              tenantId={selectedTenantId}
+            />
+          )}
+          filterFn={(user, activeTab) => {
+            if (activeTab === "Active") return user.isActive;
+            if (activeTab === "Inactive") return !user.isActive;
+            return true;
+          }}
+          renderItem={(property, onEdit) => (
+            <div className="p-4 rounded shadow bg-white text-sm space-y-1 text-gray-800">
+              <p>
+                <strong>Name:</strong> {property?.name}
+              </p>
+              <p>
+                <strong>Address:</strong> {property?.address}
+              </p>
+              <p>
+                <strong>Status:</strong>{" "}
+                <span
+                  className={
+                    property?.isActive ? "text-green-600" : "text-red-500"
+                  }
+                >
+                  {property?.isActive ? "Active" : "Inactive"}
+                </span>
+              </p>
+              <button
+                onClick={() => onEdit(property)}
+                className="mt-2 text-xs px-3 py-1 bg-blue-500 text-white rounded cursor-pointer"
+              >
+                Edit
+              </button>
+            </div>
+          )}
         />
       </div>
     </>

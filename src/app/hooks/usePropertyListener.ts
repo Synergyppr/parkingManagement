@@ -2,7 +2,6 @@
 import { useEffect, useRef } from "react";
 import { useProperty } from "../context/PropertyContext";
 import { isWithinRadius } from "../lib/clientUtils";
-import { leaveGroup } from "../lib/SignalRProvider";
 
 export default function usePropertyListener() {
   const {
@@ -13,6 +12,7 @@ export default function usePropertyListener() {
     setPropertyId,
     setPropertyName,
     setIsOutOfArea,
+    requestLocation,
   } = useProperty();
 
   const hasEvaluatedRef = useRef(false);
@@ -46,12 +46,7 @@ export default function usePropertyListener() {
       }
       setIsOutOfArea(false);
     } else {
-      if (propertyId) {
-        leaveGroup(propertyId);
-        setPropertyId("");
-        setPropertyName("");
-      }
-      setIsOutOfArea(true);
+      requestLocation();
     }
 
     hasEvaluatedRef.current = true;

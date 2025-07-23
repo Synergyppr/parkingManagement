@@ -21,13 +21,12 @@ interface CarVectorProps {
   rearViewLabelsMap: Record<string, string[]>;
   passengerViewLabelsMap: Record<string, string[]>;
   driverViewLabelsMap: Record<string, string[]>;
-  hideLabels?: boolean; // Prop to control label visibility
-  setHasUnsavedChanges?: React.Dispatch<React.SetStateAction<boolean>>; // Optional prop to track unsaved changes
-  saveClickedRef: React.RefObject<boolean>; // Optional ref to track if save was clicked
-  shouldBypassUnloadPromptRef?: React.RefObject<boolean>; // Optional ref to bypass unload prompt
-  isFormChanged?: () => boolean; // Optional function to check if the form has changed
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  damagedParts?: any[]; // Optional prop for damaged parts
+  hideLabels?: boolean;
+  setHasUnsavedChanges?: React.Dispatch<React.SetStateAction<boolean>>; 
+  saveClickedRef: React.RefObject<boolean>; 
+  shouldBypassUnloadPromptRef?: React.RefObject<boolean>;
+  isFormChanged?: () => boolean;
+  damagedParts?: { partName: string; description: string }[];
 }
 
 const CarVector: React.FC<CarVectorProps> = ({
@@ -43,9 +42,9 @@ const CarVector: React.FC<CarVectorProps> = ({
   rearViewLabelsMap,
   passengerViewLabelsMap,
   driverViewLabelsMap,
-  hideLabels, // New prop to control label visibility
-  setHasUnsavedChanges, // Optional prop to track unsaved changes
-  saveClickedRef, // Optional ref to track if save was clicked
+  hideLabels, 
+  setHasUnsavedChanges, 
+  saveClickedRef,
   shouldBypassUnloadPromptRef,
   isFormChanged,
   damagedParts,

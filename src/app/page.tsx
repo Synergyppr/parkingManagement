@@ -1,7 +1,7 @@
 // app/login/page.tsx
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
-import { authOptions } from "./api/auth/authOptions";
+import { authOptions } from "./auth/authOptions";
 import LoginForm from "./components/LoginForm";
 import Image from "next/image";
 

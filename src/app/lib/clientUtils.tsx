@@ -75,6 +75,20 @@ export const formatDatePicker = (dateTime: string) => {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
+export function formatDateOfBirth(dateString: string): string {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return dateString; // fallback if invalid
+
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 export function formatPhoneNumber(value: string): string {
   const rawValue = value.replace(/\D/g, "");
 
@@ -143,12 +157,86 @@ type SimulationOptions = {
   setSimulatedPath: React.Dispatch<
     React.SetStateAction<google.maps.LatLngLiteral[]>
   >;
+  onComplete?: () => void;
   logLabel?: string; // Optional debug label
+};
+
+type HandlePlayProps = {
+  isPaused: boolean;
+  setIsPaused: (value: boolean) => void;
+  existingProps: SimulationOptions;
+  simulationState: {
+    route: google.maps.LatLngLiteral[];
+    currentSegment: number;
+    currentStep: number;
+  };
+  setSimulationState: React.Dispatch<
+    React.SetStateAction<{
+      route: google.maps.LatLngLiteral[];
+      currentSegment: number;
+      currentStep: number;
+    }>
+  >;
+  intervalRef: React.MutableRefObject<NodeJS.Timeout | null>;
+  setPlannedPath: (path: google.maps.LatLngLiteral[]) => void;
+  properties: Record<string, Property>;
+  delay: number;
+};
+
+export const handlePlay = ({
+  isPaused,
+  setIsPaused,
+  existingProps,
+  simulationState,
+  setSimulationState,
+  intervalRef,
+  setPlannedPath,
+  properties,
+  delay,
+}: HandlePlayProps) => {
+  if (isPaused) {
+    setIsPaused(false);
+    simulateDrive({
+      ...existingProps,
+      route: simulationState.route,
+      currentSegment: simulationState.currentSegment,
+      currentStep: simulationState.currentStep,
+      setSimulationState,
+      intervalRef,
+      delay,
+    });
+  } else {
+    const route = [properties?.plaza250, properties?.plaza270];
+    setPlannedPath(generateInterpolatedPath(route));
+    setSimulationState({ route, currentSegment: 0, currentStep: 0 });
+    simulateDrive({
+      ...existingProps,
+      route,
+      currentSegment: 0,
+      currentStep: 0,
+      setSimulationState,
+      intervalRef,
+      delay,
+    });
+  }
+};
+
+export const handlePause = ({
+  setIsPaused,
+  setSimulationInProgress,
+  intervalRef,
+}: {
+  setIsPaused: (value: boolean) => void;
+  setSimulationInProgress: (value: boolean) => void;
+  intervalRef: React.MutableRefObject<NodeJS.Timeout | null>;
+}) => {
+  setIsPaused(true);
+  setSimulationInProgress(false);
+  if (intervalRef.current) clearInterval(intervalRef.current);
 };
 
 export const simulateDrive = ({
   route,
-  // predefinedProperties,
   setLatitude,
   setLongitude,
   setManualLat,
@@ -156,33 +244,63 @@ export const simulateDrive = ({
   simulationInProgress,
   setSimulationInProgress,
   setMessage,
-  setSimulatedPath, // ✅ Add here
-}: // logLabel = "Custom",
-SimulationOptions & {
-  setSimulatedPath: React.Dispatch<
-    React.SetStateAction<google.maps.LatLngLiteral[]>
+  setSimulatedPath,
+  onComplete,
+  setSimulationState,
+  intervalRef,
+  currentSegment,
+  currentStep,
+  delay,
+  setEta, // ✅ New
+}: SimulationOptions & {
+  setSimulatedPath: React.Dispatch<React.SetStateAction<LatLng[]>>;
+  setSimulationState: React.Dispatch<
+    React.SetStateAction<{
+      route: LatLng[];
+      currentSegment: number;
+      currentStep: number;
+    }>
   >;
+  intervalRef: React.MutableRefObject<NodeJS.Timeout | null>;
+  currentSegment: number;
+  currentStep: number;
+  delay: number;
+  setEta?: (eta: string | null) => void; // ✅ Optional ETA setter
 }) => {
   if (simulationInProgress || route.length < 2) return;
 
-  setSimulatedPath([]); // clear path before starting
-  setSimulationInProgress(true);
-  let currentSegment = 0;
-  let currentStep = 0;
   const steps = 100;
+  setSimulatedPath([]);
+  setSimulationInProgress(true);
+  setMessage("Simulation started");
 
-  const simulateSegment = () => {
-    if (currentSegment >= route.length - 1) {
+  const calculateETA = (segIndex: number, stepIndex: number): string => {
+    const segmentsRemaining = route.length - 1 - segIndex;
+    const stepsRemaining = segmentsRemaining * steps + (steps - stepIndex);
+    const totalMs = stepsRemaining * delay;
+
+    const minutes = Math.floor(totalMs / 60000);
+    const seconds = Math.floor((totalMs % 60000) / 1000);
+
+    const formula = `${minutes > 0 ? `${minutes}m ` : ""}${seconds - 7}s`;
+
+    return formula;
+  };
+
+  const simulateSegment = (segmentIndex: number, stepIndex: number) => {
+    if (segmentIndex >= route.length - 1) {
       setSimulationInProgress(false);
       setMessage("Simulation completed.");
+      setEta?.(null); // ✅ Clear ETA
+      if (onComplete) onComplete();
       return;
     }
 
-    const start = route[currentSegment];
-    const end = route[currentSegment + 1];
+    const start = route[segmentIndex];
+    const end = route[segmentIndex + 1];
 
-    const interval = setInterval(() => {
-      const factor = currentStep / steps;
+    intervalRef.current = setInterval(() => {
+      const factor = stepIndex / steps;
       const lat = interpolate(start.lat, end.lat, factor);
       const lng = interpolate(start.lng, end.lng, factor);
 
@@ -191,19 +309,58 @@ SimulationOptions & {
       setLongitude(lng);
       setManualLat(lat.toString());
       setManualLng(lng.toString());
-      setSimulatedPath((prev) => [...prev, position]); // ✅ Track path
+      setSimulatedPath((prev) => [...prev, position]);
 
-      currentStep++;
-      if (currentStep > steps) {
-        clearInterval(interval);
-        currentSegment++;
-        currentStep = 0;
-        simulateSegment(); // move to next
+      // ✅ Update ETA each step
+      setEta?.(calculateETA(segmentIndex, stepIndex));
+
+      stepIndex++;
+      if (stepIndex > steps) {
+        clearInterval(intervalRef.current!);
+        simulateSegment(segmentIndex + 1, 0);
+      } else {
+        setSimulationState({
+          route,
+          currentSegment: segmentIndex,
+          currentStep: stepIndex,
+        });
       }
-    }, 100);
+    }, delay);
   };
 
-  simulateSegment();
+  simulateSegment(currentSegment, currentStep);
+};
+
+export const handleStop = ({
+  setSimulationInProgress,
+  setMessage,
+  intervalRef,
+  setSimulatedPath,
+  setSimulationState,
+  setPlannedPath,
+  onComplete,
+}: {
+  setSimulationInProgress: (value: boolean) => void;
+  setMessage: (msg: string) => void;
+  intervalRef: React.MutableRefObject<NodeJS.Timeout | null>;
+  setSimulatedPath: React.Dispatch<React.SetStateAction<LatLng[]>>;
+  setPlannedPath: (path: LatLng[]) => void;
+  setSimulationState: React.Dispatch<
+    React.SetStateAction<{
+      route: LatLng[];
+      currentSegment: number;
+      currentStep: number;
+    }>
+  >;
+  onComplete?: () => void;
+}) => {
+  setSimulationInProgress(false);
+  setMessage("Simulation stopped.");
+  setSimulatedPath([]);
+  setPlannedPath([]);
+  setSimulationState({ route: [], currentSegment: 0, currentStep: 0 });
+  if (intervalRef.current) clearInterval(intervalRef.current);
+  if (onComplete) onComplete();
 };
 
 export const generateInterpolatedPath = (

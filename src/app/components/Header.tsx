@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
-import { FaUser, FaLocationDot } from "react-icons/fa6";
+import { FaUser } from "react-icons/fa6";
+import { PiWarningDiamondBold } from "react-icons/pi";
 import { TbLogout2 } from "react-icons/tb";
 import { FaBars } from "react-icons/fa";
 import { GoDotFill } from "react-icons/go";
@@ -65,7 +66,7 @@ export default function Header() {
   usePropertyListener();
 
   useEffect(() => {
-    if (!propertyId && !propertyName) {
+    if (!propertyId) {
       setIsOutOfArea(true);
     } else {
       setIsOutOfArea(false);
@@ -119,37 +120,39 @@ export default function Header() {
             <>
               <button
                 type="button"
-                className="py-1 px-2 md:px-3 bg-blue-500 text-white rounded-sm cursor-pointer hover:scale-105 m-auto"
+                className="py-1.5 px-2 md:px-3 bg-blue-500 text-white rounded-sm cursor-pointer hover:scale-105 m-auto"
                 onClick={() => setOpenLocationModal(true)}
               >
                 {locationMode === "live" ? (
                   <span className="flex items-center gap-1 text-xs md:text-sm lg:text-sm">
                     <GoDotFill className="text-red-500 animate-blink blinking-dot" />
-                    Live
+                    Live{" "}
+                    {propertyName
+                      ? propertyName === "Condado Ocean Club"
+                        ? "- COC"
+                        : propertyName === "La Concha Resort"
+                        ? "- CRH"
+                        : propertyName === "Condado Vanderbilt"
+                        ? "- CVH"
+                        : "- " + propertyName?.substring(0, 3)
+                      : ""}
                   </span>
                 ) : (
                   <span className="flex items-center gap-1 text-xs md:text-sm lg:text-sm">
                     <BiCurrentLocation className="text-blue-800" />
-                    Manual
+                    Manual{" "}
+                    {propertyName
+                      ? propertyName === "Condado Ocean Club"
+                        ? "- COC"
+                        : propertyName === "La Concha Resort"
+                        ? "- CRH"
+                        : propertyName === "Condado Vanderbilt"
+                        ? "- CVH"
+                        : "- " + propertyName?.substring(0, 3)
+                      : ""}
                   </span>
                 )}
               </button>
-              {propertyName && (
-                <div
-                  className={`hidden md:flex lg:flex gap-1 bg-slate-800/10 border-solid border-[0.5px] rounded-sm text-sm shadow-sm py-[5.5px] px-2 border-black uppercase my˝-auto`}
-                >
-                  <FaLocationDot className="w-3 h-3 my-auto text-red-600" />
-                  <p className="my-auto text-white tracking-tight font-bold">
-                    {propertyName === "Condado Ocean Club"
-                      ? "COC"
-                      : propertyName === "La Concha Resort"
-                      ? "CRH"
-                      : propertyName === "Condado Vanderbilt"
-                      ? "CVH"
-                      : propertyName?.substring(0, 3)}
-                  </p>
-                </div>
-              )}
 
               <Modal
                 isOpen={openLocationModal}
@@ -183,10 +186,11 @@ export default function Header() {
       {isOutOfArea && (
         <div className="fixed inset-0 bg-black/70 text-white z-[40] flex items-center justify-center text-center p-4 pointer-events-none">
           <div className="pointer-events-auto">
+            <PiWarningDiamondBold className="w-24 h-24 mx-auto mb-4 text-yellow-400" />
             <h2 className="text-2xl font-bold mb-2">
               You are not inside any of our properties
             </h2>
-            <p className="text-lg">
+            <p className="text-lg text-slate-100">
               Please return to the designated property location.
             </p>
           </div>

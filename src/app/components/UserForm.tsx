@@ -1,382 +1,152 @@
 "use client";
-
 import { useState, useEffect } from "react";
-import Swal from "sweetalert2";
-import { FaEye, FaEyeSlash, FaUser } from "react-icons/fa";
+import { createAndUpdateUser } from "../auth/userStoreApi";
+import { UserForm } from "../types/index";
 import { formatDatePicker } from "../lib/clientUtils";
-import ButtonLoader from "./elements/ButtonLoader";
+import ModalForm, { FormFieldConfig } from "./ModalForm";
 
-interface UserformDataProps {
-  tenantId?: string;
-  initialData?: Partial<UserformData> | null;
-  onSubmit?: (data: UserformData) => void;
-  setModalOpen: (isOpen: boolean) => void;
-}
+const fields: FormFieldConfig[] = [
+  { id: "userName", name: "userName", label: "Username", required: true },
+  {
+    id: "pin",
+    name: "pin",
+    label: "PIN",
+    type: "password",
+    required: true,
+    maxLength: 4,
+  },
+  { id: "firstName", name: "firstName", label: "First Name" },
+  { id: "lastName", name: "lastName", label: "Last Name" },
+  {
+    id: "role",
+    name: "role",
+    label: "Role",
+    type: "select",
+    required: true,
+    options: [
+      { label: "Admin", value: "Admin" },
+      { label: "General", value: "General" },
+    ],
+  },
+  {
+    id: "gender",
+    name: "gender",
+    label: "Gender",
+    type: "select",
+    options: [
+      { label: "Male", value: "m" },
+      { label: "Female", value: "f" },
+      { label: "Other", value: "o" },
+    ],
+  },
+  {
+    id: "dateOfBirth",
+    name: "dateOfBirth",
+    label: "Date of Birth",
+    type: "date",
+  },
+];
 
-export interface UserformData {
-  id?: string;
-  tenantId: string;
-  role: number;
-  userName: string;
-  pin: string;
-  firstName: string;
-  lastName: string;
-  gender: string;
-  dateOfBirth: string;
-  isActive: boolean;
-}
-
-const UserformData = ({
+export default function UserFormWrapper({
   tenantId,
-  initialData,
-  setModalOpen,
-}: UserformDataProps) => {
-  const [formData, setFormData] = useState<UserformData>({
-    id: initialData?.id || "",
-    tenantId: initialData?.tenantId || "",
-    role: initialData?.role ?? 0,
-    userName: initialData?.userName || "",
-    pin: initialData?.pin || "",
-    firstName: initialData?.firstName || "",
-    lastName: initialData?.lastName || "",
-    gender: initialData?.gender || "",
-    dateOfBirth: initialData?.dateOfBirth || "",
-    isActive: initialData?.isActive ?? true,
+  data,
+  refresh,
+  setModalOpen = () => {},
+}: {
+  tenantId: string;
+  data?: UserForm;
+  refresh: (id: string) => void;
+  setModalOpen?: (isOpen: boolean) => void;
+}) {
+  const [form, setForm] = useState<UserForm>({
+    id: data?.id,
+    userName: data?.userName || "",
+    pin: data?.pin || "",
+    firstName: data?.firstName || "",
+    lastName: data?.lastName || "",
+    gender: data?.gender || "",
+    role: data?.role as string,
+    dateOfBirth: data?.dateOfBirth || "",
+    isActive: data?.isActive ?? true,
   });
-  const [showPin, setShowPin] = useState(false);
-  const [buttonLoader, setButtonLoader] = useState(false);
-  const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [, setMissingFields] = useState<string[]>([]);
+  const [, setButtonLoader] = useState(false);
 
   useEffect(() => {
-    // If dateOfBirth exists, format it to match the input type
-    if (initialData?.dateOfBirth) {
-      setFormData((prev) => ({
+    if (data) {
+      const [firstName = "", lastName = ""] = data?.fullName?.split(" ") || [];
+      setForm((prev) => ({
         ...prev,
-        dateOfBirth: formatDatePicker(initialData?.dateOfBirth as string),
-        // dateOfBirth: initialData?.dateOfBirth as string,
+        firstName,
+        lastName,
+        dateOfBirth: data?.dateOfBirth
+          ? formatDatePicker(data.dateOfBirth)
+          : "",
+        role: data?.role,
       }));
     }
-  }, [initialData]);
+  }, [data]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // console.log("Submitting form with data:", formData);
-
-    // Define the required fields for both creation and update
-    const requiredFields: { [key: string]: string } = {
-      userName: "Username",
-      firstName: "First Name",
-      lastName: "Last Name",
-      gender: "Gender",
-      dateOfBirth: "Date of Birth",
-    };
-
-    // If creating (no id), pin is also required
-    if (!formData.id) {
-      requiredFields["pin"] = "PIN";
-    }
-
-    // Check for any empty required fields
-    const foundMissingFields = Object.entries(requiredFields).filter(
-      ([key]) => !formData[key as keyof UserformData]
-    );
-
-    if (foundMissingFields.length > 0) {
-      const missingKeys = foundMissingFields.map(([key]) => key);
-      setMissingFields(missingKeys);
-      Swal.fire({
-        icon: "warning",
-        title: "Missing Fields",
-        html: `<ul class="text-left">${foundMissingFields
-          .map(([, label]) => `<li>• ${label}</li>`)
-          .join("")}</ul>`,
-      });
-      return;
-    } else {
-      setMissingFields([]); // clear error highlights
-    }
-
-    setButtonLoader(true);
-
-    const method = "POST";
-    const endpoint = "/api/users/createAndUpdate";
-
-    const payload = {
-      id: formData?.id || null,
-      tenantId: tenantId || "",
-      role: formData?.role || 1,
-      userName: formData?.userName?.trim(),
-      pin: formData?.pin,
-      firstName: formData?.firstName?.trim(),
-      lastName: formData?.lastName?.trim(),
-      gender: formData?.gender,
-      dateOfBirth: formData?.dateOfBirth,
-      isActive: formData?.isActive ?? true,
-    };
-
-    // console.log("Submitting payload:", payload);
-
+  const handleSubmit = async () => {
+    setLoading(true);
     try {
-      const res = await fetch(endpoint, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
+      // console.log("Submitting user:", form);
+
+      await createAndUpdateUser(
+        {
+          ...form,
+          role: form.role,
+          id: form.id,
+          tenantId: tenantId,
+          // userName: "eamarket",
+          firstName: form.firstName,
+          lastName: form.lastName,
+          gender: form.gender,
+          dateOfBirth: form.dateOfBirth,
+          isActive: form.isActive,
         },
-        body: JSON.stringify(payload),
-      });
+        setMissingFields,
+        setButtonLoader,
+        tenantId,
+        setModalOpen
+      );
 
-      const result = await res.json();
-
-      // console.log("Submission result:", result);
-
-      if (result?.result?.status === "200") {
-        setModalOpen(false);
-        Swal.fire({
-          icon: "success",
-          title: `User ${formData.id ? "updated" : "created"} successfully!`,
-          showConfirmButton: false,
-          timer: 1500,
-        });
-      } else {
-        console.error("Submission failed:", result?.result?.message);
-        Swal.fire({
-          icon: "error",
-          title: "Submission Failed",
-          text: result?.result?.message || "Something went wrong.",
-        });
-      }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      Swal.fire({
-        icon: "error",
-        title: "An error occurred",
-        text: "Please try again later.",
-      });
+      refresh(tenantId);
+    } catch (err) {
+      console.error("Error submitting user:", err);
     } finally {
-      setButtonLoader(false);
+      setLoading(false);
     }
-  };
-
-  const generatePIN = () => {
-    // Generate a random 4-digit PIN
-    const pin = Math.floor(1000 + Math.random() * 9000).toString();
-    setFormData((prev) => ({ ...prev, pin }));
-  };
-
-  const toggleIsActive = () => {
-    setFormData((prev) => ({ ...prev, isActive: !prev?.isActive }));
   };
 
   return (
-    <form className="space-y-4 text-sm text-gray-800">
-      <div className="flex gap-2 text-blue-500 items-center">
-        <FaUser className="w-5 h-5" />
-        <h2 className="text-xl font-semibold tracking-tight relative top-[2px]">
-          {formData.id ? "Update User" : "Create User"}
-        </h2>
-      </div>
-
-      <div>
-        <input
-          type="text"
-          name="userName"
-          placeholder="Username"
-          value={formData?.userName}
-          onChange={handleChange}
-          className={`border-b px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full ${
-            missingFields.includes("userName")
-              ? "border-red-500"
-              : "border-gray-500"
-          }`}
-          required
-        />
-      </div>
-
-      {!formData?.id && (
-        <div className="relative w-full flex items-center gap-2">
-          <div className="relative w-full">
-            <input
-              type={showPin ? "text" : "password"}
-              name="pin"
-              placeholder="PIN"
-              value={formData?.pin}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (/^\d{0,4}$/.test(val)) {
-                  setFormData((prev) => ({ ...prev, pin: val }));
-                }
-              }}
-              className="border-b border-gray-500 px-2 py-2 pr-10 text-sm placeholder-gray-700 tracking-tight w-full"
-              maxLength={4}
-              inputMode="numeric"
-              pattern="\d*"
-              required
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowPin((prev) => !prev)}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300 focus:outline-none"
-            >
-              {showPin ? <FaEyeSlash /> : <FaEye />}
-            </button>
-          </div>
-          <button
-            type="button"
-            onClick={generatePIN}
-            className="bg-gray-700 hover:bg-gray-500 text-white rounded-md px-3 py-2 text-sm shadow-sm"
-          >
-            Auto
-          </button>
-        </div>
-      )}
-
-      <div>
-        <input
-          type="text"
-          name="firstName"
-          placeholder="First Name"
-          value={formData.firstName}
-          onChange={handleChange}
-          className={`border-b px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full ${
-            missingFields.includes("firstName")
-              ? "border-red-500"
-              : "border-gray-500"
-          }`}
-        />
-      </div>
-
-      <div>
-        <input
-          type="text"
-          name="lastName"
-          placeholder="Last Name"
-          value={formData.lastName}
-          onChange={handleChange}
-          className={`border-b px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full ${
-            missingFields.includes("lastName")
-              ? "border-red-500"
-              : "border-gray-500"
-          }`}
-        />
-      </div>
-
-      <div className="flex w-full gap-2">
-        <div className="w-full">
-          <select
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            className={`border-b px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full ${
-              missingFields.includes("role")
-                ? "border-red-500"
-                : "border-gray-500"
-            }`}
-          >
-            <option value="">Select Role</option>
-            <option value={1}>Admin</option>
-            <option value={2}>General</option>
-          </select>
-        </div>
-        <div className="w-full">
-          <select
-            name="gender"
-            value={formData.gender}
-            onChange={handleChange}
-            className={`border-b px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full ${
-              missingFields.includes("gender")
-                ? "border-red-500"
-                : "border-gray-500"
-            }`}
-          >
-            <option value="">Select Gender</option>
-            <option value="m">Male</option>
-            <option value="f">Female</option>
-            <option value="o">Other</option>
-          </select>
-        </div>
-      </div>
-
-      {formData?.id && (
-        <div>
-          <input
-            type="text"
-            name="pin"
-            placeholder="PIN (Reset)"
-            value={formData.pin}
-            onChange={handleChange}
-            className="border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full"
-          />
-        </div>
-      )}
-
-      <div className="flex justify-between gap-1 mb-4">
-        <div className="w-full">
-          <input
-            type="date"
-            name="dateOfBirth"
-            value={formData.dateOfBirth}
-            onChange={handleChange}
-            className={`border-b px-2 py-2 text-sm placeholder-gray-700 tracking-tight w-full ${
-              missingFields.includes("dateOfBirth")
-                ? "border-red-500"
-                : "border-gray-500"
-            }`}
-          />
-        </div>
-
-        {formData?.id && (
-          <div className="w-full px-0 relative gap-0 md:justify-end md:flex md:gap-1">
-            <div className="tracking-tight text-[10px] md:text-sm text-gray-200 float-left md:float-none relative left-[-1px] md:left-0 md:top-2">
-              {formData?.isActive ? "Active" : "Inactive"}
-            </div>
-            <div className="float-right">
-              <div
-                className="relative flex items-center justify-between w-14 h-8 cursor-pointer"
-                onClick={toggleIsActive}
-              >
-                <div
-                  className={`absolute w-full h-full rounded-full transition-all duration-300 ${
-                    formData.isActive ? "bg-blue-500" : "bg-gray-300"
-                  }`}
-                />
-                <div
-                  className={`absolute w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${
-                    formData.isActive
-                      ? "translate-x-[28px]"
-                      : "translate-x-[5px]"
-                  }`}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <button
-        type="button"
-        onClick={handleSubmit}
-        className={`cursor-pointer w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${
-          formData?.id ? "mt-[-20px] md:mt-[-12px]" : "mt-[-4px]"
-        }`}
-      >
-        {buttonLoader ? (
-          <ButtonLoader />
-        ) : formData?.id ? (
-          "Update User"
-        ) : (
-          "Create User"
-        )}
-      </button>
-    </form>
+    <ModalForm
+      title={form.id ? "Update User" : "Create User"}
+      initialData={form as UserForm}
+      fields={fields}
+      onChange={handleChange}
+      onSubmit={handleSubmit}
+      isActive={form.isActive}
+      onToggleActive={() =>
+        setForm((prev) => ({ ...prev, isActive: !prev.isActive }))
+      }
+      showActiveToggle
+      submitLabel={form.id ? "Update User" : "Create User"}
+      loading={loading}
+    />
   );
-};
-
-export default UserformData;
+}

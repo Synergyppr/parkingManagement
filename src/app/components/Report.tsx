@@ -27,7 +27,7 @@ const Report = () => {
       pageNumber,
       pageSize: PAGE_SIZE,
       filters: {
-        search: search.trim(),
+        search: search?.trim() as string,
       },
     };
 
@@ -42,6 +42,7 @@ const Report = () => {
     const data = await res.json();
 
     // console.log("Report data received:", data);
+
     const result = data?.result?.data || [];
     const total = data?.result?.total || result.length;
 
@@ -51,11 +52,12 @@ const Report = () => {
 
   useEffect(() => {
     if (propertyId)
-      setTimeout(() => {
-        getReportData();
-      }, 1000);
+      console.log("Fetching report data for property:", propertyId);
+    setTimeout(() => {
+      getReportData();
+    }, 1000);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, pageNumber]);
+  }, [search, pageNumber, propertyId]);
 
   const handleSearchChange = (e: {
     target: { value: React.SetStateAction<string> };

@@ -19,14 +19,16 @@ interface Props {
   properties: Property[] | undefined;
   onClose: () => void;
   isOpen: boolean;
+  refresh: (id: string) => void;
 }
 
-export default function PropertiesModalContent({
+export default function PropertyListModal({
   tenantId,
   properties,
   isOpen,
   onClose,
-}: Props) {
+}: // refresh,
+Props) {
   const [isPropertyFormOpen, setIsPropertyFormOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] =
     useState<Partial<Property> | null>(null);

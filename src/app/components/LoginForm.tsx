@@ -2,7 +2,7 @@
 import { useState, useEffect, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
-import { validateUser } from "../api/auth/userStoreApi";
+import { validateUser } from "../auth/userStoreApi";
 import { useProperty } from "../context/PropertyContext";
 import { joinGroup } from "../lib/SignalRProvider";
 import FloatingLabelInput from "./elements/FloatingLabelInput";
