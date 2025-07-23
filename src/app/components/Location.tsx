@@ -13,13 +13,13 @@ import {
   generateInterpolatedPath,
   handlePlay,
   handlePause,
-  handleStop,
+  // handleStop,
 } from "../lib/clientUtils";
 import usePropertyListener from "../hooks/usePropertyListener";
 import { GoDotFill } from "react-icons/go";
 import { FaMinus, FaPlus } from "react-icons/fa";
-import { FaPlay, FaPause, FaStop } from "react-icons/fa6";
-import { BsFillFastForwardFill, BsFillRewindFill } from "react-icons/bs";
+import { FaPlay, FaPause } from "react-icons/fa6"; // FaStop
+// import { BsFillFastForwardFill, BsFillRewindFill } from "react-icons/bs";
 import { CollapsibleSection } from "./CollapsibleSection";
 
 const mapContainerStyle = {
@@ -102,7 +102,7 @@ const Location = () => {
     currentSegment: 0,
     currentStep: 0,
   });
-  const [delay, setDelay] = useState(100); // Default to 100ms
+  const [delay] = useState(100); // Default to 100ms
   const [eta, setEta] = useState<string | null>(null);
 
   const existingProps: SimulationOptions = {
@@ -231,36 +231,36 @@ const Location = () => {
     [setLatitude, setLongitude, setManualLat, setManualLng]
   );
 
-  const getSpeedInfo = (delay: number) => {
-    // These are arbitrary values; feel free to tweak them
-    let label = "";
-    let bg = "";
-    let mph = 0;
+  // const getSpeedInfo = (delay: number) => {
+  //   // These are arbitrary values; feel free to tweak them
+  //   let label = "";
+  //   let bg = "";
+  //   let mph = 0;
 
-    if (delay <= 50) {
-      label = "Very Fast";
-      bg = "bg-green-600 text-white";
-      mph = 60;
-    } else if (delay <= 100) {
-      label = "Fast";
-      bg = "bg-green-400 text-white";
-      mph = 45;
-    } else if (delay <= 200) {
-      label = "Normal";
-      bg = "bg-yellow-400 text-black";
-      mph = 30;
-    } else if (delay <= 300) {
-      label = "Slow";
-      bg = "bg-orange-500 text-white";
-      mph = 15;
-    } else {
-      label = "Very Slow";
-      bg = "bg-red-600 text-white";
-      mph = 5;
-    }
+  //   if (delay <= 50) {
+  //     label = "Very Fast";
+  //     bg = "bg-green-600 text-white";
+  //     mph = 60;
+  //   } else if (delay <= 100) {
+  //     label = "Fast";
+  //     bg = "bg-green-400 text-white";
+  //     mph = 45;
+  //   } else if (delay <= 200) {
+  //     label = "Normal";
+  //     bg = "bg-yellow-400 text-black";
+  //     mph = 30;
+  //   } else if (delay <= 300) {
+  //     label = "Slow";
+  //     bg = "bg-orange-500 text-white";
+  //     mph = 15;
+  //   } else {
+  //     label = "Very Slow";
+  //     bg = "bg-red-600 text-white";
+  //     mph = 5;
+  //   }
 
-    return { label, bg, mph };
-  };
+  //   return { label, bg, mph };
+  // };
 
   if (loadError) return <div>Error loading map</div>;
   if (!isLoaded) return <div>Loading map...</div>;
@@ -678,7 +678,9 @@ const Location = () => {
         </div>
 
         {/* Message */}
-        {message && <p className={`text-green-600 text-sm mt-0 mb-2`}>{message}</p>}
+        {message && (
+          <p className={`text-green-600 text-sm mt-0 mb-2`}>{message}</p>
+        )}
 
         {locationMode === "manual" && (
           <div className="flex justify-between mt-0">
@@ -898,7 +900,7 @@ const Location = () => {
           )}
           {eta && (
             <div className="text-sm text-green-600 mt-2 flex justify-end font-bold">
-              <span className="font-medium">ETA: </span>{" "} {eta}
+              <span className="font-medium">ETA: </span> {eta}
             </div>
           )}
         </div>
