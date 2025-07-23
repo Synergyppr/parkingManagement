@@ -61,7 +61,7 @@ export const SignalRProvider = ({
 
       connection.on("UpdateNotification", (notification: Notification) => {
         if (notificationSound) {
-          // console.log("🔔 Playing notification sound");
+          console.log("🔔 Playing notification sound");
           setTimeout(() => {
             notificationSound.play().catch((err) => {
               console.warn("🔇 Unable to play sound:", err);
@@ -74,13 +74,13 @@ export const SignalRProvider = ({
 
       try {
         await connection.start();
-        // console.log("✅ Connected to SignalR hub");
+        console.log("✅ Connected to SignalR hub");
 
         // Join initial group if propertyId exists
         if (propertyId) {
           await connection.invoke("JoinPropertyGroup", propertyId);
           previousPropertyIdRef.current = propertyId;
-          // console.log("✅ Joined group:", propertyId);
+          console.log("✅ Joined group:", propertyId);
         }
 
         connectionRef.current = connection;
@@ -106,7 +106,7 @@ export const SignalRProvider = ({
       connection?.stop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [propertyId]);
 
   // Handle group change when propertyId changes
   useEffect(() => {

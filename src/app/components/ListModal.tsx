@@ -50,7 +50,7 @@ export default function ListModal<T>({
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose}>
+      <Modal isOpen={isOpen} onClose={handleCloseForm}>
         <div className="flex justify-between items-center mb-2 border-y-[.5px] border-solid border-gray-800 p-1">
           <h2 className="text-xl font-bold text-black tracking-tight">
             {title}
@@ -110,7 +110,7 @@ export default function ListModal<T>({
         )}
       </Modal>
 
-      <Modal isOpen={isFormOpen} onClose={onClose}>
+      <Modal isOpen={isFormOpen} onClose={handleCloseForm}>
         <FormComponent
           tenantId={tenantId}
           data={selectedEntity}
