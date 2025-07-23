@@ -183,7 +183,9 @@ export default function UserListModal({
         <UserFormComponent
           tenantId={tenantId as string}
           data={selectedUser as UserForm}
-          onClose={handleCloseModal}
+          setModalOpen={(isOpen) => {
+            if (!isOpen) handleCloseModal();
+          }}
           refresh={refresh}
         />
       </Modal>
