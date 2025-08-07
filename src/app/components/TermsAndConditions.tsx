@@ -178,10 +178,10 @@ export default function TermsAndConditions() {
               </a>
               , please contact our support team at{" "}
               <a
-                href="mailto:support@example.com"
+                href="mailto:services@synergyppr.com"
                 className="text-blue-600 underline"
               >
-                support@example.com
+                services@synergyppr.com
               </a>
               .
             </p>

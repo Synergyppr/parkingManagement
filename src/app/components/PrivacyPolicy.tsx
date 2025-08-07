@@ -202,7 +202,7 @@ export default function PrivacyPolicy() {
               If you have any questions or concerns about this Privacy Policy,
               please contact us at{" "}
               <a
-                href="mailto:support@example.com"
+                href="mailto:services@synergyppr.com"
                 className="text-blue-600 underline"
               >
                 services@synergyppr.com
