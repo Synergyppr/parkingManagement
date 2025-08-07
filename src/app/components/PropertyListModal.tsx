@@ -8,6 +8,8 @@ interface Property {
   id?: string;
   tenantId?: string;
   tenant?: string;
+  latitude: number;
+  longitude: number;
   name: string;
   address: string;
   createdAtDateTime: string;
@@ -73,6 +75,8 @@ Props) {
                       address: property?.address as string,
                       isActive: property?.isActive as boolean,
                       createdAtDateTime: property?.createdAtDateTime,
+                      latitude: property?.latitude as number,
+                      longitude: property?.longitude as number,
                     });
                     setIsPropertyFormOpen(true);
                   }}
@@ -136,10 +140,12 @@ Props) {
           tenantId={tenantId as string}
           setModalOpen={setIsPropertyFormOpen}
           initialData={
-            selectedProperty
+            (selectedProperty as Property)
               ? {
                   id: selectedProperty?.id ?? "",
                   tenantId: selectedProperty?.tenantId ?? "",
+                  latitude: Number(selectedProperty?.latitude),
+                  longitude: Number(selectedProperty?.longitude),
                   name: selectedProperty?.name ?? "",
                   address: selectedProperty?.address ?? "",
                   createdAtDateTime: selectedProperty?.createdAtDateTime ?? "",

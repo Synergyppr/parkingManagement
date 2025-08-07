@@ -9,6 +9,7 @@ import Swal from "sweetalert2";
 interface Property {
   id?: string;
   tenantId?: string;
+  tenant?: string;
   latitude: number;
   longitude: number;
   name: string;
