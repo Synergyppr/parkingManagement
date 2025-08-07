@@ -20,10 +20,14 @@ const StatusTimeline = ({ currentStatus }: { currentStatus: string }) => {
         <div key={status} className="flex flex-col items-center w-1/4 relative">
           <div
             className={`${
-              currentStatus === status ? "bg-[#ef6c00]" : "bg-gray-700"
+              currentStatus?.toLowerCase().includes(status?.toLowerCase())
+                ? "bg-[#ef6c00]"
+                : "bg-gray-700"
             } w-5 h-5 rounded-full border-2 border-white  flex items-center justify-center relative z-10`}
           >
-            {currentStatus === status && <CarIcon />}
+            {currentStatus?.toLowerCase().includes(status?.toLowerCase()) && (
+              <CarIcon />
+            )}
           </div>
           <span className="mt-2 text-xs text-gray-600 capitalize tracking-tight">
             {status}

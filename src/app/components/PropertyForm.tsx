@@ -9,7 +9,8 @@ import Swal from "sweetalert2";
 interface Property {
   id?: string;
   tenantId?: string;
-  // tenant?: string;
+  latitude: number;
+  longitude: number;
   name: string;
   address: string;
   createdAtDateTime: string;
@@ -34,6 +35,8 @@ export default function ModalPropertyForm({
     tenantId: tenantId,
     name: "",
     address: "",
+    latitude: latitude || 0,
+    longitude: longitude || 0,
     createdAtDateTime:
       initialData?.createdAtDateTime || new Date().toISOString(),
     isActive: true,
@@ -58,27 +61,27 @@ export default function ModalPropertyForm({
 
     let payload;
 
-    if (form.id) {
+    if (form?.id) {
       payload = {
-        id: form.id,
+        id: form?.id,
         tenantId: tenantId || form?.tenantId,
-        name: form.name,
-        address: form.address,
-        latitude: 18.457076,
-        longitude: -66.074113,
+        name: form?.name,
+        address: form?.address,
+        latitude: Number(form?.latitude) || 0,
+        longitude: Number(form?.longitude) || 0,
       };
     } else {
       payload = {
         ...form,
         tenantId: tenantId || form?.tenantId,
         isActive: form?.isActive ?? true,
-        latitude: latitude || 0,
-        longitude: longitude || 0,
+        latitude: Number(form?.latitude) || 0,
+        longitude: Number(form?.longitude) || 0,
         radiusMeters: 100,
       };
     }
 
-    console.log("createAndUpdate properties Submitting payload:", payload);
+    // console.log("createAndUpdate properties Submitting payload:", payload);
 
     const res = await fetch(endpoint, {
       method,
@@ -90,7 +93,7 @@ export default function ModalPropertyForm({
 
     const result = await res.json();
 
-    console.log("createAndUpdate properties Submission result:", result);
+    // console.log("createAndUpdate properties Submission result:", result);
 
     if (result?.result?.status === "200") {
       setModalOpen(false);
@@ -138,6 +141,22 @@ export default function ModalPropertyForm({
         name="address"
         label="Address"
         value={form?.address}
+        onChange={handleChange}
+      />
+
+      <ModalInput
+        id="latitude"
+        name="latitude"
+        label="Latitude"
+        value={String(form?.latitude)}
+        onChange={handleChange}
+      />
+
+      <ModalInput
+        id="longitude"
+        name="longitude"
+        label="Longitude"
+        value={String(form?.longitude)}
         onChange={handleChange}
       />
 

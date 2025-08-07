@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import Swal from "sweetalert2";
 import FormInput from "./elements/FormInput";
 import { FaMoneyBillWave } from "react-icons/fa";
-import { MdPayment, MdOutlineReceiptLong } from "react-icons/md";
+import { MdPayment, MdOutlineReceiptLong, MdPassword } from "react-icons/md";
 
 interface TransactionFormProps {
   form: TransactionForm;
@@ -30,6 +30,7 @@ interface TransactionForm {
   paymentMethod: string;
   referenceNumber: string;
   notes?: string | undefined;
+  pin?: string;
 }
 
 export default function TransactionForm({
@@ -45,6 +46,7 @@ export default function TransactionForm({
   propertyId,
 }: TransactionFormProps) {
   const [loader, setLoader] = useState(false);
+  const [showPin, setShowPin] = useState(false);
 
   useEffect(() => {
     // Generate a ticket number when the component mounts
@@ -95,6 +97,7 @@ export default function TransactionForm({
         latitude: locationMode === "manual" ? latitude : userLat,
         longitude: locationMode === "manual" ? longitude : userLng,
         ticketId: ticketId,
+        pin: form?.pin || "",
         amount: Number(form?.amount) || 0, // Ensure amount is a number
         paymentMethod: form?.paymentMethod,
         referenceNumber: form?.referenceNumber,
@@ -222,6 +225,34 @@ export default function TransactionForm({
             missing={missingFields.includes("referenceNumber")}
             onClear={() =>
               setForm((prev) => ({ ...prev, referenceNumber: "" }))
+            }
+          />
+
+          <FormInput
+            name="pin"
+            type="text"
+            placeholder="PIN"
+            icon={<MdPassword />}
+            value={form?.pin || ""}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (/^\d{0,4}$/.test(val)) {
+                setForm((prev) => ({
+                  ...prev,
+                  pin: val,
+                }));
+              }
+            }}
+            required
+            showPasswordToggle
+            showPassword={showPin}
+            setShowPassword={setShowPin}
+            missing={missingFields.includes("pin")}
+            onClear={() =>
+              setForm((prev) => ({
+                ...prev,
+                pin: "",
+              }))
             }
           />
         </div>

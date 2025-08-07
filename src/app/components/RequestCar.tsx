@@ -65,7 +65,7 @@ const RequestCar = () => {
         }
       }
     });
-  }, [ticketId, registerNotificationHandler]);
+  }, [ticketId, registerNotificationHandler, vehicleData?.status]);
 
   useEffect(() => {
     if (idFromUrl) {
@@ -355,12 +355,7 @@ const RequestCar = () => {
                   <p className="indent mt-2">
                     We’ve located your vehicle associated with ticket{"  "}
                     <strong className="italic text-[#ef6c00]">
-                      {/* text-[#3B82F6] blue */}#
-                      {/* {vehicleData?.ticketNumber?.substring(
-                        vehicleData?.ticketNumber.length - 6,
-                        vehicleData?.ticketNumber.length
-                      )} */}
-                      {vehicleData?.ticketNumber}
+                      #{vehicleData?.ticketNumber}
                     </strong>{" "}
                     —{" "}
                     <strong className="text-[#ef6c00] capitalize">

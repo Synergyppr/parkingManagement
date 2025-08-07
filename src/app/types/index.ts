@@ -151,4 +151,6 @@ export interface Property {
   address: string;
   createdAtDateTime: string;
   isActive: boolean;
+  latitude: number;
+  longitude: number;
 }

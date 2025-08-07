@@ -371,7 +371,8 @@ export default function HomePage() {
           setTimeout(() => {
             Swal.fire({
               title: "Success",
-              text: data.result.message,
+              // text: data?.result?.message,
+              text: `Ticket status updated to ${nextStatus}.`,
               icon: "success",
               confirmButtonText: "OK",
             });

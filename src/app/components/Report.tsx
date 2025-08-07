@@ -52,7 +52,7 @@ const Report = () => {
 
   useEffect(() => {
     if (propertyId)
-      console.log("Fetching report data for property:", propertyId);
+      // console.log("Fetching report data for property:", propertyId);
     setTimeout(() => {
       getReportData();
     }, 1000);

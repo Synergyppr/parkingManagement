@@ -322,7 +322,7 @@ const Tenants = ({ data }: TenantsProps) => {
           }}
           FormComponent={({ data, onClose }) => (
             <PropertyForm
-              initialData={data}
+              initialData={data as Property}
               setModalOpen={onClose}
               tenantId={selectedTenantId}
             />

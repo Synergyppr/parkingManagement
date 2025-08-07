@@ -1,3 +1,5 @@
+"use client";
+import React, { useEffect, useState } from "react";
 import Modal from "./Modal";
 import Tabs from "./elements/Tabs";
 import CarVector from "./CarVector";
@@ -59,23 +61,34 @@ export default function TicketDetailsModal({
   setHasUnsavedChanges,
   saveClickedRef,
 }: TicketDetailsModalProps) {
+  const [displayedTab, setDisplayedTab] = useState(detailsActiveTab);
+
+  useEffect(() => {
+    if (transitionState === "fade-in") {
+      setDisplayedTab(detailsActiveTab);
+    }
+  }, [transitionState, detailsActiveTab]);
+
+
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <div>
         <Tabs
           isSmallScreen={false}
           tabs={["Details", "Damages", "Log"]}
-          activeTab={detailsActiveTab}
+          activeTab={displayedTab}
           setActiveTab={setDetailsActiveTab}
           setTransitionState={setTransitionState}
         />
 
-        <div
-          className={`transition-opacity duration-300 ${
-            transitionState === "fade-out" ? "opacity-0" : "opacity-100"
+<div
+          className={`transition-all duration-1000 ${
+            transitionState === "fade-out"
+              ? "opacity-0 translate-y-2"
+              : "opacity-100 translate-y-0"
           } border-b-1 border-x-1 border-solid border-gray-30 bg-gradient-to-b to-amber-50/50 via-white`}
         >
-          {detailsActiveTab === "Details" && (
+          {displayedTab === "Details" && (
             <div className="space-y-4 text-sm md:text-base pt-4 px-4 pb-4 text-gray-800 bg-gradient-to-b to-slate-200 via-slate-100/50">
               {/* Guest Info */}
               <div className="space-y-1">
@@ -151,7 +164,7 @@ export default function TicketDetailsModal({
             </div>
           )}
 
-          {detailsActiveTab === "Damages" && (
+          {displayedTab === "Damages" && (
             <div>
               <div className="relative mb-6">
                 <CarVector
@@ -241,7 +254,7 @@ export default function TicketDetailsModal({
             </div>
           )}
 
-          {detailsActiveTab === "Log" && (
+          {displayedTab === "Log" && (
             <Log logs={ticketDetails?.ticketLogs || []} />
           )}
         </div>

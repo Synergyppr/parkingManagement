@@ -281,9 +281,7 @@ export default function ReceiveForm({
               2
             )}</pre>`,
             icon: "warning",
-            showCancelButton: true,
             confirmButtonText: "Continue",
-            cancelButtonText: "Cancel",
           }).then(async (response) => {
             if (response.isConfirmed) {
               // Swal.fire({
@@ -301,12 +299,14 @@ export default function ReceiveForm({
             } //
           }); //
         } else {
-          console.error("Error: Unexpected response:", result);
+          console.log("Error: Unexpected response:", result);
           Swal.fire({
             icon: "error",
             title: "Submission Failed",
             text: result?.message || "Something went wrong. Please try again.",
-            html: `<pre style="text-align: left; white-space: pre-wrap;">${JSON.stringify(
+            html: `<p>${
+              result?.message || "Something went wrong. Please try again."
+            }</p><pre style="text-align: left; white-space: pre-wrap; background: #f5f5f5; padding: 6px; border-radius: 4px;">${JSON.stringify(
               sendForm,
               null,
               2

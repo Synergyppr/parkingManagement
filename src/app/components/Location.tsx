@@ -666,7 +666,7 @@ const Location = () => {
         )}
 
         {/* Coordinates Display */}
-        <div className="text-gray-700 text-sm mb-1">
+        <div className="text-gray-700 text-sm mb-1 flex justify-between">
           <p>
             <strong>Current Latitude:</strong>{" "}
             {latitude !== null ? latitude.toFixed(6) : "N/A"}
@@ -679,14 +679,14 @@ const Location = () => {
 
         {/* Message */}
         {message && (
-          <p className={`text-green-600 text-sm mt-0 mb-2`}>{message}</p>
+          <p className={`text-green-600 text-sm mt-0 mb-2 mx-auto`}>{message}</p>
         )}
 
         {locationMode === "manual" && (
           <div className="flex justify-between mt-0">
             <div className="flex items-center gap-1 my-auto h-full">
               {/* Play Button */}
-              <button
+              {/* <button
                 type="button"
                 onClick={() =>
                   handlePlay({
@@ -709,10 +709,10 @@ const Location = () => {
                 disabled={!isPaused}
               >
                 <FaPlay className="inline-block" />
-              </button>
+              </button> */}
 
               {/* Pause Button */}
-              <button
+              {/* <button
                 onClick={() =>
                   handlePause({
                     setIsPaused,
@@ -728,7 +728,7 @@ const Location = () => {
                 disabled={!simulationInProgress || isPaused}
               >
                 <FaPause className="inline-block" />
-              </button>
+              </button> */}
 
               {/* Stop Button */}
               {/* Fix functionality */}
