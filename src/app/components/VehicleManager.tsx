@@ -45,10 +45,10 @@ function EntryManager({
     setFormValue("");
   };
 
-  const handleEdit = (entry: Entry) => {
-    setFormValue(entry.value);
-    setEditingId(entry.id);
-  };
+  // const handleEdit = (entry: Entry) => {
+  //   setFormValue(entry.value);
+  //   setEditingId(entry.id);
+  // };
 
   const handleDelete = (id: string) => {
     setEntries((prev) => prev.filter((entry) => entry.id !== id));
