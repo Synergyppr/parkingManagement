@@ -679,14 +679,16 @@ const Location = () => {
 
         {/* Message */}
         {message && (
-          <p className={`text-green-600 text-sm mt-0 mb-2 mx-auto`}>{message}</p>
+          <p className={`text-green-600 text-sm mt-0 mb-2 mx-auto`}>
+            {message}
+          </p>
         )}
 
         {locationMode === "manual" && (
           <div className="flex justify-between mt-0">
             <div className="flex items-center gap-1 my-auto h-full">
               {/* Play Button */}
-              {/* <button
+              <button
                 type="button"
                 onClick={() =>
                   handlePlay({
@@ -709,10 +711,10 @@ const Location = () => {
                 disabled={!isPaused}
               >
                 <FaPlay className="inline-block" />
-              </button> */}
+              </button>
 
               {/* Pause Button */}
-              {/* <button
+              <button
                 onClick={() =>
                   handlePause({
                     setIsPaused,
@@ -728,7 +730,7 @@ const Location = () => {
                 disabled={!simulationInProgress || isPaused}
               >
                 <FaPause className="inline-block" />
-              </button> */}
+              </button>
 
               {/* Stop Button */}
               {/* Fix functionality */}
