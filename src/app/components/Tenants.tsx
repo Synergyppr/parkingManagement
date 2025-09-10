@@ -7,6 +7,7 @@ import {
 } from "../helpers/propertyHelpers";
 import { Tenant, UserForm as UserFormType, Property } from "../types";
 import { FaPencil, FaTrash } from "react-icons/fa6";
+import { FaCar } from "react-icons/fa";
 import { PiUsersThreeFill } from "react-icons/pi";
 import { BsFillBuildingsFill } from "react-icons/bs";
 import { formatDateOfBirth } from "../lib/clientUtils";
@@ -15,11 +16,30 @@ import TenantForm from "./TenantForm";
 import ListModal from "./ListModal";
 import PropertyForm from "./PropertyForm";
 import UserForm from "./UserForm";
+import VehicleManager from "./VehicleManager";
+import Swal from "sweetalert2";
 
 interface TenantsProps {
   data: {
     data: Tenant[] | null;
   };
+}
+
+interface Entry {
+  id: number;
+  name: string;
+  isActive: boolean;
+}
+
+interface DropdownData {
+  carBrands: {
+    id: number;
+    name: string;
+    isActive: boolean;
+    models: Entry[];
+  }[];
+  vehicleTypes: Entry[];
+  vehicleColors: Entry[];
 }
 
 const Tenants = ({ data }: TenantsProps) => {
@@ -28,6 +48,7 @@ const Tenants = ({ data }: TenantsProps) => {
   const [isTenantModalOpen, setIsTenantModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false);
+  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [selectedTenantId, setSelectedTenantId] = useState<string>("");
   const [users, setUsers] = useState<UserFormType[]>([]);
@@ -35,17 +56,47 @@ const Tenants = ({ data }: TenantsProps) => {
   const [seeMore, setSeeMore] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [dropdownData, setDropdownData] = useState<DropdownData | null>(null);
+
   const refresh = () => {
     return;
   };
 
   useEffect(() => {
     if (tenantData) {
-      // console.log("Tenant Data", tenantData);
       setTenantData(tenantData);
     }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const fetchDropdownData = async () => {
+    try {
+      const response = await fetch("/api/getVehicle/dropdownData", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const result = await response.json();
+
+      if (result?.data?.status == "200") {
+        // console.log("Fetched Dropdown Data:", result?.data?.data);
+        setDropdownData(result?.data?.data);
+        setIsVehicleModalOpen(true);
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to fetch dropdown data.",
+        });
+        return;
+      }
+    } catch (error) {
+      console.error("Error fetching dropdown data:", error);
+    }
+  };
 
   const handleOpenTenantModal = (tenant: Tenant | null) => {
     if (!tenant || tenant === null || !tenant.id) {
@@ -71,6 +122,13 @@ const Tenants = ({ data }: TenantsProps) => {
   const handleClosePropertyModal = () => {
     setIsPropertyModalOpen(false);
     setProperties([]);
+  };
+
+  const handleCloseVehicleModal = () => {
+    setIsVehicleModalOpen(false);
+  };
+  const handleOpenVehicleModal = () => {
+    fetchDropdownData();
   };
 
   return (
@@ -221,6 +279,15 @@ const Tenants = ({ data }: TenantsProps) => {
                     >
                       <BsFillBuildingsFill className="w-6 h-6 text-white" />
                     </div>
+                    <div
+                      onClick={handleOpenVehicleModal}
+                      className={`${
+                        loading ? "cursor-not-allowed" : "cursor-pointer "
+                      } bg-orange-500 hover:bg-orange-600 rounded-xl p-3 transition transform hover:scale-105 shadow-md flex items-center justify-center`}
+                      title="View Vehicle Settings"
+                    >
+                      <FaCar className="w-6 h-6 text-white" />
+                    </div>
                   </div>
 
                   {/* Status Badge */}
@@ -246,6 +313,20 @@ const Tenants = ({ data }: TenantsProps) => {
             onClose={handleCloseTenantModal}
             refresh={refresh}
             initialData={tenantData || []}
+          />
+        </Modal>
+
+        {/* Vehicle Modal */}
+        <Modal isOpen={isVehicleModalOpen} onClose={handleCloseVehicleModal}>
+          <VehicleManager
+            carMakes={dropdownData?.carBrands || []}
+            carModels={
+              dropdownData?.carBrands
+                ?.map((brand: { models: Entry[] }) => brand?.models)
+                ?.flat() as Entry[]
+            }
+            vehicleTypes={dropdownData?.vehicleTypes || []}
+            vehicleColors={dropdownData?.vehicleColors || []}
           />
         </Modal>
 

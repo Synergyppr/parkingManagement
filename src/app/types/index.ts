@@ -21,22 +21,32 @@ export interface TicketResponseData {
 export interface Ticket {
   id: string;
   patronId: string;
-  ticketNumber: string;
   phoneNumber: string;
   firstName: string;
   lastName: string;
-  placeToVisit: string;
+  vehicles: {
+    id: string;
+    make: string;
+    model: string;
+    type: string;
+    color: string;
+    licensePlate: string;
+    damagedParts?: string[];
+  };
+  createdDateTime: string;
+  notificationId: string;
+  ticketNumber: string;
+  pin: string;
+  isRead: boolean;
+  status: string;
+  areaCode?: string;
   make: string;
   model: string;
   type: string;
   color: string;
-  status: string;
-  createdDateTime: string;
-  notificationId: string;
-  isRead: boolean;
   licensePlate?: string;
+  placeToVisit?: string;
   damagedParts?: string[];
-  pin: string;
 }
 
 export interface CarBrand {

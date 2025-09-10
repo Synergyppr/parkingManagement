@@ -40,6 +40,7 @@ const RequestCar = () => {
   const [ratedStars, setRatedStars] = useState(0);
   const [comment, setComment] = useState("");
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
+  const [smsConsent, setSmsConsent] = useState(false);
   const idFromUrl = searchParams.get("ticket");
   const { registerNotificationHandler } = useSignalR();
 
@@ -86,22 +87,19 @@ const RequestCar = () => {
     }
   }, [vehicleData]);
 
-  const fetchVehicleByTicket = async (ticket: string) => {
+  const fetchVehicleByTicket = async (ticketId: string) => {
     try {
       const res = await fetch("/api/getVehicle/byTicketId", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: ticket }),
+        body: JSON.stringify({ id: ticketId }),
       });
 
       const data = await res.json();
 
-      // console.log("Vehicle Data by Ticket ID:", data);
-
       if (data?.result?.status === "200") {
         setVehicleData(data?.result?.data);
         setVehicleNotFound(false);
-        // console.log("Vehicle Data:", data?.result?.data);
         setPropertyId(data?.result?.data?.propertyId);
       } else if (
         data?.result?.status === "200" &&
@@ -129,11 +127,16 @@ const RequestCar = () => {
 
   const updateVehicleStatus = async (status: string) => {
     const sendForm = {
+      latitude: 0, // not needed for user updates
+      longitude: 0, // not needed for user updates
+      propertyId: propertyId || "",
       ticketId,
       status,
       isUserUpdate: true,
       pin: "", // not needed for user updates
     };
+
+    console.log("Update Status Send Form:", sendForm);
 
     const res = await fetch("/api/vehicleStatus", {
       method: "POST",
@@ -171,11 +174,10 @@ const RequestCar = () => {
       if (!result.isConfirmed) return;
 
       const willCharge = await Swal.fire({
-        title: "Confirm Submission",
+        title: "Confirm SMS Opt-In",
         html: `
-          <p>This request will send an automated text message.</p>
-          <p><strong>Message and data rates may apply.</strong></p>
-          <p class="mt-2 text-gray-500 text-sm">Do you want to continue?</p>
+          <p>By selecting "Yes, submit," you agree to receive automated text messages from API Valet Service (SynergyPPR) about your vehicle status. Message & data rates may apply.</p>
+          <p class="mt-2 text-gray-500 text-sm">Reply STOP to cancel, HELP for help.</p>
         `,
         icon: "info",
         showCancelButton: true,
@@ -419,17 +421,40 @@ const RequestCar = () => {
                     </p>
                   ) : null}
 
+                  <div className="flex gap-1 mt-4 font-light text-sm">
+                    <input
+                      checked={smsConsent}
+                      onChange={() => setSmsConsent(!smsConsent)}
+                      type="checkbox"
+                      className="mr-2"
+                    />
+                    <p>
+                      I agree to receive SMS updates about my valet parking
+                      service. Message & data rates may apply. Reply STOP to
+                      cancel, HELP for help.
+                    </p>
+                  </div>
+
                   <div className="mt-5 text-center">
                     <button
-                      disabled={requested}
+                      disabled={
+                        vehicleData?.status === "requested" ||
+                        vehicleData?.status === "ready" ||
+                        !smsConsent ||
+                        buttonLoader
+                      }
                       onClick={handleRequestCar}
                       className={`${
-                        requested
+                        vehicleData?.status === "requested" ||
+                        vehicleData?.status === "ready"
                           ? "bg-blue-600/20"
-                          : "bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-600 hover:to-blue-800 hover:bg-blue-700 transition-all duration-700"
-                      } text-white py-2 px-4 rounded-md`}
+                          : !smsConsent
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-600 hover:to-blue-800 hover:bg-blue-700 transition-colors duration-1000"
+                      } text-white py-2 px-4 rounded-md cursor-pointer`}
                     >
-                      {requested ? (
+                      {vehicleData?.status === "requested" ||
+                      vehicleData?.status === "ready" ? (
                         <span className="flex gap-2 items-center justify-between">
                           Vehicle{" "}
                           {vehicleData?.status === "requested"

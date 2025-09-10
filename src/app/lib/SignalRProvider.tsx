@@ -26,6 +26,8 @@ interface SignalRContextType {
 
 const SignalRContext = createContext<SignalRContextType | undefined>(undefined);
 
+// TODO: Re-add console.errors
+
 export const SignalRProvider = ({
   children,
 }: {
@@ -85,7 +87,8 @@ export const SignalRProvider = ({
 
         connectionRef.current = connection;
       } catch (err) {
-        console.error("❌ SignalR connection error:", err);
+        console.log("❌ SignalR connection error:", err);
+        // console.error("❌ SignalR connection error:", err);
       }
     };
 
@@ -96,11 +99,10 @@ export const SignalRProvider = ({
       const prevId = previousPropertyIdRef.current;
 
       if (connection && connection.state === "Connected" && prevId) {
-        connection
-          .invoke("LeavePropertyGroup", prevId)
-          .catch((err) =>
-            console.error("❌ Failed to leave group on unmount:", err)
-          );
+        connection.invoke("LeavePropertyGroup", prevId).catch((err) => {
+          console.log("❌ Failed to leave group on unmount:", err);
+          // console.error("❌ Failed to leave group on unmount:", err);
+        });
       }
 
       connection?.stop();
@@ -129,7 +131,8 @@ export const SignalRProvider = ({
 
         previousPropertyIdRef.current = propertyId;
       } catch (err) {
-        console.error("❌ Failed to update SignalR group:", err);
+        console.log("❌ Failed to update SignalR group:", err);
+        // console.error("❌ Failed to update SignalR group:", err);
       }
     };
 
@@ -167,7 +170,8 @@ export const joinGroup = async (groupId: string) => {
       // console.log("✅ Manually joined SignalR group:", groupId);
     }
   } catch (error) {
-    console.error("❌ Failed to join group:", error);
+    console.log("❌ Failed to join group:", error);
+    // console.error("❌ Failed to join group:", error);
   }
 };
 
@@ -179,6 +183,7 @@ export const leaveGroup = async (groupId: string) => {
       // console.log("👋 Manually left SignalR group:", groupId);
     }
   } catch (error) {
-    console.error("❌ Failed to leave group:", error);
+    console.log("❌ Failed to leave group:", error);
+    // console.error("❌ Failed to leave group:", error);
   }
 };

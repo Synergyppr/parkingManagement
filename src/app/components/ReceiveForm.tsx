@@ -3,10 +3,10 @@
 import { useState, useRef, useEffect } from "react";
 import Swal from "sweetalert2";
 import { v4 as uuidv4 } from "uuid";
+import { useRouter } from "next/navigation";
 import { FaUser, FaTicketAlt, FaCar } from "react-icons/fa";
 import { FaCarRear } from "react-icons/fa6";
 import { PiCarProfileFill } from "react-icons/pi";
-import { IoPhonePortrait } from "react-icons/io5";
 import { BiSolidSprayCan } from "react-icons/bi";
 import { MdPin, MdPassword, MdLocationPin } from "react-icons/md";
 import { IoCheckmarkOutline } from "react-icons/io5";
@@ -21,6 +21,9 @@ import {
 } from "../lib/carPartsLegend";
 import CarVector from "./CarVector";
 import FormInput from "./elements/FormInput";
+import PhoneInputWithAreaCode from "./elements/PhoneInputWithAreaCode";
+import VehicleList from "./VehicleList";
+import ParkingLot from "./ParkingMap";
 
 interface ReceiveFormProps {
   carBrands: CarBrand[];
@@ -29,12 +32,13 @@ interface ReceiveFormProps {
   fetchData: () => void;
   form: Partial<Ticket>;
   setForm: React.Dispatch<React.SetStateAction<Partial<Ticket>>>;
-  initialForm: Partial<Ticket>;
+  initialForm?: Partial<Ticket>;
   setInitialForm: React.Dispatch<React.SetStateAction<Partial<Ticket>>>;
   isFormChanged?: () => boolean;
   shouldBypassUnloadPromptRef?: React.MutableRefObject<boolean>;
   closeModal?: () => void;
   modalType?: "none" | "report" | "incident";
+  patronId: string;
 }
 
 const frontViewLabelsMap = generateLabelsMap(carParts.frontViewCar);
@@ -49,11 +53,13 @@ export default function ReceiveForm({
   fetchData,
   form,
   setForm,
-  initialForm,
+  // initialForm,
   setInitialForm,
   isFormChanged,
   shouldBypassUnloadPromptRef,
+  patronId,
 }: ReceiveFormProps) {
+  const router = useRouter();
   const { propertyId, latitude, longitude, propertyName, locationMode } =
     useProperty();
   const saveClickedRef = useRef(false);
@@ -66,6 +72,34 @@ export default function ReceiveForm({
   const [incidentParts, setIncidentParts] = useState<string[]>([]);
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
   const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [existingVehicles, setExistingVehicles] = useState<
+    {
+      id: string;
+      make: string;
+      model: string;
+      type: string;
+      color: string;
+      licensePlate: string;
+    }[]
+  >([]);
+  const [showExistingVehicles, setShowExistingVehicles] =
+    useState<boolean>(true);
+  const [, setSelectedVehicleIndex] = useState<number | null>(null); // Check if being used
+  // const [manageModeOn, setManageModeOn] = useState<boolean>(false); // To manage and delete vehicles from the existing vehicles list
+  const [, setManageVehicleSettings] = useState({
+    patronId: form?.patronId || "",
+    vehicles: [
+      {
+        id: null as string | null,
+        makeId: 0,
+        modelId: 0,
+        typeId: 0,
+        colorId: 0,
+        licensePlate: "",
+      },
+    ],
+    deletes: [],
+  }); // Commented out code related to vehicle management for now
 
   useEffect(() => {
     generateTicketNumber();
@@ -120,7 +154,7 @@ export default function ReceiveForm({
     setForm((prev: Partial<Ticket>) => ({ ...prev, [name]: value }));
 
     if (name === "make") {
-      const selectedBrand = carBrands.find((b) => b.id === parseInt(value));
+      const selectedBrand = carBrands?.find((b) => b?.id === parseInt(value));
       setModels(selectedBrand ? selectedBrand.models : []);
     }
   };
@@ -138,8 +172,13 @@ export default function ReceiveForm({
     }));
   };
 
+  // Submit Form
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
+
+    if (!form?.areaCode) {
+      setForm((prev) => ({ ...prev, areaCode: "+1" }));
+    }
 
     if (
       !form?.phoneNumber ||
@@ -149,11 +188,23 @@ export default function ReceiveForm({
       !form?.color ||
       !form?.pin
     ) {
+      const missingFields: string[] = [];
+
+      if (!form?.areaCode || !form?.phoneNumber)
+        missingFields.push("Phone Number");
+      if (!form?.make) missingFields.push("Make");
+      if (!form?.model) missingFields.push("Model");
+      if (!form?.type) missingFields.push("Type");
+      if (!form?.color) missingFields.push("Color");
+      if (!form?.pin) missingFields.push("PIN");
+
       Swal.fire({
         icon: "warning",
         title: "Incomplete Form",
-        text: "Please fill all required fields.",
+        text: `Please fill all required fields: ${missingFields.join(", ")}`,
       });
+
+      console.log("Form validation failed:", form);
       return;
     }
 
@@ -192,7 +243,7 @@ export default function ReceiveForm({
       );
     });
 
-    if (missingDescriptions.length > 0 && !noIncident) {
+    if (missingDescriptions?.length > 0 && !noIncident) {
       Swal.fire({
         icon: "warning",
         title: "Missing Descriptions",
@@ -203,7 +254,7 @@ export default function ReceiveForm({
 
     setLoader(true);
 
-    const rawPhone = (form?.phoneNumber || "").replace(/\D/g, ""); // Remove non-digit characters
+    // const rawPhone = (form?.phoneNumber || "").replace(/\D/g, ""); // Remove non-digit characters
 
     let damageStatus = buildDamageStatus(incidentParts, descriptions, {
       frontview: frontViewLabelsMap,
@@ -212,19 +263,25 @@ export default function ReceiveForm({
       driverview: driverViewLabelsMap,
     });
 
-    if (Object.keys(damageStatus).length === 0) {
+    if (Object.keys(damageStatus)?.length === 0) {
       damageStatus = {};
     }
 
     navigator.geolocation.getCurrentPosition(async (position) => {
       const { latitude: userLat, longitude: userLng } = position.coords;
+      const rawPhone = (form?.phoneNumber || "").replace(/\D/g, "");
+      const last10 = rawPhone.slice(-10); // always keep only 10 digits
+
+      const validAreaCode = form?.areaCode || "+1";
       const sendForm = {
         latitude: locationMode === "manual" ? latitude : userLat,
+        // latitude: 18.426434330459355, //250
         longitude: locationMode === "manual" ? longitude : userLng,
+        // longitude: -66.05954507209249, //250
         propertyId: propertyId,
         firstName: form?.firstName,
         lastName: form?.lastName,
-        phone: rawPhone,
+        phone: validAreaCode + last10, // correct composition
         pin: form?.pin,
         makeId: parseInt(form?.make || "0"),
         modelId: parseInt(form?.model || "0"),
@@ -232,11 +289,11 @@ export default function ReceiveForm({
         colorId: parseInt(form?.color || "0"),
         licensePlate: form?.licensePlate || "",
         ticketNumber: form?.ticketNumber || uuidv4().slice(0, 6),
-        destination: form?.placeToVisit,
+        destination: form?.placeToVisit as string,
         damageStatus,
       };
 
-      // console.log("Submitting form:", sendForm);
+      console.log("Submitting form:", sendForm);
 
       // return; // Uncomment this line to prevent actual submission during development
 
@@ -251,6 +308,7 @@ export default function ReceiveForm({
 
         if (result?.status === "200") {
           await fetchData(); // refresh the data from the API
+          router.refresh();
 
           const willCharge = await Swal.fire({
             title: "Are You Sure?",
@@ -296,8 +354,8 @@ export default function ReceiveForm({
               setIncidentParts([]);
               setDescriptions({});
               setInitialForm({});
-            } //
-          }); //
+            }
+          });
         } else {
           console.log("Error: Unexpected response:", result);
           Swal.fire({
@@ -336,50 +394,107 @@ export default function ReceiveForm({
     });
   };
 
+  // Keeps last 10 digits in phoneNumber; puts the rest (country code) in areaCode.
+  const splitPhone = (
+    full: string | undefined,
+    fallbackArea = "+1"
+  ): { areaCode: string; phoneNumber: string } => {
+    const digits = (full || "").replace(/\D/g, ""); // strip non-digits
+    const local10 = digits.slice(-10); // last 10 digits
+    const countryDigits = digits.slice(0, Math.max(0, digits.length - 10));
+    const areaCode = countryDigits ? `+${countryDigits}` : fallbackArea;
+    return { areaCode, phoneNumber: local10 };
+  };
+
+  // Modify fetchUserDataByPhone
   const fetchUserDataByPhone = async (phone: string): Promise<void> => {
+    const validAreaCode = form?.areaCode || "+1";
     try {
       const res = await fetch(`/api/getVehicle/byPhone`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phoneNumber: phone }),
+        body: JSON.stringify({ phoneNumber: validAreaCode + phone }),
       });
       const data = await res.json();
       const preFill = data?.result?.data;
 
       if (preFill) {
+        setExistingVehicles(preFill?.vehicles || []);
+
+        // ← normalize the incoming phone (e.g., "+18044845620")
+        const { areaCode, phoneNumber } = splitPhone(
+          preFill?.phoneNumber,
+          form?.areaCode || "+1"
+        );
+
         const initial = {
-          phoneNumber: preFill?.phoneNumber,
+          patronId: preFill?.patronId,
+          areaCode, // e.g. "+1"
+          phoneNumber, // e.g. "8044845620" (last 10)
           firstName: preFill?.firstName,
           lastName: preFill?.lastName,
           placeToVisit: preFill?.placeToVisit,
-          make: preFill?.make?.toString(),
-          model: preFill?.model?.toString(),
-          type: preFill?.type?.toString(),
-          color: preFill?.color?.toString(),
-          licensePlate: preFill?.licensePlate || "",
           ticketNumber: form?.ticketNumber,
-          damagedParts: preFill?.damagedParts || [],
+          vehicles: preFill?.vehicles || [],
           pin: "",
+          // buildDamageStatus: {},
         };
 
         setForm(initial);
-        setInitialForm(initial);
-
-        // Optionally update models dropdown
-        const selectedBrand = carBrands?.find(
-          (b) => b?.id === parseInt(preFill?.make)
-        );
-        if (selectedBrand) {
-          setModels(selectedBrand?.models);
-        }
       }
     } catch (err) {
       console.error("Failed to fetch user data:", err);
     }
   };
 
+  const handleSelectVehicle = (
+    vehicle: {
+      id: string;
+      make: string;
+      model: string;
+      type: string;
+      color: string;
+      licensePlate: string;
+      damagedParts?: string[] | undefined;
+    },
+    index: number
+  ) => {
+    setSelectedVehicleIndex(index);
+
+    const filled = {
+      ...form,
+      areaCode: form?.areaCode || "+1",
+      firstName: form?.firstName || "",
+      lastName: form?.lastName || "",
+      phoneNumber: form?.phoneNumber || "",
+      placeToVisit: form?.placeToVisit || "",
+      patronId: patronId || form?.patronId || "",
+      make: vehicle?.make?.toString(),
+      model: vehicle?.model?.toString(),
+      type: vehicle?.type?.toString(),
+      color: vehicle?.color?.toString(),
+      licensePlate: vehicle?.licensePlate || "",
+      damagedParts: vehicle?.damagedParts || [],
+      pin: form?.pin || "",
+    };
+
+    setForm(filled);
+
+    // update model dropdown if brand selected
+    const selectedBrand = carBrands?.find(
+      (b) => b?.id === parseInt(vehicle?.make)
+    );
+    if (selectedBrand) {
+      setModels(selectedBrand?.models);
+    }
+  };
+
   const handleNext = () => {
     const missing: string[] = [];
+
+    if (!form?.areaCode) {
+      setForm((prev) => ({ ...prev, areaCode: "+1" }));
+    }
 
     if (step === 1) {
       if (!form?.phoneNumber) missing.push("phoneNumber");
@@ -392,7 +507,50 @@ export default function ReceiveForm({
       if (!form?.pin) missing.push("pin");
     }
 
-    if (missing.length > 0) {
+    if (step === 2) {
+      // Check if the vehicle entered in the form already exists in existingVehicles, if not, add it
+      const isExisting = existingVehicles?.some(
+        (v) =>
+          v.make === form?.make &&
+          v.model === form?.model &&
+          v.type === form?.type &&
+          v.color === form?.color &&
+          v.licensePlate === form?.licensePlate
+      );
+      if (!isExisting) {
+        // const newVehicle = {
+        //   id: 0,
+        //   make: form?.make,
+        //   model: form?.model,
+        //   type: form?.type,
+        //   color: form?.color,
+        //   licensePlate: form?.licensePlate || "",
+        //   pin: form?.pin || "",
+        // };
+        // setExistingVehicles((prev) => [...prev, newVehicle]);
+      }
+
+      const sendForm = {
+        vehicles: [
+          {
+            id: "",
+            makeId: form?.make ? parseInt(form?.make) : 0,
+            modelId: form?.model ? parseInt(form?.model) : 0,
+            typeId: form?.type ? parseInt(form?.type) : 0,
+            colorId: form?.color ? parseInt(form?.color) : 0,
+            licensePlate: form?.licensePlate || "",
+          },
+        ],
+      };
+
+      setManageVehicleSettings((prev) => ({
+        ...prev,
+        ...sendForm,
+      }));
+      // fetchManageVehicles(sendForm);
+    }
+
+    if (missing?.length > 0) {
       setMissingFields(missing);
 
       Swal.fire({
@@ -435,6 +593,98 @@ export default function ReceiveForm({
     });
   };
 
+  // Vehicles CRUD
+  // const fetchManageVehicles = async (form: { patronId: string }) => {
+  //   if (!form?.patronId) {
+  //     Swal.fire({
+  //       icon: "error",
+  //       title: "Manage Vehicles Failed",
+  //       text: "Patron ID is missing. Cannot manage vehicles.",
+  //     });
+  //     return;
+  //   }
+
+  //   // console.log("Send", form);
+
+  //   try {
+  //     const res = await fetch("/api/bulkVehicles", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ ...form }),
+  //     });
+
+  //     const result = await res.json();
+
+  //     // console.log("Manage vehicles result:", result);
+
+  //     if (result?.result?.status === "200") {
+  //       console.log("Manage vehicles response:", result);
+  //       // await fetchData(); // refresh the data from the API
+  //       router.refresh();
+  //       Swal.fire({
+  //         icon: "success",
+  //         title: "Manage Vehicles Successful",
+  //         text: "Vehicle list updated successfully.",
+  //         showConfirmButton: false,
+  //         timer: 1500,
+  //       });
+  //     } else {
+  //       Swal.fire({
+  //         icon: "error",
+  //         title: "Manage Vehicles Failed",
+  //         text:
+  //           result?.message || "Something went wrong. Please try again later.",
+  //       });
+  //       console.log("Error: Unexpected response:", result);
+  //       Swal.fire({
+  //         icon: "error",
+  //         title: "Submission Failed",
+  //         text: result?.message || "Something went wrong. Please try again.",
+  //         html: `<p>${
+  //           result?.message || "Something went wrong. Please try again."
+  //         }</p><pre style="text-align: left; white-space: pre-wrap; background: #f5f5f5; padding: 6px; border-radius: 4px;">${JSON.stringify(
+  //           manageVehicleSettings,
+  //           null,
+  //           2
+  //         )}</pre>`,
+  //       });
+  //     }
+  //   } catch (error) {
+  //     console.error("Error managing vehicles:", error);
+  //   }
+  // };
+
+  // Delete vehicle from existingVehicles list (in manageMode on)
+  // const handleDeleteVehicle = async (vehicleId: string) => {
+  //   Swal.fire({
+  //     title: "Delete Vehicle",
+  //     text: "Are you sure you want to delete this vehicle from the list?",
+  //     icon: "warning",
+  //     showCancelButton: true,
+  //     confirmButtonText: "Yes, delete it!",
+  //     cancelButtonText: "No, keep it",
+  //   }).then((result) => {
+  //     if (result.isConfirmed) {
+  //       const updatedVehicles = existingVehicles.filter(
+  //         (v) => v.id !== vehicleId
+  //       );
+  //       setExistingVehicles(updatedVehicles);
+
+  //       const sendForm = {
+  //         ...manageVehicleSettings,
+  //         deletes: [...manageVehicleSettings.deletes, vehicleId],
+  //         patronId: form?.patronId || "",
+  //       };
+
+  //       setManageVehicleSettings((prev) => ({
+  //         ...prev,
+  //         sendForm,
+  //       }));
+  //       fetchManageVehicles(sendForm);
+  //     }
+  //   });
+  // };
+
   return (
     <div
       className={`${
@@ -444,11 +694,15 @@ export default function ReceiveForm({
       <div className="p-2 sm:p-4 md:p-6 max-w-3xl mx-auto space-y-6 transition-opacity duration-500 ease-in-out animate-fade-in min-h-full">
         {!submitted ? (
           <div>
-            <div className="lg:mb-10 relative lg:bottom-4">
+            <div
+              className={`${
+                step !== 4 ? "lg:mb-10" : "mb-4"
+              }  relative lg:bottom-4`}
+            >
               <h2 className="text-[23px] font-bold bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent tracking-tight text-center mb-1">
                 Vehicle Receipt Form
               </h2>
-              {step < 3 && (
+              {step < 5 && (
                 <p className="text-xs font-light text-center text-gray-700 mb-2">
                   Please complete all required fields below to park in{" "}
                   {propertyName ? (
@@ -466,7 +720,7 @@ export default function ReceiveForm({
               )}
               <p
                 className={`${
-                  step < 3 ? "mb-6" : "mb-16"
+                  step < 3 ? "mb-6" : step === 4 ? "mb-0" : "mb-16"
                 } text-xs font-bold text-center text-blue-600 mt-0`}
               >
                 Step <span className="font-bold">{step}</span> / 3
@@ -502,33 +756,27 @@ export default function ReceiveForm({
                   />
 
                   {/* Phone Number */}
-                  <FormInput
-                    name="phoneNumber"
-                    placeholder="Phone Number"
-                    value={form?.phoneNumber || ""}
-                    onChange={(e) => {
+                  <PhoneInputWithAreaCode
+                    areaCode={form?.areaCode || ""}
+                    phoneNumber={form?.phoneNumber || ""}
+                    onAreaCodeChange={(e) =>
+                      setForm((prev) => ({ ...prev, areaCode: e.target.value }))
+                    }
+                    onPhoneNumberChange={(e) => {
                       const rawValue = e.target.value.replace(/\D/g, "");
                       const formatted = formatPhoneNumber(rawValue);
-
-                      setForm((prev: Partial<Ticket>) => ({
-                        ...prev,
-                        phoneNumber: formatted,
-                      }));
-
-                      if (rawValue.length >= 10) {
-                        fetchUserDataByPhone(rawValue);
-                      }
+                      setForm((prev) => ({ ...prev, phoneNumber: formatted }));
+                      if (rawValue.length >= 10) fetchUserDataByPhone(rawValue);
                     }}
-                    icon={<IoPhonePortrait />}
-                    required
-                    missing={missingFields.includes("phoneNumber")}
                     onClear={() =>
                       setForm((prev) => ({
                         ...prev,
                         phoneNumber: "",
                       }))
                     }
+                    missing={missingFields?.includes("phoneNumber")}
                   />
+
                   {/* First Name */}
                   <FormInput
                     name="firstName"
@@ -563,7 +811,7 @@ export default function ReceiveForm({
                     placeholder="Place to Visit"
                     icon={<MdLocationPin />}
                     onChange={handleChange}
-                    value={form.placeToVisit || ""}
+                    value={form?.placeToVisit || ""}
                     onClear={() =>
                       setForm((prev) => ({
                         ...prev,
@@ -575,94 +823,92 @@ export default function ReceiveForm({
               )}
 
               {step === 2 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Make */}
-                  <FormInput
-                    name="make"
-                    value={form.make || ""}
-                    onChange={handleChange}
-                    icon={<FaCar />}
-                    type="select"
-                    options={carBrands}
-                    missing={missingFields.includes("make")}
-                  />
-
-                  {/* Model */}
-                  <FormInput
-                    name="model"
-                    value={form.model || ""}
-                    onChange={handleChange}
-                    icon={<FaCarRear />}
-                    type="select"
-                    options={models}
-                    missing={missingFields.includes("model")}
-                  />
-
-                  {/* Type */}
-                  <FormInput
-                    name="type"
-                    value={form.type || ""}
-                    onChange={handleChange}
-                    icon={<PiCarProfileFill />}
-                    type="select"
-                    options={vehicleTypes}
-                    missing={missingFields.includes("type")}
-                  />
-
-                  {/* Color */}
-                  <FormInput
-                    name="color"
-                    value={form.color || ""}
-                    onChange={handleChange}
-                    icon={<BiSolidSprayCan />}
-                    type="select"
-                    options={vehicleColors}
-                    missing={missingFields.includes("color")}
-                  />
-
-                  {/* License Plate */}
-                  <FormInput
-                    name="licensePlate"
-                    placeholder="License Plate"
-                    icon={<MdPin />}
-                    onChange={handleChange}
-                    value={form?.licensePlate || ""}
-                    onClear={() =>
-                      setForm((prev) => ({
-                        ...prev,
-                        licensePlate: "",
-                      }))
-                    }
-                  />
-
-                  {/* PIN */}
-                  <FormInput
-                    name="pin"
-                    type="text"
-                    placeholder="PIN"
-                    icon={<MdPassword />}
-                    value={form?.pin || ""}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (/^\d{0,4}$/.test(val)) {
-                        setForm((prev: Partial<Ticket>) => ({
-                          ...prev,
-                          pin: val,
-                        }));
+                <div className="space-y-6">
+                  {/* Vehicle form (available for new vehicle entry) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormInput
+                      name="make"
+                      value={form?.make || ""}
+                      onChange={handleChange}
+                      icon={<FaCar />}
+                      type="select"
+                      options={carBrands}
+                      missing={missingFields.includes("make")}
+                    />
+                    <FormInput
+                      name="model"
+                      value={form?.model || ""}
+                      onChange={handleChange}
+                      icon={<FaCarRear />}
+                      type="select"
+                      options={models}
+                      missing={missingFields.includes("model")}
+                    />
+                    <FormInput
+                      name="type"
+                      value={form?.type || ""}
+                      onChange={handleChange}
+                      icon={<PiCarProfileFill />}
+                      type="select"
+                      options={vehicleTypes}
+                      missing={missingFields.includes("type")}
+                    />
+                    <FormInput
+                      name="color"
+                      value={form?.color || ""}
+                      onChange={handleChange}
+                      icon={<BiSolidSprayCan />}
+                      type="select"
+                      options={vehicleColors}
+                      missing={missingFields.includes("color")}
+                    />
+                    <FormInput
+                      name="licensePlate"
+                      placeholder="License Plate"
+                      icon={<MdPin />}
+                      onChange={handleChange}
+                      value={form?.licensePlate || ""}
+                      onClear={() =>
+                        setForm((prev) => ({ ...prev, licensePlate: "" }))
                       }
-                    }}
-                    required
-                    showPasswordToggle
-                    showPassword={showPin}
-                    setShowPassword={setShowPin}
-                    missing={missingFields.includes("pin")}
-                    onClear={() =>
-                      setForm((prev) => ({
-                        ...prev,
-                        pin: "",
-                      }))
-                    }
-                  />
+                    />
+                    <FormInput
+                      name="pin"
+                      type="text"
+                      placeholder="PIN"
+                      icon={<MdPassword />}
+                      value={form?.pin || ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^\d{0,4}$/.test(val)) {
+                          setForm((prev: Partial<Ticket>) => ({
+                            ...prev,
+                            pin: val,
+                          }));
+                        }
+                      }}
+                      required
+                      showPasswordToggle
+                      showPassword={showPin}
+                      setShowPassword={setShowPin}
+                      missing={missingFields.includes("pin")}
+                      onClear={() => setForm((prev) => ({ ...prev, pin: "" }))}
+                    />
+                  </div>
+
+                  {/* Existing vehicles list */}
+                  {existingVehicles?.length > 0 && (
+                    <VehicleList
+                      existingVehicles={existingVehicles}
+                      vehicleColors={vehicleColors}
+                      vehicleTypes={vehicleTypes}
+                      carBrands={carBrands}
+                      form={form}
+                      showExistingVehicles={showExistingVehicles}
+                      setShowExistingVehicles={setShowExistingVehicles}
+                      handleSelectVehicle={handleSelectVehicle}
+                    />
+                  )}
                 </div>
               )}
 
@@ -684,10 +930,12 @@ export default function ReceiveForm({
                     saveClickedRef={saveClickedRef}
                     shouldBypassUnloadPromptRef={shouldBypassUnloadPromptRef}
                     isFormChanged={isFormChanged}
-                    damagedParts={initialForm?.damagedParts || []}
+                    damagedParts={form?.damagedParts || []}
                   />
                 </div>
               )}
+
+              {step === 4 && <ParkingLot />}
             </form>
 
             <div

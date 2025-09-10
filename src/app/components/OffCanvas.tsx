@@ -9,7 +9,6 @@ import {
 } from "react-icons/io5";
 import { TbReportSearch } from "react-icons/tb";
 import { CgProfile } from "react-icons/cg";
-// import { GrMapLocation } from "react-icons/gr";
 
 export default function OffCanvas({
   setIsMenuOpen,
@@ -92,17 +91,6 @@ export default function OffCanvas({
                 } flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded`}
               >
                 <IoSettingsOutline /> Tenant Configuration
-              </Link>
-              <Link
-                href="/vehicle-management"
-                onClick={() => setIsMenuOpen(false)}
-                className={`${
-                  pathname.includes("vehicle-management")
-                    ? "bg-slate-200 font-bold shadow-inner"
-                    : ""
-                } flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded`}
-              >
-                <IoSettingsOutline /> Vehicle Manager
               </Link>
             </div>
 

@@ -5,22 +5,26 @@ import { FaCarRear } from "react-icons/fa6";
 import { PiCarProfileFill } from "react-icons/pi";
 import { BiSolidSprayCan } from "react-icons/bi";
 import FormInput from "../components/elements/FormInput";
+import Swal from "sweetalert2";
 
 interface Entry {
-  id: string;
-  value: string;
+  id: number;
+  name: string;
+  isActive: boolean;
 }
 
 function EntryManager({
   title,
   icon,
-  initialData = [],
+  data,
+  endpoint,
 }: {
   title: string;
   icon?: React.ReactNode;
-  initialData?: Entry[];
+  data?: Entry[];
+  endpoint: string;
 }) {
-  const [entries, setEntries] = useState<Entry[]>(initialData);
+  const [entries, setEntries] = useState<Entry[]>(data || []);
   const [formValue, setFormValue] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -31,56 +35,153 @@ function EntryManager({
     if (editingId) {
       setEntries((prev) =>
         prev.map((entry) =>
-          entry.id === editingId ? { ...entry, value: formValue } : entry
+          Number(entry?.id) === Number(editingId)
+            ? { ...entry, value: formValue }
+            : entry
         )
       );
       setEditingId(null);
     } else {
       const newEntry: Entry = {
-        id: crypto.randomUUID(),
-        value: formValue,
+        id: 0,
+        name: formValue,
+        isActive: true,
       };
       setEntries((prev) => [...prev, newEntry]);
     }
     setFormValue("");
   };
 
-  // const handleEdit = (entry: Entry) => {
-  //   setFormValue(entry.value);
-  //   setEditingId(entry.id);
-  // };
+  const addVehicleItem = (item: string, endpoint: string) => {
+    if (!item?.trim()) return;
 
-  const handleDelete = (id: string) => {
-    setEntries((prev) => prev.filter((entry) => entry.id !== id));
-    if (editingId === id) {
-      setEditingId(null);
+    try {
+      let sendForm;
+
+      if (endpoint === "Make" || endpoint === "Model") {
+        sendForm = {
+          id: 0,
+          name: item,
+          isActive: true,
+          models: {
+            id: 0,
+            name: item,
+            isActive: true,
+          },
+        };
+      } else if (endpoint === "Type" || endpoint === "Color") {
+        sendForm = {
+          id: 0,
+          name: item,
+          isActive: true,
+        };
+      }
+
+      const endpointName =
+        endpoint === "Make" || endpoint === "Model"
+          ? "makeOrModel"
+          : endpoint === "Type"
+          ? "type"
+          : endpoint === "Color"
+          ? "color"
+          : "";
+
+      fetch("/api/vehicleManager/createOrUpdate/" + endpointName, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(sendForm),
+      });
+
+      const newEntry: Entry = {
+        id: 0,
+        name: item,
+        isActive: true,
+      };
+      setEntries((prev) => [...prev, newEntry]);
       setFormValue("");
+    } catch (error) {
+      console.error("Error adding vehicle item:", error);
     }
   };
 
-  return <div></div>;
+  const proceedToDelete = (id: number, endpoint: string) => {
+    try {
+      let sendForm;
+
+      if (endpoint === "Make" || endpoint === "Model") {
+        sendForm = [Number(id)];
+      } else if (endpoint === "Type" || endpoint === "Color") {
+        sendForm = Number(id);
+      }
+
+      const endpointName =
+        endpoint === "Make" || endpoint === "Model"
+          ? "makeOrModel"
+          : endpoint === "Type"
+          ? "type"
+          : endpoint === "Color"
+          ? "color"
+          : "";
+
+      fetch("/api/vehicleManager/delete/" + endpointName, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(sendForm),
+      });
+
+      setEntries((prev) => prev.filter((entry) => Number(entry.id) !== id));
+      if (Number(editingId) === id) {
+        setEditingId(null);
+        setFormValue("");
+      }
+    } catch (error) {
+      console.error("Error adding vehicle item:", error);
+    }
+  };
+
+  const deleteVehicleItem = (id: number, endpoint: string) => {
+    if (!id) return;
+
+    Swal.fire({
+      title: `Are you sure you want to delete this
+      ${title?.toLowerCase()}?`,
+      text: "This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        proceedToDelete(id, endpoint);
+        Swal.fire(
+          "Deleted!",
+          `The ${title?.toLowerCase()} has been deleted.`,
+          "success"
+        );
+      }
+    });
+  };
 
   return (
-    <div className="rounded-2xl shadow-md overflow-hidden bg-white text-gray-800 relative">
-      {/* Card Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-700 to-blue-500 text-white">
-        <h2 className="text-lg font-bold">{title}</h2>
-        <p className="text-sm text-white/80">{entries.length} item(s)</p>
-      </div>
-
-      {/* Card Body */}
-      <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 min-h-full">
+    <div className="overflow-hidden bg-white text-gray-800 relative">
+      <div className="p-4 min-h-full">
         <form onSubmit={handleSubmit} className="flex items-center gap-2 mb-4">
           <FormInput
             name="formValue"
-            placeholder={`Enter ${title.toLowerCase()}`}
+            placeholder={`Enter ${title?.toLowerCase()}`}
             icon={icon}
             value={formValue}
             onChange={(e) => setFormValue(e.target.value)}
             onClear={() => setFormValue("")}
           />
           <button
-            type="submit"
+            onClick={() => addVehicleItem(formValue, endpoint)}
+            type="button"
             className="cursor-pointer ml-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-6 font-semibold shadow-md tracking-tight rounded"
           >
             {editingId ? "Update" : "Add"}
@@ -89,21 +190,24 @@ function EntryManager({
 
         {/* Scrollable Pills */}
         <div className="max-h-40 overflow-y-auto">
-          {entries.length === 0 ? (
+          {Array.isArray(entries) && entries?.length === 0 ? (
             <p className="text-gray-500 italic">
-              No {title.toLowerCase()}s yet.
+              No {title?.toLowerCase()}s yet.
             </p>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {entries.map((entry) => (
+              {data?.map((entry) => (
                 <div
-                  key={entry.id}
+                  key={entry?.id}
                   className="flex items-center bg-[#ef6c00] text-white text-sm px-3 py-1 rounded-lg shadow"
                 >
-                  {entry.value}
+                  {entry?.name}
                   <button
-                    onClick={() => handleDelete(entry.id)}
-                    className="ml-2 text-white hover:text-red-200"
+                    type="button"
+                    onClick={() =>
+                      deleteVehicleItem(Number(entry?.id), endpoint)
+                    }
+                    className="ml-2 text-white hover:text-red-200 cursor-pointer"
                   >
                     ×
                   </button>
@@ -117,73 +221,105 @@ function EntryManager({
   );
 }
 
-export default function VehicleCMS() {
+const VehicleCMS: React.FC<{
+  carMakes: Entry[];
+  carModels: Entry[];
+  vehicleTypes: Entry[];
+  vehicleColors: Entry[];
+}> = ({ carMakes, carModels, vehicleTypes, vehicleColors }) => {
+  const labels = ["Make", "Model", "Type", "Color"];
+  const [activeLabel, setActiveLabel] = useState(labels[0]);
+  const [form, setForm] = useState<{ make?: string }>({});
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
   return (
-    <div
-      style={{
-        background:
-          "radial-gradient(circle at center, #86b2f9 10%, #e0f2ff 90%)",
-      }}
-      className="flex flex-col items-start overflow-y-auto pb-4 min-h-[94vh] bg-white"
-    >
-      {/* Hero Section */}
-      <div
-        className="relative w-full pt-0 pb-16 text-center bg-cover bg-center z-0 min-h-[30vh]"
-        style={{ backgroundImage: "url('/carBg.jpg')" }}
-      >
-        <div className="absolute inset-0 bg-blue-900 opacity-40"></div>
-        <div className="relative z-10 flex flex-col items-center justify-center h-full px-4">
-          <h1 className="text-5xl font-extrabold text-white drop-shadow-lg mt-16 mb-2">
-            Vehicle CMS
+    <div>
+      <div>
+        <div className="w-full bg-gradient-to-r from-blue-900 to-blue-800 text-white py-4 px-4 text-center rounded-t-sm">
+          <h1 className="text-2xl font-extrabold drop-shadow-lg">
+            Vehicle Manager
           </h1>
-          <p className="text-lg text-gray-100 drop-shadow-sm">
+          <p className="text-sm drop-shadow-sm mt-2">
             Manage your vehicle makes, models, types, and colors.
           </p>
         </div>
-      </div>
 
-      {/* Entry Cards */}
-      <div className="w-full max-w-6xl mx-auto mt-8 px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
-        <EntryManager
-          title="Make"
-          icon={<FaCar />}
-          initialData={[
-            { id: "1", value: "Toyota" },
-            { id: "2", value: "Ford" },
-            { id: "3", value: "BMW" },
-          ]}
-        />
+        <div className="flex gap-1 p-3 border-b bg-gray-50 justify-center">
+          {labels?.map((section) => (
+            <button
+              type="button"
+              key={section}
+              onClick={() => setActiveLabel(section)}
+              className={`px-4 py-1 rounded-lg text-sm font-medium border cursor-pointer ${
+                activeLabel === section
+                  ? "bg-[#ef6c00] text-white border-[#ef6c00]"
+                  : "bg-white text-[#ef6c00] border-[#ef6c00] hover:bg-orange-50"
+              }`}
+            >
+              {section}
+            </button>
+          ))}
+        </div>
 
-        <EntryManager
-          title="Model"
-          icon={<FaCarRear />}
-          initialData={[
-            { id: "1", value: "Corolla" },
-            { id: "2", value: "Mustang" },
-            { id: "3", value: "X5" },
-          ]}
-        />
+        <div className="w-full max-w-full mx-auto text-gray-800">
+          {activeLabel === "Make" && (
+            <EntryManager
+              title="Make"
+              icon={<FaCar />}
+              data={carMakes || []}
+              endpoint={activeLabel}
+            />
+          )}
 
-        <EntryManager
-          title="Type"
-          icon={<PiCarProfileFill />}
-          initialData={[
-            { id: "1", value: "SUV" },
-            { id: "2", value: "Sedan" },
-            { id: "3", value: "Coupe" },
-          ]}
-        />
+          {activeLabel === "Model" && (
+            <>
+              <div className="px-4 bg-white">
+                <FormInput
+                  name="make"
+                  value={form?.make || ""}
+                  onChange={handleChange}
+                  icon={<FaCar />}
+                  type="select"
+                  options={carMakes}
+                  // missing={missingFields.includes("make")}
+                />
+              </div>
+              <EntryManager
+                title="Model"
+                icon={<FaCarRear />}
+                data={carModels || []}
+                endpoint={activeLabel}
+              />
+            </>
+          )}
 
-        <EntryManager
-          title="Color"
-          icon={<BiSolidSprayCan />}
-          initialData={[
-            { id: "1", value: "Red" },
-            { id: "2", value: "Black" },
-            { id: "3", value: "White" },
-          ]}
-        />
+          {activeLabel === "Type" && (
+            <EntryManager
+              title="Type"
+              icon={<PiCarProfileFill />}
+              data={vehicleTypes || []}
+              endpoint={activeLabel}
+            />
+          )}
+
+          {activeLabel === "Color" && (
+            <EntryManager
+              title="Color"
+              icon={<BiSolidSprayCan />}
+              data={vehicleColors || []}
+              endpoint={activeLabel}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default VehicleCMS;

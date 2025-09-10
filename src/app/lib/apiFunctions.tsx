@@ -37,6 +37,21 @@ const UnreadNotificationEndpoint =
   process.env.UNREAD_NOTIFICATION_ENDPOINT + "";
 const NotificationHubEndpoint = process.env.NOTIFICATION_HUB_ENDPOINT + "";
 const ValetTransactionEndpoint = process.env.VALET_TRANSACTION_ENDPOINT + "";
+const GetVehicleDropdownDataEndpoint =
+  process.env.GET_VEHICLE_DROPDOWN_DATA_ENDPOINT + "";
+const CreateOrUpdateBrandsAndModelsEndpoint =
+  process.env.CREATE_OR_UPDATE_BRANDS_AND_MODELS_ENDPOINT + "";
+const DeleteBrandsAndModelsEndpoint =
+  process.env.DELETE_BRANDS_AND_MODELS_ENDPOINT + "";
+const CreateOrUpdateVehicleTypesEndpoint =
+  process.env.CREATE_OR_UPDATE_VEHICLE_TYPES_ENDPOINT + "";
+const DeleteVehicleTypesEndpoint =
+  process.env.DELETE_VEHICLE_TYPES_ENDPOINT + "";
+const CreateOrUpdateVehicleColorsEndpoint =
+  process.env.CREATE_OR_UPDATE_VEHICLE_COLORS_ENDPOINT + "";
+const DeleteVehicleColorsEndpoint =
+  process.env.DELETE_VEHICLE_COLORS_ENDPOINT + "";
+const BulkVehiclesEndpoint = process.env.BULK_VEHICLES_ENDPOINT + "";
 
 const Endpoints = [
   {
@@ -134,6 +149,38 @@ const Endpoints = [
   {
     name: "Valet Transaction",
     endpoint: ValetTransactionEndpoint,
+  },
+  {
+    name: "Get Vehicle Dropdown Data",
+    endpoint: GetVehicleDropdownDataEndpoint,
+  },
+  {
+    name: "Create Or Update Brands And Models",
+    endpoint: CreateOrUpdateBrandsAndModelsEndpoint,
+  },
+  {
+    name: "Delete Brands And Models",
+    endpoint: DeleteBrandsAndModelsEndpoint,
+  },
+  {
+    name: "Create Or Update Vehicle Types",
+    endpoint: CreateOrUpdateVehicleTypesEndpoint,
+  },
+  {
+    name: "Delete Vehicle Types",
+    endpoint: DeleteVehicleTypesEndpoint,
+  },
+  {
+    name: "Create Or Update Vehicle Colors",
+    endpoint: CreateOrUpdateVehicleColorsEndpoint,
+  },
+  {
+    name: "Delete Vehicle Colors",
+    endpoint: DeleteVehicleColorsEndpoint,
+  },
+  {
+    name: "Bulk Vehicles",
+    endpoint: BulkVehiclesEndpoint,
   },
 ];
 

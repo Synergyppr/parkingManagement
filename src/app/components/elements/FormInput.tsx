@@ -45,7 +45,7 @@ export default function FormInput({
 }: FormInputProps) {
   const basePaddingLeft = icon ? "pl-8 sm:pl-10 xs:pl-12 indent-2" : "pl-2"; // Adjust as needed
   const inputClass = `capitalize ${basePaddingLeft} border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-300 text-gray-700 tracking-tight w-full focus:ring-1 focus:ring-[#ef6c00] focus:rounded-sm focus:outline-none ${className}`;
-  
+
   return (
     <div className="relative w-full">
       {icon && (
@@ -102,7 +102,7 @@ export default function FormInput({
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300 focus:outline-none"
+              className="cursor-pointer absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none"
             >
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </button>

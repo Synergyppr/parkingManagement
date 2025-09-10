@@ -92,17 +92,25 @@ export function formatDateOfBirth(dateString: string): string {
 export function formatPhoneNumber(value: string): string {
   const rawValue = value.replace(/\D/g, "");
 
-  if (rawValue.length <= 3) {
-    return rawValue;
-  } else if (rawValue.length <= 6) {
-    return `(${rawValue.slice(0, 3)}) ${rawValue.slice(3)}`;
+  if (!rawValue) return "";
+
+  // Separate area code (everything before last 10 digits) and phone number
+  const areaCode = rawValue.length > 10 ? rawValue.slice(0, rawValue.length - 10) : "";
+  const phoneNumber = rawValue.slice(-10);
+
+  let formatted = "";
+
+  if (phoneNumber.length <= 3) {
+    formatted = phoneNumber;
+  } else if (phoneNumber.length <= 6) {
+    formatted = `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
   } else {
-    return `(${rawValue.slice(0, 3)}) ${rawValue.slice(3, 6)}-${rawValue.slice(
-      6,
-      10
-    )}`;
+    formatted = `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6)}`;
   }
+
+  return areaCode ? `+${areaCode} ${formatted}` : formatted;
 }
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 export function isWithinRadius(
