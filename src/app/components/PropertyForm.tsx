@@ -12,6 +12,7 @@ interface Property {
   tenant?: string;
   latitude: number;
   longitude: number;
+  radius: number;
   name: string;
   address: string;
   createdAtDateTime: string;
@@ -38,6 +39,7 @@ export default function ModalPropertyForm({
     address: "",
     latitude: latitude || 0,
     longitude: longitude || 0,
+    radius: initialData?.radius || 0,
     createdAtDateTime:
       initialData?.createdAtDateTime || new Date().toISOString(),
     isActive: true,
@@ -70,6 +72,7 @@ export default function ModalPropertyForm({
         address: form?.address,
         latitude: Number(form?.latitude) || 0,
         longitude: Number(form?.longitude) || 0,
+        radiusMeters: Number(form?.radius) || 0,
       };
     } else {
       payload = {
@@ -78,11 +81,9 @@ export default function ModalPropertyForm({
         isActive: form?.isActive ?? true,
         latitude: Number(form?.latitude) || 0,
         longitude: Number(form?.longitude) || 0,
-        radiusMeters: 100,
+        radiusMeters: Number(form?.radius) || 0,
       };
     }
-
-    // console.log("createAndUpdate properties Submitting payload:", payload);
 
     const res = await fetch(endpoint, {
       method,
@@ -93,8 +94,6 @@ export default function ModalPropertyForm({
     });
 
     const result = await res.json();
-
-    // console.log("createAndUpdate properties Submission result:", result);
 
     if (result?.result?.status === "200") {
       setModalOpen(false);
@@ -158,6 +157,14 @@ export default function ModalPropertyForm({
         name="longitude"
         label="Longitude"
         value={String(form?.longitude)}
+        onChange={handleChange}
+      />
+
+      <ModalInput
+        id="radius"
+        name="radius"
+        label="Radius (meters)"
+        value={String(form?.radius)}
         onChange={handleChange}
       />
 

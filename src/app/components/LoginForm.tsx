@@ -18,6 +18,7 @@ export default function LoginForm() {
     requestLocation,
     locationMode,
     setLocationMode,
+    setAccountUser,
   } = useProperty();
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -172,6 +173,10 @@ export default function LoginForm() {
             setPropertyName(propertyName);
             localStorage.setItem("isLoggedIn", "true");
             if (propertyId) await joinGroup(propertyId);
+
+            setAccountUser(email);
+            localStorage.setItem("accountUser", email);
+            sessionStorage.setItem("accountUser", email);
           }
 
           setTimeout(() => {

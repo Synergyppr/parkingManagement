@@ -15,8 +15,6 @@ export const createAndUpdateTenant = async ({
   };
   onClose?: (open: boolean) => void;
 }) => {
-  // console.log("Creating or updating tenant with form data:", form);
-
   if (!form?.name || !form?.type) {
     Swal.fire({
       icon: "warning",
@@ -33,8 +31,6 @@ export const createAndUpdateTenant = async ({
     isActive: form?.isActive ?? true,
   };
 
-  // console.log("Submitting payload:", payload);
-
   try {
     const res = await fetch(endpoint, {
       method,
@@ -45,8 +41,6 @@ export const createAndUpdateTenant = async ({
     });
 
     const response = await res.json();
-
-    // console.log("createAndUpdate Submission result:", response);
 
     if (response?.result?.status === "200") {
       Swal.fire({
@@ -138,7 +132,6 @@ export const getUsersByTenant = async (
 
     const data = await res.json();
 
-    // console.log("Users fetch response:", data);
     const result = data?.result?.data;
 
     setUsers(result || []);
@@ -175,8 +168,9 @@ export const getPropertiesByTenant = async (
     });
 
     const data = await res.json();
-    // console.log("Properties fetch response:", data);
+
     const result = data?.result?.data;
+
     setProperties(result || []);
     setIsPropertyModalOpen(true);
     setLoading(false);

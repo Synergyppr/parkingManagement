@@ -163,4 +163,5 @@ export interface Property {
   isActive: boolean;
   latitude: number;
   longitude: number;
+  radius: number;
 }

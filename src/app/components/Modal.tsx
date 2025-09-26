@@ -56,7 +56,8 @@ export default function Modal({
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className={`bg-gray-200 text-white p-6 rounded-lg shadow-2xl relative min-w-[350px] max-w-[350px] md:max-w-[450px] lg:max-w-[600px] lg:min-w-[450px]
+            className={`bg-gray-200 text-white p-6 rounded-lg shadow-2xl relative min-w-[350px] max-w-[350px] 
+              md:max-w-[450px] md:min-w-[450px] lg:max-w-[600px] lg:min-w-[600px]
               ${
                 size === "sm"
                   ? "w-64"

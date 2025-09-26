@@ -37,12 +37,19 @@ const UnreadNotificationEndpoint =
   process.env.UNREAD_NOTIFICATION_ENDPOINT + "";
 const NotificationHubEndpoint = process.env.NOTIFICATION_HUB_ENDPOINT + "";
 const ValetTransactionEndpoint = process.env.VALET_TRANSACTION_ENDPOINT + "";
+const GetTransactionTypesEndpoint =
+  process.env.GET_TRANSACTION_TYPES_ENDPOINT + "";
+const CreateOrUpdateTransactionTypesEndpoint =
+  process.env.CREATE_OR_UPDATE_TRANSACTION_TYPES_ENDPOINT + "";
+const DeleteTransactionTypesEndpoint =
+  process.env.DELETE_TRANSACTION_TYPES_ENDPOINT + "";
 const GetVehicleDropdownDataEndpoint =
   process.env.GET_VEHICLE_DROPDOWN_DATA_ENDPOINT + "";
 const CreateOrUpdateBrandsAndModelsEndpoint =
   process.env.CREATE_OR_UPDATE_BRANDS_AND_MODELS_ENDPOINT + "";
 const DeleteBrandsAndModelsEndpoint =
-  process.env.DELETE_BRANDS_AND_MODELS_ENDPOINT + "";
+  process.env.DELETE_BRANDS_WITH_MODELS_ENDPOINT + "";
+const DeleteModelsEndpoint = process.env.DELETE_CAR_MODELS_ENDPOINT + "";
 const CreateOrUpdateVehicleTypesEndpoint =
   process.env.CREATE_OR_UPDATE_VEHICLE_TYPES_ENDPOINT + "";
 const DeleteVehicleTypesEndpoint =
@@ -52,6 +59,11 @@ const CreateOrUpdateVehicleColorsEndpoint =
 const DeleteVehicleColorsEndpoint =
   process.env.DELETE_VEHICLE_COLORS_ENDPOINT + "";
 const BulkVehiclesEndpoint = process.env.BULK_VEHICLES_ENDPOINT + "";
+const GetPropertyDevicesEndpoint =
+  process.env.GET_PROPERTY_DEVICES_ENDPOINT + "";
+const CreateOrUpdateDeviceEndpoint =
+  process.env.CREATE_OR_UPDATE_DEVICE_ENDPOINT + "";
+const DeleteDeviceEndpoint = process.env.DELETE_DEVICE_ENDPOINT + "";
 
 const Endpoints = [
   {
@@ -151,6 +163,18 @@ const Endpoints = [
     endpoint: ValetTransactionEndpoint,
   },
   {
+    name: "Get Transaction Types",
+    endpoint: GetTransactionTypesEndpoint,
+  },
+  {
+    name: "Create Or Update Transaction Types",
+    endpoint: CreateOrUpdateTransactionTypesEndpoint,
+  },
+  {
+    name: "Delete Transaction Types",
+    endpoint: DeleteTransactionTypesEndpoint,
+  },
+  {
     name: "Get Vehicle Dropdown Data",
     endpoint: GetVehicleDropdownDataEndpoint,
   },
@@ -159,8 +183,12 @@ const Endpoints = [
     endpoint: CreateOrUpdateBrandsAndModelsEndpoint,
   },
   {
-    name: "Delete Brands And Models",
+    name: "Delete Brands With Models",
     endpoint: DeleteBrandsAndModelsEndpoint,
+  },
+  {
+    name: "Delete Car Models",
+    endpoint: DeleteModelsEndpoint,
   },
   {
     name: "Create Or Update Vehicle Types",
@@ -181,6 +209,19 @@ const Endpoints = [
   {
     name: "Bulk Vehicles",
     endpoint: BulkVehiclesEndpoint,
+  },
+  {
+    name: "Get Property Devices",
+    endpoint: GetPropertyDevicesEndpoint,
+  },
+  {
+    name: "Create Or Update Device",
+    endpoint: CreateOrUpdateDeviceEndpoint,
+  },
+
+  {
+    name: "Delete Device",
+    endpoint: DeleteDeviceEndpoint,
   },
 ];
 

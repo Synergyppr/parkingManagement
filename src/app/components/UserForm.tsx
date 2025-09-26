@@ -104,8 +104,6 @@ export default function UserFormWrapper({
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      // console.log("Submitting user:", form);
-
       await createAndUpdateUser(
         {
           ...form,

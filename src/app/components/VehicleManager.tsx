@@ -1,16 +1,18 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaCar } from "react-icons/fa";
 import { FaCarRear } from "react-icons/fa6";
 import { PiCarProfileFill } from "react-icons/pi";
 import { BiSolidSprayCan } from "react-icons/bi";
 import FormInput from "../components/elements/FormInput";
+import ButtonLoader from "./elements/ButtonLoader";
 import Swal from "sweetalert2";
 
 interface Entry {
   id: number;
   name: string;
   isActive: boolean;
+  models?: Entry[];
 }
 
 function EntryManager({
@@ -18,138 +20,189 @@ function EntryManager({
   icon,
   data,
   endpoint,
+  parentValue,
+  fetchVehicleDropdownData,
 }: {
   title: string;
   icon?: React.ReactNode;
   data?: Entry[];
   endpoint: string;
+  parentValue?: {
+    id: number;
+    name: string;
+  };
+  fetchVehicleDropdownData: () => Promise<void>;
 }) {
-  const [entries, setEntries] = useState<Entry[]>(data || []);
+  const sortEntries = (arr: Entry[]) =>
+    [...arr].sort((a, b) => a.name.localeCompare(b.name));
+  const [entries, setEntries] = useState<Entry[]>(sortEntries(data || []));
   const [formValue, setFormValue] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [buttonLoading, setButtonLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formValue.trim()) return;
+  useEffect(() => {
+    setEntries(sortEntries(data || []));
+  }, [data]);
 
-    if (editingId) {
-      setEntries((prev) =>
-        prev.map((entry) =>
-          Number(entry?.id) === Number(editingId)
-            ? { ...entry, value: formValue }
-            : entry
-        )
+  // Check for duplicates
+  const isDuplicate = (name: string): boolean => {
+    if (!name?.trim()) return false;
+
+    if (endpoint === "Model" && parentValue?.id) {
+      // Look inside parent make's models
+      const parentMake = data?.find(
+        (m) => Number(m?.id) === Number(parentValue?.id)
       );
-      setEditingId(null);
-    } else {
-      const newEntry: Entry = {
-        id: 0,
-        name: formValue,
-        isActive: true,
-      };
-      setEntries((prev) => [...prev, newEntry]);
+      return (
+        parentMake?.models?.some(
+          (model) => model.name.toLowerCase() === name.toLowerCase()
+        ) || false
+      );
     }
-    setFormValue("");
+
+    // For Make, Type, and Color, just check entries list
+    return entries.some(
+      (entry) => entry.name.toLowerCase() === name.toLowerCase()
+    );
   };
 
-  const addVehicleItem = (item: string, endpoint: string) => {
+  const addVehicleItem = async (item: string, endpoint: string) => {
     if (!item?.trim()) return;
 
+    if (isDuplicate(item)) {
+      Swal.fire(
+        "Duplicate",
+        `The ${title?.toLowerCase()} "${item}" already exists.`,
+        "warning"
+      );
+      return;
+    }
+
+    setButtonLoading(true);
+
     try {
       let sendForm;
 
       if (endpoint === "Make" || endpoint === "Model") {
+        if (endpoint === "Make") {
+          sendForm = [
+            {
+              id: 0,
+              name: item as string,
+              isActive: true,
+            },
+          ];
+        } else if (endpoint === "Model") {
+          sendForm = [
+            {
+              id: parentValue?.id || 0,
+              name: parentValue?.name || "",
+              isActive: true,
+              models: [
+                {
+                  id: 0,
+                  name: item,
+                  isActive: true,
+                },
+              ],
+            },
+          ];
+        } else return;
+      } else if (endpoint === "Type" || endpoint === "Color") {
         sendForm = {
           id: 0,
           name: item,
           isActive: true,
-          models: {
-            id: 0,
-            name: item,
-            isActive: true,
+        };
+      }
+
+      const endpointName =
+        endpoint === "Make" || endpoint === "Model"
+          ? "makeOrModel"
+          : endpoint === "Type"
+          ? "type"
+          : endpoint === "Color"
+          ? "color"
+          : "";
+
+      const response = await fetch(
+        "/api/vehicleManager/createOrUpdate/" + endpointName,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        };
-      } else if (endpoint === "Type" || endpoint === "Color") {
-        sendForm = {
-          id: 0,
-          name: item,
-          isActive: true,
-        };
-      }
+          body: JSON.stringify(sendForm),
+        }
+      );
 
-      const endpointName =
-        endpoint === "Make" || endpoint === "Model"
-          ? "makeOrModel"
-          : endpoint === "Type"
-          ? "type"
-          : endpoint === "Color"
-          ? "color"
-          : "";
+      const result = await response.json();
 
-      fetch("/api/vehicleManager/createOrUpdate/" + endpointName, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(sendForm),
-      });
-
-      const newEntry: Entry = {
-        id: 0,
-        name: item,
-        isActive: true,
-      };
-      setEntries((prev) => [...prev, newEntry]);
-      setFormValue("");
-    } catch (error) {
-      console.error("Error adding vehicle item:", error);
-    }
-  };
-
-  const proceedToDelete = (id: number, endpoint: string) => {
-    try {
-      let sendForm;
-
-      if (endpoint === "Make" || endpoint === "Model") {
-        sendForm = [Number(id)];
-      } else if (endpoint === "Type" || endpoint === "Color") {
-        sendForm = Number(id);
-      }
-
-      const endpointName =
-        endpoint === "Make" || endpoint === "Model"
-          ? "makeOrModel"
-          : endpoint === "Type"
-          ? "type"
-          : endpoint === "Color"
-          ? "color"
-          : "";
-
-      fetch("/api/vehicleManager/delete/" + endpointName, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(sendForm),
-      });
-
-      setEntries((prev) => prev.filter((entry) => Number(entry.id) !== id));
-      if (Number(editingId) === id) {
-        setEditingId(null);
+      if (result?.result?.status === "200") {
         setFormValue("");
+        fetchVehicleDropdownData();
+        Swal.fire(
+          "Success",
+          `The ${title?.toLowerCase()} "${item}" has been added successfully.`,
+          "success"
+        );
+      } else {
+        Swal.fire(
+          "Error",
+          result?.result?.message ||
+            `Failed to add the ${title?.toLowerCase()} "${item}". Please try again.`,
+          "error"
+        );
+        return;
       }
     } catch (error) {
       console.error("Error adding vehicle item:", error);
+    } finally {
+      setButtonLoading(false);
     }
   };
 
-  const deleteVehicleItem = (id: number, endpoint: string) => {
+  const deleteVehicleItem = (
+    entry: { id: number; name: string; isActive: boolean },
+    endpoint: string
+  ) => {
+    const id = entry?.id;
     if (!id) return;
 
+    const entryToDelete = entries?.find((entry) => Number(entry?.id) === id);
+
+    // If deleting a Make, collect its models
+    let modelsHtml = "";
+    if (endpoint === "Make" && entryToDelete?.models?.length) {
+      modelsHtml = `
+        <div style="margin-top: 12px; text-align: left;">
+          <div style="font-weight: 600; margin-bottom: 6px; color: #444;">
+            These models will also be deleted:
+          </div>
+          <div style="background: #f8f9fa; padding: 10px 14px; border-radius: 6px; border: 1px solid #e0e0e0; max-height: 150px; overflow-y: auto;">
+            ${entryToDelete?.models
+              .map((m) => `<div style="padding: 2px 0;">• ${m?.name}</div>`)
+              .join("")}
+          </div>
+        </div>
+      `;
+    }
+
     Swal.fire({
-      title: `Are you sure you want to delete this
-      ${title?.toLowerCase()}?`,
-      text: "This action cannot be undone.",
+      title: `Delete ${title}?`,
+      html: `
+        <div style="text-align: center;">
+          <p style="margin-bottom: 8px;">Are you sure you want to delete:</p>
+          <div style="font-size: 16px; font-weight: bold; color: #d33;">
+            ${entryToDelete?.name}
+          </div>
+          ${modelsHtml}
+          <p style="margin-top: 12px; color: #666; font-size: 13px;">
+            This action cannot be undone.
+          </p>
+        </div>
+      `,
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
@@ -157,20 +210,118 @@ function EntryManager({
       confirmButtonText: "Yes, delete it!",
     }).then((result) => {
       if (result.isConfirmed) {
-        proceedToDelete(id, endpoint);
-        Swal.fire(
-          "Deleted!",
-          `The ${title?.toLowerCase()} has been deleted.`,
-          "success"
-        );
+        proceedToDelete(entry, endpoint);
       }
     });
   };
 
+  const proceedToDelete = async (
+    entry: { id: number; name: string; isActive: boolean },
+    endpoint: string
+  ) => {
+    const id = entry?.id;
+    setButtonLoading(true);
+
+    try {
+      let sendForm;
+
+      if (endpoint === "Make") {
+        sendForm = {
+          brandsAndModels: [
+            {
+              id: Number(id),
+            },
+          ],
+        };
+      } else if (endpoint === "Model") {
+        sendForm = {
+          id: Number(id),
+          name: entry?.name,
+          isActive: false,
+        };
+      } else if (endpoint === "Type" || endpoint === "Color") {
+        sendForm = { id: Number(id) };
+      }
+
+      const endpointName =
+        endpoint === "Make"
+          ? "makeWithModel"
+          : endpoint === "Model"
+          ? "model"
+          : endpoint === "Type"
+          ? "type"
+          : endpoint === "Color"
+          ? "color"
+          : "";
+
+      console.log(
+        "Deleting from endpoint:",
+        endpointName,
+        "with data:",
+        sendForm
+      );
+
+      const response = await fetch(
+        "/api/vehicleManager/delete/" + endpointName,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(sendForm),
+        }
+      );
+
+      const result = await response.json();
+
+      console.log("Delete response:", result);
+
+      if (result?.result?.status === "200") {
+        await fetchVehicleDropdownData();
+
+        if (Number(editingId) === id) {
+          setEditingId(null);
+          setFormValue("");
+        }
+        Swal.fire(
+          "Success",
+          `The ${title?.toLowerCase()} "${
+            entry?.name
+          }" has been deleted successfully.`,
+          "success"
+        );
+      } else {
+        Swal.fire(
+          "Error",
+          result?.result?.message ||
+            `Failed to delete the ${title?.toLowerCase()}. Please try again.`,
+          "error"
+        );
+        setButtonLoading(false);
+        return;
+      }
+    } catch (error) {
+      console.error("Error deleting vehicle item:", error);
+      setButtonLoading(false);
+      Swal.fire(
+        "Error",
+        `An error occurred while deleting the ${title?.toLowerCase()}. Please try again.`,
+        "error"
+      );
+    } finally {
+      setButtonLoading(false);
+    }
+  };
+
+  // Filter entries by search query
+  const filteredEntries = entries?.filter((entry) =>
+    entry?.name?.toLowerCase()?.includes(searchQuery?.toLowerCase())
+  );
+
   return (
     <div className="overflow-hidden bg-white text-gray-800 relative">
       <div className="p-4 min-h-full">
-        <form onSubmit={handleSubmit} className="flex items-center gap-2 mb-4">
+        <form className="flex items-center gap-2 mb-4">
           <FormInput
             name="formValue"
             placeholder={`Enter ${title?.toLowerCase()}`}
@@ -180,33 +331,65 @@ function EntryManager({
             onClear={() => setFormValue("")}
           />
           <button
-            onClick={() => addVehicleItem(formValue, endpoint)}
             type="button"
-            className="cursor-pointer ml-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-6 font-semibold shadow-md tracking-tight rounded"
+            disabled={buttonLoading}
+            onClick={() => addVehicleItem(formValue, endpoint)}
+            className={`${
+              buttonLoading
+                ? "bg-opacity-50 cursor-not-allowed py-1"
+                : "cursor-pointer py-2"
+            } ml-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white px-6 font-semibold shadow-md tracking-tight rounded`}
           >
-            {editingId ? "Update" : "Add"}
+            {buttonLoading ? <ButtonLoader /> : editingId ? "Update" : "Add"}
           </button>
         </form>
 
+        {/*  Search Bar  */}
+        <div className="mb-3">
+          <FormInput
+            name="searchQuery"
+            placeholder={`Search ${title?.toLowerCase()}s...`}
+            icon={
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            }
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onClear={() => setSearchQuery("")}
+            type="text"
+          />
+        </div>
+
         {/* Scrollable Pills */}
         <div className="max-h-40 overflow-y-auto">
-          {Array.isArray(entries) && entries?.length === 0 ? (
+          {Array.isArray(filteredEntries) && filteredEntries?.length === 0 ? (
             <p className="text-gray-500 italic">
-              No {title?.toLowerCase()}s yet.
+              No {title?.toLowerCase()}s found.
             </p>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {data?.map((entry) => (
+              {filteredEntries?.map((entry) => (
                 <div
-                  key={entry?.id}
+                  key={entry?.id + entry?.name}
                   className="flex items-center bg-[#ef6c00] text-white text-sm px-3 py-1 rounded-lg shadow"
                 >
                   {entry?.name}
                   <button
                     type="button"
-                    onClick={() =>
-                      deleteVehicleItem(Number(entry?.id), endpoint)
-                    }
+                    disabled={buttonLoading}
+                    onClick={() => deleteVehicleItem(entry, endpoint)}
                     className="ml-2 text-white hover:text-red-200 cursor-pointer"
                   >
                     ×
@@ -226,10 +409,32 @@ const VehicleCMS: React.FC<{
   carModels: Entry[];
   vehicleTypes: Entry[];
   vehicleColors: Entry[];
-}> = ({ carMakes, carModels, vehicleTypes, vehicleColors }) => {
+  fetchVehicleDropdownData: () => Promise<void>;
+}> = ({
+  carMakes,
+  // carModels,
+  vehicleTypes,
+  vehicleColors,
+  fetchVehicleDropdownData,
+}) => {
   const labels = ["Make", "Model", "Type", "Color"];
   const [activeLabel, setActiveLabel] = useState(labels[0]);
   const [form, setForm] = useState<{ make?: string }>({});
+  const [filteredModels, setFilteredModels] = useState<Entry[]>([]);
+
+  const sortEntries = (arr: Entry[]) =>
+    [...arr].sort((a, b) => a.name.localeCompare(b.name));
+
+  React.useEffect(() => {
+    if (activeLabel === "Model" && form?.make) {
+      const models =
+        carMakes?.find((m) => Number(m?.id) == Number(form?.make))?.models ||
+        [];
+      setFilteredModels(sortEntries(models));
+    } else {
+      setFilteredModels([]);
+    }
+  }, [activeLabel, form?.make, carMakes, form]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -272,8 +477,9 @@ const VehicleCMS: React.FC<{
             <EntryManager
               title="Make"
               icon={<FaCar />}
-              data={carMakes || []}
+              data={sortEntries(carMakes || [])}
               endpoint={activeLabel}
+              fetchVehicleDropdownData={fetchVehicleDropdownData}
             />
           )}
 
@@ -286,15 +492,23 @@ const VehicleCMS: React.FC<{
                   onChange={handleChange}
                   icon={<FaCar />}
                   type="select"
-                  options={carMakes}
-                  // missing={missingFields.includes("make")}
+                  options={sortEntries(carMakes)}
                 />
               </div>
               <EntryManager
                 title="Model"
                 icon={<FaCarRear />}
-                data={carModels || []}
+                data={filteredModels || []}
                 endpoint={activeLabel}
+                parentValue={{
+                  id: carMakes?.find(
+                    (m) => Number(m?.id) === Number(form?.make)
+                  )?.id as number,
+                  name: carMakes?.find(
+                    (m) => Number(m?.id) === Number(form?.make)
+                  )?.name as string,
+                }}
+                fetchVehicleDropdownData={fetchVehicleDropdownData}
               />
             </>
           )}
@@ -303,8 +517,9 @@ const VehicleCMS: React.FC<{
             <EntryManager
               title="Type"
               icon={<PiCarProfileFill />}
-              data={vehicleTypes || []}
+              data={sortEntries(vehicleTypes || [])}
               endpoint={activeLabel}
+              fetchVehicleDropdownData={fetchVehicleDropdownData}
             />
           )}
 
@@ -312,8 +527,9 @@ const VehicleCMS: React.FC<{
             <EntryManager
               title="Color"
               icon={<BiSolidSprayCan />}
-              data={vehicleColors || []}
+              data={sortEntries(vehicleColors || [])}
               endpoint={activeLabel}
+              fetchVehicleDropdownData={fetchVehicleDropdownData}
             />
           )}
         </div>

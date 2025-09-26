@@ -1,15 +1,19 @@
 "use client";
 import React from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function TermsAndConditions() {
+  const router = useRouter();
+
   return (
     <div className="flex flex-col justify-center w-[100vw] mx-0 px-4 py-0 text-gray-800">
       <div className="border-solid border-[0.5px] rounded-sm border-gray-800 my-2 pb-4 bg-white">
         <header className="flex flex-col items-center justify-center px-4 py-8 bg-gradient-to-r from-blue-900 to-blue-800 text-white shadow-lg sticky top-0 z-50">
           <div className="absolute left-6 md:left-16 lg:left-16 top-3 z-98 hidden md:inline-block lg:inline-block">
             <Image
-              className="opacity-70 w-[60px] h-[60px] md:w-[70px] md:h-[70px] lg:w-[80px] lg:h-[80px] drop-shadow-lg transition-transform duration-300 hover:scale-105"
+              onClick={() => router.push("/")}
+              className="cursor-pointer opacity-70 w-[60px] h-[60px] md:w-[70px] md:h-[70px] lg:w-[80px] lg:h-[80px] drop-shadow-lg transition-transform duration-700 hover:scale-105"
               width={100}
               height={100}
               src="/favicon.png"
@@ -18,6 +22,7 @@ export default function TermsAndConditions() {
           </div>
           {/*  */}
           <Image
+            onClick={() => router.push("/")}
             className="w-[80px] h-[80px] md:w-[100px] md:h-[100px] drop-shadow-lg opacity-90 mb-2 block md:hidden lg:hidden"
             width={100}
             height={100}

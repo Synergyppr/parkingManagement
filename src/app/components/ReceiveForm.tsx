@@ -688,7 +688,7 @@ export default function ReceiveForm({
   return (
     <div
       className={`${
-        step === 3 ? "" : "py-4 lg:mt-[7%] md:py-16 sm:py-4 xs:py-4"
+        step === 3 ? "pt-2" : "py-4 lg:mt-[5%] md:py-16 sm:py-4 xs:py-4"
       } border-none rounded-lg  mb-2`}
     >
       <div className="p-2 sm:p-4 md:p-6 max-w-3xl mx-auto space-y-6 transition-opacity duration-500 ease-in-out animate-fade-in min-h-full">

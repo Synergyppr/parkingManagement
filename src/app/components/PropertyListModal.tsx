@@ -10,6 +10,7 @@ interface Property {
   tenant?: string;
   latitude: number;
   longitude: number;
+  radius: number;
   name: string;
   address: string;
   createdAtDateTime: string;
@@ -146,6 +147,7 @@ Props) {
                   tenantId: selectedProperty?.tenantId ?? "",
                   latitude: Number(selectedProperty?.latitude),
                   longitude: Number(selectedProperty?.longitude),
+                  radius: selectedProperty?.radius ?? 0,
                   name: selectedProperty?.name ?? "",
                   address: selectedProperty?.address ?? "",
                   createdAtDateTime: selectedProperty?.createdAtDateTime ?? "",

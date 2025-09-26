@@ -4,6 +4,7 @@ import Modal from "./Modal";
 import Tabs from "./elements/Tabs";
 import CarVector from "./CarVector";
 import Log from "./Log";
+// import Surveys from "./Surveys";
 import { TicketDetails } from "@/app/types";
 import { formatDate, formatPhoneNumber } from "@/app/lib/clientUtils";
 
@@ -69,7 +70,6 @@ export default function TicketDetailsModal({
     }
   }, [transitionState, detailsActiveTab]);
 
-
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <div>
@@ -81,7 +81,7 @@ export default function TicketDetailsModal({
           setTransitionState={setTransitionState}
         />
 
-<div
+        <div
           className={`transition-all duration-1000 ${
             transitionState === "fade-out"
               ? "opacity-0 translate-y-2"
@@ -130,6 +130,11 @@ export default function TicketDetailsModal({
                   <strong className="tracking-tighter">Created On:</strong>{" "}
                   {formatDate(ticketDetails?.createdDateTime || "")}
                 </p>
+
+                {/* TODO: Finish */}
+                {/* <p className="text-blue-600 underline hover:text-purple-600 trasnsition duration-700 cursor-pointer text-sm tracking-tight mt-2">
+                  View Guest Feedback
+                </p> */}
               </div>
 
               {/* Vehicle Info */}
@@ -257,6 +262,8 @@ export default function TicketDetailsModal({
           {displayedTab === "Log" && (
             <Log logs={ticketDetails?.ticketLogs || []} />
           )}
+
+          {/* {displayedTab === "Feedback" && <Surveys />} */}
         </div>
       </div>
     </Modal>

@@ -236,8 +236,6 @@ export default function HomePage() {
 
       const data = await res.json();
 
-      // console.log("Ticket details fetched:", data);
-
       if (data?.status === "200") {
         setTicketDetails(data?.data);
         const damaged = data?.data?.damagedParts || [];

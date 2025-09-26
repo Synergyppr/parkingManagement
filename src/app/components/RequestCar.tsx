@@ -5,11 +5,42 @@ import Swal from "sweetalert2";
 import { RxCaretRight } from "react-icons/rx";
 import { BsStar, BsStarFill, BsStarHalf } from "react-icons/bs";
 import { IoCheckmarkOutline } from "react-icons/io5";
+import { FaUser, FaEnvelope } from "react-icons/fa";
+import { IoPhonePortrait } from "react-icons/io5";
 import { useSignalR, joinGroup, leaveGroup } from "../lib/SignalRProvider";
 import { useProperty } from "../context/PropertyContext";
 import StatusTimeline from "./StatusTimeline";
 import PageLoader from "./elements/PageLoader";
 import ButtonLoader from "./elements/ButtonLoader";
+import FormInput from "./elements/FormInput";
+
+const CollapsibleSection: React.FC<{
+  title: string;
+  children: React.ReactNode;
+}> = ({ title, children }) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div
+      className={`${
+        open ? "bg-white shadow-inner rounded-xl" : ""
+      } mb-4 border-b border-slate-300`}
+    >
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex justify-between items-center px-4 py-3 font-semibold text-gray-700 transition rounded-t-lg"
+      >
+        {title}
+        <RxCaretRight
+          className={`w-6 h-6 transform transition-transform ${
+            open ? "rotate-90" : ""
+          }`}
+        />
+      </button>
+      {open && <div className="p-4 border-t border-gray-200">{children}</div>}
+    </div>
+  );
+};
 
 const RequestCar = () => {
   const { propertyId, setPropertyId } = useProperty();
@@ -40,7 +71,12 @@ const RequestCar = () => {
   const [ratedStars, setRatedStars] = useState(0);
   const [comment, setComment] = useState("");
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
-  const [smsConsent, setSmsConsent] = useState(false);
+  const [smsConsent, setSmsConsent] = useState(true);
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+
   const idFromUrl = searchParams.get("ticket");
   const { registerNotificationHandler } = useSignalR();
 
@@ -135,8 +171,6 @@ const RequestCar = () => {
       isUserUpdate: true,
       pin: "", // not needed for user updates
     };
-
-    console.log("Update Status Send Form:", sendForm);
 
     const res = await fetch("/api/vehicleStatus", {
       method: "POST",
@@ -271,8 +305,6 @@ const RequestCar = () => {
 
       const data = await res.json();
 
-      // console.log("Rating Submission Result:", data);
-
       if (data?.status === "200") {
         setSubmitted(true);
         setTimeout(() => {
@@ -300,6 +332,12 @@ const RequestCar = () => {
     }
   };
 
+  const handleUpdateInfo = (e: React.FormEvent) => {
+    e.preventDefault();
+    // 🔄 Call your API here
+    console.log({ name, email, phone });
+  };
+
   return (
     <div
       style={{
@@ -309,7 +347,7 @@ const RequestCar = () => {
       className="min-h-[calc(100vh-50px)] p-6 mx-auto bg-white my-auto flex flex-col items-center justify-center"
     >
       <div>
-        <h1 className="w-full text-2xl font-bold mt-2 mb-0 text-center pt-4 pb-3 px-3 lg:py-6 bg-gradient-to-r from-blue-700 to-blue-500 text-white tracking-tight rounded-t-lg">
+        <h1 className="w-full text-2xl font-bold mt-2 mb-0 text-center pt-4 pb-3 px-6 lg:px-10 lg:py-6 bg-gradient-to-r from-blue-700 to-blue-500 text-white tracking-tight rounded-t-lg">
           Thank you for using API Valet Service!
         </h1>
         <div
@@ -398,7 +436,10 @@ const RequestCar = () => {
                       If you’ve finished your visit{" "}
                       {vehicleData?.placeToVisit && (
                         <span>
-                          at <strong>{vehicleData?.placeToVisit}</strong>
+                          at{" "}
+                          <strong className="capitalize">
+                            {vehicleData?.placeToVisit}
+                          </strong>
                         </span>
                       )}{" "}
                       and are ready to leave, please click the button below to
@@ -427,6 +468,11 @@ const RequestCar = () => {
                       onChange={() => setSmsConsent(!smsConsent)}
                       type="checkbox"
                       className="mr-2"
+                      disabled={
+                        vehicleData?.status === "requested" ||
+                        vehicleData?.status === "ready" ||
+                        buttonLoader
+                      }
                     />
                     <p>
                       I agree to receive SMS updates about my valet parking
@@ -473,6 +519,85 @@ const RequestCar = () => {
                     </button>
                   </div>
                 </div>
+
+                {/* New Sections */}
+                {false && (
+                  <CollapsibleSection title="View Transaction Details">
+                    <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
+                      <p className="capitalize">
+                        <span className="font-semibold">Customer:</span>{" "}
+                        {vehicleData?.firstName || "-"}
+                      </p>
+
+                      <p className="capitalize">
+                        <span className="font-semibold">Location:</span>{" "}
+                        {vehicleData?.placeToVisit || "-"}
+                      </p>
+
+                      <p className="">
+                        <span className="font-semibold">Drop Off:</span>{" "}
+                        {vehicleData?.createdDateTime
+                          ? new Date(
+                              vehicleData?.createdDateTime as string
+                            ).toLocaleString()
+                          : "-"}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Total Paid:</span>{" "}
+                        <span className="capitalize">$0</span>
+                      </p>
+                    </div>
+                  </CollapsibleSection>
+                )}
+
+                {false && (
+                  <CollapsibleSection title="Update Contact Information">
+                    <form
+                      onSubmit={handleUpdateInfo}
+                      className="space-y-3 text-sm text-gray-700"
+                    >
+                      <div>
+                        <FormInput
+                          name="name"
+                          placeholder="Full Name"
+                          icon={<FaUser />}
+                          value={
+                            vehicleData?.firstName +
+                              " " +
+                              vehicleData?.lastName ||
+                            name ||
+                            ""
+                          }
+                          onChange={(e) => setName(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <FormInput
+                          name="fullName"
+                          placeholder="Phone Number"
+                          icon={<IoPhonePortrait />}
+                          value={phone || ""}
+                          onChange={(e) => setPhone(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <FormInput
+                          name="email"
+                          placeholder="Email Address"
+                          icon={<FaEnvelope />}
+                          value={email || ""}
+                          onChange={(e) => setEmail(e.target.value)}
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white py-2 rounded-md font-semibold hover:from-blue-700 hover:to-blue-600 transition"
+                      >
+                        Update Info
+                      </button>
+                    </form>
+                  </CollapsibleSection>
+                )}
 
                 {/* Rating Section */}
                 {requested && (

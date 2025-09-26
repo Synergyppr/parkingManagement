@@ -1,15 +1,18 @@
 "use client";
 import { useState, useEffect } from "react";
+import Swal from "sweetalert2";
 import {
   handleTenantDelete,
   getUsersByTenant,
   getPropertiesByTenant,
 } from "../helpers/propertyHelpers";
 import { Tenant, UserForm as UserFormType, Property } from "../types";
-import { FaPencil, FaTrash } from "react-icons/fa6";
+import { FaPencil, FaTrash, FaRegCreditCard } from "react-icons/fa6";
 import { FaCar } from "react-icons/fa";
+import { MdOutlineImportantDevices } from "react-icons/md";
 import { PiUsersThreeFill } from "react-icons/pi";
 import { BsFillBuildingsFill } from "react-icons/bs";
+import { useProperty } from "../context/PropertyContext";
 import { formatDateOfBirth } from "../lib/clientUtils";
 import Modal from "./Modal";
 import TenantForm from "./TenantForm";
@@ -17,7 +20,8 @@ import ListModal from "./ListModal";
 import PropertyForm from "./PropertyForm";
 import UserForm from "./UserForm";
 import VehicleManager from "./VehicleManager";
-import Swal from "sweetalert2";
+import DeviceCMS from "./DeviceManager";
+import TransactionTypeManager from "./TransactionTypeManager";
 
 interface TenantsProps {
   data: {
@@ -44,19 +48,26 @@ interface DropdownData {
 
 const Tenants = ({ data }: TenantsProps) => {
   const tenants = data?.data;
+  const { propertyId } = useProperty();
   const [tenantData, setTenantData] = useState(data?.data);
-  const [isTenantModalOpen, setIsTenantModalOpen] = useState(false);
-  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-  const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false);
-  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [selectedTenantId, setSelectedTenantId] = useState<string>("");
   const [users, setUsers] = useState<UserFormType[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [seeMore, setSeeMore] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [vehiclesDropdownData, setVehiclesDropdownData] =
+    useState<DropdownData | null>(null);
+  const [devicesDropdownData, setDevicesDropdownData] = useState(null);
+  const [transactionTypesDropdownData, setTransactionTypesDropdownData] =
+    useState(null);
 
-  const [dropdownData, setDropdownData] = useState<DropdownData | null>(null);
+  const [isTenantModalOpen, setIsTenantModalOpen] = useState(false);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false);
+  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
+  const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
 
   const refresh = () => {
     return;
@@ -70,7 +81,7 @@ const Tenants = ({ data }: TenantsProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchDropdownData = async () => {
+  const fetchVehicleDropdownData = async () => {
     try {
       const response = await fetch("/api/getVehicle/dropdownData", {
         method: "GET",
@@ -82,9 +93,70 @@ const Tenants = ({ data }: TenantsProps) => {
       const result = await response.json();
 
       if (result?.data?.status == "200") {
-        // console.log("Fetched Dropdown Data:", result?.data?.data);
-        setDropdownData(result?.data?.data);
+        setVehiclesDropdownData(result?.data?.data);
         setIsVehicleModalOpen(true);
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to fetch dropdown data.",
+        });
+        return;
+      }
+    } catch (error) {
+      console.error("Error fetching dropdown data:", error);
+    }
+  };
+
+  const fetchPropertyDevices = async () => {
+    try {
+      const sendForm = {
+        id: propertyId as string,
+      };
+      const response = await fetch("/api/devices/get", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(sendForm),
+      });
+
+      const result = await response.json();
+
+      if (result?.result?.status == "200") {
+        setDevicesDropdownData(result?.result?.data);
+        setIsDeviceModalOpen(true);
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to fetch dropdown data.",
+        });
+        return;
+      }
+    } catch (error) {
+      console.error("Error fetching dropdown data:", error);
+    }
+  };
+
+  const fetchTransactionTypes = async () => {
+    try {
+      const sendForm = {
+        id: propertyId as string,
+      };
+      const response = await fetch("/api/valetTransaction/types/get", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(sendForm),
+      });
+
+      const result = await response.json();
+
+      if (result?.result?.status == "200") {
+        setTransactionTypesDropdownData(result?.result?.data);
+        setIsTransactionModalOpen(true);
       } else {
         Swal.fire({
           icon: "error",
@@ -128,7 +200,22 @@ const Tenants = ({ data }: TenantsProps) => {
     setIsVehicleModalOpen(false);
   };
   const handleOpenVehicleModal = () => {
-    fetchDropdownData();
+    fetchVehicleDropdownData();
+  };
+
+  const handleCloseDeviceModal = () => {
+    setIsDeviceModalOpen(false);
+  };
+  const handleOpenDeviceModal = () => {
+    fetchPropertyDevices();
+  };
+
+  const handleCloseTransactionModal = () => {
+    setIsTransactionModalOpen(false);
+  };
+  const handleOpenTransactionModal = () => {
+    fetchTransactionTypes();
+    // setIsTransactionModalOpen(true);
   };
 
   return (
@@ -212,7 +299,7 @@ const Tenants = ({ data }: TenantsProps) => {
                 </div>
 
                 {/* Card Body */}
-                <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 min-h-full">
+                <div className="py-4 bg-gradient-to-br from-blue-50 to-blue-100 min-h-full px-6">
                   {/* Description */}
                   {tenant.description && (
                     <div className="leading-[14px]">
@@ -242,7 +329,7 @@ const Tenants = ({ data }: TenantsProps) => {
                   )}
 
                   {/* Actions */}
-                  <div className="flex gap-4 mt-2">
+                  <div className="flex flex-wrap justify-between md:justify-start lg:justify-start gap-4 mt-4 mb-10">
                     <div
                       onClick={() => {
                         if (!loading)
@@ -259,7 +346,7 @@ const Tenants = ({ data }: TenantsProps) => {
                       } bg-orange-500 hover:bg-orange-600 rounded-xl p-3 transition transform hover:scale-105 shadow-md flex items-center justify-center`}
                       title="View Users"
                     >
-                      <PiUsersThreeFill className="w-6 h-6 text-white" />
+                      <PiUsersThreeFill className="w-7 h-7 text-white" />
                     </div>
                     <div
                       onClick={() => {
@@ -277,7 +364,7 @@ const Tenants = ({ data }: TenantsProps) => {
                       } bg-orange-500 hover:bg-orange-600 rounded-xl p-3 transition transform hover:scale-105 shadow-md flex items-center justify-center`}
                       title="View Properties"
                     >
-                      <BsFillBuildingsFill className="w-6 h-6 text-white" />
+                      <BsFillBuildingsFill className="w-7 h-7 text-white" />
                     </div>
                     <div
                       onClick={handleOpenVehicleModal}
@@ -286,7 +373,25 @@ const Tenants = ({ data }: TenantsProps) => {
                       } bg-orange-500 hover:bg-orange-600 rounded-xl p-3 transition transform hover:scale-105 shadow-md flex items-center justify-center`}
                       title="View Vehicle Settings"
                     >
-                      <FaCar className="w-6 h-6 text-white" />
+                      <FaCar className="w-7 h-7 text-white" />
+                    </div>
+                    <div
+                      onClick={handleOpenDeviceModal}
+                      className={`${
+                        loading ? "cursor-not-allowed" : "cursor-pointer "
+                      } bg-orange-500 hover:bg-orange-600 rounded-xl p-3 transition transform hover:scale-105 shadow-md flex items-center justify-center`}
+                      title="View Vehicle Settings"
+                    >
+                      <MdOutlineImportantDevices className="w-7 h-7 text-white" />
+                    </div>
+                    <div
+                      onClick={handleOpenTransactionModal}
+                      className={`${
+                        loading ? "cursor-not-allowed" : "cursor-pointer "
+                      } bg-orange-500 hover:bg-orange-600 rounded-xl p-3 transition transform hover:scale-105 shadow-md flex items-center justify-center`}
+                      title="View Vehicle Settings"
+                    >
+                      <FaRegCreditCard className="w-7 h-7 text-white" />
                     </div>
                   </div>
 
@@ -319,15 +424,39 @@ const Tenants = ({ data }: TenantsProps) => {
         {/* Vehicle Modal */}
         <Modal isOpen={isVehicleModalOpen} onClose={handleCloseVehicleModal}>
           <VehicleManager
-            carMakes={dropdownData?.carBrands || []}
+            carMakes={vehiclesDropdownData?.carBrands || []}
             carModels={
-              dropdownData?.carBrands
+              vehiclesDropdownData?.carBrands
                 ?.map((brand: { models: Entry[] }) => brand?.models)
                 ?.flat() as Entry[]
             }
-            vehicleTypes={dropdownData?.vehicleTypes || []}
-            vehicleColors={dropdownData?.vehicleColors || []}
+            vehicleTypes={vehiclesDropdownData?.vehicleTypes || []}
+            vehicleColors={vehiclesDropdownData?.vehicleColors || []}
+            fetchVehicleDropdownData={fetchVehicleDropdownData}
           />
+        </Modal>
+
+        {/* Device Modal */}
+        <Modal isOpen={isDeviceModalOpen} onClose={handleCloseDeviceModal}>
+          <div>
+            <DeviceCMS
+              fetchPropertyDevices={fetchPropertyDevices}
+              devices={devicesDropdownData || []}
+            />
+          </div>
+        </Modal>
+
+        {/* Transaction Modal */}
+        <Modal
+          isOpen={isTransactionModalOpen}
+          onClose={handleCloseTransactionModal}
+        >
+          <div>
+            <TransactionTypeManager
+              fetchTransactionTypes={fetchTransactionTypes} // Pass the fetch function ( to refetch after adding/deleting )
+              transactionTypes={transactionTypesDropdownData || []}
+            />
+          </div>
         </Modal>
 
         {/* Reusable User Modal */}

@@ -7,6 +7,7 @@ import {
   IoSettingsOutline,
   IoCarSportOutline,
 } from "react-icons/io5";
+import { BsQuestionSquare } from "react-icons/bs";
 import { TbReportSearch } from "react-icons/tb";
 import { CgProfile } from "react-icons/cg";
 
@@ -18,7 +19,7 @@ export default function OffCanvas({
   isMenuOpen: boolean;
 }) {
   const pathname = usePathname();
-  const { propertyName } = useProperty();
+  const { propertyName, accountUser } = useProperty();
 
   return (
     <>
@@ -47,7 +48,7 @@ export default function OffCanvas({
                 <CgProfile className="w-12 h-12" />
               </div>
               <div className="my-auto">
-                <p>User</p>
+                <p>{accountUser ? accountUser : "User"}</p>
                 <p className="text-xs text-gray-500">Admin</p>
               </div>
             </div>
@@ -71,6 +72,17 @@ export default function OffCanvas({
                 <IoHomeOutline /> Home
               </Link>
               <Link
+                href="/tenants"
+                onClick={() => setIsMenuOpen(false)}
+                className={`${
+                  pathname.includes("tenants")
+                    ? "bg-slate-200 font-bold shadow-inner"
+                    : ""
+                } flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded`}
+              >
+                <IoSettingsOutline /> Tenant Configuration
+              </Link>
+              <Link
                 href="/report"
                 onClick={() => setIsMenuOpen(false)}
                 className={`${
@@ -82,15 +94,15 @@ export default function OffCanvas({
                 <TbReportSearch /> Ticket Report
               </Link>
               <Link
-                href="/tenants"
+                href="/surveys"
                 onClick={() => setIsMenuOpen(false)}
                 className={`${
-                  pathname.includes("tenants")
+                  pathname.includes("surveys")
                     ? "bg-slate-200 font-bold shadow-inner"
                     : ""
                 } flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded`}
               >
-                <IoSettingsOutline /> Tenant Configuration
+                <BsQuestionSquare /> Service Feedback
               </Link>
             </div>
 

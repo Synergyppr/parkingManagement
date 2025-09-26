@@ -124,8 +124,6 @@ export const createAndUpdateUser = async (
     isActive: formData?.isActive ?? true,
   };
 
-  // console.log("Submitting createAndUpdate payload:", payload);
-
   try {
     const res = await fetch(endpoint, {
       method,
@@ -136,8 +134,6 @@ export const createAndUpdateUser = async (
     });
 
     const result = await res.json();
-
-    // console.log("Submission result:", result);
 
     if (result?.result?.status === "200") {
       setModalOpen(false);

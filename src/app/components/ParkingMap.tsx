@@ -222,13 +222,13 @@ const ParkingLot = () => {
               : "max-h-0 opacity-0 p-0"
           } transition-all duration-700 bg-gradient-to-br from-blue-100 to-slate-100 min-h-full`}
         >
-          <div className="grid grid-cols-3 gap-4">
-            {slots.map((slot) => (
+          <div className="grid grid-cols-4 gap-4">
+            {slots?.map((slot) => (
               <div
-                key={slot.id}
+                key={slot?.id}
                 onClick={() => handleSlotClick(slot)}
                 className={`${
-                  slot.status === "busy" || slot.status === "blockedBusy"
+                  slot?.status === "busy" || slot?.status === "blockedBusy"
                     ? "cursor-not-allowed"
                     : "cursor-pointer"
                 } h-20 rounded-lg border shadow-sm flex items-center justify-center font-semibold transition hover:scale-105 relative group overflow-hidden 
@@ -240,26 +240,28 @@ const ParkingLot = () => {
                 {/* Default Slot ID */}
                 <span
                   className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
-                    (slot.status === "busy" || slot.status === "blockedBusy") &&
+                    (slot?.status === "busy" ||
+                      slot?.status === "blockedBusy") &&
                     "group-hover:opacity-0"
                   }`}
                 >
-                  {slot.status !== "available" && slot.status !== "blocked" && (
-                    <FaCar className="text-white mr-2" />
-                  )}
+                  {slot?.status !== "available" &&
+                    slot?.status !== "blocked" && (
+                      <FaCar className="text-white mr-2" />
+                    )}
                   {slot?.id}
                 </span>
 
                 {/* Vehicle Details (busy / blockedBusy) */}
-                {(slot.status === "busy" || slot.status === "blockedBusy") &&
-                  slot.ticket && (
+                {(slot?.status === "busy" || slot?.status === "blockedBusy") &&
+                  slot?.ticket && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-2 text-center">
-                      <p className="font-bold">{slot.ticket.licensePlate}</p>
+                      <p className="font-bold">{slot?.ticket?.licensePlate}</p>
                       <p className="capitalize">
-                        {slot.ticket.color} {slot.ticket.make}{" "}
-                        {slot.ticket.model}
+                        {slot?.ticket?.color} {slot?.ticket?.make}{" "}
+                        {slot?.ticket?.model}
                       </p>
-                      <p className="italic">{slot.ticket.type}</p>
+                      <p className="italic">{slot?.ticket?.type}</p>
                       <FaCar className="mt-1 text-white" />
                     </div>
                   )}

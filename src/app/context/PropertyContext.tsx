@@ -27,6 +27,8 @@ interface PropertyContextType {
   locationMode: "live" | "manual";
   setLocationMode: (mode: "live" | "manual") => void;
   requestLocation: () => void;
+  accountUser?: string | null;
+  setAccountUser: (user: string | null) => void;
 }
 
 const PropertyContext = createContext<PropertyContextType>({
@@ -45,6 +47,8 @@ const PropertyContext = createContext<PropertyContextType>({
   locationMode: "live",
   setLocationMode: () => {},
   requestLocation: () => {},
+  accountUser: undefined,
+  setAccountUser: () => {},
 });
 
 export const PropertyProvider = ({
@@ -61,9 +65,10 @@ export const PropertyProvider = ({
     Record<string, Property>
   >({});
   const [isOutOfArea, setIsOutOfArea] = useState<boolean>(false);
+  const [accountUser, setAccountUser] = useState<string | null>(null);
 
   const handleSetPredefinedProperties = (properties: Property[]) => {
-    const record = properties.reduce((acc, prop) => {
+    const record = properties?.reduce((acc, prop) => {
       acc[prop.id] = {
         id: prop.id,
         name: prop.name,
@@ -84,6 +89,10 @@ export const PropertyProvider = ({
       sessionStorage.getItem("propertyName") ||
       localStorage.getItem("propertyName");
     const storedProperties = localStorage.getItem("properties");
+    const storedUser =
+      sessionStorage.getItem("accountUser") ||
+      localStorage.getItem("accountUser");
+    if (storedUser) setAccountUser(storedUser);
     if (storedId) setPropertyId(storedId);
     if (storedName) setPropertyName(storedName);
 
@@ -161,6 +170,8 @@ export const PropertyProvider = ({
         locationMode,
         setLocationMode,
         requestLocation,
+        accountUser,
+        setAccountUser,
       }}
     >
       {children}
