@@ -106,10 +106,11 @@ export default function TransactionForm({
     }
   };
 
+  // Submit Transaction
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
 
-    if (!form?.amount || !form?.paymentMethod || !form?.referenceNumber) {
+    if (!form?.paymentMethod || !form?.referenceNumber) {
       Swal.fire({
         icon: "warning",
         title: "Incomplete Form",
@@ -128,12 +129,13 @@ export default function TransactionForm({
         longitude: locationMode === "manual" ? longitude : userLng,
         ticketId: ticketId,
         pin: form?.pin || "",
-        // amount: Number(form?.amount) || 0,
         amount: Number(price) || 0,
         paymentMethod: form?.paymentMethod,
         referenceNumber: form?.referenceNumber,
         notes: form?.notes,
       };
+
+      // console.log("Submitting form:", sendForm);
 
       try {
         const res = await fetch("/api/valetTransaction/pay", {
@@ -142,6 +144,8 @@ export default function TransactionForm({
           body: JSON.stringify(sendForm),
         });
         const result = await res.json();
+
+        // console.log("Submission result:", result);
 
         if (result?.result?.status == "200") {
           setOpen(false);
@@ -163,8 +167,12 @@ export default function TransactionForm({
           Swal.fire({
             icon: "error",
             title: "Submission Failed",
-            text: result?.message || "Something went wrong. Please try again.",
+            text:
+              result?.result?.message ||
+              "Something went wrong. Please try again.",
           });
+          setLoader(false);
+          return;
         }
       } catch (error) {
         console.error("Error submitting transaction:", error);
@@ -179,6 +187,7 @@ export default function TransactionForm({
     });
   };
 
+  // Get price based on selected transaction type
   const price = transactionTypes?.find(
     (t) => t?.name === form?.paymentMethod
   )?.value;
@@ -187,20 +196,23 @@ export default function TransactionForm({
     <div>
       <form className="mt-6 px-10 py-2">
         <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-          {/* Ticket Number */}
-          <div className="py-3 px-[10px] flex items-center gap-[26px]">
-            <MdOutlineReceiptLong className="text-blue-600" />
-            <span className="text-gray-700 text-sm">
-              Ticket <span className="font-bold">#{form.referenceNumber}</span>
-            </span>
-          </div>
+          <div className="flex justify-between">
+            {/* Ticket Number */}
+            <div className="py-2 px-[10px] flex items-center gap-[26px]">
+              <MdOutlineReceiptLong className="text-blue-600" />
+              <span className="text-gray-700 text-base">
+                Ticket{" "}
+                <span className="font-bold">#{form?.referenceNumber}</span>
+              </span>
+            </div>
 
-          {/* Value (read-only) */}
-          <div className="py-3 px-[10px] flex items-center gap-[26px]">
-            <FaMoneyBillWave className="text-blue-600" />
-            <span className="text-gray-700 text-sm">
-              Price: <span className="font-bold">${price ? price : 0}</span>
-            </span>
+            {/* Value (read-only) */}
+            <div className="py-2 px-[10px] flex items-center gap-[26px]">
+              <FaMoneyBillWave className="text-blue-600" />
+              <span className="text-gray-700 text-base">
+                Price: <span className="font-bold">${price ? price : 0}</span>
+              </span>
+            </div>
           </div>
 
           {/* Transaction Type */}

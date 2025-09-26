@@ -254,13 +254,6 @@ function EntryManager({
           ? "color"
           : "";
 
-      console.log(
-        "Deleting from endpoint:",
-        endpointName,
-        "with data:",
-        sendForm
-      );
-
       const response = await fetch(
         "/api/vehicleManager/delete/" + endpointName,
         {
@@ -273,8 +266,6 @@ function EntryManager({
       );
 
       const result = await response.json();
-
-      console.log("Delete response:", result);
 
       if (result?.result?.status === "200") {
         await fetchVehicleDropdownData();

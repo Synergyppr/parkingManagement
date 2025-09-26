@@ -3,19 +3,19 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
+import useAuthRedirect from "../hooks/loginHook";
+import { useProperty } from "../context/PropertyContext";
+import { leaveGroup } from "../lib/SignalRProvider";
+import usePropertyListener from "../hooks/usePropertyListener";
 import { FaUser } from "react-icons/fa6";
 import { PiWarningDiamondBold } from "react-icons/pi";
 import { TbLogout2 } from "react-icons/tb";
 import { FaBars } from "react-icons/fa";
 import { GoDotFill } from "react-icons/go";
 import { BiCurrentLocation } from "react-icons/bi";
+import Location from "./Location";
 import Modal from "@/app/components/Modal";
 import OffCanvas from "./OffCanvas";
-import useAuthRedirect from "../hooks/loginHook";
-import { useProperty } from "../context/PropertyContext";
-import { leaveGroup } from "../lib/SignalRProvider";
-import Location from "./Location";
-import usePropertyListener from "../hooks/usePropertyListener";
 
 export default function Header() {
   const router = useRouter();
@@ -26,6 +26,7 @@ export default function Header() {
     setPropertyName,
     locationMode,
     requestLocation,
+    setAccountUser,
   } = useProperty();
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -93,6 +94,7 @@ export default function Header() {
         sessionStorage.clear();
         setPropertyId("");
         setPropertyName("");
+        setAccountUser("");
         router.replace("/");
       }
     });

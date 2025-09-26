@@ -293,7 +293,7 @@ export default function ReceiveForm({
         damageStatus,
       };
 
-      console.log("Submitting form:", sendForm);
+      // console.log("Submitting form:", sendForm);
 
       // return; // Uncomment this line to prevent actual submission during development
 
