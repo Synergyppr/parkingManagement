@@ -21,11 +21,12 @@ export default function LoginForm() {
     setAccountUser,
   } = useProperty();
   const router = useRouter();
+  const [pageLoading, setPageLoading] = useState(true);
+  const [buttonLoading, setButtonLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [deviceType, setDeviceType] = useState("web");
   const [ipAddress, setIpAddress] = useState("");
-  const [loading, setLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const [showLocationToggle, setShowLocationToggle] = useState(false);
 
@@ -87,11 +88,15 @@ export default function LoginForm() {
     setDeviceType(detectDeviceType());
   }, []);
 
+  // Check if already logged in
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
 
     if (isLoggedIn === "true") {
+      setRedirecting(true);
       router.replace("/dashboard");
+    } else {
+      setPageLoading(false);
     }
   }, [router]);
 
@@ -107,7 +112,7 @@ export default function LoginForm() {
       return;
     }
 
-    setLoading(true);
+    setButtonLoading(true);
 
     const sentForm = {
       username: email,
@@ -133,7 +138,7 @@ export default function LoginForm() {
       if (!result) {
         throw new Error("Unexpected error occurred.");
       } else if (result?.status != 200) {
-        setLoading(false);
+        setButtonLoading(false);
         Swal.fire({
           icon: "error",
           title: "Unauthorized",
@@ -186,11 +191,16 @@ export default function LoginForm() {
           setTimeout(() => {
             router.push("/dashboard");
           }, 1200);
-        } //
-      }); //
+        }
+      });
     } catch (error) {
       console.error("Login error:", error);
-      setLoading(false);
+      Swal.fire({
+        icon: "error",
+        title: "Login Error",
+        text: "An error occurred during login. Please try again.",
+      });
+      setButtonLoading(false);
       Swal.fire({
         icon: "error",
         title: "Login Failed",
@@ -219,9 +229,16 @@ export default function LoginForm() {
 
   return (
     <>
-      {redirecting && (
+      {(redirecting === true || pageLoading === true) && (
         <div className="fixed inset-0 bg-black/70 bg-opacity-70 z-50 flex items-center justify-center">
-          <PageLoader />
+          <div className="flex flex-col h-auto">
+            <PageLoader />
+            <p className="text-white text-sm font-light mt-1 relative bottom-[80px] md:bottom-[150px] lg:bottom-[175px]">
+              {redirecting
+                ? "Redirecting to dashboard..."
+                : "Loading, please wait..."}
+            </p>
+          </div>
         </div>
       )}
 
@@ -258,7 +275,7 @@ export default function LoginForm() {
               setPassword(e.target.value)
             }
             maxLength={50}
-            disabled={loading}
+            disabled={buttonLoading}
           />
 
           {showLocationToggle && (
@@ -290,10 +307,10 @@ export default function LoginForm() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={buttonLoading || pageLoading}
             className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 cursor-pointer text-white w-full py-3 font-semibold rounded shadow-md transition-colors"
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {buttonLoading ? "Signing in..." : "Sign In"}
           </button>
         </form>
 

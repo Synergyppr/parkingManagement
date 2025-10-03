@@ -125,10 +125,10 @@ const ModalForm = ({
                         string,
                         Tenant | UserForm | Property
                       >
-                    )[field.name] || ""
+                    ).dateOfBirth
                   )}
                   onChange={onChange}
-                  placeholder=" "
+                  placeholder=""
                   className="w-full text-gray-800 px-2 py-2 border-b border-gray-500 text-sm tracking-tight bg-transparent focus:outline-none focus:border-blue-500 transition-all"
                 />
 

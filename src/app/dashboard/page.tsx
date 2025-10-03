@@ -31,6 +31,8 @@ export default function HomePage() {
     useProperty();
   const saveClickedRef = useRef(false);
   const shouldBypassUnloadPromptRef = useRef(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [buttonLoader, setButtonLoader] = useState<boolean>(false);
   const [form, setForm] = useState<Partial<Ticket>>({}); // Create Valet Ticket Form
   const [initialForm, setInitialForm] = useState<Partial<Ticket>>({});
   const [vehicles, setVehicles] = useState<Ticket[]>([]); // Valet Tickets in status "parked" and "requested"
@@ -64,8 +66,6 @@ export default function HomePage() {
     null
   );
   const [, setHasUnsavedChanges] = useState<boolean>(true);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [buttonLoader, setButtonLoader] = useState<boolean>(false);
   const [transitionState, setTransitionState] = useState<string>("fade-in");
   const frontViewLabelsMap = generateLabelsMap(carParts.frontViewCar);
   const rearViewLabelsMap = generateLabelsMap(carParts.rearViewCar);
@@ -511,107 +511,120 @@ export default function HomePage() {
   };
 
   return (
-    <section
-      className="overflow-y-auto overflow-x-hidden min-h-[calc(100vh-86px)] relative z-0"
-      style={{
-        background:
-          "radial-gradient(circle at center, #ffffff 10%, #e0f2ff 90%)",
-      }}
-    >
-      <TabNavigation
-        selected={activeTab}
-        onSelect={handleTabChange}
-        fetchData={fetchData}
-        unreadTicketIds={unreadRequestedTickets}
-      />
-
-      <div className="w-full max-w-screen-xl mx-auto mt-2">
-        <div className="px-2 md:px-4">
-          {/* Received Tab */}
-          {activeTab === "received" && (
-            <ReceiveForm
-              carBrands={carBrands}
-              vehicleTypes={vehicleTypes}
-              vehicleColors={vehicleColors}
-              fetchData={fetchData}
-              form={form}
-              setForm={setForm}
-              initialForm={initialForm}
-              setInitialForm={setInitialForm}
-              isFormChanged={isFormChanged}
-              shouldBypassUnloadPromptRef={shouldBypassUnloadPromptRef}
-              patronId={form?.patronId as string}
-            />
-          )}
-          {/* Parked, Requested and Ready Tabs */}
-          {loading && activeTab !== "received" ? (
-            <div className="flex items-center justify-center h-full">
-              <PageLoader />
-            </div>
-          ) : (
-            activeTab !== "received" && (
-              <ValetTicketList
-                vehicles={activeTab === "ready" ? readyVehicles : vehicles}
-                activeTab={activeTab}
-                unreadTicketIds={unreadTicketIds}
-                damagedParts={damagedParts}
-                handleFetchTicketDetails={handleFetchTicketDetails}
-                handleStatusChange={handleStatusChange}
-                markAsRead={markAsRead}
-                showTransactionModal={showTransactionModal}
-                setShowTransactionModal={setShowTransactionModal}
-                selectedTicketId={selectedTicketId}
-                fetchData={fetchData}
-                latitude={latitude as number}
-                longitude={longitude as number}
-                locationMode={locationMode}
-                propertyId={propertyId}
-              />
-            )
-          )}
+    <>
+      {loading === true && (
+        <div className="fixed inset-0 bg-black/70 bg-opacity-70 z-50 flex items-center justify-center">
+          <div className="flex flex-col h-auto">
+            <PageLoader />
+            <p className="text-white text-sm font-light mt-1 relative bottom-[80px] md:bottom-[150px] lg:bottom-[175px]">
+              Loading data, please wait a moment...
+            </p>
+          </div>
         </div>
-      </div>
+      )}
+      <section
+        className="overflow-y-auto overflow-x-hidden min-h-[calc(100vh-86px)] relative z-0"
+        style={{
+          background:
+            "radial-gradient(circle at center, #ffffff 10%, #e0f2ff 90%)",
+        }}
+      >
+        <TabNavigation
+          selected={activeTab}
+          onSelect={handleTabChange}
+          fetchData={fetchData}
+          unreadTicketIds={unreadRequestedTickets}
+        />
 
-      {/* Modal for pin confirmation/authentication */}
-      <PinConfirmationModal
-        isOpen={showPinConfirmationModal}
-        onClose={() => setShowPinConfirmationModal(false)}
-        pin={pin}
-        setPin={setPin}
-        showPin={showPin}
-        setShowPin={setShowPin}
-        buttonLoader={buttonLoader}
-        onSubmit={handlePinSubmit}
-        propertyId={propertyId}
-      />
+        <div className="w-full max-w-screen-xl mx-auto mt-2">
+          <div className="px-2 md:px-4">
+            {/* Received Tab */}
+            {activeTab === "received" && (
+              <ReceiveForm
+                carBrands={carBrands}
+                vehicleTypes={vehicleTypes}
+                vehicleColors={vehicleColors}
+                fetchData={fetchData}
+                form={form}
+                setForm={setForm}
+                initialForm={initialForm}
+                setInitialForm={setInitialForm}
+                isFormChanged={isFormChanged}
+                shouldBypassUnloadPromptRef={shouldBypassUnloadPromptRef}
+                patronId={form?.patronId as string}
+              />
+            )}
+            {/* Parked, Requested and Ready Tabs */}
+            {loading && activeTab !== "received" ? (
+              <div className="flex items-center justify-center h-full">
+                <PageLoader />
+              </div>
+            ) : (
+              activeTab !== "received" && (
+                <ValetTicketList
+                  vehicles={activeTab === "ready" ? readyVehicles : vehicles}
+                  activeTab={activeTab}
+                  unreadTicketIds={unreadTicketIds}
+                  damagedParts={damagedParts}
+                  handleFetchTicketDetails={handleFetchTicketDetails}
+                  handleStatusChange={handleStatusChange}
+                  markAsRead={markAsRead}
+                  showTransactionModal={showTransactionModal}
+                  setShowTransactionModal={setShowTransactionModal}
+                  selectedTicketId={selectedTicketId}
+                  fetchData={fetchData}
+                  latitude={latitude as number}
+                  longitude={longitude as number}
+                  locationMode={locationMode}
+                  propertyId={propertyId}
+                  pageLoading={loading}
+                />
+              )
+            )}
+          </div>
+        </div>
 
-      {/* Ticket Details Modal */}
-      <TicketDetailsModal
-        isOpen={showTicketDetailsModal}
-        onClose={handleCloseTicketDetails}
-        ticketDetails={ticketDetails}
-        detailsActiveTab={detailsActiveTab}
-        setDetailsActiveTab={setDetailsActiveTab}
-        transitionState={transitionState}
-        setTransitionState={setTransitionState}
-        noIncident={noIncident}
-        setNoIncident={setNoIncident}
-        incidentParts={incidentParts}
-        setIncidentParts={setIncidentParts}
-        descriptions={descriptions}
-        setDescriptions={setDescriptions}
-        damagedParts={damagedParts}
-        viewAllDamagedParts={viewAllDamagedParts}
-        setViewAllDamagedParts={setViewAllDamagedParts}
-        formLicensePlate={formLicensePlate}
-        findLinkedGroup={findLinkedGroup}
-        frontViewLabelsMap={frontViewLabelsMap}
-        rearViewLabelsMap={rearViewLabelsMap}
-        passengerViewLabelsMap={passengerViewLabelsMap}
-        driverViewLabelsMap={driverViewLabelsMap}
-        setHasUnsavedChanges={setHasUnsavedChanges}
-        saveClickedRef={saveClickedRef}
-      />
-    </section>
+        {/* Modal for pin confirmation/authentication */}
+        <PinConfirmationModal
+          isOpen={showPinConfirmationModal}
+          onClose={() => setShowPinConfirmationModal(false)}
+          pin={pin}
+          setPin={setPin}
+          showPin={showPin}
+          setShowPin={setShowPin}
+          buttonLoader={buttonLoader}
+          onSubmit={handlePinSubmit}
+          propertyId={propertyId}
+        />
+
+        {/* Ticket Details Modal */}
+        <TicketDetailsModal
+          isOpen={showTicketDetailsModal}
+          onClose={handleCloseTicketDetails}
+          ticketDetails={ticketDetails}
+          detailsActiveTab={detailsActiveTab}
+          setDetailsActiveTab={setDetailsActiveTab}
+          transitionState={transitionState}
+          setTransitionState={setTransitionState}
+          noIncident={noIncident}
+          setNoIncident={setNoIncident}
+          incidentParts={incidentParts}
+          setIncidentParts={setIncidentParts}
+          descriptions={descriptions}
+          setDescriptions={setDescriptions}
+          damagedParts={damagedParts}
+          viewAllDamagedParts={viewAllDamagedParts}
+          setViewAllDamagedParts={setViewAllDamagedParts}
+          formLicensePlate={formLicensePlate}
+          findLinkedGroup={findLinkedGroup}
+          frontViewLabelsMap={frontViewLabelsMap}
+          rearViewLabelsMap={rearViewLabelsMap}
+          passengerViewLabelsMap={passengerViewLabelsMap}
+          driverViewLabelsMap={driverViewLabelsMap}
+          setHasUnsavedChanges={setHasUnsavedChanges}
+          saveClickedRef={saveClickedRef}
+        />
+      </section>
+    </>
   );
 }

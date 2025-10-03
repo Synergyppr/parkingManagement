@@ -271,8 +271,8 @@ export default function ReceiveForm({
       const { latitude: userLat, longitude: userLng } = position.coords;
       const rawPhone = (form?.phoneNumber || "").replace(/\D/g, "");
       const last10 = rawPhone.slice(-10); // always keep only 10 digits
-
       const validAreaCode = form?.areaCode || "+1";
+      
       const sendForm = {
         latitude: locationMode === "manual" ? latitude : userLat,
         // latitude: 18.426434330459355, //250

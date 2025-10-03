@@ -64,6 +64,9 @@ const GetPropertyDevicesEndpoint =
 const CreateOrUpdateDeviceEndpoint =
   process.env.CREATE_OR_UPDATE_DEVICE_ENDPOINT + "";
 const DeleteDeviceEndpoint = process.env.DELETE_DEVICE_ENDPOINT + "";
+const GetSurveyReportEndpoint = process.env.GET_SURVEY_REPORT_ENDPOINT + "";
+const GetPatronRatingByIdEndpoint =
+  process.env.GET_PATRON_RATING_BY_ID_ENDPOINT + "";
 
 const Endpoints = [
   {
@@ -222,6 +225,14 @@ const Endpoints = [
   {
     name: "Delete Device",
     endpoint: DeleteDeviceEndpoint,
+  },
+  {
+    name: "Get Survey Report",
+    endpoint: GetSurveyReportEndpoint,
+  },
+  {
+    name: "Get Patron Rating By ID",
+    endpoint: GetPatronRatingByIdEndpoint,
   },
 ];
 

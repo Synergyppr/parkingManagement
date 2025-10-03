@@ -71,7 +71,7 @@ const RequestCar = () => {
   const [ratedStars, setRatedStars] = useState(0);
   const [comment, setComment] = useState("");
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
-  const [smsConsent, setSmsConsent] = useState(true);
+  const [smsConsent, setSmsConsent] = useState(false);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -297,7 +297,7 @@ const RequestCar = () => {
         comment: comment,
       };
 
-      const res = await fetch("/api/patronRating", {
+      const res = await fetch("/api/patronRating/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(sendForm),

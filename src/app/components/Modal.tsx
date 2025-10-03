@@ -13,7 +13,7 @@ export default function Modal({
   size,
 }: {
   isOpen: boolean;
-  onClose: () => void;
+  onClose: (form?: string) => void;
   onRequestClose?: () => void; // Handles confirmation instead of direct discard
   children: React.ReactNode;
   placementX?: "center" | "start" | "end";

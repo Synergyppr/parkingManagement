@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
+import { FaPencil, FaPlus } from "react-icons/fa6";
 import Modal from "./Modal";
 import PropertyForm from "./PropertyForm";
-import { FaPencil, FaPlus } from "react-icons/fa6";
 
 interface Property {
   id?: string;

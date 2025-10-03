@@ -69,7 +69,7 @@ export const formatDatePicker = (dateTime: string) => {
   const date = new Date(dateTime);
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  const day = String(date.getDate() + 1).padStart(2, "0");
   return `${year}-${month}-${day}`;
 };
 
@@ -77,8 +77,12 @@ export const formatDatePicker = (dateTime: string) => {
 
 export function formatDateOfBirth(dateString: string): string {
   if (!dateString) return "";
+  
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return dateString; // fallback if invalid
+
+  // Add 1 day (in milliseconds)
+  date.setDate(date.getDate() + 1);
 
   return date.toLocaleDateString("en-US", {
     year: "numeric",
@@ -95,7 +99,8 @@ export function formatPhoneNumber(value: string): string {
   if (!rawValue) return "";
 
   // Separate area code (everything before last 10 digits) and phone number
-  const areaCode = rawValue.length > 10 ? rawValue.slice(0, rawValue.length - 10) : "";
+  const areaCode =
+    rawValue.length > 10 ? rawValue.slice(0, rawValue.length - 10) : "";
   const phoneNumber = rawValue.slice(-10);
 
   let formatted = "";
@@ -105,7 +110,10 @@ export function formatPhoneNumber(value: string): string {
   } else if (phoneNumber.length <= 6) {
     formatted = `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
   } else {
-    formatted = `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6)}`;
+    formatted = `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(
+      3,
+      6
+    )}-${phoneNumber.slice(6)}`;
   }
 
   return areaCode ? `+${areaCode} ${formatted}` : formatted;

@@ -59,7 +59,7 @@ export default function UserFormWrapper({
   setModalOpen?: (isOpen: boolean) => void;
 }) {
   const [form, setForm] = useState<UserForm>({
-    id: data?.id,
+    id: data?.id || undefined,
     userName: data?.userName || "",
     pin: data?.pin || "",
     firstName: data?.firstName || "",
@@ -80,9 +80,10 @@ export default function UserFormWrapper({
         ...prev,
         firstName,
         lastName,
-        dateOfBirth: data?.dateOfBirth
-          ? formatDatePicker(data.dateOfBirth)
-          : "",
+        dateOfBirth:
+          data?.dateOfBirth?.length > 1
+            ? formatDatePicker(data.dateOfBirth)
+            : "",
         role: data?.role,
       }));
     }
@@ -104,19 +105,20 @@ export default function UserFormWrapper({
   const handleSubmit = async () => {
     setLoading(true);
     try {
+      const sendForm = {
+        ...form,
+        role: form.role,
+        id: form.id,
+        tenantId: tenantId,
+        firstName: form.firstName,
+        lastName: form.lastName,
+        gender: form.gender,
+        dateOfBirth: form.dateOfBirth,
+        isActive: form.isActive,
+      };
+
       await createAndUpdateUser(
-        {
-          ...form,
-          role: form.role,
-          id: form.id,
-          tenantId: tenantId,
-          // userName: form.userName,
-          firstName: form.firstName,
-          lastName: form.lastName,
-          gender: form.gender,
-          dateOfBirth: form.dateOfBirth,
-          isActive: form.isActive,
-        },
+        sendForm,
         setMissingFields,
         setButtonLoader,
         tenantId,
@@ -133,17 +135,17 @@ export default function UserFormWrapper({
 
   return (
     <ModalForm
-      title={form.id ? "Update User" : "Create User"}
+      title={form?.id ? "Update User" : "Create User"}
       initialData={form as UserForm}
       fields={fields}
       onChange={handleChange}
       onSubmit={handleSubmit}
-      isActive={form.isActive}
+      isActive={form?.isActive}
       onToggleActive={() =>
-        setForm((prev) => ({ ...prev, isActive: !prev.isActive }))
+        setForm((prev) => ({ ...prev, isActive: !prev?.isActive }))
       }
       showActiveToggle
-      submitLabel={form.id ? "Update User" : "Create User"}
+      submitLabel={form?.id ? "Update User" : "Create User"}
       loading={loading}
     />
   );

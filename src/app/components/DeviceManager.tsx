@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { useProperty } from "../context/PropertyContext";
-import { FaMobileAlt } from "react-icons/fa";
+import { formatPhoneNumber } from "../lib/clientUtils";
 import { MdOutlineContactPhone } from "react-icons/md";
 import FormInput from "./elements/FormInput";
+import PhoneInputWithAreaCode from "./elements/PhoneInputWithAreaCode";
 
 interface Device {
   id: number | null;
@@ -22,6 +23,7 @@ function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
   const { propertyId } = useProperty();
   const [devices, setDevices] = useState<Device[]>(data || []);
   const [formName, setFormName] = useState("");
+  const [formAreaCode, setFormAreaCode] = useState("");
   const [formPhone, setFormPhone] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [buttonLoading, setButtonLoading] = useState(false);
@@ -37,11 +39,15 @@ function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
     setButtonLoading(true);
 
     try {
+      const rawPhone = (formPhone || "").replace(/\D/g, "");
+      const last10 = rawPhone.slice(-10); // always keep only 10 digits
+      const validAreaCode = formAreaCode || "+1";
+
       const sendForm: Device = {
         id: editingId || null,
         propertyId: propertyId || "",
         name: formName,
-        phone: formPhone,
+        phone: validAreaCode + last10,
       };
 
       const response = await fetch(`/api/devices/createOrEdit`, {
@@ -127,21 +133,26 @@ function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
     <div className="overflow-hidden bg-white text-gray-800 relative">
       <div className="p-4 min-h-full">
         {/* Add Form */}
-        <form className="flex flex-col sm:flex-row gap-2 mb-4">
-          <FormInput
-            name="formName"
-            placeholder="Device Name"
-            icon={<MdOutlineContactPhone />}
-            value={formName}
-            onChange={(e) => setFormName(e.target.value)}
-            onClear={() => setFormName("")}
-          />
-          <FormInput
-            name="formPhone"
-            placeholder="Phone Number"
-            icon={<FaMobileAlt />}
-            value={formPhone}
-            onChange={(e) => setFormPhone(e.target.value)}
+        <form className="flex flex-col sm:flex-row gap-2 mb-4 justify-baseline">
+          <div className="relative top-[3px]">
+            <FormInput
+              name="formName"
+              placeholder="Device Name"
+              icon={<MdOutlineContactPhone />}
+              value={formName}
+              onChange={(e) => setFormName(e.target.value)}
+              onClear={() => setFormName("")}
+            />
+          </div>
+          <PhoneInputWithAreaCode
+            areaCode={formAreaCode || ""}
+            phoneNumber={formPhone || ""}
+            onAreaCodeChange={(e) => setFormAreaCode(e.target.value)}
+            onPhoneNumberChange={(e) => {
+              const rawValue = e.target.value.replace(/\D/g, "");
+              const formatted = formatPhoneNumber(rawValue);
+              setFormPhone(formatted);
+            }}
             onClear={() => setFormPhone("")}
           />
           <button

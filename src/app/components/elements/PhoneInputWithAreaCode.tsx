@@ -27,7 +27,7 @@ export default function PhoneInputWithAreaCode({
   );
 
   return (
-    <div className="relative w-full flex items-center border-b border-gray-500 focus-within:ring-1 focus-within:ring-[#ef6c00] rounded-sm">
+    <div className="relative w-full flex items-center border-b border-gray-500 focus-within:ring-1 focus-within:ring-[#ef6c00]">
       {/* Phone Icon */}
       <div
         className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${

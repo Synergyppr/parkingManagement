@@ -1,6 +1,7 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Swal from "sweetalert2";
+import { useProperty } from "../context/PropertyContext";
 import {
   carParts,
   findLinkedGroup,
@@ -10,29 +11,13 @@ import { FaStar } from "react-icons/fa";
 import { PiUserCircleFill } from "react-icons/pi";
 import TicketDetailsModal from "./TicketDetailsModal";
 
-const surveyList = [
-  {
-    id: 1,
-    rating: 4.5,
-    comment: "The service was great, but waiting time could be shorter.",
-    author: "John Doe",
-    ticketId: "8c63540c-2b3b-497c-b476-1ae4a15624f7",
-  },
-  {
-    id: 2,
-    rating: 3.8,
-    comment: "Product quality is decent but packaging was damaged.",
-    author: "Jane Smith",
-    ticketId: "4f11d868-98f4-4aed-b6f9-fba13dd440e5",
-  },
-  {
-    id: 3,
-    rating: 4.2,
-    comment: "",
-    author: "Alice Johnson",
-    ticketId: "f180e683-fa97-4306-a127-3a762a4dac26",
-  },
-];
+interface Survey {
+  id: string;
+  fullName: string;
+  comments?: string;
+  ticketId: string;
+  rating: number;
+}
 
 const renderStars = (rating: number) => {
   const stars = [];
@@ -49,7 +34,9 @@ const renderStars = (rating: number) => {
 };
 
 const Surveys = () => {
+  const { propertyId } = useProperty();
   const saveClickedRef = useRef(false);
+  const [report, setReport] = useState<Survey[]>([]);
   const [ticketDetails, setTicketDetails] = useState(null); // Placeholder for ticket details
   const [showTicketDetailsModal, setShowTicketDetailsModal] = useState(false);
   const [detailsActiveTab, setDetailsActiveTab] = useState("Details");
@@ -68,6 +55,31 @@ const Surveys = () => {
   const rearViewLabelsMap = generateLabelsMap(carParts.rearViewCar);
   const passengerViewLabelsMap = generateLabelsMap(carParts.passengerViewCar); // Right-Side View
   const driverViewLabelsMap = generateLabelsMap(carParts.driverViewCar); // Left-Side View
+
+  useEffect(() => {
+    const fetchSurveys = async () => {
+      if (!propertyId) return;
+      try {
+        const res = await fetch("/api/patronRating/getAll", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: propertyId }),
+        });
+
+        const data = await res.json();
+
+        if (data?.status === "200") setReport(data?.data || []);
+        else {
+          console.log("Failed to fetch surveys", data?.message);
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to fetch surveys", error);
+      }
+    };
+
+    fetchSurveys();
+  }, [propertyId]);
 
   const handleFetchTicketDetails = async (id: string) => {
     if (!id) return;
@@ -177,15 +189,15 @@ const Surveys = () => {
   };
 
   return (
-    <div className="text-gray-800 lg:min-w-[60%]">
+    <div className="text-gray-800 lg:min-w-[60%] mt-10">
       <h1 className="text-3xl font-bold tracking-tight mb-4">
         Valet Service Feedback
       </h1>
 
       <div className="space-y-4 py-2">
-        {surveyList?.map((survey) => (
+        {report?.map((survey) => (
           <div
-            key={survey.id}
+            key={survey?.id}
             className="rounded-xl border border-gray-200 p-6 mt-2"
           >
             {/* Header: Author + Rating */}
@@ -193,21 +205,21 @@ const Surveys = () => {
               <div className="flex items-center gap-2">
                 <PiUserCircleFill className="w-6 h-6 text-gray-500" />
                 <p className="font-bold text-gray-700 text-lg">
-                  {survey.author}
+                  {survey?.fullName}
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                {renderStars(survey.rating)}
+                {renderStars(survey?.rating)}
                 <span className="text-gray-600 text-sm">
-                  {survey.rating.toFixed(1)}
+                  {survey?.rating?.toFixed(1)}
                 </span>
               </div>
             </div>
 
             {/* Comment */}
             <div className="bg-gray-50 rounded-lg p-4 text-gray-700 text-sm">
-              {survey?.comment ? (
-                <p>{survey.comment}</p>
+              {survey?.comments ? (
+                <p>{survey?.comments}</p>
               ) : (
                 <p className="italic text-gray-400">No comment provided.</p>
               )}

@@ -1,10 +1,60 @@
 import Swal from "sweetalert2";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+
+interface Tenant {
+  id: string;
+  name: string;
+  type: string;
+  description?: string;
+  isActive: boolean;
+  setTenants?: (tenants: Tenant[]) => void;
+}
+
 //////////////////////////////////////////////////////////////////////////
-//  TENANT CREATION/UPDATE/DELETE
+//  TENANT GET/CREATION/UPDATE/DELETE
+
+export const getTenants = async ({
+  setTenants,
+}: {
+  setTenants?: (tenants: Tenant[]) => void;
+}) => {
+  const method = "GET";
+  const endpoint = "/api/tenants/get";
+
+  try {
+    const res = await fetch(endpoint, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const response = await res.json();
+
+    if (response?.data?.status === "200") {
+      setTenants?.(response?.data?.data || []);
+    } else {
+      console.error("Failed to fetch tenants:", response);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: response?.result?.message || "Something went wrong.",
+      });
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "An error occurred while processing your request.",
+    });
+  }
+};
 
 export const createAndUpdateTenant = async ({
   form,
   onClose,
+  setAllTenants,
 }: {
   form: {
     id?: string;
@@ -14,6 +64,7 @@ export const createAndUpdateTenant = async ({
     isActive?: boolean;
   };
   onClose?: (open: boolean) => void;
+  setAllTenants?: (tenants: Tenant[]) => void;
 }) => {
   if (!form?.name || !form?.type) {
     Swal.fire({
@@ -28,7 +79,7 @@ export const createAndUpdateTenant = async ({
   const endpoint = "/api/tenants/createAndUpdate";
   const payload = {
     ...form,
-    isActive: form?.isActive ?? true,
+    isActive: form?.isActive,
   };
 
   try {
@@ -49,12 +100,10 @@ export const createAndUpdateTenant = async ({
         showConfirmButton: false,
         timer: 1500,
       });
-
+      await getTenants({ setTenants: setAllTenants });
       onClose?.(false);
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
     } else {
+      console.error("Failed to create/update tenant:", response);
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -71,7 +120,10 @@ export const createAndUpdateTenant = async ({
   }
 };
 
-export const handleTenantDelete = async (tenantId: string) => {
+export const handleTenantDelete = async (
+  tenantId: string,
+  router: AppRouterInstance
+) => {
   Swal.fire({
     title: "Delete Tenant",
     text: "You are about to delete this tenant. Are you sure?",
@@ -86,12 +138,14 @@ export const handleTenantDelete = async (tenantId: string) => {
       const res = await fetch(`/api/tenants/delete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(tenantId),
+        body: JSON.stringify({ id: tenantId }),
       });
 
       const result = await res.json();
 
-      if (result) {
+      console.log("Delete response:", result);
+
+      if (result?.result?.status === "200") {
         Swal.fire({
           icon: "success",
           title: "Tenant deleted successfully!",
@@ -99,7 +153,7 @@ export const handleTenantDelete = async (tenantId: string) => {
           timer: 1500,
         });
         setTimeout(() => {
-          window.location.reload();
+          router.refresh();
         }, 500);
       } else {
         console.error("Failed to delete tenant:", result);

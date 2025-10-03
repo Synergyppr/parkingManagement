@@ -246,6 +246,9 @@ const Report = () => {
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
                   Date
                 </th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                  View Details
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">

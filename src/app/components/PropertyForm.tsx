@@ -33,6 +33,7 @@ export default function ModalPropertyForm({
   setModalOpen,
 }: PropertyFormProps) {
   const { latitude, longitude } = useProperty();
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<Property>({
     tenantId: tenantId,
     name: "",
@@ -59,6 +60,8 @@ export default function ModalPropertyForm({
       return;
     }
 
+    setLoading(true);
+
     const method = "POST";
     const endpoint = "/api/properties/createAndUpdate";
 
@@ -73,12 +76,13 @@ export default function ModalPropertyForm({
         latitude: Number(form?.latitude) || 0,
         longitude: Number(form?.longitude) || 0,
         radiusMeters: Number(form?.radius) || 0,
+        isActive: form?.isActive,
       };
     } else {
       payload = {
         ...form,
         tenantId: tenantId || form?.tenantId,
-        isActive: form?.isActive ?? true,
+        isActive: form?.isActive,
         latitude: Number(form?.latitude) || 0,
         longitude: Number(form?.longitude) || 0,
         radiusMeters: Number(form?.radius) || 0,
@@ -194,6 +198,8 @@ export default function ModalPropertyForm({
       )}
 
       <button
+        type="button"
+        disabled={loading}
         onClick={handleSubmit}
         className="bg-blue-600 hover:bg-blue-700 text-white p-3 w-full rounded-md font-semibold shadow cursor-pointer transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
       >

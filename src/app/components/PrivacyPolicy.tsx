@@ -16,7 +16,7 @@ export default function PrivacyPolicy() {
               className="cursor-pointer opacity-70 w-[60px] h-[60px] md:w-[70px] md:h-[70px] lg:w-[80px] lg:h-[80px] drop-shadow-lg transition-transform duration-700 hover:scale-105"
               width={100}
               height={100}
-              src="/favicon.png"
+              src="/shortlogo.png"
               alt="Logo"
             />
           </div>
@@ -26,7 +26,7 @@ export default function PrivacyPolicy() {
             className="w-[80px] h-[80px] md:w-[100px] md:h-[100px] drop-shadow-lg opacity-90 mb-0 block md:hidden lg:hidden"
             width={100}
             height={100}
-            src="/favicon.png"
+            src="/shortlogo.png"
             alt="Logo"
           />
           <h1 className="text-3xl font-bold px-4 text-center md:mr-10">

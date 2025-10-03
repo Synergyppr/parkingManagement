@@ -14,7 +14,7 @@ interface EntityListModalProps<T> {
   renderItem: (item: T, onEdit: (item: T) => void) => ReactNode;
   FormComponent: React.ComponentType<{
     data: T | null;
-    onClose: () => void;
+    onClose: (form?: string) => void;
     refresh: (id: string) => void;
     tenantId?: string;
   }>;
@@ -22,6 +22,11 @@ interface EntityListModalProps<T> {
   refresh: (id: string) => void;
   filterFn?: (item: T, activeTab: string) => boolean;
   emptyMessage?: string;
+  isFormOpen: boolean;
+  setIsFormOpen: (isOpen: boolean) => void;
+  selectedEntity: T | null;
+  setSelectedEntity: (entity: T | null) => void;
+  handleCloseForm: (form?: string) => void;
 }
 
 export default function ListModal<T>({
@@ -34,23 +39,20 @@ export default function ListModal<T>({
   tenantId,
   refresh,
   filterFn,
+  isFormOpen,
+  setIsFormOpen,
+  selectedEntity,
+  setSelectedEntity,
+  handleCloseForm,
   activeTabs = ["Active", "Inactive"],
   emptyMessage = "No records found.",
 }: EntityListModalProps<T>) {
   const [activeTab, setActiveTab] = useState(activeTabs[0]);
   const [transitionState, setTransitionState] = useState("fade-in");
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedEntity, setSelectedEntity] = useState<T | null>(null);
-
-  const handleCloseForm = () => {
-    setIsFormOpen(false);
-    setSelectedEntity(null);
-    onClose();
-  };
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={handleCloseForm}>
+      <Modal isOpen={isOpen} onClose={onClose}>
         <div className="flex justify-between items-center mb-2 border-y-[.5px] border-solid border-gray-800 p-1">
           <h2 className="text-xl font-bold text-black tracking-tight">
             {title}
@@ -110,7 +112,7 @@ export default function ListModal<T>({
         )}
       </Modal>
 
-      <Modal isOpen={isFormOpen} onClose={handleCloseForm}>
+      <Modal isOpen={isFormOpen} onClose={(form) => handleCloseForm(form)}>
         <FormComponent
           tenantId={tenantId}
           data={selectedEntity}

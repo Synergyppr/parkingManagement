@@ -1,7 +1,8 @@
 "use client";
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Ticket } from "@/app/types";
+import { FaCheck } from "react-icons/fa6";
+import { MdOutlineCarCrash } from "react-icons/md";
 import Modal from "./Modal";
 import TransactionForm from "./TransactionForm";
 
@@ -24,6 +25,7 @@ interface ValetTicketListProps {
   longitude?: number;
   locationMode?: "live" | "manual";
   propertyId?: string | null;
+  pageLoading?: boolean;
 }
 
 interface TransactionForm {
@@ -49,7 +51,9 @@ export default function ValetTicketList({
   longitude,
   locationMode,
   propertyId,
+  pageLoading,
 }: ValetTicketListProps) {
+  const [acknowledged, setAcknowledged] = useState(false);
   const [transactionForm, setTransactionForm] = useState<TransactionForm>({
     amount: 0,
     paymentMethod: "",
@@ -59,7 +63,7 @@ export default function ValetTicketList({
   const [clickLoader, setClickLoader] = React.useState(false);
   const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       setMousePos({ x: e.clientX, y: e.clientY });
     };
@@ -208,19 +212,8 @@ export default function ValetTicketList({
 
                   {activeTab !== "ready" && (
                     <div className="flex flex-col gap-1 mt-auto">
-                      {/* {activeTab == "requested" && (
-                        <button
-                          type="button"
-                          className="cursor-pointer my-auto bg-gradient-to-r from-gray-100 to-gray-200 hover:bg-gray-400 text-blue-700 shadow-mdtransform transition-all 
-                        duration-300 hover:scale-[1.01] py-2 px-6 font-semibold shadow-sm tracking-tight rounded"
-                          onClick={() =>
-                            handleStatusChange(vehicle?.id, "parked")
-                          }
-                        >
-                          Park
-                        </button>
-                      )} */}
                       <button
+                        disabled={pageLoading}
                         type="button"
                         className="cursor-pointer my-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 transform transition-all 
                         duration-300 hover:scale-[1.01] text-white py-2 px-6 font-semibold shadow-sm tracking-tight rounded"
@@ -260,9 +253,34 @@ export default function ValetTicketList({
           );
         })
       ) : (
-        <p className="text-center text-gray-500 tracking-tight italic font-light">
-          No vehicles in this status.
-        </p>
+        <div className="flex flex-col items-center justify-center py-16 px-6 border border-gray-200 transition">
+          <MdOutlineCarCrash className="w-48 h-48 text-slate-300 mb-0" />
+          <h3 className="text-2xl font-bold text-gray-800 mb-2 text-center lg:text-left">
+            No vehicles available
+          </h3>
+          <p className="text-gray-500 text-center mb-6 max-w-md font-sans font-light">
+            There are currently no vehicles in this status. Once a vehicle is
+            added or updated to this status, it will appear here.
+          </p>
+
+          <button
+            disabled={pageLoading}
+            onClick={() => setAcknowledged(true)}
+            className={`relative flex items-center justify-center px-6 py-3 rounded-lg font-semibold transition-all duration-1000 ${
+              acknowledged
+                ? "text-white w-12 h-12 rounded-full bg-primary"
+                : "bg-primary text-white hover:bg-primary/90"
+            }`}
+          >
+            {acknowledged ? (
+              <span>
+                <FaCheck className="w-5 h-5 text-white z-10" />
+              </span>
+            ) : (
+              "Got it!"
+            )}
+          </button>
+        </div>
       )}
 
       {selectedTicketId && (

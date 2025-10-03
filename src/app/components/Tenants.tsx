@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import {
   handleTenantDelete,
@@ -49,6 +50,7 @@ interface DropdownData {
 const Tenants = ({ data }: TenantsProps) => {
   const tenants = data?.data;
   const { propertyId } = useProperty();
+  const router = useRouter();
   const [tenantData, setTenantData] = useState(data?.data);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [selectedTenantId, setSelectedTenantId] = useState<string>("");
@@ -68,18 +70,51 @@ const Tenants = ({ data }: TenantsProps) => {
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const [isUserFormOpen, setIsUserFormOpen] = useState(false);
+  const [isPropertyFormOpen, setIsPropertyFormOpen] = useState(false);
+  const [selectedEntity, setSelectedEntity] = useState<
+    UserFormType | Property | null
+  >(null);
 
-  const refresh = () => {
-    return;
+  const handleCloseForm = (form?: string) => {
+    if (form === "user") setIsUserFormOpen(false);
+    if (form === "property") setIsPropertyFormOpen(false);
+    setSelectedEntity(null);
+  };
+
+  const refreshProperties = () => {
+    if (!selectedTenantId) return;
+    getPropertiesByTenant(
+      selectedTenantId,
+      setSelectedTenantId,
+      setLoading,
+      setProperties,
+      setIsPropertyModalOpen
+    );
+  };
+
+  const refreshUsers = (id: string) => {
+    if (!id) return;
+    getUsersByTenant(
+      id,
+      setLoading,
+      setSelectedTenantId,
+      setUsers,
+      setIsUserModalOpen
+    );
   };
 
   useEffect(() => {
     if (tenantData) {
       setTenantData(tenantData);
     }
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    router.refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantData]);
 
   const fetchVehicleDropdownData = async () => {
     try {
@@ -183,6 +218,7 @@ const Tenants = ({ data }: TenantsProps) => {
 
   const handleCloseTenantModal = () => {
     setIsTenantModalOpen(false);
+    setIsUserModalOpen(false);
     setSelectedTenant(null);
   };
 
@@ -266,7 +302,7 @@ const Tenants = ({ data }: TenantsProps) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {tenants?.map((tenant) => (
               <div
-                key={tenant.id}
+                key={tenant?.id}
                 className="rounded-2xl shadow-md overflow-hidden bg-white text-gray-800 relative"
                 onClick={() => {
                   if (!selectedTenantId) {
@@ -289,7 +325,9 @@ const Tenants = ({ data }: TenantsProps) => {
                       <FaPencil className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleTenantDelete(tenant?.id as string)}
+                      onClick={() =>
+                        handleTenantDelete(tenant?.id as string, router)
+                      }
                       className="p-2 rounded hover:bg-white/20 transition cursor-pointer"
                       title="Delete Tenant"
                     >
@@ -416,8 +454,7 @@ const Tenants = ({ data }: TenantsProps) => {
           <TenantForm
             data={selectedTenant || null}
             onClose={handleCloseTenantModal}
-            refresh={refresh}
-            initialData={tenantData || []}
+            setAllTenants={setTenantData}
           />
         </Modal>
 
@@ -466,21 +503,18 @@ const Tenants = ({ data }: TenantsProps) => {
           onClose={handleCloseUserModal}
           entities={users}
           tenantId={selectedTenantId}
-          refresh={() =>
-            getUsersByTenant(
-              selectedTenantId,
-              setLoading,
-              setSelectedTenantId,
-              setUsers,
-              setIsUserModalOpen
-            )
-          }
-          FormComponent={({ data, onClose }) => (
+          refresh={refreshUsers}
+          isFormOpen={isUserFormOpen}
+          setIsFormOpen={setIsUserFormOpen}
+          selectedEntity={selectedEntity}
+          setSelectedEntity={setSelectedEntity}
+          handleCloseForm={() => handleCloseForm("user")}
+          FormComponent={({ data }) => (
             <UserForm
               tenantId={selectedTenantId as string}
               data={(data as UserFormType) || null}
-              refresh={refresh}
-              setModalOpen={onClose}
+              refresh={refreshUsers}
+              setModalOpen={setIsUserFormOpen}
             />
           )}
           filterFn={(user, activeTab) => {
@@ -491,17 +525,20 @@ const Tenants = ({ data }: TenantsProps) => {
           renderItem={(user, onEdit) => (
             <div className="p-4 rounded shadow bg-white text-sm space-y-1 text-gray-800">
               <p>
-                <strong>Name:</strong> {user?.fullName}
+                <strong>Name:</strong> {(user as UserFormType)?.fullName}
               </p>
               <p>
-                <strong>Username:</strong> {user?.userName}
+                <strong>Username:</strong> {(user as UserFormType)?.userName}
               </p>
               <p>
                 <strong>Gender:</strong>{" "}
-                <span className="uppercase">{user?.gender}</span>
+                <span className="uppercase">
+                  {(user as UserFormType)?.gender}
+                </span>
               </p>
               <p>
-                <strong>DOB:</strong> {formatDateOfBirth(user?.dateOfBirth)}
+                <strong>DOB:</strong>{" "}
+                {formatDateOfBirth((user as UserFormType)?.dateOfBirth)}
               </p>
               <button
                 onClick={() => onEdit(user)}
@@ -520,21 +557,18 @@ const Tenants = ({ data }: TenantsProps) => {
           onClose={handleClosePropertyModal}
           entities={properties}
           tenantId={selectedTenantId}
-          refresh={() => {
-            if (!selectedTenantId) return;
-            getPropertiesByTenant(
-              selectedTenantId,
-              setSelectedTenantId,
-              setLoading,
-              setProperties,
-              setIsPropertyModalOpen
-            );
-          }}
-          FormComponent={({ data, onClose }) => (
+          refresh={refreshProperties}
+          isFormOpen={isPropertyFormOpen}
+          setIsFormOpen={setIsPropertyFormOpen}
+          selectedEntity={selectedEntity}
+          setSelectedEntity={setSelectedEntity}
+          handleCloseForm={() => handleCloseForm("property")}
+          FormComponent={({ data }) => (
             <PropertyForm
               initialData={data as Property}
-              setModalOpen={onClose}
               tenantId={selectedTenantId}
+              setModalOpen={setIsPropertyFormOpen}
+              onSuccess={refreshProperties}
             />
           )}
           filterFn={(user, activeTab) => {
@@ -545,10 +579,10 @@ const Tenants = ({ data }: TenantsProps) => {
           renderItem={(property, onEdit) => (
             <div className="p-4 rounded shadow bg-white text-sm space-y-1 text-gray-800">
               <p>
-                <strong>Name:</strong> {property?.name}
+                <strong>Name:</strong> {(property as Property)?.name}
               </p>
               <p>
-                <strong>Address:</strong> {property?.address}
+                <strong>Address:</strong> {(property as Property)?.address}
               </p>
               <p>
                 <strong>Status:</strong>{" "}

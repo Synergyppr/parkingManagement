@@ -1,20 +1,21 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
+import { createAndUpdateTenant } from "../helpers/propertyHelpers";
 import { Tenant } from "../types";
 import ModalForm, { FormFieldConfig } from "./ModalForm";
-import { createAndUpdateTenant } from "../helpers/propertyHelpers";
 
 export default function TenantFormWrapper({
   data,
   onClose,
-  refresh,
-  // initialData,
+  setAllTenants,
 }: {
   data?: Tenant | null;
   onClose: () => void;
-  refresh: () => void;
-  initialData?: Tenant[] | null;
+  setAllTenants: (tenants: Tenant[]) => void;
 }) {
+  const router = useRouter();
   const [form, setForm] = useState<Tenant>({
     id: data?.id,
     name: data?.name || "",
@@ -36,9 +37,15 @@ export default function TenantFormWrapper({
       createAndUpdateTenant({
         form,
         onClose,
+        setAllTenants,
       });
-      refresh();
+      router.refresh();
     } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Something went wrong while submitting the form.",
+      });
       console.error("Error submitting tenant:", err);
     } finally {
       setLoading(false);
