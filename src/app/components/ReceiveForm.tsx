@@ -217,6 +217,16 @@ export default function ReceiveForm({
       return;
     }
 
+    const rawPhone = (form?.phoneNumber || "").replace(/\D/g, "");
+    if (rawPhone?.length < 10) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid Phone Number",
+        text: "Please enter a valid phone number with at least 10 digits.",
+      });
+      return;
+    }
+
     // Check for missing descriptions before submission
     const allLabelsMap = {
       ...frontViewLabelsMap,
@@ -272,7 +282,7 @@ export default function ReceiveForm({
       const rawPhone = (form?.phoneNumber || "").replace(/\D/g, "");
       const last10 = rawPhone.slice(-10); // always keep only 10 digits
       const validAreaCode = form?.areaCode || "+1";
-      
+
       const sendForm = {
         latitude: locationMode === "manual" ? latitude : userLat,
         // latitude: 18.426434330459355, //250
@@ -499,6 +509,23 @@ export default function ReceiveForm({
     if (step === 1) {
       if (!form?.phoneNumber) missing.push("phoneNumber");
       if (!form?.ticketNumber) missing.push("ticketNumber");
+      const rawPhone = (form?.phoneNumber || "").replace(/\D/g, "");
+      if (rawPhone && rawPhone?.length < 10) {
+        Swal.fire({
+          icon: "warning",
+          title: "Invalid Phone Number",
+          text: "Please enter a valid phone number with at least 10 digits.",
+        });
+        return;
+      }
+      if (form?.ticketNumber && form?.ticketNumber!.length < 6) {
+        Swal.fire({
+          icon: "warning",
+          title: "Invalid Ticket Number",
+          text: "Ticket number must be 6 alphanumeric characters.",
+        });
+        return;
+      }
     } else if (step === 2) {
       if (!form?.make) missing.push("make");
       if (!form?.model) missing.push("model");
@@ -573,6 +600,11 @@ export default function ReceiveForm({
     setIncidentParts([]);
     setDescriptions({});
     setInitialForm({});
+    setExistingVehicles([]);
+    setIncidentParts([]);
+    setDescriptions({});
+    setNoIncident(false);
+    generateTicketNumber();
   };
 
   const handleClearForm = () => {
@@ -589,6 +621,14 @@ export default function ReceiveForm({
         setInitialForm({});
         setModels([]);
         setStep(1);
+        setForm({});
+        setIncidentParts([]);
+        setDescriptions({});
+        setInitialForm({});
+        setExistingVehicles([]);
+        setIncidentParts([]);
+        setDescriptions({});
+        setNoIncident(false);
       }
     });
   };
@@ -763,7 +803,9 @@ export default function ReceiveForm({
                       setForm((prev) => ({ ...prev, areaCode: e.target.value }))
                     }
                     onPhoneNumberChange={(e) => {
+                      // Limit to 10 digits
                       const rawValue = e.target.value.replace(/\D/g, "");
+                      if (rawValue?.length > 10) return;
                       const formatted = formatPhoneNumber(rawValue);
                       setForm((prev) => ({ ...prev, phoneNumber: formatted }));
                       if (rawValue.length >= 10) fetchUserDataByPhone(rawValue);

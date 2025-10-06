@@ -23,8 +23,8 @@ const CollapsibleSection: React.FC<{
   return (
     <div
       className={`${
-        open ? "bg-white shadow-inner rounded-xl" : ""
-      } mb-4 border-b border-slate-300`}
+        open ? "bg-white/20 rounded-xl" : ""
+      } mb-4 border-slate-300`}
     >
       <button
         onClick={() => setOpen(!open)}
@@ -37,7 +37,9 @@ const CollapsibleSection: React.FC<{
           }`}
         />
       </button>
-      {open && <div className="p-4 border-t border-gray-200">{children}</div>}
+      {open && (
+        <div className="p-4 border-t-[0.5px] border-slate-300">{children}</div>
+      )}
     </div>
   );
 };
@@ -521,7 +523,7 @@ const RequestCar = () => {
                 </div>
 
                 {/* New Sections */}
-                {false && (
+                {requested && false && (
                   <CollapsibleSection title="View Transaction Details">
                     <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
                       <p className="capitalize">
@@ -550,7 +552,7 @@ const RequestCar = () => {
                   </CollapsibleSection>
                 )}
 
-                {false && (
+                {requested && false && (
                   <CollapsibleSection title="Update Contact Information">
                     <form
                       onSubmit={handleUpdateInfo}
@@ -706,7 +708,7 @@ const RequestCar = () => {
                               submitted
                                 ? "bg-blue-600/20 cursor-not-allowed"
                                 : "bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800"
-                            } transition-colors text-white px-3 py-2 w-[95%] font-semibold shadow-md tracking-tight rounded`}
+                            } transition-colors text-white px-3 py-2 w-[95%] font-semibold shadow-md tracking-tight rounded cursor-pointer`}
                           >
                             Submit Rating
                           </button>

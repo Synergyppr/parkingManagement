@@ -512,7 +512,7 @@ export default function HomePage() {
 
   return (
     <>
-      {loading === true && (
+      {loading === true && propertyId && (
         <div className="fixed inset-0 bg-black/70 bg-opacity-70 z-50 flex items-center justify-center">
           <div className="flex flex-col h-auto">
             <PageLoader />

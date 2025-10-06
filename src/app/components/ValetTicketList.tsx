@@ -111,7 +111,7 @@ export default function ValetTicketList({
       {activeTab !== "received" && filteredVehicles?.length > 0 && (
         <div className="mt-0 mb-0 flex justify-center w-full mx-auto bg-opacity-50">
           <div className="px-4 pb-2 text-blue-500 text-sm font-medium tracking-wider rounded-sm w-full text-center mx-1 bg-opacity-10">
-            Total <span className="capitalize">{activeTab}</span> Vehicles:{" "}
+            Total Vehicles <span className="capitalize">{activeTab}</span>:{" "}
             <span className="font-semibold">{filteredVehicles?.length}</span>
           </div>
         </div>
