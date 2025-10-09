@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useRef, Suspense } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Swal from "sweetalert2";
 import {
   Ticket,
@@ -518,121 +518,119 @@ export default function DashboardClient({ initialStatus = null }: Props) {
 
   return (
     <>
-      <Suspense fallback={<PageLoader />}>
-        {loading === true && propertyId && (
-          <div className="fixed inset-0 bg-black/70 bg-opacity-70 z-50 flex items-center justify-center">
-            <div className="flex flex-col h-auto">
-              <PageLoader />
-              <p className="text-white text-sm font-light mt-1 relative bottom-[80px] md:bottom-[150px] lg:bottom-[175px]">
-                Loading data, please wait a moment...
-              </p>
-            </div>
+      {loading === true && propertyId && (
+        <div className="fixed inset-0 bg-black/70 bg-opacity-70 z-50 flex items-center justify-center">
+          <div className="flex flex-col h-auto">
+            <PageLoader />
+            <p className="text-white text-sm font-light mt-1 relative bottom-[80px] md:bottom-[150px] lg:bottom-[175px]">
+              Loading data, please wait a moment...
+            </p>
           </div>
-        )}
-        <section
-          className="overflow-y-auto overflow-x-hidden min-h-[calc(100vh-86px)] relative z-0"
-          style={{
-            background:
-              "radial-gradient(circle at center, #ffffff 10%, #e0f2ff 90%)",
-          }}
-        >
-          <TabNavigation
-            selected={activeTab}
-            onSelect={handleTabChange}
-            fetchData={fetchData}
-            unreadTicketIds={unreadRequestedTickets}
-          />
+        </div>
+      )}
+      <section
+        className="overflow-y-auto overflow-x-hidden min-h-[calc(100vh-86px)] relative z-0"
+        style={{
+          background:
+            "radial-gradient(circle at center, #ffffff 10%, #e0f2ff 90%)",
+        }}
+      >
+        <TabNavigation
+          selected={activeTab}
+          onSelect={handleTabChange}
+          fetchData={fetchData}
+          unreadTicketIds={unreadRequestedTickets}
+        />
 
-          <div className="w-full max-w-screen-xl mx-auto mt-2">
-            <div className="px-2 md:px-4">
-              {/* Received Tab */}
-              {activeTab === "received" && (
-                <ReceiveForm
-                  carBrands={carBrands}
-                  vehicleTypes={vehicleTypes}
-                  vehicleColors={vehicleColors}
+        <div className="w-full max-w-screen-xl mx-auto mt-2">
+          <div className="px-2 md:px-4">
+            {/* Received Tab */}
+            {activeTab === "received" && (
+              <ReceiveForm
+                carBrands={carBrands}
+                vehicleTypes={vehicleTypes}
+                vehicleColors={vehicleColors}
+                fetchData={fetchData}
+                form={form}
+                setForm={setForm}
+                initialForm={initialForm}
+                setInitialForm={setInitialForm}
+                isFormChanged={isFormChanged}
+                shouldBypassUnloadPromptRef={shouldBypassUnloadPromptRef}
+                patronId={form?.patronId as string}
+              />
+            )}
+            {/* Parked, Requested and Ready Tabs */}
+            {loading && activeTab !== "received" ? (
+              <div className="flex items-center justify-center h-full">
+                <PageLoader />
+              </div>
+            ) : (
+              activeTab !== "received" && (
+                <ValetTicketList
+                  vehicles={activeTab === "ready" ? readyVehicles : vehicles}
+                  activeTab={activeTab}
+                  unreadTicketIds={unreadTicketIds}
+                  damagedParts={damagedParts}
+                  handleFetchTicketDetails={handleFetchTicketDetails}
+                  handleStatusChange={handleStatusChange}
+                  markAsRead={markAsRead}
+                  showTransactionModal={showTransactionModal}
+                  setShowTransactionModal={setShowTransactionModal}
+                  selectedTicketId={selectedTicketId}
                   fetchData={fetchData}
-                  form={form}
-                  setForm={setForm}
-                  initialForm={initialForm}
-                  setInitialForm={setInitialForm}
-                  isFormChanged={isFormChanged}
-                  shouldBypassUnloadPromptRef={shouldBypassUnloadPromptRef}
-                  patronId={form?.patronId as string}
+                  latitude={latitude as number}
+                  longitude={longitude as number}
+                  locationMode={locationMode}
+                  propertyId={propertyId}
+                  pageLoading={loading}
                 />
-              )}
-              {/* Parked, Requested and Ready Tabs */}
-              {loading && activeTab !== "received" ? (
-                <div className="flex items-center justify-center h-full">
-                  <PageLoader />
-                </div>
-              ) : (
-                activeTab !== "received" && (
-                  <ValetTicketList
-                    vehicles={activeTab === "ready" ? readyVehicles : vehicles}
-                    activeTab={activeTab}
-                    unreadTicketIds={unreadTicketIds}
-                    damagedParts={damagedParts}
-                    handleFetchTicketDetails={handleFetchTicketDetails}
-                    handleStatusChange={handleStatusChange}
-                    markAsRead={markAsRead}
-                    showTransactionModal={showTransactionModal}
-                    setShowTransactionModal={setShowTransactionModal}
-                    selectedTicketId={selectedTicketId}
-                    fetchData={fetchData}
-                    latitude={latitude as number}
-                    longitude={longitude as number}
-                    locationMode={locationMode}
-                    propertyId={propertyId}
-                    pageLoading={loading}
-                  />
-                )
-              )}
-            </div>
+              )
+            )}
           </div>
+        </div>
 
-          {/* Modal for pin confirmation/authentication */}
-          <PinConfirmationModal
-            isOpen={showPinConfirmationModal}
-            onClose={() => setShowPinConfirmationModal(false)}
-            pin={pin}
-            setPin={setPin}
-            showPin={showPin}
-            setShowPin={setShowPin}
-            buttonLoader={buttonLoader}
-            onSubmit={handlePinSubmit}
-            propertyId={propertyId}
-          />
+        {/* Modal for pin confirmation/authentication */}
+        <PinConfirmationModal
+          isOpen={showPinConfirmationModal}
+          onClose={() => setShowPinConfirmationModal(false)}
+          pin={pin}
+          setPin={setPin}
+          showPin={showPin}
+          setShowPin={setShowPin}
+          buttonLoader={buttonLoader}
+          onSubmit={handlePinSubmit}
+          propertyId={propertyId}
+        />
 
-          {/* Ticket Details Modal */}
-          <TicketDetailsModal
-            isOpen={showTicketDetailsModal}
-            onClose={handleCloseTicketDetails}
-            ticketDetails={ticketDetails}
-            detailsActiveTab={detailsActiveTab}
-            setDetailsActiveTab={setDetailsActiveTab}
-            transitionState={transitionState}
-            setTransitionState={setTransitionState}
-            noIncident={noIncident}
-            setNoIncident={setNoIncident}
-            incidentParts={incidentParts}
-            setIncidentParts={setIncidentParts}
-            descriptions={descriptions}
-            setDescriptions={setDescriptions}
-            damagedParts={damagedParts}
-            viewAllDamagedParts={viewAllDamagedParts}
-            setViewAllDamagedParts={setViewAllDamagedParts}
-            formLicensePlate={formLicensePlate}
-            findLinkedGroup={findLinkedGroup}
-            frontViewLabelsMap={frontViewLabelsMap}
-            rearViewLabelsMap={rearViewLabelsMap}
-            passengerViewLabelsMap={passengerViewLabelsMap}
-            driverViewLabelsMap={driverViewLabelsMap}
-            setHasUnsavedChanges={setHasUnsavedChanges}
-            saveClickedRef={saveClickedRef}
-          />
-        </section>
-      </Suspense>
+        {/* Ticket Details Modal */}
+        <TicketDetailsModal
+          isOpen={showTicketDetailsModal}
+          onClose={handleCloseTicketDetails}
+          ticketDetails={ticketDetails}
+          detailsActiveTab={detailsActiveTab}
+          setDetailsActiveTab={setDetailsActiveTab}
+          transitionState={transitionState}
+          setTransitionState={setTransitionState}
+          noIncident={noIncident}
+          setNoIncident={setNoIncident}
+          incidentParts={incidentParts}
+          setIncidentParts={setIncidentParts}
+          descriptions={descriptions}
+          setDescriptions={setDescriptions}
+          damagedParts={damagedParts}
+          viewAllDamagedParts={viewAllDamagedParts}
+          setViewAllDamagedParts={setViewAllDamagedParts}
+          formLicensePlate={formLicensePlate}
+          findLinkedGroup={findLinkedGroup}
+          frontViewLabelsMap={frontViewLabelsMap}
+          rearViewLabelsMap={rearViewLabelsMap}
+          passengerViewLabelsMap={passengerViewLabelsMap}
+          driverViewLabelsMap={driverViewLabelsMap}
+          setHasUnsavedChanges={setHasUnsavedChanges}
+          saveClickedRef={saveClickedRef}
+        />
+      </section>
     </>
   );
 }
