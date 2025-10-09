@@ -81,7 +81,7 @@ const Report = () => {
     const data = await res.json();
 
     const result = data?.result?.data || [];
-    const total = data?.result?.total || result.length;
+    const total = data?.result?.total || result?.length;
 
     setReport(result);
     setTotalPages(Math.ceil(total / PAGE_SIZE));
@@ -267,7 +267,7 @@ const Report = () => {
                     {entry?.employeeName}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {formatDate(entry?.date)}
+                    <span className="uppercase">{entry?.date}</span>
                   </td>
                   <td
                     onClick={() =>
@@ -319,7 +319,7 @@ const Report = () => {
                 </div>
                 <div>
                   <span className="font-semibold text-gray-700">Date:</span>{" "}
-                  {formatDate(entry?.date)}
+                  <span className="uppercase">{entry?.date}</span>
                 </div>
                 <div
                   onClick={() => handleFetchTicketDetails(entry?.id as string)}
