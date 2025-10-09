@@ -7,7 +7,6 @@ import {
   generateLabelsMap,
 } from "../lib/carPartsLegend";
 import { useProperty } from "../context/PropertyContext";
-import { formatDate } from "../lib/clientUtils";
 import TicketDetailsModal from "./TicketDetailsModal";
 
 interface TicketDetails {
