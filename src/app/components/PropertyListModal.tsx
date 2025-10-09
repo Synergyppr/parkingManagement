@@ -140,7 +140,7 @@ Props) {
         <PropertyForm
           tenantId={tenantId as string}
           setModalOpen={setIsPropertyFormOpen}
-          initialData={
+          originalData={
             (selectedProperty as Property)
               ? {
                   id: selectedProperty?.id ?? "",
