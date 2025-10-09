@@ -71,7 +71,8 @@ export const createAndUpdateUser = async (
   setMissingFields: React.Dispatch<React.SetStateAction<string[]>>,
   setButtonLoader: React.Dispatch<React.SetStateAction<boolean>>,
   tenantId: string,
-  setModalOpen: (isOpen: boolean) => void
+  setModalOpen: (isOpen: boolean) => void,
+  refresh: (tenantId: string) => void
 ) => {
   const requiredFields: { [key: string]: string } = {
     userName: "Username",
@@ -143,13 +144,16 @@ export const createAndUpdateUser = async (
         showConfirmButton: false,
         timer: 1500,
       });
+      refresh(tenantId);
     } else {
+      setButtonLoader(false);
       console.error("Submission failed:", result?.result?.message);
       Swal.fire({
         icon: "error",
         title: "Submission Failed",
         text: result?.result?.message || "Something went wrong.",
       });
+      return;
     }
   } catch (error) {
     console.error("Error submitting form:", error);
@@ -158,6 +162,8 @@ export const createAndUpdateUser = async (
       title: "An error occurred",
       text: "Please try again later.",
     });
+    setButtonLoader(false);
+    return;
   } finally {
     setButtonLoader(false);
   }

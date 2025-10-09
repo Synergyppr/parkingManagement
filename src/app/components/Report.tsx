@@ -253,21 +253,21 @@ const Report = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {report.map((entry) => (
-                <tr key={entry.id} className="hover:bg-gray-50 transition">
+                <tr key={entry?.id} className="hover:bg-gray-50 transition">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {entry.ticketNumber}
+                    {entry?.ticketNumber}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {entry.patronName}
+                    {entry?.patronName}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {entry.placeToVisit}
+                    {entry?.placeToVisit}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {entry.employeeName}
+                    {entry?.employeeName}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {formatDate(entry.date)}
+                    {formatDate(entry?.date)}
                   </td>
                   <td
                     onClick={() =>
@@ -298,28 +298,34 @@ const Report = () => {
           {report?.length > 0 ? (
             report?.map((entry) => (
               <div
-                key={entry.id}
+                key={entry?.id}
                 className="bg-white p-4 rounded shadow-md space-y-2 text-sm text-gray-800"
               >
                 <div>
                   <span className="font-semibold text-gray-700">Ticket #:</span>{" "}
-                  {entry.ticketNumber}
+                  {entry?.ticketNumber}
                 </div>
                 <div>
                   <span className="font-semibold text-gray-700">Patron:</span>{" "}
-                  {entry.patronName}
+                  {entry?.patronName}
                 </div>
                 <div>
                   <span className="font-semibold text-gray-700">Place:</span>{" "}
-                  {entry.placeToVisit}
+                  {entry?.placeToVisit}
                 </div>
                 <div>
                   <span className="font-semibold text-gray-700">Employee:</span>{" "}
-                  {entry.employeeName}
+                  {entry?.employeeName}
                 </div>
                 <div>
                   <span className="font-semibold text-gray-700">Date:</span>{" "}
-                  {formatDate(entry.date)}
+                  {formatDate(entry?.date)}
+                </div>
+                <div
+                  onClick={() => handleFetchTicketDetails(entry?.id as string)}
+                  className="whitespace-nowrap text-xs font-light text-blue-600 hover:underline cursor-pointer"
+                >
+                  View Details
                 </div>
               </div>
             ))

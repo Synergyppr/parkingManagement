@@ -177,9 +177,16 @@ export default function ValetTicketList({
                   <div>
                     <div className="flex gap-4 text-sm text-gray-800">
                       <p>
-                        <span className="font-bold tracking-tight">Type:</span>{" "}
-                        {vehicle?.type}
+                        <span className="font-bold tracking-tight">
+                          {/* Make & Model: */}
+                          Vehicle:
+                        </span>{" "}
+                        {vehicle?.make} {vehicle?.model}
                       </p>
+                    </div>
+
+                    <div className="text-sm text-gray-800">
+                      {" "}
                       <p className="capitalize">
                         <span className="font-bold tracking-tight">Color:</span>{" "}
                         {vehicle?.color}

@@ -1,6 +1,6 @@
 // ModalPropertyForm.tsx
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { FaBuilding } from "react-icons/fa6";
 import ModalInput from "./elements/ModalInput";
 import { useProperty } from "../context/PropertyContext";
@@ -21,31 +21,51 @@ interface Property {
 
 interface PropertyFormProps {
   tenantId?: string;
-  initialData?: Property | null;
+  originalData?: Property | null;
+  data?: Property | null;
   onSuccess?: () => void;
   setModalOpen: (isOpen: boolean) => void;
 }
 
 export default function ModalPropertyForm({
   tenantId,
-  initialData,
+  originalData,
+  data,
   onSuccess,
   setModalOpen,
 }: PropertyFormProps) {
   const { latitude, longitude } = useProperty();
   const [loading, setLoading] = useState(false);
+  const originalForm = {
+    tenantId: tenantId,
+    name: "",
+    address: "",
+    latitude: latitude || 0,
+    longitude: longitude || 0,
+    radius: originalData?.radius || 0,
+    createdAtDateTime:
+      originalData?.createdAtDateTime || new Date().toISOString(),
+    isActive: true,
+    ...originalData,
+  };
   const [form, setForm] = useState<Property>({
     tenantId: tenantId,
     name: "",
     address: "",
     latitude: latitude || 0,
     longitude: longitude || 0,
-    radius: initialData?.radius || 0,
-    createdAtDateTime:
-      initialData?.createdAtDateTime || new Date().toISOString(),
+    radius: data?.radius || 0,
+    createdAtDateTime: data?.createdAtDateTime || new Date().toISOString(),
     isActive: true,
-    ...initialData,
+    ...data,
   });
+
+  // Compare form with originalForm
+  const hasChanges = useMemo(() => {
+    if (!originalForm) return true; // new user, always allow submit
+    return JSON.stringify(originalForm) !== JSON.stringify(form);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -199,9 +219,14 @@ export default function ModalPropertyForm({
 
       <button
         type="button"
-        disabled={loading}
+        disabled={loading || !hasChanges}
         onClick={handleSubmit}
-        className="bg-blue-600 hover:bg-blue-700 text-white p-3 w-full rounded-md font-semibold shadow cursor-pointer transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+        className={`${
+          loading || !hasChanges
+            ? "cursor-not-allowed bg-opacity-60 opacity-60"
+            : "hover:bg-blue-700 cursor-pointer"
+        } 
+        bg-blue-600 text-white p-3 w-full rounded-md font-semibold shadow`}
       >
         {form?.id ? "Update" : "Create"} Property
       </button>

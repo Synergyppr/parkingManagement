@@ -23,6 +23,7 @@ import UserForm from "./UserForm";
 import VehicleManager from "./VehicleManager";
 import DeviceCMS from "./DeviceManager";
 import TransactionTypeManager from "./TransactionTypeManager";
+import PageLoader from "./elements/PageLoader";
 
 interface TenantsProps {
   data: {
@@ -54,16 +55,17 @@ const Tenants = ({ data }: TenantsProps) => {
   const [tenantData, setTenantData] = useState(data?.data);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [selectedTenantId, setSelectedTenantId] = useState<string>("");
+  const [initialUsers, setInitialUsers] = useState<UserFormType[]>([]);
   const [users, setUsers] = useState<UserFormType[]>([]);
+  const [initialProperties, setInitialProperties] = useState<Property[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [seeMore, setSeeMore] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [vehiclesDropdownData, setVehiclesDropdownData] =
     useState<DropdownData | null>(null);
   const [devicesDropdownData, setDevicesDropdownData] = useState(null);
   const [transactionTypesDropdownData, setTransactionTypesDropdownData] =
     useState(null);
-
   const [isTenantModalOpen, setIsTenantModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false);
@@ -88,6 +90,7 @@ const Tenants = ({ data }: TenantsProps) => {
       selectedTenantId,
       setSelectedTenantId,
       setLoading,
+      setInitialProperties,
       setProperties,
       setIsPropertyModalOpen
     );
@@ -99,12 +102,16 @@ const Tenants = ({ data }: TenantsProps) => {
       id,
       setLoading,
       setSelectedTenantId,
+      setInitialUsers,
       setUsers,
       setIsUserModalOpen
     );
   };
 
   useEffect(() => {
+    if (propertyId) {
+      setLoading(false);
+    }
     if (tenantData) {
       setTenantData(tenantData);
     }
@@ -112,11 +119,18 @@ const Tenants = ({ data }: TenantsProps) => {
   }, []);
 
   useEffect(() => {
+    if (tenantData) {
+      setLoading(false);
+    }
+  }, [tenantData]);
+
+  useEffect(() => {
     router.refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantData]);
 
   const fetchVehicleDropdownData = async () => {
+    setLoading(true);
     try {
       const response = await fetch("/api/getVehicle/dropdownData", {
         method: "GET",
@@ -131,6 +145,7 @@ const Tenants = ({ data }: TenantsProps) => {
         setVehiclesDropdownData(result?.data?.data);
         setIsVehicleModalOpen(true);
       } else {
+        setLoading(true);
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -139,11 +154,16 @@ const Tenants = ({ data }: TenantsProps) => {
         return;
       }
     } catch (error) {
+      setLoading(false);
       console.error("Error fetching dropdown data:", error);
+      return;
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchPropertyDevices = async () => {
+    setLoading(true);
     try {
       const sendForm = {
         id: propertyId as string,
@@ -162,6 +182,7 @@ const Tenants = ({ data }: TenantsProps) => {
         setDevicesDropdownData(result?.result?.data);
         setIsDeviceModalOpen(true);
       } else {
+        setLoading(false);
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -170,11 +191,16 @@ const Tenants = ({ data }: TenantsProps) => {
         return;
       }
     } catch (error) {
+      setLoading(false);
       console.error("Error fetching dropdown data:", error);
+      return;
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchTransactionTypes = async () => {
+    setLoading(true);
     try {
       const sendForm = {
         id: propertyId as string,
@@ -193,6 +219,7 @@ const Tenants = ({ data }: TenantsProps) => {
         setTransactionTypesDropdownData(result?.result?.data);
         setIsTransactionModalOpen(true);
       } else {
+        setLoading(false);
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -201,7 +228,11 @@ const Tenants = ({ data }: TenantsProps) => {
         return;
       }
     } catch (error) {
+      setLoading(false);
       console.error("Error fetching dropdown data:", error);
+      return;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -236,6 +267,7 @@ const Tenants = ({ data }: TenantsProps) => {
     setIsVehicleModalOpen(false);
   };
   const handleOpenVehicleModal = () => {
+    if (!propertyId) return;
     fetchVehicleDropdownData();
   };
 
@@ -243,6 +275,7 @@ const Tenants = ({ data }: TenantsProps) => {
     setIsDeviceModalOpen(false);
   };
   const handleOpenDeviceModal = () => {
+    if (!propertyId) return;
     fetchPropertyDevices();
   };
 
@@ -250,12 +283,23 @@ const Tenants = ({ data }: TenantsProps) => {
     setIsTransactionModalOpen(false);
   };
   const handleOpenTransactionModal = () => {
+    if (!propertyId) return;
     fetchTransactionTypes();
-    // setIsTransactionModalOpen(true);
   };
 
   return (
     <>
+      {loading === true && propertyId && (
+        <div className="fixed inset-0 bg-black/70 bg-opacity-70 z-50 flex items-center justify-center">
+          <div className="flex flex-col h-auto">
+            <PageLoader />
+            <p className="text-white text-sm font-light mt-1 relative bottom-[80px] md:bottom-[150px] lg:bottom-[175px]">
+              Loading data, please wait a moment...
+            </p>
+          </div>
+        </div>
+      )}
+
       <div
         style={{
           background:
@@ -319,7 +363,7 @@ const Tenants = ({ data }: TenantsProps) => {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleOpenTenantModal(tenant)}
-                      className="p-2 rounded hover:bg-white/20 transition cursor-pointer"
+                      className="p-2 rounded hover:bg-white/20 transition cursor-pointer hidden"
                       title="Edit Tenant"
                     >
                       <FaPencil className="w-4 h-4" />
@@ -328,7 +372,7 @@ const Tenants = ({ data }: TenantsProps) => {
                       onClick={() =>
                         handleTenantDelete(tenant?.id as string, router)
                       }
-                      className="p-2 rounded hover:bg-white/20 transition cursor-pointer"
+                      className="p-2 rounded hover:bg-white/20 transition cursor-pointer hidden"
                       title="Delete Tenant"
                     >
                       <FaTrash className="w-4 h-4" />
@@ -370,11 +414,14 @@ const Tenants = ({ data }: TenantsProps) => {
                   <div className="flex flex-wrap justify-between md:justify-start lg:justify-start gap-4 mt-4 mb-10">
                     <div
                       onClick={() => {
+                        if (!propertyId) return;
+
                         if (!loading)
                           getUsersByTenant(
                             tenant?.id as string,
                             setLoading,
                             setSelectedTenantId,
+                            setInitialUsers,
                             setUsers,
                             setIsUserModalOpen
                           );
@@ -388,11 +435,13 @@ const Tenants = ({ data }: TenantsProps) => {
                     </div>
                     <div
                       onClick={() => {
+                        if (!propertyId) return;
                         if (!loading)
                           getPropertiesByTenant(
                             tenant?.id as string,
                             setSelectedTenantId,
                             setLoading,
+                            setInitialProperties,
                             setProperties,
                             setIsPropertyModalOpen
                           );
@@ -501,17 +550,19 @@ const Tenants = ({ data }: TenantsProps) => {
           title="Users"
           isOpen={isUserModalOpen}
           onClose={handleCloseUserModal}
-          entities={users}
+          originalEntities={initialUsers as UserFormType[]}
+          entities={users as UserFormType[]}
           tenantId={selectedTenantId}
           refresh={refreshUsers}
           isFormOpen={isUserFormOpen}
           setIsFormOpen={setIsUserFormOpen}
-          selectedEntity={selectedEntity}
+          selectedEntity={selectedEntity as UserFormType | null}
           setSelectedEntity={setSelectedEntity}
           handleCloseForm={() => handleCloseForm("user")}
-          FormComponent={({ data }) => (
+          FormComponent={({ originalData, data }) => (
             <UserForm
               tenantId={selectedTenantId as string}
+              originalData={originalData as UserFormType | undefined}
               data={(data as UserFormType) || null}
               refresh={refreshUsers}
               setModalOpen={setIsUserFormOpen}
@@ -555,17 +606,19 @@ const Tenants = ({ data }: TenantsProps) => {
           title="Properties"
           isOpen={isPropertyModalOpen}
           onClose={handleClosePropertyModal}
+          originalEntities={initialProperties}
           entities={properties}
           tenantId={selectedTenantId}
           refresh={refreshProperties}
           isFormOpen={isPropertyFormOpen}
           setIsFormOpen={setIsPropertyFormOpen}
-          selectedEntity={selectedEntity}
+          selectedEntity={selectedEntity as Property | null}
           setSelectedEntity={setSelectedEntity}
           handleCloseForm={() => handleCloseForm("property")}
-          FormComponent={({ data }) => (
+          FormComponent={({ originalData, data }) => (
             <PropertyForm
-              initialData={data as Property}
+              originalData={originalData as Property}
+              data={(data as Property) || null}
               tenantId={selectedTenantId}
               setModalOpen={setIsPropertyFormOpen}
               onSuccess={refreshProperties}

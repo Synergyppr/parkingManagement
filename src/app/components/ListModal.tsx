@@ -1,19 +1,22 @@
 "use client";
-
 import { useState, ReactNode } from "react";
+import { getUserById } from "../helpers/propertyHelpers";
+import { UserForm as UserFormType } from "../types";
+import { FaPlus } from "react-icons/fa6";
 import Modal from "./Modal";
 import Tabs from "./elements/Tabs";
-import { FaPlus } from "react-icons/fa6";
 
 interface EntityListModalProps<T> {
   title: string;
   isOpen: boolean;
   onClose: () => void;
+  originalEntities: T[] | null;
   entities: T[] | null;
   activeTabs?: string[];
   renderItem: (item: T, onEdit: (item: T) => void) => ReactNode;
   FormComponent: React.ComponentType<{
     data: T | null;
+    originalData?: T;
     onClose: (form?: string) => void;
     refresh: (id: string) => void;
     tenantId?: string;
@@ -29,10 +32,13 @@ interface EntityListModalProps<T> {
   handleCloseForm: (form?: string) => void;
 }
 
-export default function ListModal<T>({
+export default function ListModal<
+  T extends { id: string; isActive: boolean } | UserFormType
+>({
   title,
   isOpen,
   onClose,
+  originalEntities,
   entities,
   renderItem,
   FormComponent,
@@ -49,6 +55,24 @@ export default function ListModal<T>({
 }: EntityListModalProps<T>) {
   const [activeTab, setActiveTab] = useState(activeTabs[0]);
   const [transitionState, setTransitionState] = useState("fade-in");
+  const [, setLoading] = useState(false);
+  const originalSelectedEntity = originalEntities?.find(
+    (item) => selectedEntity?.id === item?.id
+  );
+
+  const fetchUserDetails = (item: T | { id: string }): void => {
+    if (title === "Users") {
+      getUserById(
+        item?.id as string,
+        setLoading,
+        setIsFormOpen,
+        setSelectedEntity as (user: UserFormType) => void
+      );
+    } else {
+      setSelectedEntity(item as T);
+      setIsFormOpen(true);
+    }
+  };
 
   return (
     <>
@@ -101,10 +125,7 @@ export default function ListModal<T>({
                   )
                   .map((item, index) => (
                     <li key={index}>
-                      {renderItem(item, (item) => {
-                        setSelectedEntity(item);
-                        setIsFormOpen(true);
-                      })}
+                      {renderItem(item, (item) => fetchUserDetails(item))}
                     </li>
                   ))}
             </ul>
@@ -115,6 +136,7 @@ export default function ListModal<T>({
       <Modal isOpen={isFormOpen} onClose={(form) => handleCloseForm(form)}>
         <FormComponent
           tenantId={tenantId}
+          originalData={originalSelectedEntity}
           data={selectedEntity}
           onClose={handleCloseForm}
           refresh={refresh}

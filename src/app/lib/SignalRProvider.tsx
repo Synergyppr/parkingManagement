@@ -75,6 +75,8 @@ export const SignalRProvider = ({
       });
 
       try {
+        if (!propertyId) return;
+        
         await connection.start();
         console.log("✅ Connected to SignalR hub");
 

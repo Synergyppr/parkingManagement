@@ -5,26 +5,31 @@ import Swal from "sweetalert2";
 import { RxCaretRight } from "react-icons/rx";
 import { BsStar, BsStarFill, BsStarHalf } from "react-icons/bs";
 import { IoCheckmarkOutline } from "react-icons/io5";
-import { FaUser, FaEnvelope } from "react-icons/fa";
-import { IoPhonePortrait } from "react-icons/io5";
 import { useSignalR, joinGroup, leaveGroup } from "../lib/SignalRProvider";
 import { useProperty } from "../context/PropertyContext";
 import StatusTimeline from "./StatusTimeline";
 import PageLoader from "./elements/PageLoader";
 import ButtonLoader from "./elements/ButtonLoader";
-import FormInput from "./elements/FormInput";
 
 const CollapsibleSection: React.FC<{
   title: string;
   children: React.ReactNode;
 }> = ({ title, children }) => {
   const [open, setOpen] = useState(false);
+  const [height, setHeight] = useState(0);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      setHeight(open ? contentRef.current.scrollHeight : 0);
+    }
+  }, [open]);
 
   return (
     <div
       className={`${
         open ? "bg-white/20 rounded-xl" : ""
-      } mb-4 border-slate-300`}
+      } mb-4 border-slate-300 relative top-6 transition-all duration-500`}
     >
       <button
         onClick={() => setOpen(!open)}
@@ -32,14 +37,24 @@ const CollapsibleSection: React.FC<{
       >
         {title}
         <RxCaretRight
-          className={`w-6 h-6 transform transition-transform ${
+          className={`w-6 h-6 transform transition-transform duration-500 ${
             open ? "rotate-90" : ""
           }`}
         />
       </button>
-      {open && (
+
+      {/* Animated wrapper */}
+      <div
+        ref={contentRef}
+        style={{
+          maxHeight: `${height}px`,
+          overflow: "hidden",
+          transition: "max-height 0.5s ease, opacity 0.5s ease",
+          opacity: open ? 1 : 0,
+        }}
+      >
         <div className="p-4 border-t-[0.5px] border-slate-300">{children}</div>
-      )}
+      </div>
     </div>
   );
 };
@@ -63,6 +78,12 @@ const RequestCar = () => {
     patronId?: string;
     notificationId?: string;
     surveySubmitted?: boolean;
+    transactions?: {
+      referenceNumber?: string;
+      transactionDateTime?: string;
+      paymentMethod?: string;
+      amount?: number;
+    }[];
   } | null>(null);
   const [requested, setRequested] = useState(false);
   const [buttonLoader, setButtonLoader] = useState(false);
@@ -74,10 +95,6 @@ const RequestCar = () => {
   const [comment, setComment] = useState("");
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
   const [smsConsent, setSmsConsent] = useState(false);
-
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
 
   const idFromUrl = searchParams.get("ticket");
   const { registerNotificationHandler } = useSignalR();
@@ -154,7 +171,7 @@ const RequestCar = () => {
         sessionStorage.setItem("propertyId", newPropertyId);
         setPropertyId(newPropertyId);
       } else {
-        console.log("Error", data?.result?.message);
+        // console.log("Error", data?.result?.message);
         setVehicleNotFound(true);
       }
     } catch (error) {
@@ -258,6 +275,7 @@ const RequestCar = () => {
             text: "There was an issue requesting your vehicle. Please try again.",
             icon: "error",
           });
+          return;
         }
       } catch (error) {
         console.error("Request error:", error);
@@ -266,6 +284,7 @@ const RequestCar = () => {
           text: "Unable to request vehicle. Please try again.",
           icon: "error",
         });
+        return;
       } finally {
         setButtonLoader(false);
       }
@@ -320,7 +339,13 @@ const RequestCar = () => {
           });
         }, 700);
       } else {
+        Swal.fire({
+          title: "Error",
+          text: data?.message || "There was an error submitting your rating.",
+          icon: "error",
+        });
         console.log("Error", data?.result?.message);
+        return;
       }
     } catch (error) {
       console.error("Failed to submit rating", error);
@@ -331,13 +356,8 @@ const RequestCar = () => {
           icon: "error",
         });
       }, 700);
+      return;
     }
-  };
-
-  const handleUpdateInfo = (e: React.FormEvent) => {
-    e.preventDefault();
-    // 🔄 Call your API here
-    console.log({ name, email, phone });
   };
 
   return (
@@ -383,7 +403,11 @@ const RequestCar = () => {
           ) : ticketId ? (
             <div className="bg-slate-200 p-6 rounded-b-lg shadow-lg text-gray-800 w-full max-w-3xl md:px-[8%] lg:px-[10%]">
               <>
-                <div className="mb-6 text-justify">
+                <div
+                  className={`${
+                    vehicleData?.status === "parked" ? "mb-6" : "mb-0"
+                  } text-justify`}
+                >
                   {vehicleData?.firstName || vehicleData?.lastName ? (
                     <p className="text-lg leading-relaxed">
                       Hello{" "}
@@ -423,15 +447,6 @@ const RequestCar = () => {
                     currentStatus={vehicleData?.status as string}
                   />
 
-                  {/* <div className="mt-4 mx-auto w-[50%] bg-gradient-to-t to-blue-600 from-blue-700 via-blue-500 rounded px-6 py-4 shadow text-center">
-                    <p className="text-lg font-medium text-white">
-                      Total Paid:{" "}
-                      <span className="text-[#ef6c00] font-semibold">
-                        $0.00
-                      </span>
-                    </p>
-                  </div> */}
-
                   {vehicleData?.status === "received" ||
                   vehicleData?.status === "parked" ? (
                     <p className="indent mt-3">
@@ -457,31 +472,38 @@ const RequestCar = () => {
                     <p className="indent mt-3">
                       Your vehicle has been picked up. We hope you enjoyed your
                       visit{" "}
-                      {vehicleData?.placeToVisit &&
-                        " to " +
-                        <strong>{vehicleData?.placeToVisit}</strong>}{" "}
+                      {vehicleData?.placeToVisit && (
+                        <>
+                          {" to "}
+                          <strong className="capitalize">
+                            {vehicleData?.placeToVisit}
+                          </strong>
+                        </>
+                      )}{" "}
                       and look forward to seeing you again soon!
                     </p>
                   ) : null}
 
-                  <div className="flex gap-1 mt-4 font-light text-sm">
-                    <input
-                      checked={smsConsent}
-                      onChange={() => setSmsConsent(!smsConsent)}
-                      type="checkbox"
-                      className="mr-2"
-                      disabled={
-                        vehicleData?.status === "requested" ||
-                        vehicleData?.status === "ready" ||
-                        buttonLoader
-                      }
-                    />
-                    <p>
-                      I agree to receive SMS updates about my valet parking
-                      service. Message & data rates may apply. Reply STOP to
-                      cancel, HELP for help.
-                    </p>
-                  </div>
+                  {vehicleData?.status !== "ready" && (
+                    <div className="flex gap-1 mt-4 font-light text-sm">
+                      <input
+                        checked={smsConsent}
+                        onChange={() => setSmsConsent(!smsConsent)}
+                        type="checkbox"
+                        className="mr-2"
+                        disabled={
+                          vehicleData?.status === "requested" ||
+                          vehicleData?.status === "ready" ||
+                          buttonLoader
+                        }
+                      />
+                      <p>
+                        I agree to receive SMS updates about my valet parking
+                        service. Message & data rates may apply. Reply STOP to
+                        cancel, HELP for help.
+                      </p>
+                    </div>
+                  )}
 
                   <div className="mt-5 text-center">
                     <button
@@ -522,82 +544,39 @@ const RequestCar = () => {
                   </div>
                 </div>
 
-                {/* New Sections */}
-                {requested && false && (
+                {requested && (
                   <CollapsibleSection title="View Transaction Details">
                     <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
                       <p className="capitalize">
                         <span className="font-semibold">Customer:</span>{" "}
-                        {vehicleData?.firstName || "-"}
+                        {vehicleData?.firstName || "Unknown"}{" "}
+                        {vehicleData?.lastName || " "}
                       </p>
 
                       <p className="capitalize">
-                        <span className="font-semibold">Location:</span>{" "}
-                        {vehicleData?.placeToVisit || "-"}
+                        <span className="font-semibold">Reference #:</span>{" "}
+                        {vehicleData?.transactions?.[0]?.referenceNumber || "-"}
                       </p>
 
                       <p className="">
-                        <span className="font-semibold">Drop Off:</span>{" "}
-                        {vehicleData?.createdDateTime
+                        <span className="font-semibold">Drop-Off:</span>{" "}
+                        {vehicleData?.transactions?.[0]?.transactionDateTime
                           ? new Date(
-                              vehicleData?.createdDateTime as string
+                              vehicleData?.transactions?.[0]
+                                ?.transactionDateTime as string
                             ).toLocaleString()
                           : "-"}
                       </p>
                       <p>
-                        <span className="font-semibold">Total Paid:</span>{" "}
-                        <span className="capitalize">$0</span>
+                        <span className="font-semibold">
+                          {vehicleData?.transactions?.[0]?.paymentMethod}{" "}
+                          Tariff:
+                        </span>{" "}
+                        <span className="capitalize">
+                          ${vehicleData?.transactions?.[0].amount}
+                        </span>
                       </p>
                     </div>
-                  </CollapsibleSection>
-                )}
-
-                {requested && false && (
-                  <CollapsibleSection title="Update Contact Information">
-                    <form
-                      onSubmit={handleUpdateInfo}
-                      className="space-y-3 text-sm text-gray-700"
-                    >
-                      <div>
-                        <FormInput
-                          name="name"
-                          placeholder="Full Name"
-                          icon={<FaUser />}
-                          value={
-                            vehicleData?.firstName +
-                              " " +
-                              vehicleData?.lastName ||
-                            name ||
-                            ""
-                          }
-                          onChange={(e) => setName(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <FormInput
-                          name="fullName"
-                          placeholder="Phone Number"
-                          icon={<IoPhonePortrait />}
-                          value={phone || ""}
-                          onChange={(e) => setPhone(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <FormInput
-                          name="email"
-                          placeholder="Email Address"
-                          icon={<FaEnvelope />}
-                          value={email || ""}
-                          onChange={(e) => setEmail(e.target.value)}
-                        />
-                      </div>
-                      <button
-                        type="submit"
-                        className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white py-2 rounded-md font-semibold hover:from-blue-700 hover:to-blue-600 transition"
-                      >
-                        Update Info
-                      </button>
-                    </form>
                   </CollapsibleSection>
                 )}
 
@@ -607,13 +586,13 @@ const RequestCar = () => {
                     ref={ratingSectionRef}
                     className={`${
                       submitted ? "opacity-50" : ""
-                    } mt-2 border-t border-gray-200 pt-4`}
+                    } border-t border-gray-200 pt-0`}
                   >
                     <hr className="border-gray-300 my-4" />
 
                     {vehicleData?.surveySubmitted ? (
                       <div
-                        className="flex flex-col items-center justify-center mt-6 px-4 py-8 rounded shadow-inner transition-all duration-500 bg-opacity-80"
+                        className="flex flex-col items-center justify-center mt-6 px-4 py-8 rounded-xl shadow-inner transition-all duration-500 bg-opacity-80"
                         style={{
                           background:
                             "radial-gradient(circle at center, #E2E8F0, #CBD5E1)",

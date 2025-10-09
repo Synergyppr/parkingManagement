@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import Swal from "sweetalert2";
+import { useSearchParams } from "next/navigation";
 import {
   Ticket,
   TicketResponseData,
@@ -29,6 +30,9 @@ export default function HomePage() {
   const { registerNotificationHandler } = useSignalR();
   const { propertyId, latitude, longitude, locationMode, requestLocation } =
     useProperty();
+  const searchParams = useSearchParams();
+  const statusParam = searchParams.get("status"); // ?status=
+  const validStatuses = ["received", "parked", "requested", "ready"];
   const saveClickedRef = useRef(false);
   const shouldBypassUnloadPromptRef = useRef(false);
   const [loading, setLoading] = useState<boolean>(true);
@@ -85,6 +89,13 @@ export default function HomePage() {
 
   useAuthRedirect(); // will redirect if not logged in
   usePropertyListener(); // listen for property changes based on user's location
+
+  useEffect(() => {
+    if (statusParam && validStatuses.includes(statusParam)) {
+      setActiveTab(statusParam);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusParam]);
 
   const fetchData = async () => {
     // GetValetTicketsByPropertyId

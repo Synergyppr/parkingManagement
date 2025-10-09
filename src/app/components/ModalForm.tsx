@@ -44,6 +44,7 @@ interface ModalFormProps {
   showActiveToggle?: boolean;
   submitLabel?: string;
   loading?: boolean;
+  disableSubmit?: boolean;
 }
 
 const ModalForm = ({
@@ -57,6 +58,7 @@ const ModalForm = ({
   showActiveToggle = false,
   submitLabel = "Submit",
   loading = false,
+  disableSubmit,
 }: ModalFormProps) => {
   return (
     <form className="p-4 md:p-6 min-w-full mx-auto space-y-4 rounded shadow text-gray-800 flex flex-col">
@@ -156,6 +158,7 @@ const ModalForm = ({
                     field.name
                   ] || ""
                 )}
+                type={field.type || "text"}
                 onChange={onChange}
                 // {...commonProps}
               />
@@ -188,8 +191,9 @@ const ModalForm = ({
 
       <button
         type="button"
-        disabled={loading}
-        className="bg-blue-600 hover:bg-blue-700 text-white p-3 w-full rounded-md font-semibold shadow cursor-pointer"
+        disabled={loading || disableSubmit}
+        className={`${loading || disableSubmit ? "cursor-not-allowed bg-opacity-60 opacity-60" : "hover:bg-blue-700 cursor-pointer"} 
+        bg-blue-600 text-white p-3 w-full rounded-md font-semibold shadow`}
         onClick={(e) => {
           e.preventDefault();
           onSubmit();

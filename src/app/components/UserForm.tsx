@@ -1,8 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
+import Swal from "sweetalert2";
 import { createAndUpdateUser } from "../auth/userStoreApi";
 import { UserForm } from "../types/index";
-import { formatDatePicker } from "../lib/clientUtils";
 import ModalForm, { FormFieldConfig } from "./ModalForm";
 
 const fields: FormFieldConfig[] = [
@@ -49,21 +49,34 @@ const fields: FormFieldConfig[] = [
 
 export default function UserFormWrapper({
   tenantId,
+  originalData,
   data,
   refresh,
   setModalOpen = () => {},
 }: {
   tenantId: string;
+  originalData?: UserForm;
   data?: UserForm;
   refresh: (id: string) => void;
   setModalOpen?: (isOpen: boolean) => void;
 }) {
+  const originalForm = {
+    id: originalData?.id || undefined,
+    userName: originalData?.userName || "",
+    pin: originalData?.pin || "",
+    firstName: originalData?.fullName?.split(" ")[0] || "",
+    lastName: originalData?.fullName?.split(" ")[1] || "",
+    gender: originalData?.gender || "",
+    role: originalData?.role as string,
+    dateOfBirth: originalData?.dateOfBirth || "",
+    isActive: originalData?.isActive ?? true,
+  };
   const [form, setForm] = useState<UserForm>({
     id: data?.id || undefined,
     userName: data?.userName || "",
     pin: data?.pin || "",
-    firstName: data?.firstName || "",
-    lastName: data?.lastName || "",
+    firstName: data?.fullName?.split(" ")[0] || "",
+    lastName: data?.fullName?.split(" ")[1] || "",
     gender: data?.gender || "",
     role: data?.role as string,
     dateOfBirth: data?.dateOfBirth || "",
@@ -73,21 +86,12 @@ export default function UserFormWrapper({
   const [, setMissingFields] = useState<string[]>([]);
   const [, setButtonLoader] = useState(false);
 
-  useEffect(() => {
-    if (data) {
-      const [firstName = "", lastName = ""] = data?.fullName?.split(" ") || [];
-      setForm((prev) => ({
-        ...prev,
-        firstName,
-        lastName,
-        dateOfBirth:
-          data?.dateOfBirth?.length > 1
-            ? formatDatePicker(data.dateOfBirth)
-            : "",
-        role: data?.role,
-      }));
-    }
-  }, [data]);
+  // Compare form with originalForm
+  const hasChanges = useMemo(() => {
+    if (!originalForm) return true; // new user, always allow submit
+    return JSON.stringify(originalForm) !== JSON.stringify(form);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -95,6 +99,9 @@ export default function UserFormWrapper({
     >
   ) => {
     const { name, value } = e.target;
+
+    // Only numeric and max 4 chars for PIN
+    if (name === "pin" && (value.length > 4 || /\D/.test(value))) return;
 
     setForm((prev) => ({
       ...prev,
@@ -104,30 +111,28 @@ export default function UserFormWrapper({
 
   const handleSubmit = async () => {
     setLoading(true);
+
     try {
       const sendForm = {
         ...form,
-        role: form.role,
-        id: form.id,
-        tenantId: tenantId,
-        firstName: form.firstName,
-        lastName: form.lastName,
-        gender: form.gender,
-        dateOfBirth: form.dateOfBirth,
-        isActive: form.isActive,
+        tenantId,
       };
-
       await createAndUpdateUser(
         sendForm,
         setMissingFields,
         setButtonLoader,
         tenantId,
-        setModalOpen
+        setModalOpen,
+        refresh
       );
-
-      refresh(tenantId);
     } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "An error occurred while submitting the user. Please try again.",
+      });
       console.error("Error submitting user:", err);
+      return;
     } finally {
       setLoading(false);
     }
@@ -147,6 +152,7 @@ export default function UserFormWrapper({
       showActiveToggle
       submitLabel={form?.id ? "Update User" : "Create User"}
       loading={loading}
+      disableSubmit={!hasChanges} // <--- disable button if no changes
     />
   );
 }

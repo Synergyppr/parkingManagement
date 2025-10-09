@@ -7,9 +7,10 @@ import {
   findLinkedGroup,
   generateLabelsMap,
 } from "../lib/carPartsLegend";
-import { FaStar } from "react-icons/fa";
+import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
 import { PiUserCircleFill } from "react-icons/pi";
 import TicketDetailsModal from "./TicketDetailsModal";
+import PageLoader from "./elements/PageLoader";
 
 interface Survey {
   id: string;
@@ -19,16 +20,20 @@ interface Survey {
   rating: number;
 }
 
+// Render stars with half-star support
 const renderStars = (rating: number) => {
   const stars = [];
   for (let i = 1; i <= 5; i++) {
-    stars.push(
-      <FaStar
-        key={i}
-        className="w-5 h-5"
-        color={i <= Math.floor(rating) ? "gold" : "#e5e7eb"}
-      />
-    );
+    if (rating >= i) {
+      // Full star
+      stars.push(<FaStar key={i} className="w-5 h-5 text-yellow-400" />);
+    } else if (rating >= i - 0.5) {
+      // Half star
+      stars.push(<FaStarHalfAlt key={i} className="w-5 h-5 text-yellow-400" />);
+    } else {
+      // Empty star
+      stars.push(<FaRegStar key={i} className="w-5 h-5 text-gray-300" />);
+    }
   }
   return stars;
 };
@@ -36,6 +41,7 @@ const renderStars = (rating: number) => {
 const Surveys = () => {
   const { propertyId } = useProperty();
   const saveClickedRef = useRef(false);
+  const [loading, setLoading] = useState(true);
   const [report, setReport] = useState<Survey[]>([]);
   const [ticketDetails, setTicketDetails] = useState(null); // Placeholder for ticket details
   const [showTicketDetailsModal, setShowTicketDetailsModal] = useState(false);
@@ -59,6 +65,7 @@ const Surveys = () => {
   useEffect(() => {
     const fetchSurveys = async () => {
       if (!propertyId) return;
+      setLoading(true);
       try {
         const res = await fetch("/api/patronRating/getAll", {
           method: "POST",
@@ -68,13 +75,18 @@ const Surveys = () => {
 
         const data = await res.json();
 
-        if (data?.status === "200") setReport(data?.data || []);
-        else {
+        if (data?.status === "200") {
+          setLoading(false);
+          setReport(data?.data || []);
+        } else {
+          setLoading(false);
           console.log("Failed to fetch surveys", data?.message);
           return;
         }
       } catch (error) {
+        setLoading(false);
         console.error("Failed to fetch surveys", error);
+        return;
       }
     };
 
@@ -83,6 +95,8 @@ const Surveys = () => {
 
   const handleFetchTicketDetails = async (id: string) => {
     if (!id) return;
+
+    setLoading(true);
 
     try {
       const res = await fetch("/api/getTicketDetails", {
@@ -94,6 +108,7 @@ const Surveys = () => {
       const data = await res.json();
 
       if (data?.status === "200") {
+        setLoading(false);
         setTicketDetails(data?.data);
         const damaged = data?.data?.damagedParts || [];
 
@@ -120,11 +135,9 @@ const Surveys = () => {
             const viewParts = viewMap[carView];
 
             if (!viewParts) {
-              // console.warn(`Unknown carView: ${carView}`);
               return;
             }
 
-            // Filter the label map for the current view only
             const viewLabelToIdsMap = generateLabelsMap(viewParts);
             const matchedPartIds = viewLabelToIdsMap[formattedLabel];
 
@@ -139,10 +152,6 @@ const Surveys = () => {
               }
 
               setShowTicketDetailsModal(true);
-            } else {
-              console.warn(
-                `No matching label found for: ${formattedLabel} in ${carView}`
-              );
             }
           }
         );
@@ -153,14 +162,17 @@ const Surveys = () => {
         setDamagedParts(damaged);
         setShowTicketDetailsModal(true);
       } else {
+        setLoading(false);
         Swal.fire({
           title: "Error",
           text: data?.result?.message || "Failed to fetch ticket details",
           icon: "error",
           confirmButtonText: "OK",
         });
+        return;
       }
     } catch (error) {
+      setLoading(false);
       console.error("Failed to fetch ticket details", error);
       Swal.fire({
         title: "Error",
@@ -168,6 +180,7 @@ const Surveys = () => {
         icon: "error",
         confirmButtonText: "OK",
       });
+      return;
     }
   };
 
@@ -185,89 +198,123 @@ const Surveys = () => {
       setViewAllDamagedParts(false);
       setHasUnsavedChanges(false);
       saveClickedRef.current = false;
-    }, 300); // Match with CSS transition duration
+    }, 300);
   };
 
+  // Calculate average rating
+  const calculateAverageRating = () => {
+    if (report.length === 0) return 0;
+    const total = report.reduce((sum, survey) => sum + survey.rating, 0);
+    return total / report.length;
+  };
+  const averageRating = calculateAverageRating();
+
   return (
-    <div className="text-gray-800 lg:min-w-[60%] mt-10">
-      <h1 className="text-3xl font-bold tracking-tight mb-4">
-        Valet Service Feedback
-      </h1>
-
-      <div className="space-y-4 py-2">
-        {report?.map((survey) => (
-          <div
-            key={survey?.id}
-            className="rounded-xl border border-gray-200 p-6 mt-2"
-          >
-            {/* Header: Author + Rating */}
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex items-center gap-2">
-                <PiUserCircleFill className="w-6 h-6 text-gray-500" />
-                <p className="font-bold text-gray-700 text-lg">
-                  {survey?.fullName}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                {renderStars(survey?.rating)}
-                <span className="text-gray-600 text-sm">
-                  {survey?.rating?.toFixed(1)}
-                </span>
-              </div>
-            </div>
-
-            {/* Comment */}
-            <div className="bg-gray-50 rounded-lg p-4 text-gray-700 text-sm">
-              {survey?.comments ? (
-                <p>{survey?.comments}</p>
-              ) : (
-                <p className="italic text-gray-400">No comment provided.</p>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={() =>
-                  handleFetchTicketDetails(survey?.ticketId?.toString())
-                }
-                type="button"
-                className="border border-gray-300 rounded-lg px-4 py-2 text-sm hover:bg-gray-100 transition cursor-pointer"
-              >
-                View Ticket
-              </button>
-            </div>
+    <>
+      {loading === true && propertyId && (
+        <div className="fixed inset-0 bg-black/70 bg-opacity-70 z-50 flex items-center justify-center">
+          <div className="flex flex-col h-auto">
+            <PageLoader />
+            <p className="text-white text-sm font-light mt-1 relative bottom-[80px] md:bottom-[150px] lg:bottom-[175px]">
+              Loading data, please wait a moment...
+            </p>
           </div>
-        ))}
+        </div>
+      )}
+
+      <div className="text-gray-800 px-4 lg:min-w-[60%] mt-10">
+        {/* Header with average rating */}
+        <div className="flex flex-col md:flex-row lg:flex-row items-center md:gap-4 lg:gap-4">
+          <h1 className="text-3xl font-bold tracking-tight mb-4">
+            Valet Service Feedback
+          </h1>
+          <div className="flex items-center gap-2 mb-4">
+            {renderStars(averageRating)}
+            <h1 className="text-xl font-semibold tracking-tight text-gray-500">
+              ({averageRating.toFixed(1)} / 5)
+            </h1>
+          </div>
+        </div>
+
+        <div className="space-y-4 py-2 mb-4">
+          {report
+            // ?.reverse() // Show latest first
+            ?.sort((a, b) => (a.id < b.id ? 1 : -1)) // Sort by ID descending
+            ?.map((survey) => (
+              <div
+                key={survey?.id}
+                className="rounded-xl border border-gray-200 p-6 mt-2"
+              >
+                {/* Header: Author + Rating */}
+                <div className="flex flex-col md:flex-row lg:flex-row gap-2 md:gap-0 lg:gap-0 justify-between items-start mb-3">
+                  <div className="flex items-center gap-2">
+                    <PiUserCircleFill className="w-6 h-6 text-gray-500" />
+                    <p className="font-bold text-gray-700 text-lg">
+                      {survey?.fullName}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {renderStars(survey?.rating)}
+                    <span className="text-gray-600 text-sm">
+                      {survey?.rating?.toFixed(1)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Comment */}
+                <div className="bg-gray-50 rounded-lg p-4 text-gray-700 text-sm">
+                  {survey?.comments ? (
+                    <p>{survey?.comments}</p>
+                  ) : (
+                    <p className="italic text-gray-400">No comment provided.</p>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex justify-end mt-4">
+                  <button
+                    onClick={() =>
+                      handleFetchTicketDetails(survey?.ticketId?.toString())
+                    }
+                    type="button"
+                    className="border border-gray-300 rounded-lg px-4 py-2 text-sm hover:bg-gray-100 transition cursor-pointer"
+                  >
+                    View Ticket
+                  </button>
+                </div>
+              </div>
+            ))}
+        </div>
+
+        {/* Ticket Details Modal */}
+        <TicketDetailsModal
+          isOpen={showTicketDetailsModal}
+          onClose={handleCloseTicketDetails}
+          ticketDetails={ticketDetails}
+          detailsActiveTab={detailsActiveTab}
+          setDetailsActiveTab={setDetailsActiveTab}
+          transitionState={transitionState}
+          setTransitionState={setTransitionState}
+          noIncident={noIncident}
+          setNoIncident={setNoIncident}
+          incidentParts={incidentParts}
+          setIncidentParts={setIncidentParts}
+          descriptions={descriptions}
+          setDescriptions={setDescriptions}
+          damagedParts={damagedParts}
+          viewAllDamagedParts={viewAllDamagedParts}
+          setViewAllDamagedParts={setViewAllDamagedParts}
+          formLicensePlate={""}
+          findLinkedGroup={findLinkedGroup}
+          frontViewLabelsMap={frontViewLabelsMap}
+          rearViewLabelsMap={rearViewLabelsMap}
+          passengerViewLabelsMap={passengerViewLabelsMap}
+          driverViewLabelsMap={driverViewLabelsMap}
+          setHasUnsavedChanges={setHasUnsavedChanges}
+          saveClickedRef={saveClickedRef}
+        />
       </div>
-      {/* Ticket Details Modal */}
-      <TicketDetailsModal
-        isOpen={showTicketDetailsModal}
-        onClose={handleCloseTicketDetails}
-        ticketDetails={ticketDetails}
-        detailsActiveTab={detailsActiveTab}
-        setDetailsActiveTab={setDetailsActiveTab}
-        transitionState={transitionState}
-        setTransitionState={setTransitionState}
-        noIncident={noIncident}
-        setNoIncident={setNoIncident}
-        incidentParts={incidentParts}
-        setIncidentParts={setIncidentParts}
-        descriptions={descriptions}
-        setDescriptions={setDescriptions}
-        damagedParts={damagedParts}
-        viewAllDamagedParts={viewAllDamagedParts}
-        setViewAllDamagedParts={setViewAllDamagedParts}
-        formLicensePlate={""}
-        findLinkedGroup={findLinkedGroup}
-        frontViewLabelsMap={frontViewLabelsMap}
-        rearViewLabelsMap={rearViewLabelsMap}
-        passengerViewLabelsMap={passengerViewLabelsMap}
-        driverViewLabelsMap={driverViewLabelsMap}
-        setHasUnsavedChanges={setHasUnsavedChanges}
-        saveClickedRef={saveClickedRef}
-      />
-    </div>
+    </>
   );
 };
 

@@ -6,7 +6,7 @@ const CreateAndUpdateTenantEndpoint =
 const DeleteTenantEndpoint = process.env.DELETE_TENANT_ENDPOINT + "";
 // Users
 const GetUsersByTenantEndpoint = process.env.GET_USERS_BY_TENANT_ENDPOINT + "";
-const GetAppUserByEndpoint = process.env.GET_APP_USER_BY_ENDPOINT + "";
+const GetAppUserByIdEndpoint = process.env.GET_APP_USER_BY_ID_ENDPOINT + "";
 const CreateAndUpdateAppUserByEndpoint =
   process.env.CREATE_AND_UPDATE_APP_USER_BY_ENDPOINT + "";
 const DeleteAppUserByEndpoint = process.env.DELETE_APP_USER_BY_ENDPOINT + "";
@@ -90,8 +90,8 @@ const Endpoints = [
     endpoint: GetUsersByTenantEndpoint,
   },
   {
-    name: "Get App User By",
-    endpoint: GetAppUserByEndpoint,
+    name: "Get App User By ID",
+    endpoint: GetAppUserByIdEndpoint,
   },
   {
     name: "Create And Update App User",
@@ -221,7 +221,6 @@ const Endpoints = [
     name: "Create Or Update Device",
     endpoint: CreateOrUpdateDeviceEndpoint,
   },
-
   {
     name: "Delete Device",
     endpoint: DeleteDeviceEndpoint,

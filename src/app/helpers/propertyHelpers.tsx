@@ -1,4 +1,5 @@
 import Swal from "sweetalert2";
+import { UserForm as UserFormType, Property } from "../types";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 interface Tenant {
@@ -171,8 +172,8 @@ export const getUsersByTenant = async (
   tenantId: string,
   setLoading: (loading: boolean) => void,
   setSelectedTenantId: (id: string) => void,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setUsers: any,
+  setInitialUsers: (users: UserFormType[]) => void,
+  setUsers: (users: UserFormType[]) => void,
   setIsUserModalOpen: (isOpen: boolean) => void
 ) => {
   setLoading(true);
@@ -188,6 +189,7 @@ export const getUsersByTenant = async (
 
     const result = data?.result?.data;
 
+    setInitialUsers(result || []);
     setUsers(result || []);
     setIsUserModalOpen(true);
     setLoading(false);
@@ -204,12 +206,56 @@ export const getUsersByTenant = async (
   }
 };
 
+export const getUserById = async (
+  userId: string,
+  setLoading: (loading: boolean) => void,
+  setOpen: (isOpen: boolean) => void,
+  setUser: (user: UserFormType) => void
+) => {
+  setLoading(true);
+  try {
+    const res = await fetch("/api/users/getAppUser", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: userId }),
+    });
+
+    const data = await res.json();
+
+    if (data?.result?.status === "200") {
+      const result = data?.result?.data;
+      setUser(result || []);
+      setLoading(false);
+      setOpen(true);
+    } else {
+      console.error("Failed to fetch user:", data);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: data?.result?.message || "Something went wrong.",
+      });
+      setLoading(false);
+      return;
+    }
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    setLoading(false);
+    Swal.fire({
+      icon: "error",
+      title: "Failed to fetch user",
+      text: "Please try again later.",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
 export const getPropertiesByTenant = async (
   tenantId: string,
   setSelectedTenantId: (id: string) => void,
   setLoading: (loading: boolean) => void,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setProperties: any,
+  setInitialProperties: (properties: Property[]) => void,
+  setProperties: (properties: Property[]) => void,
   setIsPropertyModalOpen: (isOpen: boolean) => void
 ) => {
   setLoading(true);
@@ -225,6 +271,7 @@ export const getPropertiesByTenant = async (
 
     const result = data?.result?.data;
 
+    setInitialProperties(result || []);
     setProperties(result || []);
     setIsPropertyModalOpen(true);
     setLoading(false);

@@ -134,7 +134,7 @@ function EntryManager({
   return (
     <div className="overflow-hidden bg-white text-gray-800 relative">
       <div className="p-4 min-h-full">
-        <form className="flex items-center gap-2 mb-4">
+        <form className="flex flex-col md:flex-row lg:flex-row items-center gap-2 mb-4">
           <FormInput
             name="formValue"
             placeholder={`Enter ${title}`}
@@ -143,22 +143,24 @@ function EntryManager({
             onChange={(e) => setFormValue1(e.target.value)}
             onClear={() => setFormValue1("")}
           />
-          <FormInput
-            name="formValue"
-            placeholder={`Enter value`}
-            icon={<FaRegMoneyBill1 />}
-            value={formValue2}
-            onChange={(e) => setFormValue2(e.target.value)}
-            onClear={() => setFormValue2("")}
-          />
-          <button
-            type="button"
-            disabled={buttonLoading}
-            onClick={handleSubmit}
-            className="cursor-pointer ml-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-6 font-semibold shadow-md tracking-tight rounded"
-          >
-            {editingId ? "Update" : "Add"}
-          </button>
+          <div className="flex gap-2 items-center">
+            <FormInput
+              name="formValue"
+              placeholder={`Enter value`}
+              icon={<FaRegMoneyBill1 />}
+              value={formValue2}
+              onChange={(e) => setFormValue2(e.target.value)}
+              onClear={() => setFormValue2("")}
+            />
+            <button
+              type="button"
+              disabled={buttonLoading}
+              onClick={handleSubmit}
+              className="cursor-pointer ml-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-6 font-semibold shadow-md tracking-tight rounded"
+            >
+              {editingId ? "Update" : "Add"}
+            </button>
+          </div>
         </form>
 
         {/* List */}
@@ -199,16 +201,14 @@ const TransactionTypeManager: React.FC<{
   return (
     <div>
       <div className="w-full bg-gradient-to-r from-blue-900 to-blue-800 text-white py-4 px-4 text-center rounded-t-sm">
-        <h1 className="text-2xl font-extrabold drop-shadow-lg">
-          Transaction Types
-        </h1>
+        <h1 className="text-2xl font-extrabold drop-shadow-lg">Rates</h1>
         <p className="text-sm drop-shadow-sm mt-2">
-          Manage the available transaction types in your system.
+          Manage the available rates in your system.
         </p>
       </div>
 
       <EntryManager
-        title="Transaction Type"
+        title="Rate Type"
         data={transactionTypes || []}
         fetchTransactionTypes={fetchTransactionTypes}
       />

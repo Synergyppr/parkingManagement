@@ -194,11 +194,11 @@ export default function TransactionForm({
 
   return (
     <div>
-      <form className="mt-6 px-10 py-2">
-        <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+      <form className="mt-6 px-0 md:px-8 lg:px-10 py-2">
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-1 md:gap-3 lg:gap-4">
           <div className="flex justify-between">
             {/* Ticket Number */}
-            <div className="py-2 px-[10px] flex items-center gap-[26px]">
+            <div className="py-2 px-2 md:px-[10px] lg:px-[10px] flex items-center gap-2 md:gap-[20px] lg:gap-[26px]">
               <MdOutlineReceiptLong className="text-blue-600" />
               <span className="text-gray-700 text-base">
                 Ticket{" "}
@@ -207,7 +207,7 @@ export default function TransactionForm({
             </div>
 
             {/* Value (read-only) */}
-            <div className="py-2 px-[10px] flex items-center gap-[26px]">
+            <div className="py-2 px-2 md:px-[10px] lg:px-[10px] flex items-center gap-2 md:gap-[20px] lg:gap-[26px]">
               <FaMoneyBillWave className="text-blue-600" />
               <span className="text-gray-700 text-base">
                 Price: <span className="font-bold">${price ? price : 0}</span>
