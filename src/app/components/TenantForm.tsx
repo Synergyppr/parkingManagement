@@ -1,9 +1,11 @@
 "use client";
-import { useState } from "react";
+import { ChangeEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
+
 import { createAndUpdateTenant } from "../helpers/propertyHelpers";
 import { Tenant } from "../types";
+
 import ModalForm, { FormFieldConfig } from "./ModalForm";
 
 export default function TenantFormWrapper({
@@ -26,7 +28,9 @@ export default function TenantFormWrapper({
   });
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
