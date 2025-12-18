@@ -1,13 +1,17 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
 import Swal from "sweetalert2";
+import { useSearchParams } from "next/navigation";
+
 import {
   Ticket,
-  TicketResponseData,
   TicketDetails,
   CarBrand,
   DropdownOption,
+  CarPart,
 } from "@/app/types";
+import { DashboardProps } from "../types/pagesProps";
+import { fetchTicketsData } from "../helpers/dashboardHelpers";
 import useAuthRedirect from "../hooks/loginHook";
 import usePropertyListener from "../hooks/usePropertyListener";
 import { useProperty } from "../context/PropertyContext";
@@ -17,6 +21,7 @@ import {
   findLinkedGroup,
   generateLabelsMap,
 } from "../lib/carPartsLegend";
+
 import TabNavigation from "../components/TabNavigation";
 import ReceiveForm from "../components/ReceiveForm";
 import TicketDetailsModal from "../components/TicketDetailsModal";
@@ -24,14 +29,14 @@ import PinConfirmationModal from "../components/PinConfirmationModal";
 import ValetTicketList from "../components/ValetTicketList";
 import PageLoader from "../components/elements/PageLoader";
 
-interface Props {
-  initialStatus?: string | null;
-}
-
-export default function DashboardClient({ initialStatus = null }: Props) {
+export default function DashboardClient({
+  initialStatus = null,
+}: DashboardProps) {
   const { registerNotificationHandler } = useSignalR();
   const { propertyId, latitude, longitude, locationMode, requestLocation } =
     useProperty();
+  const searchParams = useSearchParams();
+  const statusFromUrl = searchParams.get("status");
 
   const validStatuses = ["received", "parked", "requested", "ready"];
   const saveClickedRef = useRef(false);
@@ -50,11 +55,9 @@ export default function DashboardClient({ initialStatus = null }: Props) {
     "" | "received" | "parked" | "requested" | "ready" | null
   >(null);
   const [noIncident, setNoIncident] = useState(false);
-  const [incidentParts, setIncidentParts] = useState<string[]>([]);
+  const [incidentParts, setIncidentParts] = useState<CarPart[]>([]);
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
-  const [damagedParts, setDamagedParts] = useState<
-    { partName: string; description: string; carView: string }[]
-  >([]);
+  const [damagedParts, setDamagedParts] = useState<CarPart[]>([]);
   const [pin, setPin] = useState<string>(""); // PIN to change status
   const [showPin, setShowPin] = useState<boolean>(false);
   const [showPinConfirmationModal, setShowPinConfirmationModal] =
@@ -67,11 +70,13 @@ export default function DashboardClient({ initialStatus = null }: Props) {
     useState<boolean>(false);
   const [viewAllDamagedParts, setViewAllDamagedParts] =
     useState<boolean>(false); // Show/Hide text descriptions of damaged parts
-  const [ticketDetails, setTicketDetails] = useState<TicketDetails | null>(
-    null
+  const [ticketDetails, setTicketDetails] = useState<TicketDetails>(
+    {} as TicketDetails
   );
+  const [reloadPageData, setReloadPageData] = useState<boolean>(false);
   const [, setHasUnsavedChanges] = useState<boolean>(true);
   const [transitionState, setTransitionState] = useState<string>("fade-in");
+
   const frontViewLabelsMap = generateLabelsMap(carParts.frontViewCar);
   const rearViewLabelsMap = generateLabelsMap(carParts.rearViewCar);
   const passengerViewLabelsMap = generateLabelsMap(carParts.passengerViewCar); // Right-Side View
@@ -92,54 +97,26 @@ export default function DashboardClient({ initialStatus = null }: Props) {
   usePropertyListener(); // listen for property changes based on user's location
 
   useEffect(() => {
-    if (initialStatus && validStatuses.includes(initialStatus)) {
+    if (initialStatus && validStatuses?.includes(initialStatus)) {
       setActiveTab(initialStatus);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialStatus]);
 
-  const fetchData = async () => {
-    // GetValetTicketsByPropertyId
-    if (!propertyId) {
-      setVehicles([]);
-      setReadyVehicles([]);
-      return;
+  useEffect(() => {
+    if (statusFromUrl) {
+      if (validStatuses.includes(statusFromUrl)) {
+        setActiveTab(statusFromUrl);
+      }
     }
-    try {
-      const res = await fetch("/api/getTicket", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          propertyId,
-        }),
-      });
-
-      const data = await res.json();
-      const result: TicketResponseData = data?.data;
-
-      setVehicles(result?.tickets);
-      setReadyVehicles(result?.readyTickets || []);
-      setCarBrands(result?.carBrands);
-      setVehicleTypes(result?.vehicleTypes);
-      setVehicleColors(result?.vehicleColors);
-      setLoading(false);
-    } catch (error) {
-      console.log("Failed to fetch valet tickets", error);
-      Swal.fire({
-        title: "Error",
-        text: (error as string) || "Failed to fetch valet tickets",
-        icon: "error",
-        confirmButtonText: "OK",
-      });
-    }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, statusFromUrl]);
 
   useEffect(() => {
     // Register the SignalR notification handler
     registerNotificationHandler(() => {
-      fetchData(); // Refetch tickets when a notification is received
+      setReloadPageData(true);
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [registerNotificationHandler]);
 
   useEffect(() => {
@@ -155,11 +132,32 @@ export default function DashboardClient({ initialStatus = null }: Props) {
     if (locationMode === "live") {
       requestLocation(); // Request user's location
     }
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [propertyId, locationMode]);
 
-  // Utility function to remove ticketNumber from an object
+    fetchTicketsData({
+      propertyId,
+      setVehicles,
+      setReadyVehicles,
+      setCarBrands,
+      setVehicleTypes,
+      setVehicleColors,
+      setLoading,
+    });
+
+    return () => {
+      setReloadPageData(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propertyId, locationMode, reloadPageData]);
+
+  useEffect(() => {
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Utility function to remove ticketNumber from an object (to ignore it in comparison)
   const omitTicketNumber = (formObj: typeof form) => {
     const newForm = { ...formObj };
     delete newForm.ticketNumber;
@@ -186,14 +184,7 @@ export default function DashboardClient({ initialStatus = null }: Props) {
     }
   };
 
-  useEffect(() => {
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+  // Handle tab change (Received, Parked, Requested, Ready) to view tickets
   const handleTabChange = (newTab: string) => {
     if (!isFormChanged()) {
       setActiveTab(newTab);
@@ -215,6 +206,7 @@ export default function DashboardClient({ initialStatus = null }: Props) {
     });
   };
 
+  // Change selected ticket status
   const handleStatusChange = (
     id: string,
     status: "" | "received" | "parked" | "requested" | "ready" | null
@@ -227,293 +219,6 @@ export default function DashboardClient({ initialStatus = null }: Props) {
         return;
       } else setShowPinConfirmationModal(true);
     }, 500);
-  };
-
-  const closePinModal = () => {
-    setShowPinConfirmationModal(false);
-    setPin("");
-  };
-
-  const handleFetchTicketDetails = async (id: string) => {
-    if (!id) return;
-
-    try {
-      const res = await fetch("/api/getTicketDetails", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-
-      const data = await res.json();
-
-      if (data?.status === "200") {
-        setTicketDetails(data?.data);
-        const damaged = data?.data?.damagedParts || [];
-
-        const viewMap: Record<string, Record<string, string>> = {
-          FrontView: carParts.frontViewCar,
-          RearView: carParts.rearViewCar,
-          PassengerView: carParts.passengerViewCar,
-          DriverView: carParts.driverViewCar,
-        };
-
-        const newIncidentParts: string[] = [];
-        const newDescriptions: Record<string, string> = {};
-
-        damaged.forEach(
-          (item: {
-            partName: string;
-            description: string;
-            carView: string;
-          }) => {
-            const { partName, description, carView } = item;
-
-            // Convert "RightHeadlight" → "Right Headlight"
-            const formattedLabel = partName.replace(/([A-Z])/g, " $1").trim();
-            const viewParts = viewMap[carView];
-
-            if (!viewParts) {
-              return;
-            }
-
-            // Filter the label map for the current view only
-            const viewLabelToIdsMap = generateLabelsMap(viewParts);
-            const matchedPartIds = viewLabelToIdsMap[formattedLabel];
-
-            if (matchedPartIds?.length) {
-              matchedPartIds.forEach((id) => {
-                const group = findLinkedGroup(id);
-                newIncidentParts.push(...group);
-              });
-
-              if (description) {
-                newDescriptions[formattedLabel] = description;
-              }
-            } else {
-              console.warn(
-                `No matching label found for: ${formattedLabel} in ${carView}`
-              );
-            }
-          }
-        );
-
-        const uniqueParts = Array.from(new Set(newIncidentParts));
-        setIncidentParts(uniqueParts);
-        setDescriptions(newDescriptions);
-        setDamagedParts(damaged);
-        setShowTicketDetailsModal(true);
-      } else {
-        Swal.fire({
-          title: "Error",
-          text: data?.result?.message || "Failed to fetch ticket details",
-          icon: "error",
-          confirmButtonText: "OK",
-        });
-      }
-    } catch (error) {
-      console.error("Failed to fetch ticket details", error);
-      Swal.fire({
-        title: "Error",
-        text: (error as string) || "Failed to fetch ticket details",
-        icon: "error",
-        confirmButtonText: "OK",
-      });
-    }
-  };
-
-  const handlePinSubmit = async () => {
-    if (!selectedTicketId || !nextStatus || !pin) return;
-
-    setButtonLoader(true);
-
-    navigator.geolocation.getCurrentPosition(async (position) => {
-      const { latitude: userLat, longitude: userLng } = position.coords;
-
-      const sendForm = {
-        ticketId: selectedTicketId,
-        status: nextStatus,
-        isUserUpdate: false,
-        pin: pin,
-        propertyId: propertyId,
-        latitude: locationMode === "manual" ? latitude : userLat,
-        longitude: locationMode === "manual" ? longitude : userLng,
-      };
-
-      try {
-        const res = await fetch("/api/vehicleStatus", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(sendForm),
-        });
-
-        const data = await res.json();
-
-        if (data?.result?.status === "200") {
-          setVehicles([
-            ...vehicles.map((vehicle) => {
-              if (vehicle?.id === selectedTicketId) {
-                return {
-                  ...vehicle,
-                  status: nextStatus,
-                  isRead: false, // Reset read status when status changes
-                };
-              }
-              return vehicle;
-            }),
-          ]);
-
-          await fetchData(); // refresh the data from the API
-
-          markAsRead(
-            vehicles?.find(
-              (vehicle) => vehicle?.id === selectedTicketId
-            ) as Ticket,
-            "changeStatus"
-          );
-
-          setTimeout(() => {
-            Swal.fire({
-              title: "Success",
-              // text: data?.result?.message,
-              text: `Ticket status updated to ${nextStatus}.`,
-              icon: "success",
-              confirmButtonText: "OK",
-            });
-          }, 700);
-        } else {
-          setTimeout(() => {
-            Swal.fire({
-              title: "Error",
-              text: data?.result?.message || "Failed to update status",
-              icon: "error",
-              confirmButtonText: "OK",
-            });
-          }, 700);
-        }
-
-        closePinModal();
-      } catch (error) {
-        console.error("Failed to update status", error);
-        Swal.fire({
-          title: "Error",
-          text: (error as string) || "Failed to update status",
-          icon: "error",
-          confirmButtonText: "OK",
-        });
-      } finally {
-        setButtonLoader(false);
-        setPin("");
-        setShowPinConfirmationModal(false);
-        setSelectedTicketId(null);
-        setNextStatus(null);
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      (error: unknown) => {
-        console.error("Geolocation error:", error);
-        Swal.fire({
-          icon: "error",
-          title: "Location Error",
-          text: "Unable to retrieve your location. Please allow location access and try again.",
-        });
-        setButtonLoader(false);
-      };
-    });
-  };
-
-  const handleCloseTicketDetails = () => {
-    setShowTicketDetailsModal(false);
-    setTicketDetails(null);
-    setViewAllDamagedParts(false);
-    setIncidentParts([]);
-    setDescriptions({});
-    setNoIncident(false);
-    setDetailsActiveTab("Details");
-  };
-
-  const markAsRead = async (vehicle: Ticket, action: string) => {
-    setSelectedTicketId(vehicle?.id);
-
-    const ticket = {
-      ticketNumber: vehicle.ticketNumber,
-      notificationId: vehicle.notificationId,
-      isRead: vehicle.isRead,
-    };
-
-    if (action !== "view" && action !== "changeStatus") {
-      console.warn(`Unsupported action: ${action}`);
-      return;
-    }
-
-    if (!ticket?.ticketNumber) return;
-
-    try {
-      const sendForm = {
-        id: ticket?.notificationId,
-      };
-
-      if (action === "view") {
-        const res = await fetch("/api/notification/read", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(sendForm),
-        });
-
-        const data = await res.json();
-
-        if (data?.status === "200") {
-          fetchData(); // Refresh the data from the API
-        } else {
-          Swal.fire({
-            title: "Error",
-            text: data?.message || "Failed to mark ticket as read",
-            icon: "error",
-            confirmButtonText: "OK",
-          });
-          console.error("Error marking ticket as read:", data);
-          return;
-        }
-        return;
-      } else if (action === "changeStatus") {
-        const res = await fetch("/api/notification/unread", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(sendForm),
-        });
-
-        const data = await res.json();
-
-        if (data?.status === "200") {
-          fetchData();
-        } else {
-          Swal.fire({
-            title: "Error",
-            text: data?.message || "Failed to mark ticket as unread",
-            icon: "error",
-            confirmButtonText: "OK",
-          });
-          return;
-        }
-      }
-
-      // Update the unread status of the ticket
-      setVehicles((prevVehicles) =>
-        prevVehicles.map((vehicle) =>
-          vehicle?.ticketNumber === ticket?.ticketNumber
-            ? { ...vehicle, isRead: true }
-            : vehicle
-        )
-      );
-    } catch (error) {
-      console.error("Error marking ticket as read", error);
-      Swal.fire({
-        title: "Error",
-        text: "Failed to mark ticket as read",
-        icon: "error",
-        confirmButtonText: "OK",
-      });
-      return;
-    }
   };
 
   return (
@@ -538,8 +243,8 @@ export default function DashboardClient({ initialStatus = null }: Props) {
         <TabNavigation
           selected={activeTab}
           onSelect={handleTabChange}
-          fetchData={fetchData}
           unreadTicketIds={unreadRequestedTickets}
+          setReloadPageData={setReloadPageData}
         />
 
         <div className="w-full max-w-screen-xl mx-auto mt-2">
@@ -550,7 +255,6 @@ export default function DashboardClient({ initialStatus = null }: Props) {
                 carBrands={carBrands}
                 vehicleTypes={vehicleTypes}
                 vehicleColors={vehicleColors}
-                fetchData={fetchData}
                 form={form}
                 setForm={setForm}
                 initialForm={initialForm}
@@ -558,6 +262,8 @@ export default function DashboardClient({ initialStatus = null }: Props) {
                 isFormChanged={isFormChanged}
                 shouldBypassUnloadPromptRef={shouldBypassUnloadPromptRef}
                 patronId={form?.patronId as string}
+                setHasUnsavedChanges={setHasUnsavedChanges}
+                setReloadPageData={setReloadPageData}
               />
             )}
             {/* Parked, Requested and Ready Tabs */}
@@ -569,21 +275,28 @@ export default function DashboardClient({ initialStatus = null }: Props) {
               activeTab !== "received" && (
                 <ValetTicketList
                   vehicles={activeTab === "ready" ? readyVehicles : vehicles}
+                  setVehicles={
+                    activeTab === "ready" ? setReadyVehicles : setVehicles
+                  }
                   activeTab={activeTab}
                   unreadTicketIds={unreadTicketIds}
                   damagedParts={damagedParts}
-                  handleFetchTicketDetails={handleFetchTicketDetails}
                   handleStatusChange={handleStatusChange}
-                  markAsRead={markAsRead}
                   showTransactionModal={showTransactionModal}
                   setShowTransactionModal={setShowTransactionModal}
                   selectedTicketId={selectedTicketId}
-                  fetchData={fetchData}
+                  setSelectedTicketId={setSelectedTicketId}
                   latitude={latitude as number}
                   longitude={longitude as number}
                   locationMode={locationMode}
                   propertyId={propertyId}
                   pageLoading={loading}
+                  setReloadPageData={setReloadPageData}
+                  setTicketDetails={setTicketDetails}
+                  setIncidentParts={setIncidentParts}
+                  setDescriptions={setDescriptions}
+                  setDamagedParts={setDamagedParts}
+                  setShowTicketDetailsModal={setShowTicketDetailsModal}
                 />
               )
             )}
@@ -599,15 +312,23 @@ export default function DashboardClient({ initialStatus = null }: Props) {
           showPin={showPin}
           setShowPin={setShowPin}
           buttonLoader={buttonLoader}
-          onSubmit={handlePinSubmit}
-          propertyId={propertyId}
+          selectedTicketId={selectedTicketId}
+          setSelectedTicketId={setSelectedTicketId}
+          nextStatus={nextStatus}
+          setNextStatus={setNextStatus}
+          vehicles={vehicles}
+          setVehicles={setVehicles}
+          setShowPinConfirmationModal={setShowPinConfirmationModal}
+          setButtonLoader={setButtonLoader}
+          setReloadPageData={setReloadPageData}
         />
 
         {/* Ticket Details Modal */}
         <TicketDetailsModal
           isOpen={showTicketDetailsModal}
-          onClose={handleCloseTicketDetails}
+          setIsOpen={setShowTicketDetailsModal}
           ticketDetails={ticketDetails}
+          setTicketDetails={setTicketDetails}
           detailsActiveTab={detailsActiveTab}
           setDetailsActiveTab={setDetailsActiveTab}
           transitionState={transitionState}

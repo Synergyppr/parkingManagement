@@ -15,21 +15,19 @@ const tabs: TabItem[] = [
 export default function TabNavigation({
   selected,
   onSelect,
-  fetchData,
   unreadTicketIds,
+  setReloadPageData,
 }: {
   selected: string;
   onSelect: (key: string) => void;
-  fetchData: () => void;
   unreadTicketIds: Ticket[];
+  setReloadPageData: (value: boolean) => void;
 }) {
   const { registerNotificationHandler } = useSignalR();
 
   useEffect(() => {
-    fetchData(); // Initial data
     registerNotificationHandler(() => {
-      // console.log("🔄 Refetching due to new notification");
-      fetchData();
+      setReloadPageData(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

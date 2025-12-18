@@ -1,4 +1,4 @@
-import { GetContentData, PostContentData } from "../../lib/apiFunctions";
+import { GetContentData } from "../../lib/apiFunctions";
 import { Tenant as TenantType } from "../../types";
 
 function isTenant(obj: unknown): obj is TenantType {
@@ -17,7 +17,7 @@ function isTenantArray(data: unknown): data is TenantType[] {
 }
 
 export default async function Page() {
-  let tenants: TenantType[] | null = null;
+  // let tenants: TenantType[] | null = null;
 
   const response = await GetContentData("Get Tenants");
 
@@ -27,29 +27,29 @@ export default async function Page() {
       : null;
 
   if (isTenantArray(result)) {
-    tenants = result;
+    // tenants = result;
   } else {
     console.warn("Invalid data received from backend", response);
   }
 
-  const tenant = tenants?.find(
-    (tenant) => tenant.id === "907b5b8a-3e2b-4b5f-bbb3-9f5f99fb5c37"
-  );
+  // const tenant = tenants?.find(
+  //   (tenant) => tenant.id === "907b5b8a-3e2b-4b5f-bbb3-9f5f99fb5c37"
+  // );
 
-  let userResult;
-  let propertyResult;
+  // let userResult;
+  // let propertyResult;
 
-  if (tenant?.id) {
-    userResult = await PostContentData("Get Users By Tenant", {
-      id: tenant?.id as string,
-    });
-    propertyResult = await PostContentData("Get Properties By Tenant", {
-      id: tenant?.id as string,
-    });
-  }
+  // if (tenant?.id) {
+  //   userResult = await PostContentData("Get Users By Tenant", {
+  //     id: tenant?.id as string,
+  //   });
+  //   propertyResult = await PostContentData("Get Properties By Tenant", {
+  //     id: tenant?.id as string,
+  //   });
+  // }
 
-  console.log("User Result:", userResult);
-  console.log("Property Result:", propertyResult);
+  // console.log("User Result:", userResult);
+  // console.log("Property Result:", propertyResult);
 
   return <div></div>;
 
@@ -78,7 +78,7 @@ export default async function Page() {
 
 //   return (
 //     <PageModel
-//       page={(pageData as any)?.data}
+//       page={pageData?.data}
 //       propertyId={params.dashboard}
 //       propertyColor={property?.color}
 //       titleAfterHero={true}

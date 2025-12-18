@@ -1,14 +1,18 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import Swal from "sweetalert2";
+
 import { useProperty } from "../context/PropertyContext";
 import {
   carParts,
   findLinkedGroup,
   generateLabelsMap,
 } from "../lib/carPartsLegend";
+import { CarPart, TicketDetails } from "../types";
+import { handleFetchTicketDetails } from "../helpers/dashboardHelpers";
+
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
 import { PiUserCircleFill } from "react-icons/pi";
+
 import TicketDetailsModal from "./TicketDetailsModal";
 import PageLoader from "./elements/PageLoader";
 
@@ -43,7 +47,9 @@ const Surveys = () => {
   const saveClickedRef = useRef(false);
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState<Survey[]>([]);
-  const [ticketDetails, setTicketDetails] = useState(null); // Placeholder for ticket details
+  const [ticketDetails, setTicketDetails] = useState<TicketDetails>(
+    {} as TicketDetails
+  );
   const [showTicketDetailsModal, setShowTicketDetailsModal] = useState(false);
   const [detailsActiveTab, setDetailsActiveTab] = useState("Details");
   const [transitionState, setTransitionState] = useState("fade-in");
@@ -51,11 +57,9 @@ const Surveys = () => {
   const [viewAllDamagedParts, setViewAllDamagedParts] = useState(false);
   const [, setHasUnsavedChanges] = useState(false);
 
-  const [incidentParts, setIncidentParts] = useState<string[]>([]);
+  const [incidentParts, setIncidentParts] = useState<CarPart[]>([]);
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
-  const [damagedParts, setDamagedParts] = useState<
-    { partName: string; description: string; carView: string }[]
-  >([]);
+  const [damagedParts, setDamagedParts] = useState<CarPart[]>([]);
 
   const frontViewLabelsMap = generateLabelsMap(carParts.frontViewCar);
   const rearViewLabelsMap = generateLabelsMap(carParts.rearViewCar);
@@ -92,114 +96,6 @@ const Surveys = () => {
 
     fetchSurveys();
   }, [propertyId]);
-
-  const handleFetchTicketDetails = async (id: string) => {
-    if (!id) return;
-
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/getTicketDetails", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-
-      const data = await res.json();
-
-      if (data?.status === "200") {
-        setLoading(false);
-        setTicketDetails(data?.data);
-        const damaged = data?.data?.damagedParts || [];
-
-        const viewMap: Record<string, Record<string, string>> = {
-          FrontView: carParts.frontViewCar,
-          RearView: carParts.rearViewCar,
-          PassengerView: carParts.passengerViewCar,
-          DriverView: carParts.driverViewCar,
-        };
-
-        const newIncidentParts: string[] = [];
-        const newDescriptions: Record<string, string> = {};
-
-        damaged.forEach(
-          (item: {
-            partName: string;
-            description: string;
-            carView: string;
-          }) => {
-            const { partName, description, carView } = item;
-
-            // Convert "RightHeadlight" → "Right Headlight"
-            const formattedLabel = partName.replace(/([A-Z])/g, " $1").trim();
-            const viewParts = viewMap[carView];
-
-            if (!viewParts) {
-              return;
-            }
-
-            const viewLabelToIdsMap = generateLabelsMap(viewParts);
-            const matchedPartIds = viewLabelToIdsMap[formattedLabel];
-
-            if (matchedPartIds?.length) {
-              matchedPartIds.forEach((id) => {
-                const group = findLinkedGroup(id);
-                newIncidentParts.push(...group);
-              });
-
-              if (description) {
-                newDescriptions[formattedLabel] = description;
-              }
-
-              setShowTicketDetailsModal(true);
-            }
-          }
-        );
-
-        const uniqueParts = Array.from(new Set(newIncidentParts));
-        setIncidentParts(uniqueParts);
-        setDescriptions(newDescriptions);
-        setDamagedParts(damaged);
-        setShowTicketDetailsModal(true);
-      } else {
-        setLoading(false);
-        Swal.fire({
-          title: "Error",
-          text: data?.result?.message || "Failed to fetch ticket details",
-          icon: "error",
-          confirmButtonText: "OK",
-        });
-        return;
-      }
-    } catch (error) {
-      setLoading(false);
-      console.error("Failed to fetch ticket details", error);
-      Swal.fire({
-        title: "Error",
-        text: (error as string) || "Failed to fetch ticket details",
-        icon: "error",
-        confirmButtonText: "OK",
-      });
-      return;
-    }
-  };
-
-  const handleCloseTicketDetails = () => {
-    setShowTicketDetailsModal(false);
-    setTransitionState("fade-out");
-    setTimeout(() => {
-      setTicketDetails(null);
-      setDetailsActiveTab("Details");
-      setTransitionState("fade-in");
-      setNoIncident(false);
-      setIncidentParts([]);
-      setDescriptions({});
-      setDamagedParts([]);
-      setViewAllDamagedParts(false);
-      setHasUnsavedChanges(false);
-      saveClickedRef.current = false;
-    }, 300);
-  };
 
   // Calculate average rating
   const calculateAverageRating = () => {
@@ -274,7 +170,14 @@ const Surveys = () => {
                 <div className="flex justify-end mt-4">
                   <button
                     onClick={() =>
-                      handleFetchTicketDetails(survey?.ticketId?.toString())
+                      handleFetchTicketDetails({
+                        id: survey?.ticketId,
+                        setTicketDetails,
+                        setIncidentParts,
+                        setDescriptions,
+                        setDamagedParts,
+                        setShowTicketDetailsModal,
+                      })
                     }
                     type="button"
                     className="border border-gray-300 rounded-lg px-4 py-2 text-sm hover:bg-gray-100 transition cursor-pointer"
@@ -289,8 +192,9 @@ const Surveys = () => {
         {/* Ticket Details Modal */}
         <TicketDetailsModal
           isOpen={showTicketDetailsModal}
-          onClose={handleCloseTicketDetails}
+          setIsOpen={setShowTicketDetailsModal}
           ticketDetails={ticketDetails}
+          setTicketDetails={setTicketDetails}
           detailsActiveTab={detailsActiveTab}
           setDetailsActiveTab={setDetailsActiveTab}
           transitionState={transitionState}

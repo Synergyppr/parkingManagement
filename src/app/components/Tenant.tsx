@@ -45,12 +45,9 @@
 
 //   useEffect(() => {
 //     if (tenantData) {
-//       console.log("Tenant Data", tenantData);
 //       setTenantData(tenantData);
 //     }
 
-//     console.log("Users Data", users);
-//     console.log("Properties Data", properties);
 //     // eslint-disable-next-line react-hooks/exhaustive-deps
 //   }, []);
 

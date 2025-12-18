@@ -144,8 +144,6 @@ export const handleTenantDelete = async (
 
       const result = await res.json();
 
-      console.log("Delete response:", result);
-
       if (result?.result?.status === "200") {
         Swal.fire({
           icon: "success",

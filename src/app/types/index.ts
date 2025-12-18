@@ -31,7 +31,7 @@ export interface Ticket {
     type: string;
     color: string;
     licensePlate: string;
-    damagedParts?: string[];
+    damagedParts?: CarPart[];
   };
   createdDateTime: string;
   notificationId: string;
@@ -46,7 +46,7 @@ export interface Ticket {
   color: string;
   licensePlate?: string;
   placeToVisit?: string;
-  damagedParts?: string[];
+  damagedParts?: CarPart[];
 }
 
 export interface CarBrand {
@@ -68,6 +68,45 @@ export interface VehicleType {
 export interface VehicleColor {
   id: number;
   name: string;
+}
+
+export interface CarPart {
+  partName: string;
+  description: string;
+  carView: string;
+  id: string;
+}
+
+export interface VehicleData {
+  firstName?: string;
+  lastName?: string;
+  ticketNumber?: string;
+  color?: string;
+  make?: string;
+  model?: string;
+  type?: string;
+  createdDateTime?: string;
+  placeToVisit?: string;
+  status?: string;
+  patronId?: string;
+  notificationId?: string;
+  surveySubmitted?: boolean;
+  transactions?: {
+    referenceNumber?: string;
+    transactionDateTime?: string;
+    paymentMethod?: string;
+    amount?: number;
+  }[];
+}
+
+export interface Vehicle {
+  id: string;
+  make: string;
+  model: string;
+  type: string;
+  color: string;
+  licensePlate: string;
+  damagedParts?: CarPart[];
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -96,7 +135,8 @@ export interface TicketDetails {
     newValue: string;
     oldValue: string;
   }[];
-  damagedParts?: { partName: string; description: string; carView: string }[];
+  licensePlate?: string;
+  damagedParts?: CarPart[];
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -164,4 +204,62 @@ export interface Property {
   latitude: number;
   longitude: number;
   radius: number;
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+export interface NotificationHandler {
+  ticketId: string;
+  status: string;
+  // id: string;
+  // title: string;
+  // message: string;
+  // createdDateTime: string;
+  // isRead: boolean;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+export interface VehicleForm {
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  areaCode?: string;
+  make?: string;
+  model?: string;
+  type?: string;
+  color?: string;
+  placeToVisit?: string;
+  licensePlate?: string;
+  damagedParts?: CarPart[];
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+export interface MarkAsReadProps {
+  vehicle: Ticket;
+  action: "view" | "changeStatus";
+  setSelectedTicketId: React.Dispatch<React.SetStateAction<string | null>>;
+  setReloadPageData: React.Dispatch<React.SetStateAction<boolean>>;
+  setVehicles: React.Dispatch<React.SetStateAction<Ticket[]>>;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+export interface LogEntry {
+  createdDateTime: string;
+  loggedBy?: string;
+  description?: string;
+  oldValue?: string;
+  newValue?: string;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+export interface ReportEntry {
+  id: string;
+  ticketNumber: string;
+  patronName: string;
+  placeToVisit: string;
+  employeeName: string;
+  date: string;
 }

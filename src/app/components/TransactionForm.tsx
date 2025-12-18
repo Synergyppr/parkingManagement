@@ -19,7 +19,7 @@ interface TransactionFormProps {
   ticketId?: string;
   missingFields?: string[];
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  fetchData?: () => Promise<void>;
+  setReloadPageData: React.Dispatch<React.SetStateAction<boolean>>;
   latitude?: number;
   longitude?: number;
   locationMode?: "live" | "manual";
@@ -46,11 +46,11 @@ export default function TransactionForm({
   ticketId,
   missingFields = [],
   setOpen,
-  fetchData,
   latitude,
   longitude,
   locationMode,
   propertyId,
+  setReloadPageData,
 }: TransactionFormProps) {
   const [loader, setLoader] = useState(false);
   const [showPin, setShowPin] = useState(false);
@@ -135,8 +135,6 @@ export default function TransactionForm({
         notes: form?.notes,
       };
 
-      // console.log("Submitting form:", sendForm);
-
       try {
         const res = await fetch("/api/valetTransaction/pay", {
           method: "POST",
@@ -145,11 +143,9 @@ export default function TransactionForm({
         });
         const result = await res.json();
 
-        // console.log("Submission result:", result);
-
         if (result?.result?.status == "200") {
           setOpen(false);
-          await fetchData?.();
+          setReloadPageData(true);
           Swal.fire({
             icon: "success",
             title: "Success",

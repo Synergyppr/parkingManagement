@@ -36,8 +36,11 @@ interface ModalFormProps {
     | Property
     | Record<string, Tenant | UserForm | Property>;
   fields: FormFieldConfig[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onChange: any;
+  onChange: (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => void;
   onSubmit: () => void;
   onToggleActive?: () => void;
   isActive?: boolean;
@@ -192,7 +195,11 @@ const ModalForm = ({
       <button
         type="button"
         disabled={loading || disableSubmit}
-        className={`${loading || disableSubmit ? "cursor-not-allowed bg-opacity-60 opacity-60" : "hover:bg-blue-700 cursor-pointer"} 
+        className={`${
+          loading || disableSubmit
+            ? "cursor-not-allowed bg-opacity-60 opacity-60"
+            : "hover:bg-blue-700 cursor-pointer"
+        } 
         bg-blue-600 text-white p-3 w-full rounded-md font-semibold shadow`}
         onClick={(e) => {
           e.preventDefault();

@@ -1,31 +1,40 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { Ticket } from "@/app/types";
+import React, { useState, useEffect, Dispatch } from "react";
+import { CarPart, Ticket, TicketDetails } from "@/app/types";
 import { FaCheck } from "react-icons/fa6";
 import { MdOutlineCarCrash } from "react-icons/md";
 import Modal from "./Modal";
 import TransactionForm from "./TransactionForm";
+import {
+  handleFetchTicketDetails,
+  markAsRead,
+} from "../helpers/dashboardHelpers";
 
 interface ValetTicketListProps {
   vehicles: Ticket[];
+  setVehicles: Dispatch<React.SetStateAction<Ticket[]>>;
   activeTab: string;
   unreadTicketIds: Ticket[];
-  damagedParts?: { partName: string; description: string; carView: string }[];
-  handleFetchTicketDetails: (id: string) => void;
+  damagedParts?: CarPart[];
   handleStatusChange: (
     id: string,
     status: "" | "received" | "parked" | "requested" | "ready" | null
   ) => void;
-  markAsRead: (vehicle: Ticket, action: string) => void;
   showTransactionModal: boolean;
   setShowTransactionModal: React.Dispatch<React.SetStateAction<boolean>>;
   selectedTicketId: string | null;
-  fetchData?: () => Promise<void>;
+  setSelectedTicketId: React.Dispatch<React.SetStateAction<string | null>>;
   latitude?: number;
   longitude?: number;
   locationMode?: "live" | "manual";
   propertyId?: string | null;
   pageLoading?: boolean;
+  setReloadPageData: Dispatch<React.SetStateAction<boolean>>;
+  setTicketDetails: Dispatch<React.SetStateAction<TicketDetails>>;
+  setIncidentParts: Dispatch<React.SetStateAction<CarPart[]>>;
+  setDescriptions: Dispatch<React.SetStateAction<Record<string, string>>>;
+  setDamagedParts: Dispatch<React.SetStateAction<CarPart[]>>;
+  setShowTicketDetailsModal: Dispatch<React.SetStateAction<boolean>>;
 }
 
 interface TransactionForm {
@@ -37,21 +46,26 @@ interface TransactionForm {
 
 export default function ValetTicketList({
   vehicles,
+  setVehicles,
   activeTab,
   unreadTicketIds,
   damagedParts,
-  handleFetchTicketDetails,
   handleStatusChange,
-  markAsRead,
   showTransactionModal,
   setShowTransactionModal,
   selectedTicketId,
-  fetchData,
+  setSelectedTicketId,
   latitude,
   longitude,
   locationMode,
   propertyId,
   pageLoading,
+  setReloadPageData,
+  setTicketDetails,
+  setIncidentParts,
+  setDescriptions,
+  setDamagedParts,
+  setShowTicketDetailsModal,
 }: ValetTicketListProps) {
   const [acknowledged, setAcknowledged] = useState(false);
   const [transactionForm, setTransactionForm] = useState<TransactionForm>({
@@ -79,12 +93,21 @@ export default function ValetTicketList({
     };
   }, [clickLoader]);
 
-  const handleMarkAsRead = async (vehicle: Ticket, action: string) => {
+  const handleMarkAsRead = async (
+    vehicle: Ticket,
+    action: "view" | "changeStatus"
+  ) => {
     if (activeTab !== "requested") return;
 
     setClickLoader(true);
     try {
-      await markAsRead(vehicle, action);
+      await markAsRead({
+        vehicle,
+        action,
+        setSelectedTicketId,
+        setReloadPageData,
+        setVehicles,
+      });
     } finally {
       setClickLoader(false);
     }
@@ -208,7 +231,16 @@ export default function ValetTicketList({
 
                     {damagedParts && (
                       <div
-                        onClick={() => handleFetchTicketDetails(vehicle?.id)}
+                        onClick={() =>
+                          handleFetchTicketDetails({
+                            id: vehicle?.id,
+                            setTicketDetails,
+                            setIncidentParts,
+                            setDescriptions,
+                            setDamagedParts,
+                            setShowTicketDetailsModal,
+                          })
+                        }
                       >
                         <p className="text-sm tracking-tight cursor-pointer text-blue-500 hover:text-blue-600 underline mt-0">
                           View ticket details
@@ -263,7 +295,7 @@ export default function ValetTicketList({
         <div className="flex flex-col items-center justify-center py-16 px-6 border border-gray-200 transition">
           <MdOutlineCarCrash className="w-48 h-48 text-slate-300 mb-0" />
           <h3 className="text-2xl font-bold text-gray-800 mb-2 text-center lg:text-left">
-            No vehicles available
+            No vehicles to show
           </h3>
           <p className="text-gray-500 text-center mb-6 max-w-md font-sans font-light">
             There are currently no vehicles in this status. Once a vehicle is
@@ -304,11 +336,11 @@ export default function ValetTicketList({
               setForm={setTransactionForm}
               ticketId={selectedTicketId || ""}
               setOpen={setShowTransactionModal}
-              fetchData={fetchData}
               latitude={latitude}
               longitude={longitude}
               locationMode={locationMode}
               propertyId={propertyId}
+              setReloadPageData={setReloadPageData}
             />
           </div>
         </Modal>

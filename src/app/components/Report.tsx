@@ -1,44 +1,25 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import Swal from "sweetalert2";
+
 import {
   carParts,
   findLinkedGroup,
   generateLabelsMap,
 } from "../lib/carPartsLegend";
 import { useProperty } from "../context/PropertyContext";
-import TicketDetailsModal from "./TicketDetailsModal";
+import { CarPart, ReportEntry, TicketDetails } from "../types";
+import { handleFetchTicketDetails } from "../helpers/dashboardHelpers";
 
-interface TicketDetails {
-  id: string;
-  ticketId: string;
-  ticketNumber: string;
-  patronName: string;
-  placeToVisit: string;
-  employeeName: string;
-  date: string;
-  damagedParts?: { partName: string; description: string; carView: string }[];
-  licensePlate?: string;
-  createdDateTime: string;
-}
+import TicketDetailsModal from "./TicketDetailsModal";
 
 const PAGE_SIZE = 10;
 
 const Report = () => {
   const saveClickedRef = React.useRef(false);
   const { propertyId } = useProperty();
-  const [report, setReport] = useState<
-    {
-      id: string;
-      ticketNumber: string;
-      patronName: string;
-      placeToVisit: string;
-      employeeName: string;
-      date: string;
-    }[]
-  >([]);
-  const [ticketDetails, setTicketDetails] = useState<TicketDetails | null>(
-    null
+  const [report, setReport] = useState<ReportEntry[]>([]);
+  const [ticketDetails, setTicketDetails] = useState<TicketDetails>(
+    {} as TicketDetails
   );
   const [showTicketDetailsModal, setShowTicketDetailsModal] = useState(false);
   const [search, setSearch] = useState("");
@@ -50,11 +31,9 @@ const Report = () => {
   const [viewAllDamagedParts, setViewAllDamagedParts] = useState(false);
   const [, setHasUnsavedChanges] = useState(false);
 
-  const [incidentParts, setIncidentParts] = useState<string[]>([]);
+  const [incidentParts, setIncidentParts] = useState<CarPart[]>([]);
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
-  const [damagedParts, setDamagedParts] = useState<
-    { partName: string; description: string; carView: string }[]
-  >([]);
+  const [damagedParts, setDamagedParts] = useState<CarPart[]>([]);
 
   const frontViewLabelsMap = generateLabelsMap(carParts.frontViewCar);
   const rearViewLabelsMap = generateLabelsMap(carParts.rearViewCar);
@@ -109,104 +88,6 @@ const Report = () => {
     if (pageNumber < totalPages) setPageNumber(pageNumber + 1);
   };
 
-  const handleFetchTicketDetails = async (id: string) => {
-    if (!id) return;
-
-    try {
-      const res = await fetch("/api/getTicketDetails", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-
-      const data = await res.json();
-
-      if (data?.status === "200") {
-        setTicketDetails(data?.data);
-        const damaged = data?.data?.damagedParts || [];
-
-        const viewMap: Record<string, Record<string, string>> = {
-          FrontView: carParts.frontViewCar,
-          RearView: carParts.rearViewCar,
-          PassengerView: carParts.passengerViewCar,
-          DriverView: carParts.driverViewCar,
-        };
-
-        const newIncidentParts: string[] = [];
-        const newDescriptions: Record<string, string> = {};
-
-        damaged.forEach(
-          (item: {
-            partName: string;
-            description: string;
-            carView: string;
-          }) => {
-            const { partName, description, carView } = item;
-
-            // Convert "RightHeadlight" → "Right Headlight"
-            const formattedLabel = partName.replace(/([A-Z])/g, " $1").trim();
-            const viewParts = viewMap[carView];
-
-            if (!viewParts) {
-              // console.warn(`Unknown carView: ${carView}`);
-              return;
-            }
-
-            // Filter the label map for the current view only
-            const viewLabelToIdsMap = generateLabelsMap(viewParts);
-            const matchedPartIds = viewLabelToIdsMap[formattedLabel];
-
-            if (matchedPartIds?.length) {
-              matchedPartIds.forEach((id) => {
-                const group = findLinkedGroup(id);
-                newIncidentParts.push(...group);
-              });
-
-              if (description) {
-                newDescriptions[formattedLabel] = description;
-              }
-
-              setShowTicketDetailsModal(true);
-            } else {
-              console.warn(
-                `No matching label found for: ${formattedLabel} in ${carView}`
-              );
-            }
-          }
-        );
-
-        const uniqueParts = Array.from(new Set(newIncidentParts));
-        setIncidentParts(uniqueParts);
-        setDescriptions(newDescriptions);
-        setDamagedParts(damaged);
-        setShowTicketDetailsModal(true);
-      } else {
-        Swal.fire({
-          title: "Error",
-          text: data?.result?.message || "Failed to fetch ticket details",
-          icon: "error",
-          confirmButtonText: "OK",
-        });
-      }
-    } catch (error) {
-      console.error("Failed to fetch ticket details", error);
-      Swal.fire({
-        title: "Error",
-        text: (error as string) || "Failed to fetch ticket details",
-        icon: "error",
-        confirmButtonText: "OK",
-      });
-    }
-  };
-
-  const handleCloseTicketDetails = () => {
-    setShowTicketDetailsModal(false);
-    setTicketDetails(null);
-    setIncidentParts([]);
-    setDescriptions({});
-    setDamagedParts([]);
-  };
-
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-4">
       <div className="max-w-6xl mx-auto">
@@ -234,7 +115,10 @@ const Report = () => {
                   Ticket #
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                  Patron
+                  First Name
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                  Last Name(s)
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
                   Place
@@ -256,8 +140,11 @@ const Report = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {entry?.ticketNumber}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {entry?.patronName}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 capitalize">
+                    {entry?.patronName.split(" ")[0]}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 capitalize">
+                    {entry?.patronName.split(" ").slice(1).join(" ")}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                     {entry?.placeToVisit}
@@ -270,7 +157,14 @@ const Report = () => {
                   </td>
                   <td
                     onClick={() =>
-                      handleFetchTicketDetails(entry?.id as string)
+                      handleFetchTicketDetails({
+                        id: entry?.id,
+                        setTicketDetails,
+                        setIncidentParts,
+                        setDescriptions,
+                        setDamagedParts,
+                        setShowTicketDetailsModal,
+                      })
                     }
                     className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 hover:underline cursor-pointer"
                   >
@@ -321,7 +215,16 @@ const Report = () => {
                   <span className="uppercase">{entry?.date}</span>
                 </div>
                 <div
-                  onClick={() => handleFetchTicketDetails(entry?.id as string)}
+                  onClick={() =>
+                    handleFetchTicketDetails({
+                      id: entry?.id,
+                      setTicketDetails,
+                      setIncidentParts,
+                      setDescriptions,
+                      setDamagedParts,
+                      setShowTicketDetailsModal,
+                    })
+                  }
                   className="whitespace-nowrap text-xs font-light text-blue-600 hover:underline cursor-pointer"
                 >
                   View Details
@@ -361,8 +264,9 @@ const Report = () => {
       {/* Ticket Details Modal */}
       <TicketDetailsModal
         isOpen={showTicketDetailsModal}
-        onClose={handleCloseTicketDetails}
-        ticketDetails={ticketDetails as TicketDetails}
+        setIsOpen={setShowTicketDetailsModal}
+        ticketDetails={ticketDetails}
+        setTicketDetails={setTicketDetails}
         detailsActiveTab={detailsActiveTab}
         setDetailsActiveTab={setDetailsActiveTab}
         transitionState={transitionState}

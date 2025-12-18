@@ -1,4 +1,5 @@
 import { FaCar, FaChevronDown, FaChevronUp } from "react-icons/fa6";
+import { VehicleListProps } from "../types/pagesProps";
 
 const VehicleList = ({
   existingVehicles = [],
@@ -9,50 +10,7 @@ const VehicleList = ({
   showExistingVehicles,
   setShowExistingVehicles,
   handleSelectVehicle,
-}: {
-  existingVehicles: {
-    id: string;
-    make: string;
-    model: string;
-    type: string;
-    color: string;
-    licensePlate: string;
-    damagedParts?: string[];
-  }[];
-  vehicleColors: { id: number; name: string }[];
-  vehicleTypes: { id: number; name: string }[];
-  carBrands: {
-    id: number;
-    name: string;
-    models: { id: number; name: string }[];
-  }[];
-  form: {
-    firstName?: string;
-    lastName?: string;
-    phoneNumber?: string;
-    areaCode?: string;
-    make?: string;
-    model?: string;
-    type?: string;
-    color?: string;
-    licensePlate?: string;
-    damagedParts?: string[];
-  };
-  showExistingVehicles: boolean;
-  setShowExistingVehicles: (show: boolean) => void;
-  handleSelectVehicle: (
-    vehicle: {
-      id: string;
-      make: string;
-      model: string;
-      type: string;
-      color: string;
-      licensePlate: string;
-      damagedParts?: string[];
-    },
-    index: number
-  ) => void;
-}) => {
+}: VehicleListProps) => {
   return (
     <div
       className={`${
@@ -150,7 +108,7 @@ const VehicleList = ({
               <div
                 onClick={() => handleSelectVehicle(v, idx)}
                 className={`cursor-pointer px-4 py-3 rounded-xl shadow-md flex items-center gap-3 transition bg-white duration-500 
-              border-[.8px] border-solid border-[#ef6c00] hover:scale-105`}
+                border-[.8px] border-solid border-[#ef6c00] hover:scale-105`}
               >
                 <div>
                   <p

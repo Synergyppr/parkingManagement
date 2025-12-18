@@ -1,18 +1,11 @@
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+
+import { handlePinSubmit, markAsRead } from "../helpers/dashboardHelpers";
+import { useProperty } from "../context/PropertyContext";
+import { PinConfirmationModalProps } from "../types/pagesProps";
+
 import Modal from "./Modal";
 import ButtonLoader from "./elements/ButtonLoader";
-
-interface PinConfirmationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  pin: string;
-  setPin: (val: string) => void;
-  showPin: boolean;
-  setShowPin: (val: boolean) => void;
-  buttonLoader: boolean;
-  onSubmit: () => void;
-  propertyId?: string | null;
-}
 
 export default function PinConfirmationModal({
   isOpen,
@@ -22,9 +15,18 @@ export default function PinConfirmationModal({
   showPin,
   setShowPin,
   buttonLoader,
-  onSubmit,
-  propertyId,
+  selectedTicketId,
+  setSelectedTicketId,
+  nextStatus,
+  setNextStatus,
+  vehicles,
+  setVehicles,
+  setShowPinConfirmationModal,
+  setButtonLoader,
+  setReloadPageData,
 }: PinConfirmationModalProps) {
+  const { propertyId, latitude, longitude, locationMode } = useProperty();
+
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <div className="space-y-4 text-gray-800">
@@ -63,7 +65,26 @@ export default function PinConfirmationModal({
         <div className="flex">
           <button
             disabled={buttonLoader || !pin || !propertyId}
-            onClick={onSubmit}
+            onClick={() =>
+              handlePinSubmit({
+                propertyId,
+                locationMode, // "live" | "manual"
+                latitude,
+                longitude,
+                pin,
+                setPin,
+                selectedTicketId,
+                setSelectedTicketId,
+                nextStatus,
+                setNextStatus,
+                vehicles,
+                setVehicles,
+                markAsRead,
+                setShowPinConfirmationModal,
+                setButtonLoader,
+                setReloadPageData,
+              })
+            }
             className={` ${
               !pin || !propertyId
                 ? "bg-blue-500/20"

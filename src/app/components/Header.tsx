@@ -2,17 +2,19 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import Swal from "sweetalert2";
+
 import useAuthRedirect from "../hooks/loginHook";
 import { useProperty } from "../context/PropertyContext";
-import { leaveGroup } from "../lib/SignalRProvider";
 import usePropertyListener from "../hooks/usePropertyListener";
+import { handleLogout } from "../helpers/authHelpers";
+
 import { FaUser } from "react-icons/fa6";
 import { PiWarningDiamondBold } from "react-icons/pi";
 import { TbLogout2 } from "react-icons/tb";
 import { FaBars } from "react-icons/fa";
 import { GoDotFill } from "react-icons/go";
 import { BiCurrentLocation } from "react-icons/bi";
+
 import Location from "./Location";
 import Modal from "@/app/components/Modal";
 import OffCanvas from "./OffCanvas";
@@ -78,27 +80,6 @@ export default function Header() {
     requestLocation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const handleLogout = () => {
-    Swal.fire({
-      title: "Log Out",
-      text: "Are you sure you want to log out?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Yes",
-      cancelButtonText: "Cancel",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        if (propertyId) await leaveGroup(propertyId);
-        localStorage.clear();
-        sessionStorage.clear();
-        setPropertyId("");
-        setPropertyName("");
-        setAccountUser("");
-        router.replace("/");
-      }
-    });
-  };
 
   const toggleModal = () => {
     setIsMenuOpen(true);
@@ -167,7 +148,18 @@ export default function Header() {
 
           <button
             className="cursor-pointer"
-            onClick={isLoggedIn ? handleLogout : () => router.push("/")}
+            onClick={
+              isLoggedIn
+                ? () =>
+                    handleLogout({
+                      propertyId,
+                      setPropertyId ,
+                      setPropertyName,
+                      setAccountUser,
+                      router,
+                    })
+                : () => router.push("/")
+            }
           >
             {isLoggedIn ? (
               <TbLogout2 className="text-white text-lg hover:scale-110 transition-transform" />
@@ -184,7 +176,7 @@ export default function Header() {
         </div>
       </header>
 
-      {/* 🚫 Out of Area Overlay */}
+      {/* Out of Area Overlay */}
       {isOutOfArea && (
         <div className="fixed inset-0 bg-black/70 text-white z-[40] flex items-center justify-center text-center p-4 pointer-events-none">
           <div className="pointer-events-auto">

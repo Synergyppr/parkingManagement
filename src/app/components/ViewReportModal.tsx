@@ -2,6 +2,7 @@
 import React, { useRef } from "react";
 import Modal from "./Modal";
 import FullIncidentReport from "./FullIncidentReport";
+import { CarPart } from "../types";
 
 type LabelMaps = Record<string, Record<string, string[]>>;
 
@@ -16,7 +17,7 @@ const ViewReportModal = ({
   onClose: (value: boolean) => void;
   allLabelMaps: LabelMaps;
   descriptions: Record<string, string>;
-  incidentParts: string[];
+  incidentParts: CarPart[];
 }) => {
   const reportRef = useRef<HTMLDivElement>(null);
 
@@ -25,48 +26,8 @@ const ViewReportModal = ({
     labelsMap: Record<string, string[]>
   ) => {
     const ids = labelsMap[label];
-    return ids?.some((id) => incidentParts.includes(id));
+    return ids?.some((id) => incidentParts?.includes(id as unknown as CarPart));
   };
-
-  // const handleExportPDF = async () => {
-  //   if (!reportRef.current) return;
-
-  //   reportRef.current?.classList.add("html2canvas-export");
-  //   await new Promise((r) => setTimeout(r, 100));
-  //   const canvas = await html2canvas(reportRef.current, { scale: 2 });
-  //   reportRef.current?.classList.remove("html2canvas-export");
-
-  //   reportRef.current.classList.remove("html2canvas-export");
-
-  //   const imgData = canvas.toDataURL("image/png");
-
-  //   const pdf = new jsPDF({
-  //     orientation: "portrait",
-  //     unit: "pt",
-  //     format: "a4",
-  //   });
-
-  //   const pageWidth = pdf.internal.pageSize.getWidth();
-  //   const pageHeight = pdf.internal.pageSize.getHeight();
-  //   const imgWidth = pageWidth;
-  //   const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-  //   if (imgHeight < pageHeight) {
-  //     pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-  //   } else {
-  //     let position = 0;
-  //     let heightLeft = imgHeight;
-
-  //     while (heightLeft > 0) {
-  //       pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-  //       heightLeft -= pageHeight;
-  //       position -= pageHeight;
-  //       if (heightLeft > 0) pdf.addPage();
-  //     }
-  //   }
-
-  //   pdf.save("incident-report.pdf");
-  // };
 
   return (
     <Modal isOpen={isOpen} onClose={() => onClose(false)}>

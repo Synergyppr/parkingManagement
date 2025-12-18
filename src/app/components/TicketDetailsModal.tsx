@@ -5,41 +5,15 @@ import Tabs from "./elements/Tabs";
 import CarVector from "./CarVector";
 import Log from "./Log";
 // import Surveys from "./Surveys";
-import { TicketDetails } from "@/app/types";
 import { formatDate, formatPhoneNumber } from "@/app/lib/clientUtils";
-
-interface TicketDetailsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  ticketDetails: TicketDetails | null;
-  detailsActiveTab: string;
-  setDetailsActiveTab: (tab: string) => void;
-  transitionState: string;
-  setTransitionState: (state: string) => void;
-  // Add CarVector-related props
-  noIncident: boolean;
-  setNoIncident: React.Dispatch<React.SetStateAction<boolean>>;
-  incidentParts: string[];
-  setIncidentParts: (val: string[]) => void;
-  descriptions: Record<string, string>;
-  setDescriptions: (val: Record<string, string>) => void;
-  damagedParts: { carView: string; partName: string; description: string }[];
-  viewAllDamagedParts: boolean;
-  setViewAllDamagedParts: (val: boolean) => void;
-  formLicensePlate: string;
-  findLinkedGroup: (id: string) => string[];
-  frontViewLabelsMap: Record<string, string[]>;
-  rearViewLabelsMap: Record<string, string[]>;
-  passengerViewLabelsMap: Record<string, string[]>;
-  driverViewLabelsMap: Record<string, string[]>;
-  setHasUnsavedChanges: (val: boolean) => void;
-  saveClickedRef: React.MutableRefObject<boolean>;
-}
+import { TicketDetailsModalProps } from "../types/pagesProps";
+import { TicketDetails } from "../types";
 
 export default function TicketDetailsModal({
   isOpen,
-  onClose,
+  setIsOpen,
   ticketDetails,
+  setTicketDetails,
   detailsActiveTab,
   setDetailsActiveTab,
   transitionState,
@@ -70,8 +44,18 @@ export default function TicketDetailsModal({
     }
   }, [transitionState, detailsActiveTab]);
 
+  const handleCloseTicketDetails = () => {
+    setIsOpen(false);
+    setTicketDetails({} as TicketDetails);
+    setViewAllDamagedParts(false);
+    setIncidentParts([]);
+    setDescriptions({});
+    setNoIncident(false);
+    setDetailsActiveTab("Details");
+  };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={handleCloseTicketDetails}>
       <div>
         <Tabs
           isSmallScreen={false}
@@ -174,23 +158,11 @@ export default function TicketDetailsModal({
               <div className="relative mb-6">
                 <CarVector
                   noIncident={noIncident}
-                  setNoIncident={
-                    setNoIncident as React.Dispatch<
-                      React.SetStateAction<boolean>
-                    >
-                  }
+                  setNoIncident={setNoIncident}
                   incidentParts={incidentParts}
-                  setIncidentParts={
-                    setIncidentParts as React.Dispatch<
-                      React.SetStateAction<string[]>
-                    >
-                  }
+                  setIncidentParts={setIncidentParts}
                   descriptions={descriptions}
-                  setDescriptions={
-                    setDescriptions as React.Dispatch<
-                      React.SetStateAction<Record<string, string>>
-                    >
-                  }
+                  setDescriptions={setDescriptions}
                   licensePlate={formLicensePlate}
                   findLinkedGroup={findLinkedGroup}
                   frontViewLabelsMap={frontViewLabelsMap}
@@ -198,9 +170,7 @@ export default function TicketDetailsModal({
                   passengerViewLabelsMap={passengerViewLabelsMap}
                   driverViewLabelsMap={driverViewLabelsMap}
                   hideLabels={true}
-                  setHasUnsavedChanges={(value) =>
-                    setHasUnsavedChanges(value as boolean)
-                  }
+                  setHasUnsavedChanges={setHasUnsavedChanges}
                   saveClickedRef={saveClickedRef}
                 />
 

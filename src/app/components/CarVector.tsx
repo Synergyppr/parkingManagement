@@ -3,32 +3,14 @@ import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { LuListVideo } from "react-icons/lu";
 import { CiViewList } from "react-icons/ci";
+
 import { carParts } from "../lib/carPartsLegend";
+
 import Modal from "./Modal";
 import LabelSelector from "./LabelSelector";
 import ViewReportModal from "./ViewReportModal";
-
-interface CarVectorProps {
-  noIncident: boolean;
-  setNoIncident: React.Dispatch<React.SetStateAction<boolean>>;
-  incidentParts: string[];
-  setIncidentParts: React.Dispatch<React.SetStateAction<string[]>>;
-  descriptions: Record<string, string>;
-  setDescriptions: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-  licensePlate?: string;
-  findLinkedGroup: (id: string) => string[];
-  frontViewLabelsMap: Record<string, string[]>;
-  rearViewLabelsMap: Record<string, string[]>;
-  passengerViewLabelsMap: Record<string, string[]>;
-  driverViewLabelsMap: Record<string, string[]>;
-  hideLabels?: boolean;
-  setHasUnsavedChanges?: React.Dispatch<React.SetStateAction<boolean>>;
-  saveClickedRef: React.RefObject<boolean>;
-  shouldBypassUnloadPromptRef?: React.RefObject<boolean>;
-  isFormChanged?: () => boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  damagedParts?: { partName: string; description: string }[] | any[];
-}
+import { CarVectorProps } from "../types/pagesProps";
+import { CarPart } from "../types";
 
 const CarVector: React.FC<CarVectorProps> = ({
   noIncident,
@@ -77,7 +59,7 @@ const CarVector: React.FC<CarVectorProps> = ({
       return raw?.replace(/([A-Z])/g, " $1")?.trim();
     };
 
-    const newIncidentParts = new Set<string>();
+    const newIncidentParts: Set<CarPart> = new Set(incidentParts);
     const newDescriptions: Record<string, string> = {};
 
     damagedParts?.forEach((damage) => {
@@ -95,7 +77,7 @@ const CarVector: React.FC<CarVectorProps> = ({
         return;
       }
 
-      ids.forEach((id) => newIncidentParts?.add(id));
+      ids.forEach((id) => newIncidentParts?.add(id as unknown as CarPart));
 
       if (!newDescriptions[label]) {
         newDescriptions[label] = description;
@@ -118,12 +100,21 @@ const CarVector: React.FC<CarVectorProps> = ({
     if (hideLabels) return; // If labels are hidden, do nothing
 
     const group = findLinkedGroup(partId);
-    const isGroupActive = group.some((id) => incidentParts?.includes(id));
+    const isGroupActive = group?.some((id) =>
+      incidentParts?.includes(id as unknown as CarPart)
+    );
 
-    setIncidentParts((prevParts) =>
+    setIncidentParts(
       isGroupActive
-        ? prevParts.filter((id) => !group.includes(id))
-        : [...prevParts, ...group.filter((id) => !prevParts?.includes(id))]
+        ? incidentParts?.filter(
+            (id) => !group.includes(id as unknown as string)
+          )
+        : ([
+            ...incidentParts,
+            ...group.filter(
+              (id) => !incidentParts?.includes(id as unknown as CarPart)
+            ),
+          ] as CarPart[])
     );
 
     setNoIncident(false);
@@ -131,40 +122,52 @@ const CarVector: React.FC<CarVectorProps> = ({
     // Open corresponding modal based on group, not just partId
     setTimeout(() => {
       if (
-        Object.keys(carParts.frontViewCar).some((id) => group?.includes(id))
+        Object.keys(carParts?.frontViewCar).some((id) => group?.includes(id))
       ) {
         setShowFrontModal(true);
       } else if (
-        Object.keys(carParts.rearViewCar).some((id) => group?.includes(id))
+        Object.keys(carParts?.rearViewCar).some((id) => group?.includes(id))
       ) {
         setShowRearModal(true);
       } else if (
-        Object.keys(carParts.passengerViewCar).some((id) => group?.includes(id))
+        Object.keys(carParts?.passengerViewCar).some((id) =>
+          group?.includes(id)
+        )
       ) {
         setShowPassengerModal(true);
       } else if (
-        Object.keys(carParts.driverViewCar).some((id) => group?.includes(id))
+        Object.keys(carParts?.driverViewCar).some((id) => group?.includes(id))
       ) {
         setShowDriverModal(true);
       }
     }, 500);
   };
 
-  const isHighlighted = (id: string) => incidentParts?.includes(id);
+  const isHighlighted = (id: string) =>
+    incidentParts?.includes(id as unknown as CarPart);
 
   const isLabelChecked =
     (labelsMap: Record<string, string[]>) => (label: string) =>
-      labelsMap[label]?.some((id) => incidentParts?.includes(id));
+      labelsMap[label]?.some((id) =>
+        incidentParts?.includes(id as unknown as CarPart)
+      );
 
   const toggleLabel =
     (labelsMap: Record<string, string[]>) => (label: string) => {
       const allIds = labelsMap[label]?.flatMap(findLinkedGroup);
       const isActive = isLabelChecked(labelsMap)(label);
 
-      setIncidentParts((prevParts) =>
+      setIncidentParts(
         isActive
-          ? prevParts.filter((id) => !allIds?.includes(id))
-          : [...prevParts, ...allIds?.filter((id) => !prevParts?.includes(id))]
+          ? incidentParts?.filter(
+              (id) => !allIds.includes(id as unknown as string)
+            )
+          : ([
+              ...incidentParts,
+              ...allIds?.filter(
+                (id) => !incidentParts?.includes(id as unknown as CarPart)
+              ),
+            ] as CarPart[])
       );
 
       setNoIncident(false);
@@ -203,7 +206,7 @@ const CarVector: React.FC<CarVectorProps> = ({
     const labelsWithMissingDescriptions = new Set<string>();
 
     for (const id of incidentParts) {
-      const label = idToLabelMap[id];
+      const label = idToLabelMap[id as unknown as string];
       const desc = descriptions[label];
 
       if (!label || !desc || desc.trim() === "") {

@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import * as signalR from "@microsoft/signalr";
 import { useProperty } from "../context/PropertyContext";
+import { NotificationHandler } from "../types";
 
 type ChatMessage = {
   ticketId: string;
@@ -20,7 +21,7 @@ interface SignalRContextType {
   messagesByStatus: Record<string, ChatMessage[]>;
   connection: signalR.HubConnection | null;
   registerNotificationHandler: (
-    handler: (notification: Notification) => void
+    handler: (notification: NotificationHandler) => void
   ) => void;
 }
 
@@ -37,14 +38,14 @@ export const SignalRProvider = ({
   const [messagesByStatus] = useState<Record<string, ChatMessage[]>>({});
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const notificationHandlerRef =
-    useRef<(notification: Notification) => void | null>(null);
+    useRef<(notification: NotificationHandler) => void | null>(null);
   const previousPropertyIdRef = useRef<string | null>(null);
 
   const notificationSound =
     typeof Audio !== "undefined" ? new Audio("/notification.mp3") : null;
 
   const registerNotificationHandler = (
-    handler: (notification: Notification) => void
+    handler: (notification: NotificationHandler) => void
   ) => {
     notificationHandlerRef.current = handler;
   };
@@ -61,12 +62,12 @@ export const SignalRProvider = ({
 
       globalConnection = connection;
 
-      connection.on("UpdateNotification", (notification: Notification) => {
+      connection.on("UpdateNotification", (notification: NotificationHandler) => {
         if (notificationSound) {
-          console.log("🔔 Playing notification sound");
+          console.log("Playing notification sound");
           setTimeout(() => {
             notificationSound.play().catch((err) => {
-              console.warn("🔇 Unable to play sound:", err);
+              console.warn("Unable to play sound:", err);
             });
           }, 1000);
         }
@@ -78,19 +79,19 @@ export const SignalRProvider = ({
         if (!propertyId) return;
         
         await connection.start();
-        console.log("✅ Connected to SignalR hub");
+        console.log("Connected to SignalR hub");
 
         // Join initial group if propertyId exists
         if (propertyId) {
           await connection.invoke("JoinPropertyGroup", propertyId);
           previousPropertyIdRef.current = propertyId;
-          console.log("✅ Joined group:", propertyId);
+          console.log("Joined group:", propertyId);
         }
 
         connectionRef.current = connection;
       } catch (err) {
-        console.log("❌ SignalR connection error:", err);
-        // console.error("❌ SignalR connection error:", err);
+        console.log("SignalR connection error:", err);
+        // console.error("SignalR connection error:", err);
       }
     };
 
@@ -102,8 +103,8 @@ export const SignalRProvider = ({
 
       if (connection && connection.state === "Connected" && prevId) {
         connection.invoke("LeavePropertyGroup", prevId).catch((err) => {
-          console.log("❌ Failed to leave group on unmount:", err);
-          // console.error("❌ Failed to leave group on unmount:", err);
+          console.log("Failed to leave group on unmount:", err);
+          // console.error("Failed to leave group on unmount:", err);
         });
       }
 
@@ -123,18 +124,18 @@ export const SignalRProvider = ({
       try {
         if (prevId && prevId !== propertyId) {
           await connection.invoke("LeavePropertyGroup", prevId);
-          // console.log("👋 Left previous group:", prevId);
+          // console.log("Left previous group:", prevId);
         }
 
         if (propertyId && propertyId !== prevId) {
           await connection.invoke("JoinPropertyGroup", propertyId);
-          // console.log("✅ Joined new group:", propertyId);
+          // console.log("Joined new group:", propertyId);
         }
 
         previousPropertyIdRef.current = propertyId;
       } catch (err) {
-        console.log("❌ Failed to update SignalR group:", err);
-        // console.error("❌ Failed to update SignalR group:", err);
+        console.log("Failed to update SignalR group:", err);
+        // console.error("Failed to update SignalR group:", err);
       }
     };
 
@@ -169,11 +170,11 @@ export const joinGroup = async (groupId: string) => {
   try {
     if (globalConnection && globalConnection.state === "Connected") {
       await globalConnection.invoke("JoinPropertyGroup", groupId);
-      // console.log("✅ Manually joined SignalR group:", groupId);
+      // console.log("Manually joined SignalR group:", groupId);
     }
   } catch (error) {
-    console.log("❌ Failed to join group:", error);
-    // console.error("❌ Failed to join group:", error);
+    console.log("Failed to join group:", error);
+    // console.error("Failed to join group:", error);
   }
 };
 
@@ -182,10 +183,10 @@ export const leaveGroup = async (groupId: string) => {
   try {
     if (globalConnection && globalConnection.state === "Connected") {
       await globalConnection.invoke("LeavePropertyGroup", groupId);
-      // console.log("👋 Manually left SignalR group:", groupId);
+      // console.log("Manually left SignalR group:", groupId);
     }
   } catch (error) {
-    console.log("❌ Failed to leave group:", error);
-    // console.error("❌ Failed to leave group:", error);
+    console.log("Failed to leave group:", error);
+    // console.error("Failed to leave group:", error);
   }
 };

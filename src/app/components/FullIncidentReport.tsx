@@ -14,9 +14,8 @@ const FullIncidentReport: React.FC<Props> = ({
   title,
 }) => {
   const reportedLabels = Object.keys(labelsMap).filter(isLabelChecked);
-  // const reportRef = useRef<HTMLDivElement>(null);
 
-  if (reportedLabels.length === 0) return null;
+  if (reportedLabels?.length === 0) return null;
 
   return (
     <section className="mb-6">
@@ -24,7 +23,7 @@ const FullIncidentReport: React.FC<Props> = ({
         {title}
       </h3>
       <ul className="space-y-2 pl-4">
-        {reportedLabels.map((label) => (
+        {reportedLabels?.map((label) => (
           <li key={label} className="border-l-2 border-orange-400 pl-3">
             <article>
               <p className="font-semibold text-gray-800">{label}</p>

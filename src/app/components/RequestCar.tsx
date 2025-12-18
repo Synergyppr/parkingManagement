@@ -2,89 +2,26 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Swal from "sweetalert2";
+
 import { RxCaretRight } from "react-icons/rx";
-import { BsStar, BsStarFill, BsStarHalf } from "react-icons/bs";
 import { IoCheckmarkOutline } from "react-icons/io5";
+
 import { useSignalR, joinGroup, leaveGroup } from "../lib/SignalRProvider";
 import { useProperty } from "../context/PropertyContext";
+import { NotificationHandler, VehicleData } from "../types";
+
 import StatusTimeline from "./StatusTimeline";
 import PageLoader from "./elements/PageLoader";
 import ButtonLoader from "./elements/ButtonLoader";
-
-const CollapsibleSection: React.FC<{
-  title: string;
-  children: React.ReactNode;
-}> = ({ title, children }) => {
-  const [open, setOpen] = useState(false);
-  const [height, setHeight] = useState(0);
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (contentRef.current) {
-      setHeight(open ? contentRef.current.scrollHeight : 0);
-    }
-  }, [open]);
-
-  return (
-    <div
-      className={`${
-        open ? "bg-white/20 rounded-xl" : ""
-      } mb-4 border-slate-300 relative top-6 transition-all duration-500`}
-    >
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex justify-between items-center px-4 py-3 font-semibold text-gray-700 transition rounded-t-lg"
-      >
-        {title}
-        <RxCaretRight
-          className={`w-6 h-6 transform transition-transform duration-500 ${
-            open ? "rotate-90" : ""
-          }`}
-        />
-      </button>
-
-      {/* Animated wrapper */}
-      <div
-        ref={contentRef}
-        style={{
-          maxHeight: `${height}px`,
-          overflow: "hidden",
-          transition: "max-height 0.5s ease, opacity 0.5s ease",
-          opacity: open ? 1 : 0,
-        }}
-      >
-        <div className="p-4 border-t-[0.5px] border-slate-300">{children}</div>
-      </div>
-    </div>
-  );
-};
+import ClientRating from "./ClientRating";
+import TransactionDetails from "./TransactionDetails";
 
 const RequestCar = () => {
   const { propertyId, setPropertyId } = useProperty();
   const ratingSectionRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
   const [ticketId, setTicketId] = useState("");
-  const [vehicleData, setVehicleData] = useState<{
-    firstName?: string;
-    lastName?: string;
-    ticketNumber?: string;
-    color?: string;
-    make?: string;
-    model?: string;
-    type?: string;
-    createdDateTime?: string;
-    placeToVisit?: string;
-    status?: string;
-    patronId?: string;
-    notificationId?: string;
-    surveySubmitted?: boolean;
-    transactions?: {
-      referenceNumber?: string;
-      transactionDateTime?: string;
-      paymentMethod?: string;
-      amount?: number;
-    }[];
-  } | null>(null);
+  const [vehicleData, setVehicleData] = useState<VehicleData | null>(null);
   const [requested, setRequested] = useState(false);
   const [buttonLoader, setButtonLoader] = useState(false);
   const [submitted, setSubmitted] = useState(
@@ -101,19 +38,18 @@ const RequestCar = () => {
 
   useEffect(() => {
     // Only register handler after component is mounted
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    registerNotificationHandler((notification: any) => {
-      // console.log("🔄 Real-time notification received:", notification);
+    registerNotificationHandler((notification: NotificationHandler) => {
+      // console.log("Real-time notification received:", notification);
 
-      if (notification.ticketId === ticketId && notification.status) {
+      if (notification?.ticketId === ticketId && notification?.status) {
         setVehicleData((prev) => ({
           ...prev!,
-          status: notification.status,
+          status: notification?.status,
         }));
 
         if (
-          notification.status === "requested" ||
-          notification.status === "ready"
+          notification?.status === "requested" ||
+          notification?.status === "ready"
         ) {
           setRequested(true);
         } else if (notification.status === "parked") {
@@ -212,6 +148,7 @@ const RequestCar = () => {
     return res.json();
   };
 
+  // Request Car Submission Handler
   const handleRequestCar = async () => {
     Swal.fire({
       title: "Request Vehicle",
@@ -517,7 +454,7 @@ const RequestCar = () => {
                       className={`${
                         vehicleData?.status === "requested" ||
                         vehicleData?.status === "ready"
-                          ? "bg-blue-600/20"
+                          ? "bg-blue-600/20 cursor-not-allowed"
                           : !smsConsent
                           ? "bg-gray-400 cursor-not-allowed"
                           : "bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-600 hover:to-blue-800 hover:bg-blue-700 transition-colors duration-1000"
@@ -544,157 +481,24 @@ const RequestCar = () => {
                   </div>
                 </div>
 
-                {requested && (
-                  <CollapsibleSection title="View Transaction Details">
-                    <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
-                      <p className="capitalize">
-                        <span className="font-semibold">Customer:</span>{" "}
-                        {vehicleData?.firstName || "Unknown"}{" "}
-                        {vehicleData?.lastName || " "}
-                      </p>
-
-                      <p className="capitalize">
-                        <span className="font-semibold">Reference #:</span>{" "}
-                        {vehicleData?.transactions?.[0]?.referenceNumber || "-"}
-                      </p>
-
-                      <p className="">
-                        <span className="font-semibold">Drop-Off:</span>{" "}
-                        {vehicleData?.transactions?.[0]?.transactionDateTime
-                          ? new Date(
-                              vehicleData?.transactions?.[0]
-                                ?.transactionDateTime as string
-                            ).toLocaleString()
-                          : "-"}
-                      </p>
-                      <p>
-                        <span className="font-semibold">
-                          {vehicleData?.transactions?.[0]?.paymentMethod}{" "}
-                          Tariff:
-                        </span>{" "}
-                        <span className="capitalize">
-                          ${vehicleData?.transactions?.[0].amount}
-                        </span>
-                      </p>
-                    </div>
-                  </CollapsibleSection>
-                )}
+                {/* Transaction Details */}
+                {requested && <TransactionDetails vehicleData={vehicleData!} />}
 
                 {/* Rating Section */}
                 {requested && (
-                  <div
-                    ref={ratingSectionRef}
-                    className={`${
-                      submitted ? "opacity-50" : ""
-                    } border-t border-gray-200 pt-0`}
-                  >
-                    <hr className="border-gray-300 my-4" />
-
-                    {vehicleData?.surveySubmitted ? (
-                      <div
-                        className="flex flex-col items-center justify-center mt-6 px-4 py-8 rounded-xl shadow-inner transition-all duration-500 bg-opacity-80"
-                        style={{
-                          background:
-                            "radial-gradient(circle at center, #E2E8F0, #CBD5E1)",
-                        }}
-                      >
-                        <div
-                          className="w-16 h-16 mb-3 rounded-full p-2 flex items-center justify-center border border-orange-500 shadow-md"
-                          style={{
-                            background:
-                              "linear-gradient(135deg, #ff9800, #ef6c00)", // vibrant orange gradient
-                          }}
-                        >
-                          <IoCheckmarkOutline className="text-white w-10 h-10" />
-                        </div>{" "}
-                        <h3 className="text-lg font-semibold text-slate-700 text-center tracking-tight leading-5">
-                          Thank you for your feedback
-                          {vehicleData?.firstName
-                            ? `, ${vehicleData.firstName}`
-                            : ""}
-                          !
-                        </h3>
-                        <p className="text-slate-600 text-sm text-center mt-1">
-                          We truly appreciate your rating and look forward to
-                          serving you again.
-                        </p>
-                      </div>
-                    ) : (
-                      <>
-                        <h2 className="text-center text-lg text-gray-700 mb-2 font-bold tracking-tighter italic">
-                          How was your experience?
-                        </h2>
-                        <div className="flex justify-center space-x-1">
-                          {[...Array(5)]?.map((_, starIndex) => {
-                            const fullValue = starIndex + 1;
-                            const halfValue = starIndex + 0.5;
-
-                            return (
-                              <div key={starIndex} className="relative w-6 h-6">
-                                {/* Left Half */}
-                                <div
-                                  className="absolute left-0 top-0 w-1/2 h-full z-10 cursor-pointer"
-                                  onMouseEnter={() =>
-                                    handleMouseEnter(starIndex, true)
-                                  }
-                                  onClick={() =>
-                                    handleStarClick(starIndex, true)
-                                  }
-                                ></div>
-
-                                {/* Right Half */}
-                                <div
-                                  className="absolute right-0 top-0 w-1/2 h-full z-10 cursor-pointer"
-                                  onMouseEnter={() =>
-                                    handleMouseEnter(starIndex, false)
-                                  }
-                                  onClick={() =>
-                                    handleStarClick(starIndex, false)
-                                  }
-                                ></div>
-
-                                {/* Icon Layer */}
-                                <div className="z-0 flex justify-center items-center w-full h-full">
-                                  {hoveredStars >= fullValue ? (
-                                    <BsStarFill className="text-blue-600 w-5 h-5" />
-                                  ) : hoveredStars >= halfValue ? (
-                                    <BsStarHalf className="text-blue-600 w-5 h-5" />
-                                  ) : (
-                                    <BsStar className="text-primary w-5 h-5" />
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <div className="mx-5">
-                          <textarea
-                            className="mt-4 w-full p-2 border border-gray-300 rounded"
-                            placeholder="Leave a comment (optional)"
-                            rows={3}
-                            disabled={submitted}
-                            value={comment}
-                            onChange={(e) => setComment(e.target.value)}
-                          ></textarea>
-                        </div>
-
-                        <div className="flex mt-4 justify-center">
-                          <button
-                            type="button"
-                            onClick={(e) => handleSubmitRating(e)}
-                            disabled={submitted}
-                            className={`${
-                              submitted
-                                ? "bg-blue-600/20 cursor-not-allowed"
-                                : "bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800"
-                            } transition-colors text-white px-3 py-2 w-[95%] font-semibold shadow-md tracking-tight rounded cursor-pointer`}
-                          >
-                            Submit Rating
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                  <ClientRating
+                    hoveredStars={hoveredStars}
+                    handleMouseEnter={handleMouseEnter}
+                    handleStarClick={handleStarClick}
+                    handleSubmitRating={handleSubmitRating}
+                    comment={comment}
+                    setComment={setComment}
+                    submitted={submitted}
+                    ratingSectionRef={
+                      ratingSectionRef as React.RefObject<HTMLDivElement>
+                    }
+                    vehicleData={vehicleData as VehicleData}
+                  />
                 )}
               </>
             </div>
