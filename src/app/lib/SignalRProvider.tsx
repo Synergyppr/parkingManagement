@@ -64,7 +64,7 @@ export const SignalRProvider = ({
 
       connection.on("UpdateNotification", (notification: NotificationHandler) => {
         if (notificationSound) {
-          console.log("Playing notification sound");
+          console.log("Playing notification sound!");
           setTimeout(() => {
             notificationSound.play().catch((err) => {
               console.warn("Unable to play sound:", err);
