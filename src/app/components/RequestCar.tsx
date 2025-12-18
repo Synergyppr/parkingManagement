@@ -5,6 +5,7 @@ import Swal from "sweetalert2";
 
 import { RxCaretRight } from "react-icons/rx";
 import { IoCheckmarkOutline } from "react-icons/io5";
+import { FaTicketAlt } from "react-icons/fa";
 
 import { useSignalR, joinGroup, leaveGroup } from "../lib/SignalRProvider";
 import { useProperty } from "../context/PropertyContext";
@@ -15,6 +16,7 @@ import PageLoader from "./elements/PageLoader";
 import ButtonLoader from "./elements/ButtonLoader";
 import ClientRating from "./ClientRating";
 import TransactionDetails from "./TransactionDetails";
+import FormInput from "./elements/FormInput";
 
 const RequestCar = () => {
   const { propertyId, setPropertyId } = useProperty();
@@ -297,6 +299,29 @@ const RequestCar = () => {
     }
   };
 
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    setTicketId(e.target.value);
+  };
+
+  const handleSubmit = () => {
+    if (ticketId.trim() === "") {
+      Swal.fire({
+        title: "Input Required",
+        text: "Please enter a valid Ticket ID.",
+        icon: "warning",
+      });
+      return;
+    }
+    // Inject ticketId into URL
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set("ticket", ticketId.trim());
+    window.history.replaceState({}, "", newUrl.toString());
+
+    fetchVehicleByTicket(ticketId?.trim());
+  };
+
   return (
     <div
       style={{
@@ -314,20 +339,37 @@ const RequestCar = () => {
         >
           {!idFromUrl ? (
             <div className="text-center text-gray-600 pt-6 px-6 relative top-10 py-2 pb-30 my-auto h-full">
-              <h2 className="text-2xl font-bold text-red-500 mb-4 tracking-tight">
+              <h2 className="text-2xl font-bold text-red-500 mb-3 tracking-tight">
                 No Ticket ID Provided
               </h2>
-              <p className="text-gray-500 leading-6 max-w-md mx-auto">
+              <p className="text-gray-500 leading-5 max-w-md mx-auto font-light px-4 md:px-8 text-sm mb-4 md:mb-3">
                 Please use the link provided in your email to view your vehicle
                 details.
               </p>
+              <div className="flex gap-2 justify-center mx-6 items-center px-1 md:px-6">
+                <FormInput
+                  name="ticketId"
+                  placeholder="Ticket ID"
+                  icon={<FaTicketAlt />}
+                  value={ticketId}
+                  onChange={(e) => handleChange(e)}
+                  onClear={() => setTicketId("")}
+                />
+                <button
+                  className="cursor-pointer ml-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-6 font-semibold shadow-sm tracking-tight rounded"
+                  onClick={handleSubmit}
+                  type="button"
+                >
+                  Find
+                </button>
+              </div>
             </div>
           ) : vehicleNotFound ? (
             <div className="text-center text-gray-600 pt-6 px-6 relative top-10 py-2 pb-30">
               <h2 className="text-2xl font-bold text-red-500 mb-4 tracking-tight">
                 Vehicle Not Found
               </h2>
-              <p className="text-gray-500 leading-6 max-w-md mx-auto">
+              <p className="text-gray-500 leading-6 max-w-md mx-auto font-light md:px-4">
                 We couldn’t find a vehicle associated with this ticket ID.
                 Please make sure you&apos;re using the correct link from your
                 email, or contact valet support for assistance.

@@ -171,11 +171,11 @@ export default function ReceiveForm({
       // Check if the vehicle entered in the form already exists in existingVehicles, if not, add it
       const isExisting = existingVehicles?.some(
         (v) =>
-          v.make === form?.make &&
-          v.model === form?.model &&
-          v.type === form?.type &&
-          v.color === form?.color &&
-          v.licensePlate === form?.licensePlate
+          v?.make === form?.make &&
+          v?.model === form?.model &&
+          v?.type === form?.type &&
+          v?.color === form?.color &&
+          v?.licensePlate === form?.licensePlate
       );
       if (!isExisting) {
         // const newVehicle = {

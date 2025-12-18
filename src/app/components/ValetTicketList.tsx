@@ -305,11 +305,12 @@ export default function ValetTicketList({
           <button
             disabled={pageLoading}
             onClick={() => setAcknowledged(true)}
-            className={`relative flex items-center justify-center px-6 py-3 rounded-lg font-semibold transition-all duration-1000 ${
-              acknowledged
-                ? "text-white w-12 h-12 rounded-full bg-primary"
-                : "bg-primary text-white hover:bg-primary/90"
-            }`}
+            className={`bg-gradient-to-r from-blue-500 to-blue-700
+              relative flex items-center justify-center px-6 py-3 rounded-lg font-semibold transition-all duration-1000 ${
+                acknowledged
+                  ? "text-white w-12 h-12 rounded-full bg-primary"
+                  : "bg-primary text-white hover:bg-primary/90"
+              }`}
           >
             {acknowledged ? (
               <span>
