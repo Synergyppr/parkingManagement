@@ -1,15 +1,13 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useProperty } from "../context/PropertyContext";
-import {
-  IoHomeOutline,
-  IoSettingsOutline,
-  IoCarSportOutline,
-} from "react-icons/io5";
-import { BsQuestionSquare } from "react-icons/bs";
-import { TbReportSearch } from "react-icons/tb";
+import { handleLogout } from "../helpers/authHelpers";
+import { IoLogOut, IoSettings } from "react-icons/io5";
 import { CgProfile } from "react-icons/cg";
+import { MdHomeFilled } from "react-icons/md";
+import { HiDocumentReport } from "react-icons/hi";
+import { FaCar, FaComment } from "react-icons/fa6";
 
 export default function OffCanvas({
   setIsMenuOpen,
@@ -19,27 +17,47 @@ export default function OffCanvas({
   isMenuOpen: boolean;
 }) {
   const pathname = usePathname();
-  const { propertyName, accountUser } = useProperty();
+  const router = useRouter();
+  const {
+    propertyName,
+    accountUser,
+    propertyId,
+    setPropertyId,
+    setPropertyName,
+    setAccountUser,
+  } = useProperty();
 
   return (
     <>
       {/* Slide-in Menu */}
       <div
-        className={`fixed top-0 right-0 h-full w-72 bg-slate-100 border-l-2 border-blue-600 shadow-xl z-[9999] transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 h-full w-72 bg-slate-100 border-l-2 border-blue-600 shadow-xl z-9999 transform transition-transform duration-300 ease-in-out ${
           isMenuOpen ? "translate-x-0" : "translate-x-full"
         } flex flex-col justify-between`}
       >
         <div>
-          <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-500 to-blue-700 text-white">
-            <h2 className="text-lg font-semibold">
-              {propertyName ? propertyName : "Synergy"}
-            </h2>
-            <button
-              className="text-white text-2xl hover:text-[#ef6c00] cursor-pointer"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              ×
-            </button>
+          <div className="p-4 bg-linear-to-r from-blue-500 to-blue-700 text-white">
+            <div className="flex justify-between items-center ">
+              <h2 className="text-lg font-semibold">
+                {/* {propertyName ? propertyName : "Synergy"} */}
+                {propertyName === "250"
+                  ? "250 Plaza"
+                  : propertyName ?? "Synergy"}
+              </h2>
+
+              <button
+                className="text-white text-2xl hover:text-[#ef6c00] cursor-pointer"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div>
+              {propertyName === "250" ? (
+                <p className="text-xs">American International Plaza</p>
+              ) : null}
+            </div>
           </div>
 
           <nav className="flex flex-col gap-1 py-4 px-2 text-blue-900 font-medium">
@@ -69,7 +87,7 @@ export default function OffCanvas({
                     : ""
                 } flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded`}
               >
-                <IoHomeOutline /> Home
+                <MdHomeFilled /> Home
               </Link>
               <Link
                 href="/tenants"
@@ -78,9 +96,9 @@ export default function OffCanvas({
                   pathname.includes("tenants")
                     ? "bg-slate-200 font-bold shadow-inner"
                     : ""
-                } flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded`}
+                } flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded transition-colors duration-700`}
               >
-                <IoSettingsOutline /> Tenant Configuration
+                <IoSettings /> Tenant Configuration
               </Link>
               <Link
                 href="/report"
@@ -89,9 +107,9 @@ export default function OffCanvas({
                   pathname.includes("report")
                     ? "bg-slate-200 font-bold shadow-inner"
                     : ""
-                } flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded`}
+                } flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded transition-colors duration-700`}
               >
-                <TbReportSearch /> Ticket Report
+                <HiDocumentReport /> Ticket Report
               </Link>
               <Link
                 href="/surveys"
@@ -100,9 +118,9 @@ export default function OffCanvas({
                   pathname.includes("surveys")
                     ? "bg-slate-200 font-bold shadow-inner"
                     : ""
-                } flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded`}
+                } flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded transition-colors duration-700`}
               >
-                <BsQuestionSquare /> Service Feedback
+                <FaComment /> Service Feedback
               </Link>
             </div>
 
@@ -120,9 +138,9 @@ export default function OffCanvas({
                   pathname.includes("request")
                     ? "bg-slate-200 font-bold shadow-inner"
                     : ""
-                } flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded`}
+                } flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded transition-colors duration-700`}
               >
-                <IoCarSportOutline /> Request Car
+                <FaCar /> Request Car
               </Link>
             </div>
           </nav>
@@ -130,6 +148,23 @@ export default function OffCanvas({
 
         {/* Footer links */}
         <div className="px-4 pb-4 text-sm text-blue-900">
+          <div className="mt-2">
+            <Link
+              href="#"
+              onClick={() =>
+                handleLogout({
+                  propertyId,
+                  setPropertyId,
+                  setPropertyName,
+                  setAccountUser,
+                  router,
+                })
+              }
+              className={`flex items-center gap-2 hover:text-[#ef6c00] hover:bg-slate-200 p-2 rounded text-base transition-colors duration-700`}
+            >
+              <IoLogOut /> Log Out
+            </Link>
+          </div>
           <hr className="border-slate-300 mb-2" />
           <div className="flex flex-col gap-1">
             <Link
@@ -155,7 +190,7 @@ export default function OffCanvas({
       {/* Background Overlay */}
       {isMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/80 bg-opacity-40 z-[9998]"
+          className="fixed inset-0 bg-black/80 bg-opacity-40 z-9998"
           onClick={() => setIsMenuOpen(false)}
         />
       )}
