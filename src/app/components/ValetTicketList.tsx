@@ -163,18 +163,18 @@ export default function ValetTicketList({
                 className={`cursor-pointer p-4 relative overflow-hidden rounded-xl border-none shadow-lg transform transition-all duration-300 mx-1 hover:scale-[1.01]
               ${
                 !vehicle?.isRead && vehicle?.status == "requested"
-                  ? "bg-gradient-to-br from-blue-300 via-blue-200 to-blue-400 outline-1 outline-[#ef6c00] outline-offset-2 before:content-[''] before:absolute before:inset-0 before:rounded-xl before:bg-blue-400/40 before:blur-[20px] before:z-[-1]"
-                  : "bg-gradient-to-br from-slate-300 via-slate-200 to-slate-400/70 hover:from-slate-300 hover:via-slate-200 hover:to-slate-400/70 before:content-[''] before:absolute before:inset-0 before:rounded-xl before:bg-slate-400/40 before:blur-[20px] before:z-[-1] hover:outline-none"
+                  ? "bg-linear-to-br from-blue-300 via-blue-200 to-blue-400 outline-1 outline-[#ef6c00] outline-offset-2 before:content-[''] before:absolute before:inset-0 before:rounded-xl before:bg-blue-400/40 before:blur-[20px] before:z-[-1]"
+                  : "bg-linear-to-br from-slate-300 via-slate-200 to-slate-400/70 hover:from-slate-300 hover:via-slate-200 hover:to-slate-400/70 before:content-[''] before:absolute before:inset-0 before:rounded-xl before:bg-slate-400/40 before:blur-[20px] before:z-[-1] hover:outline-none"
               }`}
                 style={{
                   boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
                 }}
               >
                 {/* Decorative Circles */}
-                <div className="absolute top-[-6px] left-[-6px] w-4 h-4 bg-[#f4faff]/60 rounded-full backdrop-blur-sm shadow-sm" />
-                <div className="absolute top-[-6px] right-[-6px] w-4 h-4 bg-[#f4faff]/60 rounded-full backdrop-blur-sm shadow-sm" />
-                <div className="absolute bottom-[-6px] left-[-6px] w-4 h-4 bg-[#f4faff]/60 rounded-full backdrop-blur-sm shadow-sm" />
-                <div className="absolute bottom-[-6px] right-[-6px] w-4 h-4 bg-[#f4faff]/60 rounded-full backdrop-blur-sm shadow-sm" />
+                <div className="absolute -top-1.5 -left-1.5 w-4 h-4 bg-[#f4faff]/60 rounded-full backdrop-blur-sm shadow-sm" />
+                <div className="absolute -top-1.5  -right-1.5 w-4 h-4 bg-[#f4faff]/60 rounded-full backdrop-blur-sm shadow-sm" />
+                <div className="absolute -bottom-1.5 -left-1.5 w-4 h-4 bg-[#f4faff]/60 rounded-full backdrop-blur-sm shadow-sm" />
+                <div className="absolute -bottom-1.5 -right-1.5  w-4 h-4 bg-[#f4faff]/60 rounded-full backdrop-blur-sm shadow-sm" />
 
                 <div>
                   <h4 className="font-semibold text-[#ef6c00] text-shadow-gray-800">
@@ -254,7 +254,7 @@ export default function ValetTicketList({
                       <button
                         disabled={pageLoading}
                         type="button"
-                        className="cursor-pointer my-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 transform transition-all 
+                        className="cursor-pointer my-auto bg-linear-to-r from-blue-500 to-blue-700 hover:from-blue-600 transform transition-all 
                         duration-300 hover:scale-[1.01] text-white py-2 px-6 font-semibold shadow-sm tracking-tight rounded"
                         onClick={() =>
                           handleStatusChange(
@@ -279,7 +279,7 @@ export default function ValetTicketList({
               </div>
               {clickLoader && (
                 <div
-                  className="fixed z-[9999] pointer-events-none border-blue-300"
+                  className="fixed z-9999 pointer-events-none border-blue-300"
                   style={{
                     top: `${mousePos.y + 40}px`,
                     left: `${mousePos.x + 12}px`,
@@ -305,7 +305,7 @@ export default function ValetTicketList({
           <button
             disabled={pageLoading}
             onClick={() => setAcknowledged(true)}
-            className={`bg-gradient-to-r from-blue-500 to-blue-700
+            className={`bg-linear-to-r from-blue-500 to-blue-700
               relative flex items-center justify-center px-6 py-3 rounded-lg font-semibold transition-all duration-1000 ${
                 acknowledged
                   ? "text-white w-12 h-12 rounded-full bg-primary"
