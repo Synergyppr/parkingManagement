@@ -28,17 +28,18 @@ export default function PinConfirmationModal({
   const { propertyId, latitude, longitude, locationMode } = useProperty();
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="space-y-4 text-gray-800">
-        <h4 className="tracking-tight leading-5">
-          Please enter your PIN to confirm the status change:
-        </h4>
+    <Modal isOpen={isOpen} onClose={onClose} size="sm">
+      <div className="p-5 space-y-4">
+        <h3 className="font-semibold text-gray-900 text-base">PIN Confirmation</h3>
+        <p className="text-sm text-gray-500">
+          Enter your PIN to confirm the status change:
+        </p>
 
         <div className="relative w-full">
           <input
             type={showPin ? "text" : "password"}
             name="pin"
-            placeholder="Enter PIN"
+            placeholder="4-digit PIN"
             value={pin}
             onChange={(e) => {
               const val = e.target.value;
@@ -46,7 +47,7 @@ export default function PinConfirmationModal({
                 setPin(val);
               }
             }}
-            className="border-b border-gray-500 px-2 py-2 pr-10 text-sm placeholder-gray-400 tracking-tight w-full"
+            className="w-full h-11 px-3 pr-10 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-center text-lg tracking-widest font-mono"
             maxLength={4}
             inputMode="numeric"
             pattern="\d*"
@@ -56,19 +57,26 @@ export default function PinConfirmationModal({
           <button
             type="button"
             onClick={() => setShowPin(!showPin)}
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:opacity-50 focus:outline-none cursor-pointer"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer"
           >
-            {showPin ? <FaEyeSlash /> : <FaEye />}
+            {showPin ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
           </button>
         </div>
 
-        <div className="flex">
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 h-11 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors text-sm font-medium cursor-pointer"
+          >
+            Cancel
+          </button>
           <button
             disabled={buttonLoader || !pin || !propertyId}
             onClick={() =>
               handlePinSubmit({
                 propertyId,
-                locationMode, // "live" | "manual"
+                locationMode,
                 latitude,
                 longitude,
                 pin,
@@ -85,11 +93,7 @@ export default function PinConfirmationModal({
                 setReloadPageData,
               })
             }
-            className={` ${
-              !pin || !propertyId
-                ? "bg-blue-500/20"
-                : "bg-blue-500 hover:bg-blue-600 cursor-pointer"
-            } w-full text-white px-4 py-2 rounded text-sm transition-colors duration-200`}
+            className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors text-sm cursor-pointer flex items-center justify-center"
           >
             {buttonLoader ? <ButtonLoader /> : "Confirm"}
           </button>

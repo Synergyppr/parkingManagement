@@ -11,7 +11,6 @@ import { CarPart, TicketDetails } from "../types";
 import { handleFetchTicketDetails } from "../helpers/dashboardHelpers";
 
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
-import { PiUserCircleFill } from "react-icons/pi";
 
 import TicketDetailsModal from "./TicketDetailsModal";
 import PageLoader from "./elements/PageLoader";
@@ -25,18 +24,16 @@ interface Survey {
 }
 
 // Render stars with half-star support
-const renderStars = (rating: number) => {
+const renderStars = (rating: number, size: "sm" | "md" = "md") => {
   const stars = [];
+  const iconClass = size === "sm" ? "w-4 h-4" : "w-5 h-5";
   for (let i = 1; i <= 5; i++) {
     if (rating >= i) {
-      // Full star
-      stars.push(<FaStar key={i} className="w-5 h-5 text-yellow-400" />);
+      stars.push(<FaStar key={i} className={`${iconClass} text-amber-400`} />);
     } else if (rating >= i - 0.5) {
-      // Half star
-      stars.push(<FaStarHalfAlt key={i} className="w-5 h-5 text-yellow-400" />);
+      stars.push(<FaStarHalfAlt key={i} className={`${iconClass} text-amber-400`} />);
     } else {
-      // Empty star
-      stars.push(<FaRegStar key={i} className="w-5 h-5 text-gray-300" />);
+      stars.push(<FaRegStar key={i} className={`${iconClass} text-gray-300`} />);
     }
   }
   return stars;
@@ -108,7 +105,7 @@ const Surveys = () => {
   return (
     <>
       {loading === true && propertyId && (
-        <div className="fixed inset-0 bg-black/70 bg-opacity-70 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="flex flex-col h-auto">
             <PageLoader />
             <p className="text-white text-sm font-light mt-1 relative bottom-[80px] md:bottom-[150px] lg:bottom-[175px]">
@@ -118,57 +115,35 @@ const Surveys = () => {
         </div>
       )}
 
-      <div className="text-gray-800 px-4 lg:min-w-[60%] mt-10">
-        {/* Header with average rating */}
-        <div className="flex flex-col md:flex-row lg:flex-row items-center md:gap-4 lg:gap-4">
-          <h1 className="text-3xl font-bold tracking-tight mb-4">
-            Valet Service Feedback
-          </h1>
-          <div className="flex items-center gap-2 mb-4">
-            {renderStars(averageRating)}
-            <h1 className="text-xl font-semibold tracking-tight text-gray-500">
-              ({averageRating.toFixed(1)} / 5)
+      <div className="min-h-screen py-6 px-4">
+        <div className="max-w-4xl mx-auto space-y-4">
+          {/* Header with average rating */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold text-gray-900">
+              Service Feedback
             </h1>
+            <div className="flex items-center gap-2">
+              {renderStars(averageRating, "sm")}
+              <span className="text-sm font-medium text-gray-500">
+                ({averageRating.toFixed(1)})
+              </span>
+            </div>
           </div>
-        </div>
 
-        <div className="space-y-4 py-2 mb-4">
-          {report
-            // ?.reverse() // Show latest first
-            ?.sort((a, b) => (a.id < b.id ? 1 : -1)) // Sort by ID descending
-            ?.map((survey) => (
-              <div
-                key={survey?.id}
-                className="rounded-xl border border-gray-200 p-6 mt-2"
-              >
-                {/* Header: Author + Rating */}
-                <div className="flex flex-col md:flex-row lg:flex-row gap-2 md:gap-0 lg:gap-0 justify-between items-start mb-3">
-                  <div className="flex items-center gap-2">
-                    <PiUserCircleFill className="w-6 h-6 text-gray-500" />
-                    <p className="font-bold text-gray-700 text-lg">
-                      {survey?.fullName}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {renderStars(survey?.rating)}
-                    <span className="text-gray-600 text-sm">
-                      {survey?.rating?.toFixed(1)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Comment */}
-                <div className="bg-gray-50 rounded-lg p-4 text-gray-700 text-sm">
-                  {survey?.comments ? (
-                    <p>{survey?.comments}</p>
-                  ) : (
-                    <p className="italic text-gray-400">No comment provided.</p>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="flex justify-end mt-4">
-                  <button
+          {report.length === 0 && !loading ? (
+            <div className="text-center py-20 text-gray-400">
+              <svg className="w-10 h-10 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+              </svg>
+              <p className="font-medium text-gray-600">No feedback yet</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {report
+                ?.sort((a, b) => (a.id < b.id ? 1 : -1))
+                ?.map((survey) => (
+                  <div
+                    key={survey?.id}
                     onClick={() =>
                       handleFetchTicketDetails({
                         id: survey?.ticketId,
@@ -179,14 +154,40 @@ const Surveys = () => {
                         setShowTicketDetailsModal,
                       })
                     }
-                    type="button"
-                    className="border border-gray-300 rounded-lg px-4 py-2 text-sm hover:bg-gray-100 transition cursor-pointer"
+                    className="bg-white rounded-xl shadow-sm ring-1 ring-black/5 p-4 cursor-pointer hover:shadow-md transition-shadow"
                   >
-                    View Ticket
-                  </button>
-                </div>
-              </div>
-            ))}
+                    {/* Header: Avatar + Name */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                        {survey?.fullName?.[0]?.toUpperCase() || "?"}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-900 text-sm truncate">
+                          {survey?.fullName}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Rating */}
+                    <div className="flex items-center gap-2 mb-2">
+                      {renderStars(survey?.rating, "sm")}
+                      <span className="text-xs text-gray-400">
+                        {survey?.rating?.toFixed(1)}
+                      </span>
+                    </div>
+
+                    {/* Comment */}
+                    {survey?.comments ? (
+                      <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">
+                        &ldquo;{survey?.comments}&rdquo;
+                      </p>
+                    ) : (
+                      <p className="text-sm italic text-gray-400">No comment provided.</p>
+                    )}
+                  </div>
+                ))}
+            </div>
+          )}
         </div>
 
         {/* Ticket Details Modal */}

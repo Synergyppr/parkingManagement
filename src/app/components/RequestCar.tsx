@@ -323,233 +323,224 @@ const RequestCar = () => {
   };
 
   return (
-    <div
-      style={{
-        background:
-          "radial-gradient(circle at center, #3B82F6 10%, #e0f2ff 90%)",
-      }}
-      className="min-h-[calc(100vh-50px)] p-6 mx-auto bg-white my-auto flex flex-col items-center justify-center"
-    >
-      <div>
-        <h1 className="w-full text-2xl font-bold mt-2 mb-0 text-center pt-4 pb-3 px-6 lg:px-10 lg:py-6 bg-gradient-to-r from-blue-700 to-blue-500 text-white tracking-tight rounded-t-lg">
-          Thank you for using API Valet Service!
-        </h1>
-        <div
-          className={`flex flex-col items-center justify-center h-full bg-gray-200 rounded-b-lg`}
-        >
-          {!idFromUrl ? (
-            <div className="text-center text-gray-600 pt-6 px-6 relative top-10 py-2 pb-30 my-auto h-full">
-              <h2 className="text-2xl font-bold text-red-500 mb-3 tracking-tight">
-                No Ticket ID Provided
-              </h2>
-              <p className="text-gray-500 leading-5 max-w-md mx-auto font-light px-4 md:px-8 text-sm mb-4 md:mb-3">
-                Please use the link provided in your email to view your vehicle
-                details.
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
+      <div className="max-w-sm mx-auto px-4 py-8">
+        {/* Brand Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2">
+            <div className="w-8 h-8 bg-blue-500 rounded-xl flex items-center justify-center">
+              <span className="text-white font-bold text-xs">V</span>
+            </div>
+            <span className="text-white font-bold text-lg">API Valet Service</span>
+          </div>
+        </div>
+
+        {!idFromUrl ? (
+          <div className="bg-white rounded-2xl p-6 text-center space-y-4">
+            <h2 className="text-lg font-bold text-gray-900">
+              Thank you for using API Valet Service!
+            </h2>
+            <p className="text-sm text-gray-500">
+              Enter your ticket number to find your vehicle.
+            </p>
+            <div className="flex gap-2">
+              <FormInput
+                name="ticketId"
+                placeholder="Ticket ID"
+                icon={<FaTicketAlt />}
+                value={ticketId}
+                onChange={(e) => handleChange(e)}
+                onClear={() => setTicketId("")}
+              />
+              <button
+                className="px-4 h-11 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors cursor-pointer"
+                onClick={handleSubmit}
+                type="button"
+              >
+                Find
+              </button>
+            </div>
+          </div>
+        ) : vehicleNotFound ? (
+          <div className="bg-white rounded-2xl p-6 text-center space-y-3">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+              <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-bold text-gray-900">
+              Vehicle Not Found
+            </h2>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              We couldn&apos;t find a vehicle associated with this ticket ID.
+              Please make sure you&apos;re using the correct link from your
+              email, or contact valet support for assistance.
+            </p>
+          </div>
+        ) : ticketId && !vehicleData ? (
+          <div className="text-center py-12">
+            <PageLoader />
+          </div>
+        ) : ticketId ? (
+          <div className="space-y-4">
+            {/* Greeting Card */}
+            <div className="bg-white rounded-2xl p-5">
+              {vehicleData?.firstName || vehicleData?.lastName ? (
+                <>
+                  <p className="text-gray-500 text-sm mb-1">Hello,</p>
+                  <h2 className="text-xl font-bold text-gray-900 mb-3">
+                    {vehicleData?.firstName} {vehicleData?.lastName}
+                  </h2>
+                </>
+              ) : (
+                <p className="text-gray-500 text-sm mb-3">Greetings,</p>
+              )}
+              <p className="text-sm text-gray-600 leading-relaxed">
+                We&apos;ve located your vehicle associated with ticket{" "}
+                <span className="font-mono font-semibold text-blue-600">
+                  #{vehicleData?.ticketNumber}
+                </span>
+                {" — "}
+                <span className="text-accent font-semibold capitalize">
+                  {vehicleData?.color} {vehicleData?.make}{" "}
+                  {vehicleData?.model}
+                </span>{" "}
+                ({vehicleData?.type}), received on{" "}
+                <span className="font-medium">
+                  {new Date(
+                    vehicleData?.createdDateTime as string
+                  ).toLocaleString([], {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+                .
               </p>
-              <div className="flex gap-2 justify-center mx-6 items-center px-1 md:px-6">
-                <FormInput
-                  name="ticketId"
-                  placeholder="Ticket ID"
-                  icon={<FaTicketAlt />}
-                  value={ticketId}
-                  onChange={(e) => handleChange(e)}
-                  onClear={() => setTicketId("")}
-                />
+            </div>
+
+            {/* Status Timeline Card */}
+            <div className="bg-white rounded-2xl p-5">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Vehicle Status</p>
+              <StatusTimeline
+                currentStatus={vehicleData?.status as string}
+              />
+            </div>
+
+            {/* Status Message Card */}
+            {(vehicleData?.status === "received" ||
+              vehicleData?.status === "parked") && (
+              <div className="rounded-2xl p-4 bg-blue-50 border border-blue-100">
+                <p className="text-sm leading-relaxed text-gray-700">
+                  If you&apos;ve finished your visit{" "}
+                  {vehicleData?.placeToVisit && (
+                    <span>
+                      at{" "}
+                      <strong className="capitalize">
+                        {vehicleData?.placeToVisit}
+                      </strong>
+                    </span>
+                  )}{" "}
+                  and are ready to leave, please tap the button below to
+                  request your vehicle.
+                </p>
+              </div>
+            )}
+
+            {vehicleData?.status === "requested" && (
+              <div className="bg-orange-500 rounded-2xl p-5 text-center text-white">
+                <IoCheckmarkOutline className="w-8 h-8 mx-auto mb-2 opacity-90" />
+                <p className="font-semibold">Vehicle Requested</p>
+                <p className="text-xs opacity-80 mt-1">
+                  Your vehicle has been requested and is on its way! Please be ready within 3–5 minutes.
+                </p>
+              </div>
+            )}
+
+            {vehicleData?.status === "ready" && (
+              <div className="rounded-2xl p-4 bg-emerald-50 border border-emerald-100">
+                <p className="text-sm leading-relaxed text-gray-700">
+                  Your vehicle has been picked up. We hope you enjoyed your
+                  visit{" "}
+                  {vehicleData?.placeToVisit && (
+                    <>
+                      {" to "}
+                      <strong className="capitalize">
+                        {vehicleData?.placeToVisit}
+                      </strong>
+                    </>
+                  )}{" "}
+                  and look forward to seeing you again soon!
+                </p>
+              </div>
+            )}
+
+            {/* SMS Consent & Request Button */}
+            {vehicleData?.status !== "ready" &&
+              vehicleData?.status !== "requested" && (
+              <div className="bg-white rounded-2xl p-5 space-y-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    checked={smsConsent}
+                    onChange={() => setSmsConsent(!smsConsent)}
+                    type="checkbox"
+                    className="mt-0.5 w-4 h-4 accent-blue-600"
+                    disabled={buttonLoader}
+                  />
+                  <span className="text-xs text-gray-500 leading-relaxed">
+                    I agree to receive SMS updates about my valet parking
+                    service. Message & data rates may apply. Reply STOP to
+                    cancel, HELP for help.
+                  </span>
+                </label>
                 <button
-                  className="cursor-pointer ml-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-6 font-semibold shadow-sm tracking-tight rounded"
-                  onClick={handleSubmit}
-                  type="button"
+                  disabled={!smsConsent || buttonLoader}
+                  onClick={handleRequestCar}
+                  className="w-full h-12 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  Find
+                  {buttonLoader ? (
+                    <ButtonLoader />
+                  ) : (
+                    <span className="flex gap-2 items-center">
+                      Request My Vehicle
+                      <RxCaretRight className="w-5 h-5" />
+                    </span>
+                  )}
                 </button>
               </div>
-            </div>
-          ) : vehicleNotFound ? (
-            <div className="text-center text-gray-600 pt-6 px-6 relative top-10 py-2 pb-30">
-              <h2 className="text-2xl font-bold text-red-500 mb-4 tracking-tight">
-                Vehicle Not Found
-              </h2>
-              <p className="text-gray-500 leading-6 max-w-md mx-auto font-light md:px-4">
-                We couldn’t find a vehicle associated with this ticket ID.
-                Please make sure you&apos;re using the correct link from your
-                email, or contact valet support for assistance.
-              </p>
-            </div>
-          ) : ticketId && !vehicleData ? (
-            <div className="text-center">
-              <PageLoader />
-            </div>
-          ) : ticketId ? (
-            <div className="bg-slate-200 p-6 rounded-b-lg shadow-lg text-gray-800 w-full max-w-3xl md:px-[8%] lg:px-[10%]">
-              <>
-                <div
-                  className={`${
-                    vehicleData?.status === "parked" ? "mb-6" : "mb-0"
-                  } text-justify`}
-                >
-                  {vehicleData?.firstName || vehicleData?.lastName ? (
-                    <p className="text-lg leading-relaxed">
-                      Hello{" "}
-                      <strong>
-                        {vehicleData?.firstName} {vehicleData?.lastName},
-                      </strong>
-                    </p>
-                  ) : (
-                    <p className="text-base leading-relaxed">Greetings,</p>
-                  )}
-                  <p className="indent mt-2">
-                    We’ve located your vehicle associated with ticket{"  "}
-                    <strong className="italic text-[#ef6c00]">
-                      #{vehicleData?.ticketNumber}
-                    </strong>{" "}
-                    —{" "}
-                    <strong className="text-[#ef6c00] capitalize">
-                      {vehicleData?.color} {vehicleData?.make}{" "}
-                      {vehicleData?.model}
-                    </strong>{" "}
-                    ({vehicleData?.type}), recorded as received on{" "}
-                    <strong>
-                      {new Date(
-                        vehicleData?.createdDateTime as string
-                      ).toLocaleString([], {
-                        year: "numeric",
-                        month: "2-digit",
-                        day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </strong>
-                    .
-                  </p>
+            )}
 
-                  <StatusTimeline
-                    currentStatus={vehicleData?.status as string}
-                  />
+            {/* Transaction Details */}
+            {requested && <TransactionDetails vehicleData={vehicleData!} />}
 
-                  {vehicleData?.status === "received" ||
-                  vehicleData?.status === "parked" ? (
-                    <p className="indent mt-3">
-                      If you’ve finished your visit{" "}
-                      {vehicleData?.placeToVisit && (
-                        <span>
-                          at{" "}
-                          <strong className="capitalize">
-                            {vehicleData?.placeToVisit}
-                          </strong>
-                        </span>
-                      )}{" "}
-                      and are ready to leave, please click the button below to
-                      request your vehicle.
-                    </p>
-                  ) : vehicleData?.status === "requested" ? (
-                    <p className="indent mt-3">
-                      Your vehicle has been requested and is currently on its
-                      way! Please be ready to pick it up within the next 3–5
-                      minutes to avoid any delays.
-                    </p>
-                  ) : vehicleData?.status === "ready" ? (
-                    <p className="indent mt-3">
-                      Your vehicle has been picked up. We hope you enjoyed your
-                      visit{" "}
-                      {vehicleData?.placeToVisit && (
-                        <>
-                          {" to "}
-                          <strong className="capitalize">
-                            {vehicleData?.placeToVisit}
-                          </strong>
-                        </>
-                      )}{" "}
-                      and look forward to seeing you again soon!
-                    </p>
-                  ) : null}
+            {/* Rating Section */}
+            {requested && (
+              <ClientRating
+                hoveredStars={hoveredStars}
+                handleMouseEnter={handleMouseEnter}
+                handleStarClick={handleStarClick}
+                handleSubmitRating={handleSubmitRating}
+                comment={comment}
+                setComment={setComment}
+                submitted={submitted}
+                ratingSectionRef={
+                  ratingSectionRef as React.RefObject<HTMLDivElement>
+                }
+                vehicleData={vehicleData as VehicleData}
+              />
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <PageLoader />
+          </div>
+        )}
 
-                  {vehicleData?.status !== "ready" && (
-                    <div className="flex gap-1 mt-4 font-light text-sm">
-                      <input
-                        checked={smsConsent}
-                        onChange={() => setSmsConsent(!smsConsent)}
-                        type="checkbox"
-                        className="mr-2"
-                        disabled={
-                          vehicleData?.status === "requested" ||
-                          vehicleData?.status === "ready" ||
-                          buttonLoader
-                        }
-                      />
-                      <p>
-                        I agree to receive SMS updates about my valet parking
-                        service. Message & data rates may apply. Reply STOP to
-                        cancel, HELP for help.
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="mt-5 text-center">
-                    <button
-                      disabled={
-                        vehicleData?.status === "requested" ||
-                        vehicleData?.status === "ready" ||
-                        !smsConsent ||
-                        buttonLoader
-                      }
-                      onClick={handleRequestCar}
-                      className={`${
-                        vehicleData?.status === "requested" ||
-                        vehicleData?.status === "ready"
-                          ? "bg-blue-600/20 cursor-not-allowed"
-                          : !smsConsent
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-600 hover:to-blue-800 hover:bg-blue-700 transition-colors duration-1000"
-                      } text-white py-2 px-4 rounded-md cursor-pointer`}
-                    >
-                      {vehicleData?.status === "requested" ||
-                      vehicleData?.status === "ready" ? (
-                        <span className="flex gap-2 items-center justify-between">
-                          Vehicle{" "}
-                          {vehicleData?.status === "requested"
-                            ? "Requested"
-                            : "Picked-Up"}
-                          <IoCheckmarkOutline className="w-5 h-5 text-blue-500" />
-                        </span>
-                      ) : buttonLoader ? (
-                        <ButtonLoader />
-                      ) : (
-                        <span className="flex gap-2 items-center justify-between cursor-pointer">
-                          Request your vehicle{" "}
-                          <RxCaretRight className="w-5 h-5" />
-                        </span>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Transaction Details */}
-                {requested && <TransactionDetails vehicleData={vehicleData!} />}
-
-                {/* Rating Section */}
-                {requested && (
-                  <ClientRating
-                    hoveredStars={hoveredStars}
-                    handleMouseEnter={handleMouseEnter}
-                    handleStarClick={handleStarClick}
-                    handleSubmitRating={handleSubmitRating}
-                    comment={comment}
-                    setComment={setComment}
-                    submitted={submitted}
-                    ratingSectionRef={
-                      ratingSectionRef as React.RefObject<HTMLDivElement>
-                    }
-                    vehicleData={vehicleData as VehicleData}
-                  />
-                )}
-              </>
-            </div>
-          ) : (
-            <div className="text-center">
-              <PageLoader />
-            </div>
-          )}
-        </div>
+        <p className="text-center text-slate-500 text-xs mt-8">
+          Powered by API Valet Service
+        </p>
       </div>
     </div>
   );

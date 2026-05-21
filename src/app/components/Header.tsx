@@ -87,28 +87,28 @@ export default function Header() {
 
   return (
     <>
-      <header className="w-full flex justify-between items-center p-4 bg-gradient-to-r from-blue-900 to-blue-800 text-gray-800 shadow-lg sticky top-0 z-50">
+      <header className="w-full h-14 flex justify-between items-center px-4 bg-header-bg text-white sticky top-0 z-50">
         <Image
           className="relative w-auto h-auto cursor-pointer"
           src="/synergy1.png"
           alt="Synergy Logo"
-          width={180}
-          height={37}
+          width={140}
+          height={30}
           priority
           onClick={() => router.push("/dashboard")}
         />
 
-        <div className="flex gap-4 items-center relative z-[9999]">
+        <div className="flex gap-3 items-center relative z-[9999]">
           {showLocationToggle && (
             <>
               <button
                 type="button"
-                className="py-1.5 px-2 md:px-3 bg-blue-500 text-white rounded-sm cursor-pointer hover:scale-105 m-auto"
+                className="h-8 px-3 bg-white/10 hover:bg-white/20 text-white rounded-xl cursor-pointer transition-colors text-xs font-medium"
                 onClick={() => setOpenLocationModal(true)}
               >
                 {locationMode === "live" ? (
-                  <span className="flex items-center gap-1 text-xs md:text-sm lg:text-sm">
-                    <GoDotFill className="text-red-500 animate-blink blinking-dot" />
+                  <span className="flex items-center gap-1.5">
+                    <GoDotFill className="text-red-400 blinking-dot" />
                     Live{" "}
                     {propertyName
                       ? propertyName === "Condado Ocean Club"
@@ -121,8 +121,8 @@ export default function Header() {
                       : ""}
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 text-xs md:text-sm lg:text-sm">
-                    <BiCurrentLocation className="text-blue-800" />
+                  <span className="flex items-center gap-1.5">
+                    <BiCurrentLocation className="text-blue-300" />
                     Manual{" "}
                     {propertyName
                       ? propertyName === "Condado Ocean Club"
@@ -147,7 +147,7 @@ export default function Header() {
           )}
 
           <button
-            className="cursor-pointer"
+            className="cursor-pointer w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
             onClick={
               isLoggedIn
                 ? () =>
@@ -162,14 +162,14 @@ export default function Header() {
             }
           >
             {isLoggedIn ? (
-              <TbLogout2 className="text-white text-lg hover:scale-110 transition-transform" />
+              <TbLogout2 className="text-white/80 hover:text-white text-lg" />
             ) : (
-              <FaUser className="text-white text-lg hover:scale-110 transition-transform" />
+              <FaUser className="text-white/80 hover:text-white text-lg" />
             )}
           </button>
 
-          <button className="cursor-pointer" onClick={() => toggleModal()}>
-            <FaBars className="text-white text-lg hover:scale-110 transition-transform" />
+          <button className="cursor-pointer w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors" onClick={() => toggleModal()}>
+            <FaBars className="text-white/80 hover:text-white text-lg" />
           </button>
 
           <OffCanvas isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />

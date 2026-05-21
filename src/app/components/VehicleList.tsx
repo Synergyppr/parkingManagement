@@ -12,125 +12,68 @@ const VehicleList = ({
   handleSelectVehicle,
 }: VehicleListProps) => {
   return (
-    <div
-      className={`${
-        !showExistingVehicles ? "border-[.8px]" : "border-[.3px]"
-      } overflow-hidden bg-white text-gray-800 relative  border-solid border-blue-700 mb-4`}
-    >
+    <div className="bg-white rounded-xl ring-1 ring-black/5 overflow-hidden">
       {/* Card Header */}
-      <div
-        className={`${
-          !showExistingVehicles
-            ? "border-none"
-            : "border-b-[0.3px] border-solid"
-        } flex items-center justify-between px-4 py-3 text-blue-600  border-blue-700`}
+      <button
+        type="button"
+        onClick={() => setShowExistingVehicles(!showExistingVehicles)}
+        className="w-full flex items-center justify-between p-4 text-left cursor-pointer"
       >
-        <h3 className="text-base font-bold tracking-tight">
+        <span className="font-medium text-gray-900 text-sm">
           {form?.firstName ? `${form?.firstName}'s ` : ""}
-          Existing Vehicles <span>({Number(existingVehicles?.length)})</span>
-        </h3>
-        <div>
-          {/* Manage List Button */}
-          {/* <button
-          type="button"
-          className="ml-2 text-gray-400 hover:text-blue-600 focus:outline-none cursor-pointer"
-          title="Toggle View"
-          onClick={() => setManageModeOn(!manageModeOn)}
-        >
-          <IoSettingsSharp className="w-5 h-5" />
-        </button> */}
-
-          {/* Chevron up/down to collapse body */}
-          <button
-            type="button"
-            onClick={() => {
-              setShowExistingVehicles(!showExistingVehicles);
-              const body = document.getElementById("existingVehiclesBody");
-              if (body) {
-                if (body.style.display === "none") {
-                  body.style.display = "flex";
-                } else {
-                  body.style.display = "none";
-                }
-              }
-            }}
-            className="ml-2 text-gray-400 hover:text-blue-600 focus:outline-none cursor-pointer"
-            title="Toggle View"
-          >
-            {showExistingVehicles ? (
-              <FaChevronUp className="w-5 h-5" />
-            ) : (
-              <FaChevronDown className="w-5 h-5" />
-            )}
-          </button>
-        </div>
-      </div>
+          Existing Vehicles ({Number(existingVehicles?.length)})
+        </span>
+        {showExistingVehicles ? (
+          <FaChevronUp className="w-4 h-4 text-gray-400" />
+        ) : (
+          <FaChevronDown className="w-4 h-4 text-gray-400" />
+        )}
+      </button>
 
       {/* Card Body */}
-      <div
-        className={`${
-          showExistingVehicles
-            ? "max-h-[1000px] opacity-100 p-4"
-            : "max-h-0 opacity-0 p-0"
-        } transition-all duration-700 bg-gradient-to-br from-blue-100 to-slate-100 min-h-full flex flex-wrap gap-3`}
-      >
-        {existingVehicles?.map((v, idx) => {
-          const selectedColor = vehicleColors?.find(
-            (c) => c?.id === parseInt(v?.color)
-          )?.name;
+      {showExistingVehicles && (
+        <div className="px-4 pb-4 flex gap-3 overflow-x-auto">
+          {existingVehicles?.map((v, idx) => {
+            const selectedColor = vehicleColors?.find(
+              (c) => c?.id === parseInt(v?.color)
+            )?.name;
 
-          const selectedMakeObj = carBrands?.find(
-            (b) => b?.id === parseInt(v?.make)
-          );
+            const selectedMakeObj = carBrands?.find(
+              (b) => b?.id === parseInt(v?.make)
+            );
 
-          const selectedMake = selectedMakeObj?.name;
+            const selectedMake = selectedMakeObj?.name;
 
-          const selectedModel = selectedMakeObj?.models.find(
-            (m) => m?.id === parseInt(v?.model)
-          )?.name;
+            const selectedModel = selectedMakeObj?.models.find(
+              (m) => m?.id === parseInt(v?.model)
+            )?.name;
 
-          const selectedType = vehicleTypes?.find(
-            (t) => t?.id === parseInt(v?.type)
-          )?.name;
+            const selectedType = vehicleTypes?.find(
+              (t) => t?.id === parseInt(v?.type)
+            )?.name;
 
-          return (
-            <div key={idx}>
-              {/* {manageModeOn && (
-              <div className="my-auto">
-                <button type="button">
-                  <FaTrash
-                    onClick={() => handleDeleteVehicle(v?.id)}
-                    className="text-gray-500 hover:text-red-600 cursor-pointer"
-                  />
-                </button>
-              </div>
-            )} */}
-              <div
+            return (
+              <button
+                key={idx}
+                type="button"
                 onClick={() => handleSelectVehicle(v, idx)}
-                className={`cursor-pointer px-4 py-3 rounded-xl shadow-md flex items-center gap-3 transition bg-white duration-500 
-                border-[.8px] border-solid border-[#ef6c00] hover:scale-105`}
+                className="shrink-0 w-44 p-3 bg-white border-2 border-orange-200 hover:border-orange-400 rounded-xl text-left transition-all hover:scale-105 hover:shadow-md cursor-pointer"
               >
-                <div>
-                  <p
-                    className={`${
-                      v?.licensePlate
-                        ? "font-bold tracking-tight"
-                        : "text-gray-400 font-medium"
-                    } text-sm`}
-                  >
-                    {v?.licensePlate || "No Plate"}
-                  </p>
-                  <p className={`text-xs capitalize text-[#ef6c00]`}>
-                    {selectedColor || v?.color} {selectedMake || v?.make}{" "}
-                    {selectedModel || v?.model} – {selectedType || v?.type}
-                  </p>
-                </div>
-                <FaCar className={`w-5 h-5 text-[#ef6c00]`} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                <FaCar className="w-5 h-5 text-accent mb-2" />
+                <p className={`${
+                  v?.licensePlate ? "font-semibold" : "text-gray-400"
+                } text-gray-900 text-sm`}>
+                  {v?.licensePlate || "No Plate"}
+                </p>
+                <p className="text-accent text-xs mt-0.5 capitalize">
+                  {selectedColor || v?.color} {selectedMake || v?.make}{" "}
+                  {selectedModel || v?.model} &ndash; {selectedType || v?.type}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

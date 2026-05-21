@@ -37,45 +37,43 @@ export default function TabNavigation({
   };
 
   return (
-    <div className="bg-slate-900 py-2 text-white relative">
-      <div className="flex justify-around border-b-[0.5px] py-2 shadow-sm relative">
-        {tabs?.map((tab) => {
-          const isActive = selected === tab?.key;
+    <div className="bg-header-bg h-12 text-white relative flex">
+      {tabs?.map((tab) => {
+        const isActive = selected === tab?.key;
 
-          return (
-            <button
-              key={tab?.key}
-              onClick={() => handleSelect(tab?.key)}
-              className={`cursor-pointer relative flex flex-col gap-1.5 items-center text-xs px-4 py-2 rounded-md transition-all duration-300 ${
-                isActive
-                  ? "text-white font-semibold"
-                  : "text-gray-400 hover:text-blue-400"
-              }`}
-            >
-              <div className="text-lg relative">
-                {tab?.icon}
-                {unreadTicketIds?.length > 0 && tab?.label === "Requested" && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-slate-900">
-                    {unreadTicketIds?.length > 9
-                      ? "9+"
-                      : unreadTicketIds?.length}
-                  </span>
-                )}
-              </div>
-
-              <span>{tab?.label}</span>
-
-              {isActive && (
-                <motion.div
-                  layoutId="underline"
-                  className="absolute bottom-0 h-[1px] w-full bg-blue-600"
-                  transition={{ type: "spring", stiffness: 180, damping: 20 }}
-                />
+        return (
+          <button
+            key={tab?.key}
+            onClick={() => handleSelect(tab?.key)}
+            className={`cursor-pointer relative flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${
+              isActive
+                ? "text-white"
+                : "text-slate-500 hover:text-slate-300"
+            }`}
+          >
+            <div className="relative text-base">
+              {tab?.icon}
+              {unreadTicketIds?.length > 0 && tab?.label === "Requested" && (
+                <span className="absolute -top-1.5 -right-2 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                  {unreadTicketIds?.length > 9
+                    ? "9+"
+                    : unreadTicketIds?.length}
+                </span>
               )}
-            </button>
-          );
-        })}
-      </div>
+            </div>
+
+            <span className="text-xs font-medium">{tab?.label}</span>
+
+            {isActive && (
+              <motion.div
+                layoutId="underline"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"
+                transition={{ type: "spring", stiffness: 180, damping: 20 }}
+              />
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }

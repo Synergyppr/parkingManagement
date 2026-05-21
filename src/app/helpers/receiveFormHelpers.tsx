@@ -1,6 +1,7 @@
 import Swal from "sweetalert2";
 import { v4 as uuidv4 } from "uuid";
-import { CarPart, Ticket, Vehicle } from "../types";
+import { CarBrand, CarPart, DropdownOption, Ticket, Vehicle } from "../types";
+import { formatPhoneNumber } from "../lib/clientUtils";
 
 export const generateTicketNumber = ({
   setForm,
@@ -84,7 +85,9 @@ export const handleParkVehicle = async (
   frontViewLabelsMap: Record<string, string[]>,
   rearViewLabelsMap: Record<string, string[]>,
   passengerViewLabelsMap: Record<string, string[]>,
-  driverViewLabelsMap: Record<string, string[]>
+  driverViewLabelsMap: Record<string, string[]>,
+  photos: string[] = [],
+  setVehiclePhotoUrls?: React.Dispatch<React.SetStateAction<string[]>>
 ) => {
   e.preventDefault();
 
@@ -119,11 +122,14 @@ export const handleParkVehicle = async (
     return;
   }
 
-  if (Number(incidentParts?.length) < 1 && !noIncident) {
+  const hasIncidentData =
+    Number(incidentParts?.length) > 0 || photos.length > 0;
+
+  if (!hasIncidentData && !noIncident) {
     Swal.fire({
       icon: "warning",
       title: "Incident Report Required",
-      text: "Please complete the vehicle incident report. If there are no incidents, please check the box above before submission.",
+      text: "Please complete the vehicle incident report by marking damaged parts, taking photos, or checking 'No Incident'.",
     });
     return;
   }
@@ -210,6 +216,7 @@ export const handleParkVehicle = async (
       ticketNumber: form?.ticketNumber || uuidv4().slice(0, 6),
       destination: form?.placeToVisit as string,
       damageStatus,
+      photos: photos.length > 0 ? photos.map((url) => ({ url })) : undefined,
     };
 
     // console.log("Submitting form:", sendForm);
@@ -273,6 +280,7 @@ export const handleParkVehicle = async (
             setIncidentParts([]);
             setDescriptions({});
             setInitialForm({});
+            setVehiclePhotoUrls?.([]);
             setSubmitted(true);
           }
         });
@@ -314,62 +322,121 @@ export const handleParkVehicle = async (
   });
 };
 
-// Keeps last 10 digits in phoneNumber; puts the rest (country code) in areaCode.
-const splitPhone = (
-  full: string | undefined,
-  fallbackArea = "+1"
-): { areaCode: string; phoneNumber: string } => {
-  const digits = (full || "").replace(/\D/g, ""); // strip non-digits
-  const local10 = digits.slice(-10); // last 10 digits
-  const countryDigits = digits.slice(0, Math.max(0, digits.length - 10));
-  const areaCode = countryDigits ? `+${countryDigits}` : fallbackArea;
-  return { areaCode, phoneNumber: local10 };
+
+// Resolve a value to a numeric ID string.
+// The API may return either a numeric ID or a name string.
+const resolveToId = (
+  value: unknown,
+  list?: { id: number; name: string }[]
+): string => {
+  if (value == null || value === "") return "";
+  const str = String(value);
+  // Already a numeric ID — return as-is
+  if (/^\d+$/.test(str)) return str;
+  // Reverse-lookup: find the ID by matching the name
+  if (list) {
+    const match = list.find(
+      (item) => item.name.toLowerCase() === str.toLowerCase()
+    );
+    if (match) return String(match.id);
+  }
+  return "";
 };
 
-// Modify fetchUserDataByPhone
 export const fetchUserDataByPhone = async (
+  areaCode: string,
   phone: string,
-  form: Partial<Ticket>,
   setForm: React.Dispatch<React.SetStateAction<Partial<Ticket>>>,
-  setExistingVehicles: React.Dispatch<React.SetStateAction<Vehicle[]>>
+  setExistingVehicles: React.Dispatch<React.SetStateAction<Vehicle[]>>,
+  carBrands?: CarBrand[],
+  vehicleTypes?: DropdownOption[],
+  vehicleColors?: DropdownOption[],
+  setModels?: React.Dispatch<React.SetStateAction<DropdownOption[]>>,
+  setIsPhoneLookupLoading?: React.Dispatch<React.SetStateAction<boolean>>
 ): Promise<void> => {
-  const validAreaCode = form?.areaCode || "+1";
   try {
+    setIsPhoneLookupLoading?.(true);
+
+    // Compose full international number: e.g. "+1" + "7874849124" → "+17874849124"
+    const digits = phone.replace(/\D/g, "");
+    const code = (areaCode || "+1").trim();
+    const fullPhone = code + digits;
+
     const res = await fetch(`/api/getVehicle/byPhone`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phoneNumber: validAreaCode + phone }),
+      body: JSON.stringify({ phoneNumber: fullPhone }),
     });
+
     const data = await res.json();
     const preFill = data?.result?.data;
 
-    if (preFill) {
-      setExistingVehicles(preFill?.vehicles || []);
-      const damaged = (data?.data?.damagedParts[0] as CarPart[]) || [];
+    if (!preFill) return;
 
-      // ← normalize the incoming phone (e.g., "+18044845620")
-      const { areaCode, phoneNumber } = splitPhone(
-        preFill?.phoneNumber,
-        form?.areaCode || "+1"
-      );
+    // Flatten carBrands to a simple list for make lookup
+    const brandsFlat = carBrands?.map((b) => ({ id: b.id, name: b.name }));
 
-      const initial = {
+    // Normalize vehicles: API may return name strings ("Hyundai", "SUV", "Gray")
+    // but our dropdowns use numeric IDs. Resolve names → IDs.
+    const rawVehicles = preFill?.vehicles || [];
+    const vehicles: Vehicle[] = rawVehicles.map(
+      (v: Record<string, unknown>) => {
+        // Resolve make: prefer makeId, fall back to make (could be name or ID)
+        const makeId = resolveToId(v.makeId ?? v.make, brandsFlat);
+
+        // Resolve model: needs brand context to find the correct model list
+        const brand = carBrands?.find((b) => b.id === parseInt(makeId || "0"));
+        const modelId = resolveToId(v.modelId ?? v.model, brand?.models);
+
+        return {
+          id: String(v.id || ""),
+          make: makeId,
+          model: modelId,
+          type: resolveToId(v.typeId ?? v.type, vehicleTypes),
+          color: resolveToId(v.colorId ?? v.color, vehicleColors),
+          licensePlate: String(v.licensePlate || ""),
+          damagedParts: v.damagedParts as CarPart[] | undefined,
+        };
+      }
+    );
+    setExistingVehicles(vehicles);
+
+    // Use functional updater to avoid spreading stale form state
+    setForm((prev) => {
+      const updated: Partial<Ticket> = {
+        ...prev,
         patronId: preFill?.patronId,
-        areaCode, // e.g. "+1"
-        phoneNumber, // e.g. "8044845620" (last 10)
+        areaCode: prev?.areaCode || "+1",
+        phoneNumber: formatPhoneNumber(phone),
         firstName: preFill?.firstName,
         lastName: preFill?.lastName,
         placeToVisit: preFill?.placeToVisit,
-        ticketNumber: form?.ticketNumber,
-        vehicles: preFill?.vehicles || [],
-        pin: "",
-        damagedParts: damaged,
-        // buildDamageStatus: {},
       };
 
-      setForm(initial);
+      // Auto-fill vehicle fields when exactly one vehicle is saved
+      if (vehicles.length === 1) {
+        const vehicle = vehicles[0];
+        updated.make = vehicle.make;
+        updated.model = vehicle.model;
+        updated.type = vehicle.type;
+        updated.color = vehicle.color;
+        updated.licensePlate = vehicle.licensePlate || "";
+        updated.damagedParts = vehicle.damagedParts;
+      }
+
+      return updated;
+    });
+
+    // Populate model dropdown when one vehicle is auto-selected
+    if (vehicles.length === 1 && carBrands && setModels) {
+      const brand = carBrands.find(
+        (b) => b.id === parseInt(vehicles[0].make || "0")
+      );
+      if (brand) setModels(brand.models);
     }
   } catch (err) {
     console.error("Failed to fetch user data:", err);
+  } finally {
+    setIsPhoneLookupLoading?.(false);
   }
 };

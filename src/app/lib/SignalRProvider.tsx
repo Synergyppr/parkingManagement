@@ -53,10 +53,17 @@ export const SignalRProvider = ({
   // Establish SignalR connection once
   useEffect(() => {
     const connectToSignalR = async () => {
+      const hubUrl = process.env.NEXT_PUBLIC_NOTIFICATION_HUB_ENDPOINT;
+
+      if (!hubUrl) {
+        console.error(
+          "NEXT_PUBLIC_NOTIFICATION_HUB_ENDPOINT is not defined in environment variables"
+        );
+        return;
+      }
+
       const connection = new signalR.HubConnectionBuilder()
-        .withUrl(
-          "https://synergymwprod-hdbrdrhpawachjbx.eastus-01.azurewebsites.net/notificationhub"
-        )
+        .withUrl(hubUrl)
         .withAutomaticReconnect()
         .build();
 

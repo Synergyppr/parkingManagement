@@ -89,176 +89,80 @@ const Report = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10 px-4">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">
-          Report
-        </h1>
+    <div className="min-h-screen py-6 px-4">
+      <div className="max-w-4xl mx-auto space-y-4">
+        <h1 className="text-xl font-bold text-gray-900">Ticket Report</h1>
 
         {/* Search Bar */}
-        <div className="mb-4 flex justify-center md:justify-center lg:justify-end text-gray-800">
+        <div className="relative">
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Search by ticket #, name, destination..."
             value={search}
             onChange={handleSearchChange}
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:border-blue-300 w-64"
+            className="w-full h-11 pl-4 pr-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-gray-900"
           />
         </div>
 
         {/* Table for desktop */}
-        <div className="hidden sm:block overflow-x-auto bg-white shadow-md rounded-lg">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                  Ticket #
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                  First Name
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                  Last Name(s)
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                  Place
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                  Employee
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                  View Details
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
-              {report.map((entry) => (
-                <tr key={entry?.id} className="hover:bg-gray-50 transition">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {entry?.ticketNumber}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 capitalize">
-                    {entry?.patronName.split(" ")[0]}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 capitalize">
-                    {entry?.patronName.split(" ").slice(1).join(" ")}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {entry?.placeToVisit}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {entry?.employeeName}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    <span className="uppercase">{entry?.date}</span>
-                  </td>
-                  <td
-                    onClick={() =>
-                      handleFetchTicketDetails({
-                        id: entry?.id,
-                        setTicketDetails,
-                        setIncidentParts,
-                        setDescriptions,
-                        setDamagedParts,
-                        setShowTicketDetailsModal,
-                      })
-                    }
-                    className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 hover:underline cursor-pointer"
-                  >
-                    View Details
-                  </td>
-                </tr>
-              ))}
-              {report.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="text-center text-sm text-gray-500 py-6"
-                  >
-                    No records found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <div className="bg-white rounded-xl shadow-sm ring-1 ring-black/5 overflow-hidden">
+          <div className="hidden sm:grid grid-cols-6 px-4 py-3 bg-slate-50 border-b border-gray-100 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <span>Ticket #</span><span>Patron</span><span>Place</span><span>Employee</span><span>Date</span><span>Actions</span>
+          </div>
 
-        {/* Mobile card layout */}
-        <div className="sm:hidden space-y-4">
-          {report?.length > 0 ? (
-            report?.map((entry) => (
+          {report.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              <p className="text-sm">No records found.</p>
+            </div>
+          ) : (
+            report.map((entry, i) => (
               <div
                 key={entry?.id}
-                className="bg-white p-4 rounded shadow-md space-y-2 text-sm text-gray-800"
+                className={`flex flex-col sm:grid sm:grid-cols-6 px-4 py-3 cursor-pointer hover:bg-slate-50 transition-colors text-sm ${
+                  i < report.length - 1 ? "border-b border-gray-100" : ""
+                }`}
+                onClick={() =>
+                  handleFetchTicketDetails({
+                    id: entry?.id,
+                    setTicketDetails,
+                    setIncidentParts,
+                    setDescriptions,
+                    setDamagedParts,
+                    setShowTicketDetailsModal,
+                  })
+                }
               >
-                <div>
-                  <span className="font-semibold text-gray-700">Ticket #:</span>{" "}
-                  {entry?.ticketNumber}
-                </div>
-                <div>
-                  <span className="font-semibold text-gray-700">Patron:</span>{" "}
-                  {entry?.patronName}
-                </div>
-                <div>
-                  <span className="font-semibold text-gray-700">Place:</span>{" "}
-                  {entry?.placeToVisit}
-                </div>
-                <div>
-                  <span className="font-semibold text-gray-700">Employee:</span>{" "}
-                  {entry?.employeeName}
-                </div>
-                <div>
-                  <span className="font-semibold text-gray-700">Date:</span>{" "}
-                  <span className="uppercase">{entry?.date}</span>
-                </div>
-                <div
-                  onClick={() =>
-                    handleFetchTicketDetails({
-                      id: entry?.id,
-                      setTicketDetails,
-                      setIncidentParts,
-                      setDescriptions,
-                      setDamagedParts,
-                      setShowTicketDetailsModal,
-                    })
-                  }
-                  className="whitespace-nowrap text-xs font-light text-blue-600 hover:underline cursor-pointer"
-                >
-                  View Details
-                </div>
+                <span className="font-mono font-semibold text-blue-600">#{entry?.ticketNumber}</span>
+                <span className="text-gray-900 capitalize">{entry?.patronName}</span>
+                <span className="text-gray-500 truncate">{entry?.placeToVisit}</span>
+                <span className="text-gray-500">{entry?.employeeName}</span>
+                <span className="text-gray-400 text-xs uppercase">{entry?.date}</span>
+                <span className="text-blue-600 text-xs sm:text-sm">View</span>
               </div>
             ))
-          ) : (
-            <div className="text-center text-sm text-gray-500">
-              No records found.
-            </div>
           )}
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between mt-6">
-          <button
-            onClick={handlePrevPage}
-            disabled={pageNumber === 1}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded disabled:opacity-50"
-          >
-            Previous
-          </button>
-
-          <span className="text-gray-700 text-sm">
-            Page {pageNumber} of {totalPages}
-          </span>
-
-          <button
-            onClick={handleNextPage}
-            disabled={pageNumber === totalPages}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded disabled:opacity-50"
-          >
-            Next
-          </button>
+        <div className="flex items-center justify-between text-sm text-gray-500">
+          <span>{report.length} tickets</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handlePrevPage}
+              disabled={pageNumber === 1}
+              className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center disabled:opacity-40 hover:bg-gray-50 transition-colors text-gray-600"
+            >
+              &lsaquo;
+            </button>
+            <span className="text-xs">Page {pageNumber} of {totalPages}</span>
+            <button
+              onClick={handleNextPage}
+              disabled={pageNumber === totalPages}
+              className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center disabled:opacity-40 hover:bg-gray-50 transition-colors text-gray-600"
+            >
+              &rsaquo;
+            </button>
+          </div>
         </div>
       </div>
       {/* Ticket Details Modal */}

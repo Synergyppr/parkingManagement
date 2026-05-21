@@ -47,6 +47,7 @@ export interface Ticket {
   licensePlate?: string;
   placeToVisit?: string;
   damagedParts?: CarPart[];
+  photos?: { url: string }[];
 }
 
 export interface CarBrand {
@@ -126,6 +127,7 @@ export interface TicketDetails {
     type?: string;
     color?: string;
     licensePlate?: string;
+    photos?: { url: string }[];
   };
   ticketLogs?: {
     id: string;
@@ -137,6 +139,7 @@ export interface TicketDetails {
   }[];
   licensePlate?: string;
   damagedParts?: CarPart[];
+  photos?: { url: string }[];
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -231,6 +234,7 @@ export interface VehicleForm {
   placeToVisit?: string;
   licensePlate?: string;
   damagedParts?: CarPart[];
+  photos?: { url: string }[];
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -262,4 +266,40 @@ export interface ReportEntry {
   placeToVisit: string;
   employeeName: string;
   date: string;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+export interface PrTaxRate {
+  key: string;
+  label: string;
+  rate: number; // percentage, e.g. 10.5
+}
+
+export interface RateEntry {
+  id: number;
+  name: string;
+  value: number;
+  isActive: boolean;
+  taxable?: boolean;
+  stateTaxRate?: number; // percentage e.g. 10.5 (IVU Estatal - Puerto Rico)
+  cityTaxRate?: number;  // percentage e.g. 1.0  (IVU Municipal - Puerto Rico)
+}
+
+export interface CourtesyRecord {
+  ticketId: string;
+  reason: string;
+  givenBy: string;       // accountUser (email/username)
+  givenAt: string;       // ISO datetime string
+  propertyId: string;
+  pin: string;
+}
+
+export interface TaxBreakdown {
+  base: number;
+  stateTax: number;
+  stateTaxRate: number;
+  cityTax: number;
+  cityTaxRate: number;
+  total: number;
 }

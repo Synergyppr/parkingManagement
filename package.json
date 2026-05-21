@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@azure/storage-blob": "^12.31.0",
     "@microsoft/signalr": "^8.0.7",
     "@react-google-maps/api": "^2.20.7",
     "@react-icons/all-files": "^4.1.0",

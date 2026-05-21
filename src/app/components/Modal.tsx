@@ -45,37 +45,41 @@ export default function Modal({
     }
   };
 
+  const placementYClass =
+    placementY === "start" ? "items-start" : placementY === "end" ? "items-end" : "items-center";
+  const placementXClass =
+    placementX === "start" ? "justify-start" : placementX === "end" ? "justify-end" : "justify-center";
+
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className={`fixed inset-0 bg-gray-500 bg-opacity-70 flex items-${placementY} justify-${placementX} z-50 p-4`}
+          className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex ${placementYClass} ${placementXClass} z-50 p-4`}
           onClick={handleOverlayClick}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className={`bg-gray-200 text-white p-6 rounded-lg shadow-2xl relative min-w-[350px] max-w-[350px] 
-              md:max-w-[450px] md:min-w-[450px] lg:max-w-[600px] lg:min-w-[600px]
+            className={`bg-white rounded-2xl shadow-xl relative w-full max-w-[95vw]
               ${
                 size === "sm"
-                  ? "w-64"
+                  ? "max-w-sm"
                   : size === "md"
-                  ? "w-80"
+                  ? "max-w-md"
                   : size === "lg"
-                  ? "w-96"
+                  ? "max-w-lg"
                   : size === "xl"
-                  ? "w-full max-w-4xl"
-                  : ""
+                  ? "max-w-4xl"
+                  : "max-w-md md:max-w-lg"
               }`}
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
+            initial={{ opacity: 0, y: -20, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.98 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
           >
             <button
-              className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 font-bold text-xl cursor-pointer"
+              className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer z-10"
               onClick={() => {
                 if (onRequestClose) {
                   onRequestClose();
@@ -84,9 +88,9 @@ export default function Modal({
                 }
               }}
             >
-              ×
+              <span className="text-lg leading-none">&times;</span>
             </button>
-            <div className="mt-6 max-h-[70vh] overflow-y-auto">{children}</div>
+            <div className="max-h-[80vh] overflow-y-auto">{children}</div>
           </motion.div>
         </motion.div>
       )}

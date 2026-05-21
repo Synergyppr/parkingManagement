@@ -130,13 +130,11 @@ export default function ValetTicketList({
     });
 
   return (
-    <div className="space-y-3 mb-2 overflow-y-auto py-1 px-1">
+    <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
       {activeTab !== "received" && filteredVehicles?.length > 0 && (
-        <div className="mt-0 mb-0 flex justify-center w-full mx-auto bg-opacity-50">
-          <div className="px-4 pb-2 text-blue-500 text-sm font-medium tracking-wider rounded-sm w-full text-center mx-1 bg-opacity-10">
-            Total Vehicles <span className="capitalize">{activeTab}</span>:{" "}
-            <span className="font-semibold">{filteredVehicles?.length}</span>
-          </div>
+        <div className="text-center text-sm text-muted-foreground font-medium pb-1">
+          <span className="capitalize">{activeTab}</span>:{" "}
+          <span className="font-semibold text-foreground">{filteredVehicles?.length}</span> vehicles
         </div>
       )}
       {filteredVehicles?.length > 0 ? (
@@ -151,87 +149,68 @@ export default function ValetTicketList({
                 <div
                   className={`${
                     unreadTicketIds?.length > 0 ? "block" : "hidden"
-                  } text-center text-xs text-blue-500 tracking-tight font-light`}
+                  } text-center text-xs text-muted-foreground`}
                 >
-                  <p className="mb-0 pb-0">Unread</p>
-                  <hr className="border-t-[.5px] border-sky-700 opacity-50 mb-2 mt-[0.5px] mx-0" />
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-px bg-border" />
+                    <span>Previously read</span>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
                 </div>
               )}
 
               <div
                 onClick={() => handleMarkAsRead(vehicle, "view")}
-                className={`cursor-pointer p-4 relative overflow-hidden rounded-xl border-none shadow-lg transform transition-all duration-300 mx-1 hover:scale-[1.01]
-              ${
-                !vehicle?.isRead && vehicle?.status == "requested"
-                  ? "bg-linear-to-br from-blue-300 via-blue-200 to-blue-400 outline-1 outline-[#ef6c00] outline-offset-2 before:content-[''] before:absolute before:inset-0 before:rounded-xl before:bg-blue-400/40 before:blur-[20px] before:z-[-1]"
-                  : "bg-linear-to-br from-slate-300 via-slate-200 to-slate-400/70 hover:from-slate-300 hover:via-slate-200 hover:to-slate-400/70 before:content-[''] before:absolute before:inset-0 before:rounded-xl before:bg-slate-400/40 before:blur-[20px] before:z-[-1] hover:outline-none"
-              }`}
-                style={{
-                  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
-                }}
+                className={`cursor-pointer bg-white rounded-xl shadow-sm ring-1 ring-black/5 p-4 hover:shadow-md transition-all ${
+                  !vehicle?.isRead && vehicle?.status == "requested"
+                    ? "border-l-2 border-blue-500"
+                    : ""
+                }`}
               >
-                {/* Decorative Circles */}
-                <div className="absolute -top-1.5 -left-1.5 w-4 h-4 bg-[#f4faff]/60 rounded-full backdrop-blur-sm shadow-sm" />
-                <div className="absolute -top-1.5  -right-1.5 w-4 h-4 bg-[#f4faff]/60 rounded-full backdrop-blur-sm shadow-sm" />
-                <div className="absolute -bottom-1.5 -left-1.5 w-4 h-4 bg-[#f4faff]/60 rounded-full backdrop-blur-sm shadow-sm" />
-                <div className="absolute -bottom-1.5 -right-1.5  w-4 h-4 bg-[#f4faff]/60 rounded-full backdrop-blur-sm shadow-sm" />
-
-                <div>
-                  <h4 className="font-semibold text-[#ef6c00] text-shadow-gray-800">
-                    {vehicle?.firstName} {vehicle?.lastName}
-                  </h4>
-                  <p
-                    className="text-sm text-gray-800"
-                    onClick={() =>
-                      navigator.clipboard.writeText(vehicle?.ticketNumber)
-                    }
-                    title="Click to copy"
-                  >
-                    <span className="font-bold tracking-tight">ID:</span>{" "}
-                    <span className="hover:text-blue-600 hover:underline cursor-pointer">
-                      #{vehicle?.ticketNumber}
-                    </span>
-                  </p>
-                </div>
-
-                <div
-                  className={`rounded-sm flex justify-between items-center mt-0 relative`}
-                >
-                  <div>
-                    <div className="flex gap-4 text-sm text-gray-800">
-                      <p>
-                        <span className="font-bold tracking-tight">
-                          {/* Make & Model: */}
-                          Vehicle:
-                        </span>{" "}
-                        {vehicle?.make} {vehicle?.model}
-                      </p>
-                    </div>
-
-                    <div className="text-sm text-gray-800">
-                      {" "}
-                      <p className="capitalize">
-                        <span className="font-bold tracking-tight">Color:</span>{" "}
-                        {vehicle?.color}
-                      </p>
-                    </div>
-
-                    <div className="text-[13px] text-slate-500 capitalize mt-[0.5px]">
-                      <p>
-                        <span className="font-bold tracking-tight">Time: </span>
+                <div className="flex items-start gap-3">
+                  <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${
+                    vehicle?.status === "parked" ? "bg-blue-500" :
+                    vehicle?.status === "requested" ? "bg-orange-500" :
+                    vehicle?.status === "ready" ? "bg-emerald-500" : "bg-gray-400"
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-gray-900 text-sm">
+                        {vehicle?.firstName} {vehicle?.lastName}
+                      </span>
+                      <span className="text-xs text-gray-400 shrink-0">
                         {new Date(vehicle?.createdDateTime).toLocaleString([], {
-                          year: "numeric",
                           month: "2-digit",
                           day: "2-digit",
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
-                      </p>
+                      </span>
+                    </div>
+                    <p className="text-sm text-accent font-medium mt-0.5">
+                      {vehicle?.color} {vehicle?.make} {vehicle?.model}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span
+                        className="text-xs text-gray-400 font-mono tracking-wider cursor-pointer hover:text-blue-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(vehicle?.ticketNumber);
+                        }}
+                        title="Click to copy"
+                      >
+                        #{vehicle?.ticketNumber}
+                      </span>
+                      {!vehicle?.isRead && vehicle?.status === "requested" && (
+                        <span className="w-2 h-2 rounded-full bg-blue-500" />
+                      )}
                     </div>
 
                     {damagedParts && (
-                      <div
-                        onClick={() =>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
                           handleFetchTicketDetails({
                             id: vehicle?.id,
                             setTicketDetails,
@@ -239,83 +218,74 @@ export default function ValetTicketList({
                             setDescriptions,
                             setDamagedParts,
                             setShowTicketDetailsModal,
-                          })
-                        }
+                          });
+                        }}
+                        className="text-xs text-blue-600 hover:text-blue-700 mt-1 cursor-pointer"
                       >
-                        <p className="text-sm tracking-tight cursor-pointer text-blue-500 hover:text-blue-600 underline mt-0">
-                          View ticket details
-                        </p>
-                      </div>
+                        View details
+                      </button>
                     )}
                   </div>
 
                   {activeTab !== "ready" && (
-                    <div className="flex flex-col gap-1 mt-auto">
-                      <button
-                        disabled={pageLoading}
-                        type="button"
-                        className="cursor-pointer my-auto bg-linear-to-r from-blue-500 to-blue-700 hover:from-blue-600 transform transition-all 
-                        duration-300 hover:scale-[1.01] text-white py-2 px-6 font-semibold shadow-sm tracking-tight rounded"
-                        onClick={() =>
-                          handleStatusChange(
-                            vehicle?.id,
-                            activeTab === "parked"
-                              ? "requested"
-                              : activeTab === "requested"
-                              ? "ready"
-                              : ""
-                          )
-                        }
-                      >
-                        {activeTab === "parked"
-                          ? "Request"
-                          : activeTab === "requested"
-                          ? "Ready"
-                          : ""}
-                      </button>
-                    </div>
+                    <button
+                      disabled={pageLoading}
+                      type="button"
+                      className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-colors cursor-pointer ${
+                        activeTab === "requested"
+                          ? "bg-accent hover:bg-orange-600 text-white"
+                          : "bg-blue-600 hover:bg-blue-700 text-white"
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStatusChange(
+                          vehicle?.id,
+                          activeTab === "parked"
+                            ? "requested"
+                            : activeTab === "requested"
+                            ? "ready"
+                            : ""
+                        );
+                      }}
+                    >
+                      <FaCheck className="w-4 h-4" />
+                    </button>
                   )}
                 </div>
               </div>
               {clickLoader && (
                 <div
-                  className="fixed z-9999 pointer-events-none border-blue-300"
+                  className="fixed z-9999 pointer-events-none"
                   style={{
                     top: `${mousePos.y + 40}px`,
                     left: `${mousePos.x + 12}px`,
                   }}
                 >
-                  <div className="w-4 h-4 border-2 border-blue-700  border-t-transparent rounded-full animate-spin bg-none" />
+                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                 </div>
               )}
             </React.Fragment>
           );
         })
       ) : (
-        <div className="flex flex-col items-center justify-center py-16 px-6 border border-gray-200 transition">
-          <MdOutlineCarCrash className="w-48 h-48 text-slate-300 mb-0" />
-          <h3 className="text-2xl font-bold text-gray-800 mb-2 text-center lg:text-left">
-            No vehicles to show
-          </h3>
-          <p className="text-gray-500 text-center mb-6 max-w-md font-sans font-light">
-            There are currently no vehicles in this status. Once a vehicle is
-            added or updated to this status, it will appear here.
+        <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
+          <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+            <MdOutlineCarCrash className="w-7 h-7 text-gray-300" />
+          </div>
+          <p className="font-semibold text-gray-600">No vehicles to show</p>
+          <p className="text-sm text-gray-400 mt-1">
+            Vehicles in this status will appear here.
           </p>
 
           <button
             disabled={pageLoading}
             onClick={() => setAcknowledged(true)}
-            className={`bg-linear-to-r from-blue-500 to-blue-700
-              relative flex items-center justify-center px-6 py-3 rounded-lg font-semibold transition-all duration-1000 ${
-                acknowledged
-                  ? "text-white w-12 h-12 rounded-full bg-primary"
-                  : "bg-primary text-white hover:bg-primary/90"
-              }`}
+            className={`mt-4 h-11 px-6 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all ${
+              acknowledged ? "w-11 px-0" : ""
+            }`}
           >
             {acknowledged ? (
-              <span>
-                <FaCheck className="w-5 h-5 text-white z-10" />
-              </span>
+              <FaCheck className="w-4 h-4 text-white mx-auto" />
             ) : (
               "Got it!"
             )}

@@ -7,34 +7,41 @@ const TransactionDetails = ({ vehicleData }: { vehicleData: VehicleData }) => {
 
   return (
     <CollapsibleSection title="View Transaction Details">
-      <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
-        <p className="capitalize">
-          <span className="font-semibold">Customer:</span>{" "}
-          {vehicleData?.firstName || "Unknown"} {vehicleData?.lastName || " "}
-        </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="bg-slate-50 rounded-xl p-3">
+          <p className="text-xs text-gray-400 mb-1">Customer</p>
+          <p className="text-sm font-medium text-gray-900 capitalize">
+            {vehicleData?.firstName || "Unknown"} {vehicleData?.lastName || " "}
+          </p>
+        </div>
 
-        <p className="capitalize">
-          <span className="font-semibold">Reference #:</span>{" "}
-          {vehicleData?.transactions?.[index]?.referenceNumber || "-"}
-        </p>
+        <div className="bg-slate-50 rounded-xl p-3">
+          <p className="text-xs text-gray-400 mb-1">Reference #</p>
+          <p className="text-sm font-medium text-gray-900">
+            {vehicleData?.transactions?.[index]?.referenceNumber || "-"}
+          </p>
+        </div>
 
-        <p className="">
-          <span className="font-semibold">Drop-Off:</span>{" "}
-          {vehicleData?.transactions?.[index]?.transactionDateTime
-            ? new Date(
-                vehicleData?.transactions?.[index]
-                  ?.transactionDateTime as string
-              ).toLocaleString()
-            : "-"}
-        </p>
-        <p>
-          <span className="font-semibold">
-            {vehicleData?.transactions?.[index]?.paymentMethod} Tariff:
-          </span>{" "}
-          <span className="capitalize">
+        <div className="bg-slate-50 rounded-xl p-3">
+          <p className="text-xs text-gray-400 mb-1">Drop-Off</p>
+          <p className="text-sm font-medium text-gray-900">
+            {vehicleData?.transactions?.[index]?.transactionDateTime
+              ? new Date(
+                  vehicleData?.transactions?.[index]
+                    ?.transactionDateTime as string
+                ).toLocaleString()
+              : "-"}
+          </p>
+        </div>
+
+        <div className="bg-slate-50 rounded-xl p-3">
+          <p className="text-xs text-gray-400 mb-1">
+            {vehicleData?.transactions?.[index]?.paymentMethod} Tariff
+          </p>
+          <p className="text-sm font-medium text-gray-900">
             ${vehicleData?.transactions?.[index]?.amount}
-          </span>
-        </p>
+          </p>
+        </div>
       </div>
     </CollapsibleSection>
   );
@@ -57,18 +64,14 @@ const CollapsibleSection: React.FC<{
   }, [open]);
 
   return (
-    <div
-      className={`${
-        open ? "bg-white/20 rounded-xl" : ""
-      } mb-4 border-slate-300 relative top-6 transition-all duration-500`}
-    >
+    <div className="bg-white rounded-2xl overflow-hidden transition-all duration-300">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex justify-between items-center px-4 py-3 font-semibold text-gray-700 transition rounded-t-lg"
+        className="w-full flex justify-between items-center px-5 py-4 font-semibold text-gray-900 text-sm transition hover:bg-slate-50 cursor-pointer"
       >
         {title}
         <RxCaretRight
-          className={`w-6 h-6 transform transition-transform duration-500 ${
+          className={`w-5 h-5 text-gray-400 transform transition-transform duration-300 ${
             open ? "rotate-90" : ""
           }`}
         />
@@ -80,11 +83,11 @@ const CollapsibleSection: React.FC<{
         style={{
           maxHeight: `${height}px`,
           overflow: "hidden",
-          transition: "max-height 0.5s ease, opacity 0.5s ease",
+          transition: "max-height 0.4s ease, opacity 0.4s ease",
           opacity: open ? 1 : 0,
         }}
       >
-        <div className="p-4 border-t-[0.5px] border-slate-300">{children}</div>
+        <div className="px-5 pb-5 border-t border-gray-100 pt-4">{children}</div>
       </div>
     </div>
   );

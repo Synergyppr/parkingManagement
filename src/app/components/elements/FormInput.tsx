@@ -43,16 +43,18 @@ export default function FormInput({
   missing = false,
   onClear,
 }: FormInputProps) {
-  const basePaddingLeft = icon ? "pl-8 sm:pl-10 xs:pl-12 indent-2" : "pl-2"; // Adjust as needed
-  const inputClass = `capitalize ${basePaddingLeft} border-b border-gray-500 px-2 py-2 text-sm placeholder-gray-300 text-gray-700 tracking-tight w-full focus:ring-1 focus:ring-[#ef6c00] focus:rounded-sm focus:outline-none ${className}`;
+  const basePaddingLeft = icon ? "pl-9" : "pl-3";
+  const baseClass = `${basePaddingLeft} h-11 bg-white border rounded-xl text-sm text-gray-900 w-full outline-none transition-all focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 ${
+    missing ? "border-red-300 ring-2 ring-red-100" : "border-gray-200"
+  } ${className}`;
 
   return (
     <div className="relative w-full">
       {icon && (
         <div
-          className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${
-            missing ? "text-red-600" : "text-blue-600"
-          }`}
+          className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${
+            missing ? "text-red-500" : "text-gray-400"
+          } pointer-events-none`}
         >
           {icon}
         </div>
@@ -63,7 +65,7 @@ export default function FormInput({
           name={name}
           onChange={onChange}
           value={value || ""}
-          className={inputClass}
+          className={`${baseClass} appearance-none pr-8 capitalize`}
         >
           <option value="">
             Select {name.replace(/([A-Z])/g, " $1").trim()}
@@ -82,16 +84,16 @@ export default function FormInput({
             placeholder={placeholder}
             value={value || ""}
             onChange={onChange}
-            className={`${inputClass} pr-10`} // reserve space for icon
+            className={`${baseClass} pr-10 capitalize`}
             required={required}
           />
 
           {/* Show Clear Button */}
-          {value && (
+          {value && !showPasswordToggle && (
             <button
               type="button"
               onClick={onClear}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer"
             >
               <IoCloseOutline className="w-4 h-4" />
             </button>
@@ -102,9 +104,9 @@ export default function FormInput({
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="cursor-pointer absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none"
+              className="cursor-pointer absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
             >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
+              {showPassword ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
             </button>
           )}
         </>

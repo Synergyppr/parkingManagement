@@ -1,15 +1,20 @@
 import React, { Suspense } from "react";
 import Dashboard from "../components/Dashboard";
 import PageLoader from "../components/elements/PageLoader";
-import { InferGetServerSidePropsType } from "next"; // <-- correctly imports the type for server-side props
-import { getServerSideProps } from "next/dist/build/templates/pages";
 
-export default function DashboardPage({
-  searchParams,
-}: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  const statusParam = Array.isArray(searchParams?.status)
-    ? searchParams?.status[0]
-    : searchParams?.status ?? null;
+type SearchParams = {
+  status?: string | string[];
+};
+
+type DashboardPageProps = {
+  searchParams: Promise<SearchParams>;
+};
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+  const params = await searchParams;
+  const statusParam = Array.isArray(params?.status)
+    ? params.status[0]
+    : params?.status ?? null;
 
   return (
     <Suspense fallback={<PageLoader />}>

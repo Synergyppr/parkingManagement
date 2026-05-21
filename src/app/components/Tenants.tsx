@@ -7,7 +7,7 @@ import {
   getUsersByTenant,
   getPropertiesByTenant,
 } from "../helpers/propertyHelpers";
-import { Tenant, UserForm as UserFormType, Property } from "../types";
+import { Tenant, UserForm as UserFormType, Property, RateEntry } from "../types";
 import { FaPencil, FaTrash, FaRegCreditCard } from "react-icons/fa6";
 import { FaCar } from "react-icons/fa";
 import { MdOutlineImportantDevices } from "react-icons/md";
@@ -65,7 +65,7 @@ const Tenants = ({ data }: TenantsProps) => {
     useState<DropdownData | null>(null);
   const [devicesDropdownData, setDevicesDropdownData] = useState(null);
   const [transactionTypesDropdownData, setTransactionTypesDropdownData] =
-    useState(null);
+    useState<RateEntry[]>([]);
   const [isTenantModalOpen, setIsTenantModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false);
@@ -216,7 +216,7 @@ const Tenants = ({ data }: TenantsProps) => {
       const result = await response.json();
 
       if (result?.result?.status == "200") {
-        setTransactionTypesDropdownData(result?.result?.data);
+        setTransactionTypesDropdownData(result?.result?.data as RateEntry[]);
         setIsTransactionModalOpen(true);
       } else {
         setLoading(false);
@@ -300,198 +300,142 @@ const Tenants = ({ data }: TenantsProps) => {
         </div>
       )}
 
-      <div
-        style={{
-          background:
-            "radial-gradient(circle at center, #86b2f9 10%, #e0f2ff 90%)",
-        }}
-        className="flex flex-col items-start overflow-y-auto pb-4 min-h-[94vh] bg-white"
-      >
-        <div
-          className="relative w-full pt-0 pb-16 text-center bg-cover bg-center z-0 min-h-[30vh]"
-          style={{ backgroundImage: "url('/valet.jpg')" }}
-        >
-          {/* Darker overlay for more contrast */}
-          <div className="absolute inset-0 bg-blue-900 opacity-40"></div>
-
-          <div className="relative z-10 flex flex-col items-center justify-center h-full px-4">
-            {/* Title with larger size, white color, shadow for contrast */}
-            <h1 className="text-5xl font-extrabold text-white drop-shadow-lg mt-16 mb-2">
-              Tenants
-            </h1>
-            <p className="text-lg text-gray-100 drop-shadow-sm">
-              Configure your tenants and manage their properties and users.
-            </p>
-          </div>
-        </div>
-
-        <div className="w-full max-w-full mt-8 px-6">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h2 className="text-2xl font-semibold text-gray-900 text-shadow-[.2px_.2px_.2px_#3b82f6]">
-                Tenant List
-              </h2>
-              <p className="text-gray-600 text-xs">
-                {tenants?.length ?? 0} record(s)
-              </p>
-            </div>
+      <div className="min-h-screen py-6">
+        <div className="max-w-4xl mx-auto px-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold text-gray-900">Tenant Configuration</h1>
             <button
               onClick={() => handleOpenTenantModal(null)}
-              className="cursor-pointer ml-auto bg-gradient-to-r from-blue-500 to-blue-600 hover:scale-102 hover:bg-opacity-80 transition duration-500 text-white py-2 px-6 font-semibold shadow-sm tracking-tight rounded"
+              className="cursor-pointer flex items-center gap-2 h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors text-sm"
             >
               Add Tenant
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="space-y-3">
             {tenants?.map((tenant) => (
               <div
                 key={tenant?.id}
-                className="rounded-2xl shadow-md overflow-hidden bg-white text-gray-800 relative"
+                className="bg-white rounded-xl shadow-sm ring-1 ring-black/5 p-4"
                 onClick={() => {
                   if (!selectedTenantId) {
                     setSelectedTenantId(tenant?.id as string);
                   }
                 }}
               >
-                {/* Card Header */}
-                <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-700 to-blue-500 text-white">
-                  <div>
-                    <h3 className="text-lg font-bold">{tenant?.name}</h3>
-                    <p className="text-sm text-white/80">{tenant?.type}</p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold text-gray-900 text-sm">{tenant?.name}</h3>
+                      <span className="text-xs text-gray-400">&middot; {tenant?.type}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        tenant.isActive ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"
+                      }`}>
+                        {tenant?.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                    {tenant.description && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {tenant?.description?.length > 130 && !seeMore
+                          ? tenant?.description?.slice(0, 130) + "..."
+                          : tenant?.description}
+                        {tenant?.description?.length > 130 && (
+                          <button
+                            type="button"
+                            className="text-blue-600 ml-1 cursor-pointer"
+                            onClick={(e) => { e.stopPropagation(); setSeeMore(!seeMore); }}
+                          >
+                            {seeMore ? "Less" : "More"}
+                          </button>
+                        )}
+                      </p>
+                    )}
                   </div>
-                  <div className="flex gap-2">
+
+                  {/* Action icons */}
+                  <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
                     <button
-                      onClick={() => handleOpenTenantModal(tenant)}
-                      className="p-2 rounded hover:bg-white/20 transition cursor-pointer hidden"
-                      title="Edit Tenant"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!propertyId || loading) return;
+                        getUsersByTenant(
+                          tenant?.id as string,
+                          setLoading,
+                          setSelectedTenantId,
+                          setInitialUsers,
+                          setUsers,
+                          setIsUserModalOpen
+                        );
+                      }}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
+                      title="Users"
+                    >
+                      <PiUsersThreeFill className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!propertyId || loading) return;
+                        getPropertiesByTenant(
+                          tenant?.id as string,
+                          setSelectedTenantId,
+                          setLoading,
+                          setInitialProperties,
+                          setProperties,
+                          setIsPropertyModalOpen
+                        );
+                      }}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
+                      title="Properties"
+                    >
+                      <BsFillBuildingsFill className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleOpenVehicleModal(); }}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
+                      title="Vehicles"
+                    >
+                      <FaCar className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleOpenDeviceModal(); }}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
+                      title="Devices"
+                    >
+                      <MdOutlineImportantDevices className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleOpenTransactionModal(); }}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
+                      title="Transactions"
+                    >
+                      <FaRegCreditCard className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleOpenTenantModal(tenant); }}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors cursor-pointer"
+                      title="Edit"
                     >
                       <FaPencil className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() =>
-                        handleTenantDelete(tenant?.id as string, router)
-                      }
-                      className="p-2 rounded hover:bg-white/20 transition cursor-pointer hidden"
-                      title="Delete Tenant"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTenantDelete(tenant?.id as string, router);
+                      }}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer"
+                      title="Delete"
                     >
                       <FaTrash className="w-4 h-4" />
                     </button>
                   </div>
-                </div>
-
-                {/* Card Body */}
-                <div className="py-4 bg-gradient-to-br from-blue-50 to-blue-100 min-h-full px-6">
-                  {/* Description */}
-                  {tenant.description && (
-                    <div className="leading-[14px]">
-                      <p className="text-sm text-gray-700 mb-4 inline">
-                        {tenant?.description?.length > 130 && !seeMore
-                          ? tenant?.description?.slice(0, 130) + "..."
-                          : tenant?.description}
-                      </p>
-                      {tenant?.description?.length > 130 ? (
-                        !seeMore ? (
-                          <span
-                            className="text-xs hover:underline text-blue-500 inline ml-2 cursor-pointer"
-                            onClick={() => setSeeMore(true)}
-                          >
-                            See More
-                          </span>
-                        ) : (
-                          <span
-                            className="text-xs hover:underline text-blue-500 inline ml-2 cursor-pointer"
-                            onClick={() => setSeeMore(false)}
-                          >
-                            See Less
-                          </span>
-                        )
-                      ) : null}
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex flex-wrap justify-between md:justify-start lg:justify-start gap-4 mt-4 mb-10">
-                    <div
-                      onClick={() => {
-                        if (!propertyId) return;
-
-                        if (!loading)
-                          getUsersByTenant(
-                            tenant?.id as string,
-                            setLoading,
-                            setSelectedTenantId,
-                            setInitialUsers,
-                            setUsers,
-                            setIsUserModalOpen
-                          );
-                      }}
-                      className={`${
-                        loading ? "cursor-not-allowed" : "cursor-pointer "
-                      } bg-orange-500 hover:bg-orange-600 rounded-xl p-3 transition transform hover:scale-105 shadow-md flex items-center justify-center`}
-                      title="View Users"
-                    >
-                      <PiUsersThreeFill className="w-7 h-7 text-white" />
-                    </div>
-                    <div
-                      onClick={() => {
-                        if (!propertyId) return;
-                        if (!loading)
-                          getPropertiesByTenant(
-                            tenant?.id as string,
-                            setSelectedTenantId,
-                            setLoading,
-                            setInitialProperties,
-                            setProperties,
-                            setIsPropertyModalOpen
-                          );
-                      }}
-                      className={`${
-                        loading ? "cursor-not-allowed" : "cursor-pointer "
-                      } bg-orange-500 hover:bg-orange-600 rounded-xl p-3 transition transform hover:scale-105 shadow-md flex items-center justify-center`}
-                      title="View Properties"
-                    >
-                      <BsFillBuildingsFill className="w-7 h-7 text-white" />
-                    </div>
-                    <div
-                      onClick={handleOpenVehicleModal}
-                      className={`${
-                        loading ? "cursor-not-allowed" : "cursor-pointer "
-                      } bg-orange-500 hover:bg-orange-600 rounded-xl p-3 transition transform hover:scale-105 shadow-md flex items-center justify-center`}
-                      title="View Vehicle Settings"
-                    >
-                      <FaCar className="w-7 h-7 text-white" />
-                    </div>
-                    <div
-                      onClick={handleOpenDeviceModal}
-                      className={`${
-                        loading ? "cursor-not-allowed" : "cursor-pointer "
-                      } bg-orange-500 hover:bg-orange-600 rounded-xl p-3 transition transform hover:scale-105 shadow-md flex items-center justify-center`}
-                      title="View Vehicle Settings"
-                    >
-                      <MdOutlineImportantDevices className="w-7 h-7 text-white" />
-                    </div>
-                    <div
-                      onClick={handleOpenTransactionModal}
-                      className={`${
-                        loading ? "cursor-not-allowed" : "cursor-pointer "
-                      } bg-orange-500 hover:bg-orange-600 rounded-xl p-3 transition transform hover:scale-105 shadow-md flex items-center justify-center`}
-                      title="View Vehicle Settings"
-                    >
-                      <FaRegCreditCard className="w-7 h-7 text-white" />
-                    </div>
-                  </div>
-
-                  {/* Status Badge */}
-                  <span
-                    className={`absolute bottom-4 right-4 px-3 py-1 text-xs font-semibold rounded-full ${
-                      tenant.isActive
-                        ? "bg-green-200 text-green-800"
-                        : "bg-red-200 text-red-800"
-                    }`}
-                  >
-                    {tenant?.isActive ? "Active" : "Inactive"}
-                  </span>
                 </div>
               </div>
             ))}

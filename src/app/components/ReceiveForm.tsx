@@ -22,6 +22,7 @@ import {
 } from "../lib/carPartsLegend";
 
 import CarVector from "./CarVector";
+import VehiclePhotoCapture from "./VehiclePhotoCapture";
 import FormInput from "./elements/FormInput";
 import PhoneInputWithAreaCode from "./elements/PhoneInputWithAreaCode";
 import VehicleList from "./VehicleList";
@@ -63,7 +64,9 @@ export default function ReceiveForm({
   const [noIncident, setNoIncident] = useState(false);
   const [incidentParts, setIncidentParts] = useState<CarPart[]>([]);
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
+  const [photos, setPhotos] = useState<string[]>([]);
   const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [isPhoneLookupLoading, setIsPhoneLookupLoading] = useState(false);
   const [existingVehicles, setExistingVehicles] = useState<Vehicle[]>([]);
   const [showExistingVehicles, setShowExistingVehicles] =
     useState<boolean>(true);
@@ -94,7 +97,7 @@ export default function ReceiveForm({
   ) => {
     const { name, value } = e.target;
     setForm((prev: Partial<Ticket>) => ({ ...prev, [name]: value }));
-
+    
     if (name === "make") {
       const selectedBrand = carBrands?.find((b) => b?.id === parseInt(value));
       setModels(selectedBrand ? selectedBrand.models : []);
@@ -178,16 +181,15 @@ export default function ReceiveForm({
           v?.licensePlate === form?.licensePlate
       );
       if (!isExisting) {
-        // const newVehicle = {
-        //   id: 0,
-        //   make: form?.make,
-        //   model: form?.model,
-        //   type: form?.type,
-        //   color: form?.color,
-        //   licensePlate: form?.licensePlate || "",
-        //   pin: form?.pin || "",
-        // };
-        // setExistingVehicles((prev) => [...prev, newVehicle]);
+        const newVehicle: Vehicle = {
+          id: "",
+          make: form?.make || "",
+          model: form?.model || "",
+          type: form?.type || "",
+          color: form?.color || "",
+          licensePlate: form?.licensePlate || "",
+        };
+        setExistingVehicles((prev) => [...prev, newVehicle]);
       }
 
       const sendForm = {
@@ -267,48 +269,43 @@ export default function ReceiveForm({
   return (
     <div
       className={`${
-        step === 3 ? "pt-2" : "py-4 lg:mt-[5%] md:py-16 sm:py-4 xs:py-4"
-      } border-none rounded-lg  mb-2`}
+        step === 3 ? "pt-2" : "py-4"
+      } mb-2`}
     >
-      <div className="p-2 sm:p-4 md:p-6 max-w-3xl mx-auto space-y-6 transition-opacity duration-500 ease-in-out animate-fade-in min-h-full">
+      <div className="px-4 py-4 max-w-2xl mx-auto space-y-4 transition-opacity duration-500 ease-in-out animate-fade-in min-h-full">
         {!submitted ? (
           <div>
-            <div
-              className={`${
-                step !== 4 ? "lg:mb-10" : "mb-4"
-              }  relative lg:bottom-4`}
-            >
-              <h2 className="text-[23px] font-bold bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent tracking-tight text-center mb-1">
-                Vehicle Receipt Form
-              </h2>
-              {step < 5 && (
-                <p className="text-xs font-light text-center text-gray-700 mb-2">
-                  Please complete all required fields below to park in{" "}
-                  {propertyName ? (
-                    propertyName
-                  ) : (
-                    <span className="italic">[ designated property ]</span>
-                  )}
-                  .
-                </p>
-              )}
-              {step === 3 && (
-                <p className="text-xs font-light text-center text-gray-700 mb-2">
-                  Complete vehicle incident report. (Optional)
-                </p>
-              )}
-              <p
-                className={`${
-                  step < 3 ? "mb-6" : step === 4 ? "mb-0" : "mb-16"
-                } text-xs font-bold text-center text-blue-600 mt-0`}
-              >
-                Step <span className="font-bold">{step}</span> / 3
+            {/* Stepper Header */}
+            <div className="mb-6">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                {[1, 2, 3].map((s) => (
+                  <div key={s} className="flex items-center gap-2">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
+                      s < step ? "bg-blue-600 text-white" :
+                      s === step ? "bg-blue-600 text-white shadow-lg shadow-blue-200" :
+                      "bg-gray-100 text-gray-400"
+                    }`}>
+                      {s < step ? <IoCheckmarkOutline className="w-4 h-4" /> : s}
+                    </div>
+                    {s < 3 && <div className={`w-8 h-0.5 ${s < step ? "bg-blue-600" : "bg-gray-200"}`} />}
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 text-center">
+                Step {step} / 3 &middot; Complete all required fields to park in{" "}
+                {propertyName ? (
+                  propertyName
+                ) : (
+                  <span className="italic">[ designated property ]</span>
+                )}
               </p>
             </div>
 
-            <form className="mt-6">
+            <form>
               {step === 1 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-gray-900">Guest Information</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Ticket Number with Auto */}
                   <FormInput
                     name="ticketNumber"
@@ -338,29 +335,39 @@ export default function ReceiveForm({
                   <PhoneInputWithAreaCode
                     areaCode={form?.areaCode || ""}
                     phoneNumber={form?.phoneNumber || ""}
+                    isLoading={isPhoneLookupLoading}
                     onAreaCodeChange={(e) =>
                       setForm((prev) => ({ ...prev, areaCode: e.target.value }))
                     }
                     onPhoneNumberChange={(e) => {
-                      // Limit to 10 digits
                       const rawValue = e.target.value.replace(/\D/g, "");
                       if (rawValue?.length > 10) return;
                       const formatted = formatPhoneNumber(rawValue);
                       setForm((prev) => ({ ...prev, phoneNumber: formatted }));
-                      if (rawValue.length >= 10)
+                      if (rawValue.length === 10)
                         fetchUserDataByPhone(
+                          form?.areaCode || "+1",
                           rawValue,
-                          form,
                           setForm,
-                          setExistingVehicles
+                          setExistingVehicles,
+                          carBrands,
+                          vehicleTypes,
+                          vehicleColors,
+                          setModels,
+                          setIsPhoneLookupLoading
                         );
                     }}
-                    onClear={() =>
+                    onClear={() => {
                       setForm((prev) => ({
                         ...prev,
                         phoneNumber: "",
-                      }))
-                    }
+                        firstName: "",
+                        lastName: "",
+                        patronId: "",
+                        placeToVisit: "",
+                      }));
+                      setExistingVehicles([]);
+                    }}
                     missing={missingFields?.includes("phoneNumber")}
                   />
 
@@ -407,12 +414,14 @@ export default function ReceiveForm({
                     }
                   />
                 </div>
+                </div>
               )}
 
               {step === 2 && (
-                <div className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-gray-900">Vehicle Information</h3>
                   {/* Vehicle form (available for new vehicle entry) */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <FormInput
                       name="make"
                       value={form?.make || ""}
@@ -526,18 +535,31 @@ export default function ReceiveForm({
               {step === 4 && <ParkingLot />}
             </form>
 
+            {/* Vehicle photo capture — outside form to isolate from CarVector's absolute positioning context */}
+            {step === 3 && (
+              <div className="w-full mt-3 px-1">
+                <div className="border-t border-gray-200 pt-3">
+                  <p className="text-xs text-gray-500 text-center mb-2">
+                    — or capture photos instead —
+                  </p>
+                  <VehiclePhotoCapture
+                    photos={photos}
+                    onPhotoUrlsChange={setPhotos}
+                  />
+                </div>
+              </div>
+            )}
+
             {/*  Buttons  */}
-            <div
-              className={`${step === 3 ? "mt-4" : "mt-2"} flex justify-between`}
-            >
+            <div className="flex gap-3 pt-2">
               {step === 1 && (
                 <button
                   type="button"
                   disabled={!isFormChanged}
                   onClick={() => handleClearForm(true)}
-                  className={`${
-                    isFormChanged ? "cursor-pointer hover:bg-gray-400" : ""
-                  } px-6 py-2 bg-gray-200/80  text-blue-700 font-semibold rounded shadow-md`}
+                  className={`flex-1 h-11 bg-gray-100 text-gray-700 font-medium rounded-xl transition-colors text-sm ${
+                    isFormChanged ? "cursor-pointer hover:bg-gray-200" : "opacity-60"
+                  }`}
                 >
                   Clear
                 </button>
@@ -547,7 +569,7 @@ export default function ReceiveForm({
                 <button
                   type="button"
                   onClick={() => setStep(step - 1)}
-                  className="cursor-pointer px-6 py-2 bg-gray-200/80 hover:bg-gray-400 text-blue-700 font-semibold rounded shadow-md"
+                  className="flex-1 h-11 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors text-sm cursor-pointer"
                 >
                   Back
                 </button>
@@ -557,7 +579,7 @@ export default function ReceiveForm({
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="cursor-pointer ml-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-6 font-semibold shadow-md tracking-tight rounded"
+                  className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors text-sm cursor-pointer"
                 >
                   Next
                 </button>
@@ -585,12 +607,14 @@ export default function ReceiveForm({
                       frontViewLabelsMap,
                       rearViewLabelsMap,
                       passengerViewLabelsMap,
-                      driverViewLabelsMap
+                      driverViewLabelsMap,
+                      photos,
+                      setPhotos
                     )
                   }
                   type="button"
                   disabled={loader || !propertyId}
-                  className="cursor-pointer ml-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-6 font-semibold shadow-sm tracking-tight rounded"
+                  className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors text-sm cursor-pointer"
                 >
                   {loader ? "Submitting..." : "Submit"}
                 </button>
@@ -598,38 +622,25 @@ export default function ReceiveForm({
             </div>
           </div>
         ) : (
-          <div
-            className="text-center animate-fade-in flex flex-col items-center h-full md:my-auto mt-[2vh] justify-center w-full p-4 rounded-lg"
-            style={{
-              background: "radial-gradient(circle at center, #E2E8F0, #CBD5E1)",
-            }}
-          >
-            {/* After Submission */}
-            <div className="my-auto flex-1 px-4 py-10 rounded-sm bg-opacity-10">
-              <div
-                className="w-20 h-20 mb-5 mx-auto rounded-full p-3 flex items-center justify-center border border-orange-500 shadow-md"
-                style={{
-                  background: "linear-gradient(135deg, #ff9800, #ef6c00)", // vibrant orange gradient
-                }}
-              >
-                <IoCheckmarkOutline className="text-white w-20 h-20 mx-auto my-1" />
-              </div>
-
-              <h3 className="text-2xl font-semibold text-slate-700 text-center tracking-tighter leading-5 mb-3">
-                Vehicle Check-In Successful
-              </h3>
-              <p className="text-slate-600 mt-2 mb-6 leading-5 mx-2">
-                Your vehicle has been checked in and is being parked. Relax and
-                enjoy your visit — we’ve got it from here.
-              </p>
-              <button
-                onClick={handleSubmitAnother}
-                className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white px-6 py-3 rounded-md transition-colors tracking-tight flex gap-2 items-center justify-center shadow-md w-full cursor-pointer"
-              >
-                <CiRedo className="text-white" />
-                Submit Another Vehicle
-              </button>
+          <div className="text-center animate-fade-in flex flex-col items-center justify-center py-16 px-6">
+            <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <IoCheckmarkOutline className="text-emerald-500 w-10 h-10" />
             </div>
+
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              Vehicle Check-In Successful
+            </h3>
+            <p className="text-gray-500 text-sm mb-6 max-w-sm">
+              Your vehicle has been checked in and is being parked. Relax and
+              enjoy your visit.
+            </p>
+            <button
+              onClick={handleSubmitAnother}
+              className="h-11 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors text-sm flex items-center gap-2 cursor-pointer"
+            >
+              <CiRedo className="w-4 h-4" />
+              Submit Another Vehicle
+            </button>
           </div>
         )}
       </div>

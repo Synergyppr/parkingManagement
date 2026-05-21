@@ -19,6 +19,7 @@ export default function LoginForm() {
     locationMode,
     setLocationMode,
     setAccountUser,
+    setUserRole,
   } = useProperty();
   const router = useRouter();
   const [pageLoading, setPageLoading] = useState(true);
@@ -182,6 +183,13 @@ export default function LoginForm() {
             setAccountUser(email);
             localStorage.setItem("accountUser", email);
             sessionStorage.setItem("accountUser", email);
+
+            const role = result?.data?.user?.role || result?.data?.role || null;
+            if (role) {
+              setUserRole(String(role));
+              localStorage.setItem("userRole", String(role));
+              sessionStorage.setItem("userRole", String(role));
+            }
           }
 
           setTimeout(() => {
@@ -242,14 +250,18 @@ export default function LoginForm() {
         </div>
       )}
 
-      <div className="w-full max-w-md bg-white rounded-xl p-8 space-y-4 animate-fade-in transition-opacity duration-500 relative z-10">
-        <h2 className="text-3xl font-bold text-center tracking-tighter mb-1 bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent">
-          Valet App Sign In
-        </h2>
-
-        <p className="text-sm text-gray-500 text-center">
-          Enter your credentials to continue
-        </p>
+      <div className="w-full max-w-sm bg-white rounded-2xl p-8 space-y-6 shadow-xl animate-fade-in transition-opacity duration-500 relative z-10">
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-600 rounded-xl mb-2">
+            <span className="text-white font-bold text-lg">V</span>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">
+            Sign In
+          </h2>
+          <p className="text-sm text-gray-500">
+            Enter your credentials to continue
+          </p>
+        </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <FloatingLabelInput
@@ -279,13 +291,13 @@ export default function LoginForm() {
           />
 
           {showLocationToggle && (
-            <div className="flex justify-center">
+            <div className="flex justify-center rounded-xl overflow-hidden border border-gray-200">
               <button
                 className={`${
                   locationMode === "live"
-                    ? "bg-blue-500 text-white"
-                    : "text-blue-500"
-                } border-[0.5px] border-blue-500 py-1 px-2  text-sm w-[70px]`}
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-600 hover:bg-gray-50"
+                } py-2 px-4 text-sm font-medium flex-1 transition-colors`}
                 type="button"
                 onClick={handleLocationMode}
               >
@@ -294,9 +306,9 @@ export default function LoginForm() {
               <button
                 className={`${
                   locationMode === "manual"
-                    ? "bg-blue-500 text-white"
-                    : "text-blue-500"
-                } border-[0.5px] border-blue-500 py-1 px-2  text-sm w-[70px]`}
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-600 hover:bg-gray-50"
+                } py-2 px-4 text-sm font-medium flex-1 transition-colors`}
                 type="button"
                 onClick={handleLocationMode}
               >
@@ -308,7 +320,7 @@ export default function LoginForm() {
           <button
             type="submit"
             disabled={buttonLoading || pageLoading}
-            className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 cursor-pointer text-white w-full py-3 font-semibold rounded shadow-md transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 cursor-pointer text-white w-full h-11 font-semibold rounded-xl transition-colors text-sm"
           >
             {buttonLoading ? "Signing in..." : "Sign In"}
           </button>
@@ -316,7 +328,7 @@ export default function LoginForm() {
 
         <p className="text-xs text-gray-400 text-center">
           Forgot your password?{" "}
-          <a href="#" className="text-blue-500 hover:underline">
+          <a href="#" className="text-blue-600 hover:underline">
             Reset it
           </a>
         </p>

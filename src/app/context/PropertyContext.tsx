@@ -29,6 +29,8 @@ interface PropertyContextType {
   requestLocation: () => void;
   accountUser?: string | null;
   setAccountUser: (user: string | null) => void;
+  userRole?: string | null;
+  setUserRole: (role: string | null) => void;
 }
 
 const PropertyContext = createContext<PropertyContextType>({
@@ -49,6 +51,8 @@ const PropertyContext = createContext<PropertyContextType>({
   requestLocation: () => {},
   accountUser: undefined,
   setAccountUser: () => {},
+  userRole: undefined,
+  setUserRole: () => {},
 });
 
 export const PropertyProvider = ({
@@ -66,6 +70,7 @@ export const PropertyProvider = ({
   >({});
   const [isOutOfArea, setIsOutOfArea] = useState<boolean>(false);
   const [accountUser, setAccountUser] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   const handleSetPredefinedProperties = (properties: Property[]) => {
     const record = properties?.reduce((acc, prop) => {
@@ -93,6 +98,10 @@ export const PropertyProvider = ({
       sessionStorage.getItem("accountUser") ||
       localStorage.getItem("accountUser");
     if (storedUser) setAccountUser(storedUser);
+    const storedRole =
+      sessionStorage.getItem("userRole") ||
+      localStorage.getItem("userRole");
+    if (storedRole) setUserRole(storedRole);
     if (storedId) setPropertyId(storedId);
     if (storedName) setPropertyName(storedName);
 
@@ -172,6 +181,8 @@ export const PropertyProvider = ({
         requestLocation,
         accountUser,
         setAccountUser,
+        userRole,
+        setUserRole,
       }}
     >
       {children}

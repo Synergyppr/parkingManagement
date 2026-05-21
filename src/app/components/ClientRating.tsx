@@ -30,48 +30,32 @@ const ClientRating = ({
   return (
     <div
       ref={ratingSectionRef}
-      className={`${
-        submitted ? "opacity-50" : ""
-      } border-t border-gray-200 pt-0`}
+      className="bg-white rounded-2xl p-5 space-y-4"
     >
-      <hr className="border-gray-300 my-4" />
-
       {vehicleData?.surveySubmitted ? (
-        <div
-          className="flex flex-col items-center justify-center mt-6 px-4 py-8 rounded-xl shadow-inner transition-all duration-500 bg-opacity-80"
-          style={{
-            background: "radial-gradient(circle at center, #E2E8F0, #CBD5E1)",
-          }}
-        >
-          <div
-            className="w-16 h-16 mb-3 rounded-full p-2 flex items-center justify-center border border-orange-500 shadow-md"
-            style={{
-              background: "linear-gradient(135deg, #ff9800, #ef6c00)", // vibrant orange gradient
-            }}
-          >
-            <IoCheckmarkOutline className="text-white w-10 h-10" />
-          </div>{" "}
-          <h3 className="text-lg font-semibold text-slate-700 text-center tracking-tight leading-5">
-            Thank you for your feedback
+        <div className="text-center py-4">
+          <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <IoCheckmarkOutline className="text-emerald-500 w-7 h-7" />
+          </div>
+          <p className="font-semibold text-gray-900">
+            Thanks for your feedback
             {vehicleData?.firstName ? `, ${vehicleData.firstName}` : ""}!
-          </h3>
-          <p className="text-slate-600 text-sm text-center mt-1">
+          </p>
+          <p className="text-sm text-gray-500 mt-1">
             We truly appreciate your rating and look forward to serving you
             again.
           </p>
         </div>
       ) : (
         <>
-          <h2 className="text-center text-lg text-gray-700 mb-2 font-bold tracking-tighter italic">
-            How was your experience?
-          </h2>
+          <p className="font-semibold text-gray-900">Rate Your Experience</p>
           <div className="flex justify-center space-x-1">
             {[...Array(5)]?.map((_, starIndex) => {
               const fullValue = starIndex + 1;
               const halfValue = starIndex + 0.5;
 
               return (
-                <div key={starIndex} className="relative w-6 h-6">
+                <div key={starIndex} className="relative w-7 h-7">
                   {/* Left Half */}
                   <div
                     className="absolute left-0 top-0 w-1/2 h-full z-10 cursor-pointer"
@@ -89,42 +73,38 @@ const ClientRating = ({
                   {/* Icon Layer */}
                   <div className="z-0 flex justify-center items-center w-full h-full">
                     {hoveredStars >= fullValue ? (
-                      <BsStarFill className="text-blue-600 w-5 h-5" />
+                      <BsStarFill className="text-amber-400 w-6 h-6" />
                     ) : hoveredStars >= halfValue ? (
-                      <BsStarHalf className="text-blue-600 w-5 h-5" />
+                      <BsStarHalf className="text-amber-400 w-6 h-6" />
                     ) : (
-                      <BsStar className="text-primary w-5 h-5" />
+                      <BsStar className="text-gray-300 w-6 h-6" />
                     )}
                   </div>
                 </div>
               );
             })}
           </div>
-          <div className="mx-5">
-            <textarea
-              className="mt-4 w-full p-2 border border-gray-300 rounded"
-              placeholder="Leave a comment (optional)"
-              rows={3}
-              disabled={submitted}
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-            ></textarea>
-          </div>
+          <textarea
+            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
+            placeholder="Leave a comment (optional)"
+            rows={3}
+            disabled={submitted}
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+          ></textarea>
 
-          <div className="flex mt-4 justify-center">
-            <button
-              type="button"
-              onClick={(e) => handleSubmitRating(e)}
-              disabled={submitted}
-              className={`${
-                submitted
-                  ? "bg-blue-600/20 cursor-not-allowed"
-                  : "bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800"
-              } transition-colors text-white px-3 py-2 w-[95%] font-semibold shadow-md tracking-tight rounded cursor-pointer`}
-            >
-              Submit Rating
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={(e) => handleSubmitRating(e)}
+            disabled={submitted}
+            className={`w-full h-11 font-semibold rounded-xl transition-colors text-sm cursor-pointer ${
+              submitted
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700 text-white"
+            }`}
+          >
+            Submit Rating
+          </button>
         </>
       )}
     </div>
