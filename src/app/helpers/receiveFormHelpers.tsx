@@ -1,6 +1,6 @@
 import Swal from "sweetalert2";
 import { v4 as uuidv4 } from "uuid";
-import { CarBrand, CarPart, DropdownOption, Ticket, Vehicle } from "../types";
+import { CarBrand, CarPart, DropdownOption, Ticket, Vehicle, VehiclePhoto } from "../types";
 import { formatPhoneNumber } from "../lib/clientUtils";
 
 export const generateTicketNumber = ({
@@ -352,7 +352,8 @@ export const fetchUserDataByPhone = async (
   vehicleTypes?: DropdownOption[],
   vehicleColors?: DropdownOption[],
   setModels?: React.Dispatch<React.SetStateAction<DropdownOption[]>>,
-  setIsPhoneLookupLoading?: React.Dispatch<React.SetStateAction<boolean>>
+  setIsPhoneLookupLoading?: React.Dispatch<React.SetStateAction<boolean>>,
+  setSelectedVehiclePhotos?: React.Dispatch<React.SetStateAction<VehiclePhoto[]>>
 ): Promise<void> => {
   try {
     setIsPhoneLookupLoading?.(true);
@@ -396,6 +397,7 @@ export const fetchUserDataByPhone = async (
           color: resolveToId(v.colorId ?? v.color, vehicleColors),
           licensePlate: String(v.licensePlate || ""),
           damagedParts: v.damagedParts as CarPart[] | undefined,
+          photos: Array.isArray(v.photos) ? v.photos as { id: number; url: string; createdDateTime: string }[] : undefined,
         };
       }
     );
@@ -427,12 +429,15 @@ export const fetchUserDataByPhone = async (
       return updated;
     });
 
-    // Populate model dropdown when one vehicle is auto-selected
-    if (vehicles.length === 1 && carBrands && setModels) {
-      const brand = carBrands.find(
-        (b) => b.id === parseInt(vehicles[0].make || "0")
-      );
-      if (brand) setModels(brand.models);
+    // Populate model dropdown and photos when one vehicle is auto-selected
+    if (vehicles.length === 1) {
+      if (carBrands && setModels) {
+        const brand = carBrands.find(
+          (b) => b.id === parseInt(vehicles[0].make || "0")
+        );
+        if (brand) setModels(brand.models);
+      }
+      setSelectedVehiclePhotos?.(vehicles[0].photos || []);
     }
   } catch (err) {
     console.error("Failed to fetch user data:", err);

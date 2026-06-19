@@ -100,6 +100,12 @@ export interface VehicleData {
   }[];
 }
 
+export interface VehiclePhoto {
+  id: number;
+  url: string;
+  createdDateTime: string;
+}
+
 export interface Vehicle {
   id: string;
   make: string;
@@ -108,6 +114,7 @@ export interface Vehicle {
   color: string;
   licensePlate: string;
   damagedParts?: CarPart[];
+  photos?: VehiclePhoto[];
 }
 
 /////////////////////////////////////////////////////////////////////

@@ -8,10 +8,10 @@ import { FaCarRear } from "react-icons/fa6";
 import { PiCarProfileFill } from "react-icons/pi";
 import { BiSolidSprayCan } from "react-icons/bi";
 import { MdPin, MdPassword, MdLocationPin } from "react-icons/md";
-import { IoCheckmarkOutline } from "react-icons/io5";
+import { IoCheckmarkOutline, IoImagesOutline } from "react-icons/io5";
 import { CiRedo } from "react-icons/ci";
 
-import { Ticket, DropdownOption, CarPart, Vehicle } from "../types";
+import { Ticket, DropdownOption, CarPart, Vehicle, VehiclePhoto } from "../types";
 import { ReceiveFormProps } from "../types/pagesProps";
 import { useProperty } from "../context/PropertyContext";
 import { formatPhoneNumber } from "../lib/clientUtils";
@@ -51,6 +51,7 @@ export default function ReceiveForm({
   patronId,
   setHasUnsavedChanges,
   setReloadPageData,
+  parkedTickets,
 }: ReceiveFormProps) {
   const router = useRouter();
   const { propertyId, propertyName, locationMode, latitude, longitude } =
@@ -71,6 +72,7 @@ export default function ReceiveForm({
   const [showExistingVehicles, setShowExistingVehicles] =
     useState<boolean>(true);
   const [, setSelectedVehicleIndex] = useState<number | null>(null); // Check if being used
+  const [selectedVehiclePhotos, setSelectedVehiclePhotos] = useState<VehiclePhoto[]>([]);
   // const [manageModeOn, setManageModeOn] = useState<boolean>(false); // To manage and delete vehicles from the existing vehicles list
   const [, setManageVehicleSettings] = useState({
     patronId: form?.patronId || "",
@@ -125,6 +127,7 @@ export default function ReceiveForm({
     };
 
     setForm(filled);
+    setSelectedVehiclePhotos(vehicle?.photos || []);
 
     // update model dropdown if brand selected
     const selectedBrand = carBrands?.find(
@@ -245,6 +248,7 @@ export default function ReceiveForm({
       setDescriptions({});
       setNoIncident(false);
       setModels([]);
+      setSelectedVehiclePhotos([]);
     };
 
     if (submitted === false) {
@@ -354,7 +358,8 @@ export default function ReceiveForm({
                           vehicleTypes,
                           vehicleColors,
                           setModels,
-                          setIsPhoneLookupLoading
+                          setIsPhoneLookupLoading,
+                          setSelectedVehiclePhotos
                         );
                     }}
                     onClear={() => {
@@ -367,6 +372,7 @@ export default function ReceiveForm({
                         placeToVisit: "",
                       }));
                       setExistingVehicles([]);
+                      setSelectedVehiclePhotos([]);
                     }}
                     missing={missingFields?.includes("phoneNumber")}
                   />
@@ -538,9 +544,49 @@ export default function ReceiveForm({
             {/* Vehicle photo capture — outside form to isolate from CarVector's absolute positioning context */}
             {step === 3 && (
               <div className="w-full mt-3 px-1">
+                {/* Existing vehicle photos from previous visits */}
+                {selectedVehiclePhotos.length > 0 && (
+                  <div className="border border-gray-200 rounded-xl bg-gray-50 p-3 mb-3">
+                    <div className="flex items-center gap-2 mb-3">
+                      <IoImagesOutline className="text-blue-600 text-lg" />
+                      <span className="text-sm font-medium text-gray-700">
+                        Previous Photos
+                      </span>
+                      <span className="bg-blue-100 text-blue-700 text-xs rounded-full px-1.5 py-0.5 font-semibold">
+                        {selectedVehiclePhotos.length}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                      {selectedVehiclePhotos.map((photo) => (
+                        <div
+                          key={photo.id}
+                          className="relative rounded-lg overflow-hidden aspect-video bg-black border border-gray-200"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={photo.url}
+                            alt="Previous vehicle photo"
+                            className="w-full h-full object-cover"
+                          />
+                          {photo.createdDateTime && (
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1.5 py-0.5">
+                              <p className="text-white text-[9px] truncate">
+                                {new Date(photo.createdDateTime).toLocaleDateString()}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="border-t border-gray-200 pt-3">
                   <p className="text-xs text-gray-500 text-center mb-2">
-                    — or capture photos instead —
+                    {selectedVehiclePhotos.length > 0
+                      ? "— take new photos if needed —"
+                      : "— or capture photos instead —"}
                   </p>
                   <VehiclePhotoCapture
                     photos={photos}
@@ -585,7 +631,31 @@ export default function ReceiveForm({
                 </button>
               ) : (
                 <button
-                  onClick={(e) =>
+                  onClick={(e) => {
+                    // Duplicate check: prevent same owner + plate from being parked twice
+                    const normalizedPlate = (form?.licensePlate || "").trim().toLowerCase();
+                    const normalizedFirstName = (form?.firstName || "").trim().toLowerCase();
+                    const normalizedLastName = (form?.lastName || "").trim().toLowerCase();
+
+                    if (normalizedPlate) {
+                      const duplicate = parkedTickets?.find(
+                        (t) =>
+                          t?.status === "parked" &&
+                          (t?.licensePlate || t?.vehicles?.licensePlate || "").trim().toLowerCase() === normalizedPlate &&
+                          (t?.firstName || "").trim().toLowerCase() === normalizedFirstName &&
+                          (t?.lastName || "").trim().toLowerCase() === normalizedLastName
+                      );
+
+                      if (duplicate) {
+                        Swal.fire({
+                          icon: "warning",
+                          title: "Duplicate Vehicle",
+                          text: `A vehicle with plate "${form?.licensePlate}" owned by ${form?.firstName} ${form?.lastName} is already parked (Ticket #${duplicate?.ticketNumber}). You cannot park the same vehicle twice.`,
+                        });
+                        return;
+                      }
+                    }
+
                     handleParkVehicle(
                       e,
                       form,
@@ -610,8 +680,8 @@ export default function ReceiveForm({
                       driverViewLabelsMap,
                       photos,
                       setPhotos
-                    )
-                  }
+                    );
+                  }}
                   type="button"
                   disabled={loader || !propertyId}
                   className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors text-sm cursor-pointer"

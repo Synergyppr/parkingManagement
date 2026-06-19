@@ -264,6 +264,7 @@ export default function DashboardClient({
                 patronId={form?.patronId as string}
                 setHasUnsavedChanges={setHasUnsavedChanges}
                 setReloadPageData={setReloadPageData}
+                parkedTickets={vehicles}
               />
             )}
             {/* Parked, Requested and Ready Tabs */}
