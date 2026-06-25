@@ -3,7 +3,7 @@ import React, { useState, useEffect, Dispatch } from "react";
 import { CarPart, Ticket, TicketDetails } from "@/app/types";
 import { FaCheck } from "react-icons/fa6";
 import { MdOutlineCarCrash } from "react-icons/md";
-import { FiSearch, FiFilter, FiCalendar, FiClock, FiUser } from "react-icons/fi";
+import { FiSearch, FiCalendar, FiClock, FiUser } from "react-icons/fi";
 import { LuArrowUpDown, LuCar } from "react-icons/lu";
 import Modal from "./Modal";
 import TransactionForm from "./TransactionForm";
@@ -46,7 +46,7 @@ interface TransactionForm {
   notes?: string | undefined;
 }
 
-const statusTabs = ["received", "parked", "requested", "ready"];
+// const statusTabs = ["received", "parked", "requested", "ready"];
 
 const getStatusLabel = (status: string) =>
   status ? status.charAt(0).toUpperCase() + status.slice(1) : "Received";
@@ -74,7 +74,6 @@ export default function ValetTicketList({
   setDamagedParts,
   setShowTicketDetailsModal,
 }: ValetTicketListProps) {
-  const [acknowledged, setAcknowledged] = useState(false);
   const [search, setSearch] = useState("");
   const [transactionForm, setTransactionForm] = useState<TransactionForm>({
     amount: 0,
