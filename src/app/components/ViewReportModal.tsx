@@ -31,7 +31,7 @@ const ViewReportModal = ({
 
   return (
     <Modal isOpen={isOpen} onClose={() => onClose(false)}>
-      <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden p-2 min-w-[300px] max-w-[300px] md:max-w-[450px] lg:max-w-[600px] lg:min-w-[450px]">
+      <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden p-2 min-w-75 max-w-75 md:max-w-112.5 lg:max-w-150 lg:min-w-112.5">
         <h2 className="text-2xl font-bold text-gray-900 tracking-tight mb-1">
           Full Incident Report
         </h2>

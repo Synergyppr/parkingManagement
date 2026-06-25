@@ -12,11 +12,11 @@ const VehicleList = ({
   handleSelectVehicle,
 }: VehicleListProps) => {
   return (
-    <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+    <div className="overflow-hidden rounded-4xl border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
       <button
         type="button"
         onClick={() => setShowExistingVehicles(!showExistingVehicles)}
-        className="flex w-full cursor-pointer items-center justify-between gap-4 bg-gradient-to-br from-white via-amber-50/60 to-white px-5 py-4 text-left transition hover:bg-amber-50"
+        className="flex w-full cursor-pointer items-center justify-between gap-4 bg-linear-to-br from-white via-amber-50/60 to-white px-5 py-4 text-left transition hover:bg-amber-50"
       >
         <div className="min-w-0">
           <span className="inline-flex rounded-full border border-amber-300 bg-white px-3 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-amber-700 shadow-sm">
@@ -45,7 +45,7 @@ const VehicleList = ({
       {showExistingVehicles && (
         <div className="border-t border-slate-200 bg-white px-4 pb-4 pt-4">
           {existingVehicles?.length === 0 ? (
-            <div className="flex min-h-[120px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50/70 p-6 text-center">
+            <div className="flex min-h-30 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/70 p-6 text-center">
               <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-200">
                 <FaCar className="h-5 w-5" />
               </div>
@@ -84,7 +84,7 @@ const VehicleList = ({
                     key={idx}
                     type="button"
                     onClick={() => handleSelectVehicle(v, idx)}
-                    className="group relative min-h-[140px] w-48 shrink-0 cursor-pointer overflow-hidden rounded-[1.5rem] border border-slate-200 bg-gradient-to-br from-white via-amber-50/30 to-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_18px_45px_rgba(214,168,0,0.16)]"
+                    className="group relative min-h-35 w-48 shrink-0 cursor-pointer overflow-hidden rounded-3xl border border-slate-200 bg-linear-to-br from-white via-amber-50/30 to-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_18px_45px_rgba(214,168,0,0.16)]"
                   >
                     <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-amber-100/70 transition group-hover:bg-amber-200/80" />
 

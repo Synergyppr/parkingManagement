@@ -247,8 +247,8 @@ function StatusCard({
       : "border-amber-200 bg-amber-50 text-amber-700";
 
   return (
-    <section className="overflow-hidden rounded-[2rem] border border-amber-200/70 bg-white/95 shadow-[0_30px_90px_rgba(15,23,42,0.16)] backdrop-blur-xl">
-      <div className="border-b border-slate-200 bg-gradient-to-br from-white via-amber-50/60 to-white px-6 py-7 text-center">
+    <section className="overflow-hidden rounded-4xl border border-amber-200/70 bg-white/95 shadow-[0_30px_90px_rgba(15,23,42,0.16)] backdrop-blur-xl">
+      <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/60 to-white px-6 py-7 text-center">
         <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)]">
           <KeySquare className="h-7 w-7" />
         </div>
@@ -299,7 +299,7 @@ function PaymentDetails({
   compact?: boolean;
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-4">
+    <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
       <DetailRow label="Request ID" value={paymentData.requestId} />
 
       {paymentData.payment?.reference && !compact && (

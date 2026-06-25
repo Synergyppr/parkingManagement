@@ -1,6 +1,5 @@
 // ModalPropertyForm.tsx
 "use client";
-
 import { useState, useMemo } from "react";
 import { FaBuilding } from "react-icons/fa6";
 import ModalInput from "./elements/ModalInput";
@@ -160,8 +159,8 @@ export default function ModalPropertyForm({
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col overflow-hidden rounded-[2rem] bg-white text-slate-800">
-      <div className="border-b border-slate-200 bg-gradient-to-br from-white via-amber-50/60 to-white px-5 py-6 md:px-7">
+    <div className="mx-auto flex w-full max-w-xl flex-col overflow-hidden rounded-4xl bg-white text-slate-800">
+      <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/60 to-white px-5 py-6 md:px-7">
         <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
           Property Setup
         </span>
@@ -258,7 +257,7 @@ export default function ModalPropertyForm({
               >
                 <span
                   className={`absolute h-6 w-6 rounded-full bg-white shadow-md transition-transform duration-300 ${
-                    form?.isActive ? "translate-x-[28px]" : "translate-x-[4px]"
+                    form?.isActive ? "translate-x-7" : "translate-x-1"
                   }`}
                 />
               </button>

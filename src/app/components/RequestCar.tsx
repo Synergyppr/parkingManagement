@@ -340,7 +340,7 @@ const RequestCar = () => {
         </div>
   
         {!idFromUrl ? (
-          <section className="rounded-[2rem] border border-amber-200/70 bg-white/90 p-7 text-center shadow-[0_30px_90px_rgba(15,23,42,0.12)] backdrop-blur-xl">
+          <section className="rounded-4xl border border-amber-200/70 bg-white/90 p-7 text-center shadow-[0_30px_90px_rgba(15,23,42,0.12)] backdrop-blur-xl">
             <span className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
               Guest Access
             </span>
@@ -374,7 +374,7 @@ const RequestCar = () => {
             </div>
           </section>
         ) : vehicleNotFound ? (
-          <section className="rounded-[2rem] border border-red-100 bg-white/90 p-7 text-center shadow-[0_30px_90px_rgba(15,23,42,0.12)] backdrop-blur-xl">
+          <section className="rounded-4xl border border-red-100 bg-white/90 p-7 text-center shadow-[0_30px_90px_rgba(15,23,42,0.12)] backdrop-blur-xl">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50 ring-1 ring-red-100">
               <svg
                 className="h-8 w-8 text-red-500"
@@ -403,7 +403,7 @@ const RequestCar = () => {
         ) : ticketId ? (
           <div className="space-y-5">
             {/* Hero Ticket Card */}
-            <section className="relative overflow-hidden rounded-[2rem] border border-amber-200/80 bg-white p-7 shadow-[0_30px_90px_rgba(15,23,42,0.13)]">
+            <section className="relative overflow-hidden rounded-4xl border border-amber-200/80 bg-white p-7 shadow-[0_30px_90px_rgba(15,23,42,0.13)]">
               <div className="absolute -right-14 -top-14 h-36 w-36 rounded-full bg-amber-100/70" />
   
               <span className="relative inline-flex rounded-full border border-amber-300 bg-amber-50 px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
@@ -443,7 +443,7 @@ const RequestCar = () => {
             </section>
   
             {/* Timeline */}
-            <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+            <section className="rounded-4xl border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">
@@ -463,7 +463,7 @@ const RequestCar = () => {
             </section>
   
             {(vehicleData?.status === "received" || vehicleData?.status === "parked") && (
-              <section className="rounded-[2rem] border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-6 shadow-sm">
+              <section className="rounded-4xl border border-amber-200 bg-linear-to-br from-amber-50 to-white p-6 shadow-sm">
                 <p className="text-sm leading-7 text-slate-700">
                   If you&apos;ve finished your visit{" "}
                   {vehicleData?.placeToVisit && (
@@ -480,7 +480,7 @@ const RequestCar = () => {
             )}
   
             {vehicleData?.status === "requested" && (
-              <section className="rounded-[2rem] bg-gradient-to-br from-amber-400 to-amber-600 p-7 text-center text-white shadow-[0_20px_55px_rgba(214,168,0,0.35)]">
+              <section className="rounded-4xl bg-linear-to-br from-amber-400 to-amber-600 p-7 text-center text-white shadow-[0_20px_55px_rgba(214,168,0,0.35)]">
                 <IoCheckmarkOutline className="mx-auto mb-3 h-10 w-10" />
                 <h3 className="font-serif text-3xl font-bold">
                   Vehicle Requested
@@ -492,7 +492,7 @@ const RequestCar = () => {
             )}
   
             {vehicleData?.status === "ready" && (
-              <section className="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
+              <section className="rounded-4xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
                 <p className="text-sm leading-7 text-slate-700">
                   Your vehicle has been picked up. We hope you enjoyed your visit
                   {vehicleData?.placeToVisit && (
@@ -509,7 +509,7 @@ const RequestCar = () => {
             )}
   
             {vehicleData?.status !== "ready" && vehicleData?.status !== "requested" && (
-              <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+              <section className="rounded-4xl border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
                 <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-slate-50 p-4">
                   <input
                     checked={smsConsent}

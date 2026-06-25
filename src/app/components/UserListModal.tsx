@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { FaPencil } from "react-icons/fa6";
 import { FaUserPlus } from "react-icons/fa";
@@ -43,8 +42,8 @@ export default function UserListModal({
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose}>
-        <div className="overflow-hidden rounded-[2rem] bg-white">
-          <div className="border-b border-slate-200 bg-gradient-to-br from-white via-amber-50/60 to-white px-5 py-6">
+        <div className="overflow-hidden rounded-4xl bg-white">
+          <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/60 to-white px-5 py-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
@@ -101,7 +100,7 @@ export default function UserListModal({
 
           <div className="p-5">
             {filteredUsers.length === 0 ? (
-              <div className="flex min-h-[180px] flex-col items-center justify-center rounded-[2rem] border border-dashed border-slate-200 bg-slate-50/70 p-8 text-center">
+              <div className="flex min-h-45 flex-col items-center justify-center rounded-4xl border border-dashed border-slate-200 bg-slate-50/70 p-8 text-center">
                 <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-200">
                   <FaUserPlus className="h-5 w-5" />
                 </div>
@@ -126,9 +125,9 @@ export default function UserListModal({
                   {filteredUsers.map((user) => (
                     <li
                       key={user?.id}
-                      className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm transition hover:border-amber-200 hover:bg-amber-50/30 hover:shadow-md"
+                      className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:border-amber-200 hover:bg-amber-50/30 hover:shadow-md"
                     >
-                      <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-gradient-to-br from-amber-50/80 to-white px-4 py-4">
+                      <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-linear-to-br from-amber-50/80 to-white px-4 py-4">
                         <div className="min-w-0">
                           <h3 className="truncate text-sm font-extrabold text-slate-950">
                             {user.fullName}

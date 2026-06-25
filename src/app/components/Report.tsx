@@ -107,7 +107,7 @@ const Report = () => {
 
       <div className="relative mx-auto max-w-6xl space-y-7">
         {/* Hero */}
-        <section className="overflow-hidden rounded-[2rem] border border-amber-200/70 bg-white/90 p-6 shadow-[0_30px_90px_rgba(15,23,42,0.10)] backdrop-blur-xl md:p-8">
+        <section className="overflow-hidden rounded-4xl border border-amber-200/70 bg-white/90 p-6 shadow-[0_30px_90px_rgba(15,23,42,0.10)] backdrop-blur-xl md:p-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div>
               <span className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
@@ -148,7 +148,7 @@ const Report = () => {
             />
           </div>
 
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm md:min-w-[220px]">
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm md:min-w-55">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
                 Results
@@ -163,7 +163,7 @@ const Report = () => {
         </section>
 
         {/* Desktop Table */}
-        <section className="hidden overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] md:block">
+        <section className="hidden overflow-hidden rounded-4xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] md:block">
           <div className="grid grid-cols-6 border-b border-slate-200 bg-slate-50/80 px-5 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
             <span>Ticket #</span>
             <span>Patron</span>
@@ -223,7 +223,7 @@ const Report = () => {
         {/* Mobile Cards */}
         <section className="space-y-3 md:hidden">
           {report.length === 0 ? (
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-8 text-center shadow-sm">
+            <div className="rounded-4xl border border-slate-200 bg-white p-8 text-center shadow-sm">
               <p className="font-serif text-2xl font-bold text-slate-950">
                 No records found
               </p>
@@ -237,7 +237,7 @@ const Report = () => {
                 key={entry?.id}
                 type="button"
                 onClick={() => openDetails(entry?.id)}
-                className="w-full rounded-[1.5rem] border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:border-amber-200 hover:bg-amber-50/40"
+                className="w-full rounded-3xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:border-amber-200 hover:bg-amber-50/40"
               >
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div>

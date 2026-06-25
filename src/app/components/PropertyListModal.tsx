@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { FaPencil, FaPlus } from "react-icons/fa6";
 import Modal from "./Modal";
@@ -39,8 +38,8 @@ export default function PropertyListModal({
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose}>
-        <div className="overflow-hidden rounded-[2rem] bg-white">
-          <div className="border-b border-slate-200 bg-gradient-to-br from-white via-amber-50/60 to-white px-5 py-6">
+        <div className="overflow-hidden rounded-4xl bg-white">
+          <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/60 to-white px-5 py-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
@@ -88,7 +87,7 @@ export default function PropertyListModal({
 
           <div className="p-5">
             {!properties || properties.length === 0 ? (
-              <div className="flex min-h-[180px] flex-col items-center justify-center rounded-[2rem] border border-dashed border-amber-200 bg-amber-50/40 p-8 text-center">
+              <div className="flex min-h-45 flex-col items-center justify-center rounded-4xl border border-dashed border-amber-200 bg-amber-50/40 p-8 text-center">
                 <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-amber-600 ring-1 ring-amber-200">
                   <FaPlus className="h-4 w-4" />
                 </div>
@@ -106,7 +105,7 @@ export default function PropertyListModal({
                 {properties.map((property) => (
                   <li
                     key={property?.id}
-                    className="group relative overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:border-amber-200 hover:bg-amber-50/30 hover:shadow-md"
+                    className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:border-amber-200 hover:bg-amber-50/30 hover:shadow-md"
                   >
                     <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-amber-100/60 transition group-hover:bg-amber-200/70" />
 

@@ -23,14 +23,14 @@ export default function PrivacyPolicy() {
     <main className="min-h-screen bg-[#f8f5ed] px-4 py-8 text-slate-800">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(214,168,0,0.18),transparent_34%),radial-gradient(circle_at_bottom,rgba(15,23,42,0.08),transparent_42%)]" />
 
-      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] border border-amber-200/70 bg-white/90 shadow-[0_30px_90px_rgba(15,23,42,0.10)] backdrop-blur-xl">
-        <header className="sticky top-0 z-50 border-b border-slate-200 bg-gradient-to-br from-white via-amber-50/70 to-white px-5 py-6 md:px-8">
+      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-4xl border border-amber-200/70 bg-white/90 shadow-[0_30px_90px_rgba(15,23,42,0.10)] backdrop-blur-xl">
+        <header className="sticky top-0 z-50 border-b border-slate-200 bg-linear-to-br from-white via-amber-50/70 to-white px-5 py-6 md:px-8">
           <div className="flex flex-col items-center gap-4 text-center md:grid md:grid-cols-[25%_75%] md:text-left">
             <button
               type="button"
               onClick={() => router.push("/")}
               className="flex items-center gap-3 rounded-full border border-amber-200 bg-white px-4 py-2 shadow-sm transition hover:bg-amber-50 
-              cursor-pointer max-w-[200px]"
+              cursor-pointer max-w-50"
             >
               <div className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-500 text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)]">
                 <KeySquare className="h-5 w-5" />
@@ -60,7 +60,7 @@ export default function PrivacyPolicy() {
 
         <div className="grid gap-8 px-5 py-8 md:grid-cols-[280px_1fr] md:px-8">
           <aside className="md:sticky md:top-36 md:self-start">
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="rounded-4xl border border-slate-200 bg-white p-5 shadow-sm">
               <p className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
                 Table of Contents
               </p>
@@ -80,7 +80,7 @@ export default function PrivacyPolicy() {
             </div>
           </aside>
 
-          <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+          <section className="rounded-4xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50/60 px-5 py-4">
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
                 Effective Date
