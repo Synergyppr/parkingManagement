@@ -17,34 +17,44 @@ const Tabs: React.FC<TabsProps> = ({
   setTransitionState,
   customOnTabChange,
 }) => {
-  const onTabChange = (item: string) => {
+  const onTabChange = (item: string, i: number) => {
+    if (customOnTabChange) {
+      customOnTabChange(item, i);
+      return;
+    }
+
     setTransitionState("fade-out");
+
     setTimeout(() => {
-      setActiveTab(item as string);
+      setActiveTab(item);
       setTransitionState("fade-in");
     }, 300);
   };
 
   return (
-    <div className={`flex gap-1 ${isSmallScreen && tabs?.length > 3 ? "overflow-x-auto" : ""}`}>
-      {tabs?.map((item, i) => (
-        <button
-          key={item}
-          type="button"
-          onClick={() =>
-            setActiveTab != null
-              ? onTabChange(item)
-              : customOnTabChange?.(item, i)
-          }
-          className={`px-4 py-2 text-sm font-medium capitalize border-b-2 transition-colors cursor-pointer ${
-            activeTab === item
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          {item}
-        </button>
-      ))}
+    <div
+      className={`flex rounded-2xl border border-slate-200 bg-white/80 p-1 shadow-sm ${
+        isSmallScreen && tabs?.length > 3 ? "overflow-x-auto" : ""
+      }`}
+    >
+      {tabs?.map((item, i) => {
+        const isActive = activeTab === item;
+
+        return (
+          <button
+            key={item}
+            type="button"
+            onClick={() => onTabChange(item, i)}
+            className={`relative min-w-fit flex-1 cursor-pointer rounded-xl px-4 py-2.5 text-sm font-bold capitalize transition-all duration-200 ${
+              isActive
+                ? "bg-amber-500 text-white shadow-[0_10px_24px_rgba(217,174,38,0.28)]"
+                : "text-slate-500 hover:bg-amber-50 hover:text-amber-700"
+            }`}
+          >
+            {item}
+          </button>
+        );
+      })}
     </div>
   );
 };

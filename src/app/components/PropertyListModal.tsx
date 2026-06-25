@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import { FaPencil, FaPlus } from "react-icons/fa6";
 import Modal from "./Modal";
@@ -30,8 +31,7 @@ export default function PropertyListModal({
   properties,
   isOpen,
   onClose,
-}: // refresh,
-Props) {
+}: Props) {
   const [isPropertyFormOpen, setIsPropertyFormOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] =
     useState<Partial<Property> | null>(null);
@@ -39,95 +39,158 @@ Props) {
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose}>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-[#ef6c00] tracking-tight">
-            Properties
-          </h2>
-          <button
-            onClick={() => {
-              setSelectedProperty(null);
-              setIsPropertyFormOpen(true);
-            }}
-            className="cursor-pointer px-2.5 py-1 rounded-lg text-sm bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600/80 hover:shadow-md delay-300 duration-700 transition-colors text-white"
-          >
-            <FaPlus className="inline w-3 h-3" />
-          </button>
-        </div>
+        <div className="overflow-hidden rounded-[2rem] bg-white">
+          <div className="border-b border-slate-200 bg-gradient-to-br from-white via-amber-50/60 to-white px-5 py-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+                  Property Directory
+                </span>
 
-        {properties?.length === 0 ? (
-          <p className="text-gray-500">No properties found.</p>
-        ) : (
-          <ul className="space-y-4 max-h-[60vh] overflow-y-auto text-gray-700 text-sm">
-            {properties?.map((property) => (
-              <li
-                key={property?.id}
-                className="relative group rounded-md overflow-hidden border border-blue-200/60 bg-slate-300/60 shadow-sm"
+                <h2 className="mt-3 font-serif text-3xl font-bold tracking-tight text-slate-950">
+                  Properties
+                </h2>
+
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  Manage valet locations, addresses, tenant assignments, and
+                  property status.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedProperty(null);
+                  setIsPropertyFormOpen(true);
+                }}
+                className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-amber-500 text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)] transition hover:bg-amber-600"
+                title="Add property"
               >
-                {/* Hover Overlay */}
-                {/* <div className="absolute inset-0 bg-slate/80 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"></div> */}
+                <FaPlus className="h-4 w-4" />
+              </button>
+            </div>
 
-                {/* Edit Button */}
-                <button
-                  onClick={() => {
-                    setSelectedProperty({
-                      id: property?.id as string,
-                      tenantId: tenantId as string,
-                      name: property?.name as string,
-                      address: property?.address as string,
-                      isActive: property?.isActive as boolean,
-                      createdAtDateTime: property?.createdAtDateTime,
-                      latitude: property?.latitude as number,
-                      longitude: property?.longitude as number,
-                    });
-                    setIsPropertyFormOpen(true);
-                  }}
-                  className="cursor-pointer absolute bottom-2 right-2 z-20 p-1.5 bg-white/80 text-gray-700 rounded-full hover:bg-white transition-all hover:text-sky-600 hover:shadow-md"
-                  title="Edit property"
-                >
-                  <FaPencil className="w-3.5 h-3.5" />
-                </button>
+            <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 shadow-sm">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  Total Properties
+                </p>
+                <p className="text-sm font-extrabold text-slate-950">
+                  {properties?.length || 0} records
+                </p>
+              </div>
 
-                {/* Property Info Content */}
-                <div className="relative z-0 p-4 text-gray-700 text-sm">
-                  <p>
-                    <strong className="text-gray-800 tracking-tight">
-                      Name:
-                    </strong>{" "}
-                    {property?.name}
-                  </p>
-                  <p>
-                    <strong className="text-gray-800 tracking-tight">
-                      Address:
-                    </strong>{" "}
-                    {property?.address}
-                  </p>
-                  <p>
-                    <strong className="text-gray-800 tracking-tight">
-                      Tenant:
-                    </strong>{" "}
-                    {property?.tenant}
-                  </p>
-                  <p>
-                    <strong className="text-gray-800 tracking-tight">
-                      Status:
-                    </strong>{" "}
-                    <span
-                      className={`text-sm font-semibold tracking-tight ${
-                        property?.isActive ? "text-green-700" : "text-red-600"
-                      }`}
-                    >
-                      {property?.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </p>
-                  <p className="text-xs text-gray-700">
-                    Created:{" "}
-                    {new Date(property?.createdAtDateTime).toLocaleString()}
-                  </p>
+              <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700 ring-1 ring-amber-200">
+                Locations
+              </span>
+            </div>
+          </div>
+
+          <div className="p-5">
+            {!properties || properties.length === 0 ? (
+              <div className="flex min-h-[180px] flex-col items-center justify-center rounded-[2rem] border border-dashed border-amber-200 bg-amber-50/40 p-8 text-center">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-amber-600 ring-1 ring-amber-200">
+                  <FaPlus className="h-4 w-4" />
                 </div>
-              </li>
-            ))}
-          </ul>
-        )}
+
+                <p className="font-serif text-xl font-bold text-slate-950">
+                  No properties found
+                </p>
+
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  Create your first property to begin managing valet locations.
+                </p>
+              </div>
+            ) : (
+              <ul className="grid max-h-[62vh] grid-cols-1 gap-4 overflow-y-auto pr-1 text-sm sm:grid-cols-2">
+                {properties.map((property) => (
+                  <li
+                    key={property?.id}
+                    className="group relative overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:border-amber-200 hover:bg-amber-50/30 hover:shadow-md"
+                  >
+                    <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-amber-100/60 transition group-hover:bg-amber-200/70" />
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedProperty({
+                          id: property?.id as string,
+                          tenantId: tenantId as string,
+                          name: property?.name as string,
+                          address: property?.address as string,
+                          isActive: property?.isActive as boolean,
+                          createdAtDateTime: property?.createdAtDateTime,
+                          latitude: property?.latitude as number,
+                          longitude: property?.longitude as number,
+                          radius: property?.radius as number,
+                        });
+                        setIsPropertyFormOpen(true);
+                      }}
+                      className="absolute right-4 top-4 z-20 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-amber-200 bg-white text-amber-600 shadow-sm transition hover:scale-105 hover:bg-amber-500 hover:text-white"
+                      title="Edit property"
+                    >
+                      <FaPencil className="h-3.5 w-3.5" />
+                    </button>
+
+                    <div className="relative z-10 p-5 pr-16">
+                      <div className="mb-4">
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+                          Property
+                        </p>
+
+                        <h3 className="mt-1 line-clamp-2 font-serif text-2xl font-bold leading-tight text-slate-950">
+                          {property?.name || "Unnamed Property"}
+                        </h3>
+                      </div>
+
+                      <div className="space-y-3">
+                        <InfoRow label="Address" value={property?.address} />
+
+                        <InfoRow label="Tenant" value={property?.tenant} />
+
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                            Status
+                          </p>
+
+                          <span
+                            className={`mt-1 inline-flex rounded-full px-3 py-1 text-xs font-black ring-1 ${
+                              property?.isActive
+                                ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                                : "bg-red-50 text-red-700 ring-red-200"
+                            }`}
+                          >
+                            {property?.isActive ? "Active" : "Inactive"}
+                          </span>
+                        </div>
+
+                        <div className="border-t border-amber-100 pt-3">
+                          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                            Created
+                          </p>
+
+                          <p className="mt-1 text-xs font-semibold text-slate-600">
+                            {property?.createdAtDateTime
+                              ? new Date(
+                                  property.createdAtDateTime
+                                ).toLocaleString([], {
+                                  year: "numeric",
+                                  month: "2-digit",
+                                  day: "2-digit",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : "—"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
       </Modal>
 
       <Modal
@@ -141,7 +204,7 @@ Props) {
           tenantId={tenantId as string}
           setModalOpen={setIsPropertyFormOpen}
           originalData={
-            (selectedProperty as Property)
+            selectedProperty
               ? {
                   id: selectedProperty?.id ?? "",
                   tenantId: selectedProperty?.tenantId ?? "",
@@ -158,5 +221,25 @@ Props) {
         />
       </Modal>
     </>
+  );
+}
+
+function InfoRow({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | number | null;
+}) {
+  return (
+    <div>
+      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+        {label}
+      </p>
+
+      <p className="mt-1 line-clamp-2 text-sm font-semibold text-slate-700">
+        {value || "—"}
+      </p>
+    </div>
   );
 }

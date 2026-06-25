@@ -1,13 +1,10 @@
 import Swal from "sweetalert2";
 import {
-  CarBrand,
   CarPart,
   MarkAsReadProps,
   Ticket,
   TicketDetails,
   TicketResponseData,
-  VehicleColor,
-  VehicleType,
 } from "../types";
 import {
   carParts,
@@ -17,27 +14,27 @@ import {
 
 export const fetchTicketsData = async ({
   propertyId,
-  setVehicles,
-  setReadyVehicles,
-  setCarBrands,
-  setVehicleTypes,
-  setVehicleColors,
+  // setVehicles,
+  // setReadyVehicles,
+  // setCarBrands,
+  // setVehicleTypes,
+  // setVehicleColors,
   setLoading,
 }: {
   propertyId: string | null;
-  setVehicles: React.Dispatch<React.SetStateAction<Ticket[]>>;
-  setReadyVehicles: React.Dispatch<React.SetStateAction<Ticket[]>>;
-  setCarBrands: React.Dispatch<React.SetStateAction<CarBrand[]>>;
-  setVehicleTypes: React.Dispatch<React.SetStateAction<VehicleType[]>>;
-  setVehicleColors: React.Dispatch<React.SetStateAction<VehicleColor[]>>;
+  // setVehicles: React.Dispatch<React.SetStateAction<Ticket[]>>;
+  // setReadyVehicles: React.Dispatch<React.SetStateAction<Ticket[]>>;
+  // setCarBrands: React.Dispatch<React.SetStateAction<CarBrand[]>>;
+  // setVehicleTypes: React.Dispatch<React.SetStateAction<VehicleType[]>>;
+  // setVehicleColors: React.Dispatch<React.SetStateAction<VehicleColor[]>>;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
   // GetValetTicketsByPropertyId
-  if (!propertyId) {
-    setVehicles([]);
-    setReadyVehicles([]);
-    return;
-  }
+  // if (!propertyId) {
+  //   setVehicles([]);
+  //   setReadyVehicles([]);
+  //   return;
+  // }
   try {
     const res = await fetch("/api/getTicket", {
       method: "POST",
@@ -50,12 +47,13 @@ export const fetchTicketsData = async ({
     const data = await res.json();
     const result: TicketResponseData = data?.data;
 
-    setVehicles(result?.tickets);
-    setReadyVehicles(result?.readyTickets || []);
-    setCarBrands(result?.carBrands);
-    setVehicleTypes(result?.vehicleTypes);
-    setVehicleColors(result?.vehicleColors);
+    // setVehicles(result?.tickets);
+    // setReadyVehicles(result?.readyTickets || []);
+    // setCarBrands(result?.carBrands);
+    // setVehicleTypes(result?.vehicleTypes);
+    // setVehicleColors(result?.vehicleColors);
     setLoading(false);
+    return result;
   } catch (error) {
     console.log("Failed to fetch valet tickets", error);
     Swal.fire({

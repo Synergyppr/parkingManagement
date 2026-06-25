@@ -7,7 +7,12 @@ import {
   getUsersByTenant,
   getPropertiesByTenant,
 } from "../helpers/propertyHelpers";
-import { Tenant, UserForm as UserFormType, Property, RateEntry } from "../types";
+import {
+  Tenant,
+  UserForm as UserFormType,
+  Property,
+  RateEntry,
+} from "../types";
 import { FaPencil, FaTrash, FaRegCreditCard } from "react-icons/fa6";
 import { FaCar } from "react-icons/fa";
 import { MdOutlineImportantDevices } from "react-icons/md";
@@ -16,7 +21,7 @@ import { BsFillBuildingsFill } from "react-icons/bs";
 import { useProperty } from "../context/PropertyContext";
 import { formatDateOfBirth } from "../lib/clientUtils";
 import Modal from "./Modal";
-import TenantForm from "./TenantForm";
+import TenantForm from "./TenantForm"; // To configure tenant
 import ListModal from "./ListModal";
 import PropertyForm from "./PropertyForm";
 import UserForm from "./UserForm";
@@ -52,6 +57,7 @@ const Tenants = ({ data }: TenantsProps) => {
   const tenants = data?.data;
   const { propertyId } = useProperty();
   const router = useRouter();
+
   const [tenantData, setTenantData] = useState(data?.data);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [selectedTenantId, setSelectedTenantId] = useState<string>("");
@@ -109,19 +115,13 @@ const Tenants = ({ data }: TenantsProps) => {
   };
 
   useEffect(() => {
-    if (propertyId) {
-      setLoading(false);
-    }
-    if (tenantData) {
-      setTenantData(tenantData);
-    }
+    if (propertyId) setLoading(false);
+    if (tenantData) setTenantData(tenantData);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (tenantData) {
-      setLoading(false);
-    }
+    if (tenantData) setLoading(false);
   }, [tenantData]);
 
   useEffect(() => {
@@ -134,9 +134,7 @@ const Tenants = ({ data }: TenantsProps) => {
     try {
       const response = await fetch("/api/getVehicle/dropdownData", {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
 
       const result = await response.json();
@@ -145,18 +143,15 @@ const Tenants = ({ data }: TenantsProps) => {
         setVehiclesDropdownData(result?.data?.data);
         setIsVehicleModalOpen(true);
       } else {
-        setLoading(true);
         Swal.fire({
           icon: "error",
           title: "Error",
           text: "Failed to fetch dropdown data.",
+          confirmButtonColor: "#d6a800",
         });
-        return;
       }
     } catch (error) {
-      setLoading(false);
       console.error("Error fetching dropdown data:", error);
-      return;
     } finally {
       setLoading(false);
     }
@@ -165,15 +160,10 @@ const Tenants = ({ data }: TenantsProps) => {
   const fetchPropertyDevices = async () => {
     setLoading(true);
     try {
-      const sendForm = {
-        id: propertyId as string,
-      };
       const response = await fetch("/api/devices/get", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(sendForm),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: propertyId as string }),
       });
 
       const result = await response.json();
@@ -182,18 +172,15 @@ const Tenants = ({ data }: TenantsProps) => {
         setDevicesDropdownData(result?.result?.data);
         setIsDeviceModalOpen(true);
       } else {
-        setLoading(false);
         Swal.fire({
           icon: "error",
           title: "Error",
           text: "Failed to fetch dropdown data.",
+          confirmButtonColor: "#d6a800",
         });
-        return;
       }
     } catch (error) {
-      setLoading(false);
       console.error("Error fetching dropdown data:", error);
-      return;
     } finally {
       setLoading(false);
     }
@@ -202,15 +189,10 @@ const Tenants = ({ data }: TenantsProps) => {
   const fetchTransactionTypes = async () => {
     setLoading(true);
     try {
-      const sendForm = {
-        id: propertyId as string,
-      };
       const response = await fetch("/api/valetTransaction/types/get", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(sendForm),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: propertyId as string }),
       });
 
       const result = await response.json();
@@ -219,32 +201,30 @@ const Tenants = ({ data }: TenantsProps) => {
         setTransactionTypesDropdownData(result?.result?.data as RateEntry[]);
         setIsTransactionModalOpen(true);
       } else {
-        setLoading(false);
         Swal.fire({
           icon: "error",
           title: "Error",
           text: "Failed to fetch dropdown data.",
+          confirmButtonColor: "#d6a800",
         });
-        return;
       }
     } catch (error) {
-      setLoading(false);
       console.error("Error fetching dropdown data:", error);
-      return;
     } finally {
       setLoading(false);
     }
   };
 
   const handleOpenTenantModal = (tenant: Tenant | null) => {
-    if (!tenant || tenant === null || !tenant.id) {
+    if (!tenant || !tenant.id) {
       setSelectedTenant(null);
       setIsTenantModalOpen(true);
-    } else {
-      setSelectedTenant(tenant);
-      setSelectedTenantId(tenant?.id);
-      setIsTenantModalOpen(true);
+      return;
     }
+
+    setSelectedTenant(tenant);
+    setSelectedTenantId(tenant.id);
+    setIsTenantModalOpen(true);
   };
 
   const handleCloseTenantModal = () => {
@@ -263,25 +243,16 @@ const Tenants = ({ data }: TenantsProps) => {
     setProperties([]);
   };
 
-  const handleCloseVehicleModal = () => {
-    setIsVehicleModalOpen(false);
-  };
   const handleOpenVehicleModal = () => {
     if (!propertyId) return;
     fetchVehicleDropdownData();
   };
 
-  const handleCloseDeviceModal = () => {
-    setIsDeviceModalOpen(false);
-  };
   const handleOpenDeviceModal = () => {
     if (!propertyId) return;
     fetchPropertyDevices();
   };
 
-  const handleCloseTransactionModal = () => {
-    setIsTransactionModalOpen(false);
-  };
   const handleOpenTransactionModal = () => {
     if (!propertyId) return;
     fetchTransactionTypes();
@@ -290,159 +261,208 @@ const Tenants = ({ data }: TenantsProps) => {
   return (
     <>
       {loading === true && propertyId && (
-        <div className="fixed inset-0 bg-black/70 bg-opacity-70 z-50 flex items-center justify-center">
-          <div className="flex flex-col h-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm">
+          <div className="flex flex-col items-center">
             <PageLoader />
-            <p className="text-white text-sm font-light mt-1 relative bottom-[80px] md:bottom-[150px] lg:bottom-[175px]">
+            <p className="relative bottom-20 mt-1 text-sm font-medium text-white md:bottom-37.5 lg:bottom-43.75">
               Loading data, please wait a moment...
             </p>
           </div>
         </div>
       )}
 
-      <div className="min-h-screen py-6">
-        <div className="max-w-4xl mx-auto px-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-gray-900">Tenant Configuration</h1>
-            <button
-              onClick={() => handleOpenTenantModal(null)}
-              className="cursor-pointer flex items-center gap-2 h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors text-sm"
-            >
-              Add Tenant
-            </button>
-          </div>
+      <div className="min-h-screen bg-[#f8f5ed] px-4 py-8">
+        <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(214,168,0,0.18),transparent_34%),radial-gradient(circle_at_bottom,rgba(15,23,42,0.08),transparent_42%)]" />
 
-          <div className="space-y-3">
+        <div className="relative mx-auto max-w-6xl space-y-7">
+          <section className="overflow-hidden rounded-4xl border border-amber-200/70 bg-white/90 p-6 shadow-[0_30px_90px_rgba(15,23,42,0.10)] backdrop-blur-xl md:p-8">
+            <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+              <div>
+                <span className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+                  System Settings
+                </span>
+
+                <h1 className="mt-4 font-serif text-4xl font-bold tracking-tight text-slate-950 md:text-5xl">
+                  Tenant Configuration
+                </h1>
+
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+                  Manage tenants, properties, users, vehicle dropdowns, devices,
+                  and valet transaction rates from one premium operations panel.
+                </p>
+              </div>
+
+              <button
+                onClick={() => handleOpenTenantModal(null)}
+                className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-amber-500 px-6 text-sm font-extrabold text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)] transition hover:bg-amber-600"
+              >
+                Add Tenant
+              </button>
+            </div>
+          </section>
+
+          <section className="grid grid-cols-1 gap-5 md:grid-cols-3">
+            <SummaryCard
+              label="Tenants"
+              value={String(tenants?.length || 0)}
+              icon={<BsFillBuildingsFill />}
+            />
+            <SummaryCard
+              label="Current Property"
+              value={propertyId ? "Connected" : "Missing"}
+              icon={<MdOutlineImportantDevices />}
+            />
+            <SummaryCard
+              label="Config Modules"
+              value="5"
+              icon={<FaRegCreditCard />}
+            />
+          </section>
+
+          <section className="space-y-4">
             {tenants?.map((tenant) => (
               <div
                 key={tenant?.id}
-                className="bg-white rounded-xl shadow-sm ring-1 ring-black/5 p-4"
+                className="group rounded-4xl border border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:border-amber-200 hover:shadow-[0_24px_60px_rgba(15,23,42,0.10)]"
                 onClick={() => {
-                  if (!selectedTenantId) {
+                  if (!selectedTenantId)
                     setSelectedTenantId(tenant?.id as string);
-                  }
                 }}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold text-gray-900 text-sm">{tenant?.name}</h3>
-                      <span className="text-xs text-gray-400">&middot; {tenant?.type}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        tenant.isActive ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"
-                      }`}>
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-serif text-2xl font-bold text-slate-950">
+                        {tenant?.name}
+                      </h3>
+
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold capitalize text-slate-500">
+                        {tenant?.type}
+                      </span>
+
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-black ${
+                          tenant.isActive
+                            ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+                            : "bg-slate-100 text-slate-500 ring-1 ring-slate-200"
+                        }`}
+                      >
                         {tenant?.isActive ? "Active" : "Inactive"}
                       </span>
                     </div>
+
                     {tenant.description && (
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
                         {tenant?.description?.length > 130 && !seeMore
                           ? tenant?.description?.slice(0, 130) + "..."
                           : tenant?.description}
+
                         {tenant?.description?.length > 130 && (
                           <button
                             type="button"
-                            className="text-blue-600 ml-1 cursor-pointer"
-                            onClick={(e) => { e.stopPropagation(); setSeeMore(!seeMore); }}
+                            className="ml-1 cursor-pointer font-bold text-amber-600 hover:text-amber-700"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSeeMore(!seeMore);
+                            }}
                           >
                             {seeMore ? "Less" : "More"}
                           </button>
                         )}
                       </p>
                     )}
+
+                    <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+                      <QuickAction
+                        label="Users"
+                        icon={<PiUsersThreeFill />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!propertyId || loading) return;
+                          getUsersByTenant(
+                            tenant?.id as string,
+                            setLoading,
+                            setSelectedTenantId,
+                            setInitialUsers,
+                            setUsers,
+                            setIsUserModalOpen
+                          );
+                        }}
+                      />
+                      <QuickAction
+                        label="Properties"
+                        icon={<BsFillBuildingsFill />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!propertyId || loading) return;
+                          getPropertiesByTenant(
+                            tenant?.id as string,
+                            setSelectedTenantId,
+                            setLoading,
+                            setInitialProperties,
+                            setProperties,
+                            setIsPropertyModalOpen
+                          );
+                        }}
+                      />
+                      <QuickAction
+                        label="Vehicles"
+                        icon={<FaCar />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenVehicleModal();
+                        }}
+                      />
+                      <QuickAction
+                        label="Devices"
+                        icon={<MdOutlineImportantDevices />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDeviceModal();
+                        }}
+                      />
+                      <QuickAction
+                        label="Rates"
+                        icon={<FaRegCreditCard />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenTransactionModal();
+                        }}
+                      />
+                    </div>
                   </div>
 
-                  {/* Action icons */}
-                  <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
+                  <div className="flex shrink-0 items-center justify-end gap-2">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (!propertyId || loading) return;
-                        getUsersByTenant(
-                          tenant?.id as string,
-                          setLoading,
-                          setSelectedTenantId,
-                          setInitialUsers,
-                          setUsers,
-                          setIsUserModalOpen
-                        );
+                        handleOpenTenantModal(tenant);
                       }}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
-                      title="Users"
-                    >
-                      <PiUsersThreeFill className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (!propertyId || loading) return;
-                        getPropertiesByTenant(
-                          tenant?.id as string,
-                          setSelectedTenantId,
-                          setLoading,
-                          setInitialProperties,
-                          setProperties,
-                          setIsPropertyModalOpen
-                        );
-                      }}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
-                      title="Properties"
-                    >
-                      <BsFillBuildingsFill className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); handleOpenVehicleModal(); }}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
-                      title="Vehicles"
-                    >
-                      <FaCar className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); handleOpenDeviceModal(); }}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
-                      title="Devices"
-                    >
-                      <MdOutlineImportantDevices className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); handleOpenTransactionModal(); }}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
-                      title="Transactions"
-                    >
-                      <FaRegCreditCard className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); handleOpenTenantModal(tenant); }}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors cursor-pointer"
+                      className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-700 transition hover:bg-amber-500 hover:text-white"
                       title="Edit"
                     >
-                      <FaPencil className="w-4 h-4" />
+                      <FaPencil className="h-4 w-4" />
                     </button>
+
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleTenantDelete(tenant?.id as string, router);
                       }}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer"
+                      className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-red-100 bg-white text-red-500 transition hover:bg-red-50"
                       title="Delete"
                     >
-                      <FaTrash className="w-4 h-4" />
+                      <FaTrash className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
               </div>
             ))}
-          </div>
+          </section>
         </div>
 
-        {/* Tenant Modal */}
         <Modal isOpen={isTenantModalOpen} onClose={handleCloseTenantModal}>
           <TenantForm
             data={selectedTenant || null}
@@ -451,8 +471,10 @@ const Tenants = ({ data }: TenantsProps) => {
           />
         </Modal>
 
-        {/* Vehicle Modal */}
-        <Modal isOpen={isVehicleModalOpen} onClose={handleCloseVehicleModal}>
+        <Modal
+          isOpen={isVehicleModalOpen}
+          onClose={() => setIsVehicleModalOpen(false)}
+        >
           <VehicleManager
             carMakes={vehiclesDropdownData?.carBrands || []}
             carModels={
@@ -466,30 +488,26 @@ const Tenants = ({ data }: TenantsProps) => {
           />
         </Modal>
 
-        {/* Device Modal */}
-        <Modal isOpen={isDeviceModalOpen} onClose={handleCloseDeviceModal}>
-          <div>
-            <DeviceCMS
-              fetchPropertyDevices={fetchPropertyDevices}
-              devices={devicesDropdownData || []}
-            />
-          </div>
+        <Modal
+          isOpen={isDeviceModalOpen}
+          onClose={() => setIsDeviceModalOpen(false)}
+        >
+          <DeviceCMS
+            fetchPropertyDevices={fetchPropertyDevices}
+            devices={devicesDropdownData || []}
+          />
         </Modal>
 
-        {/* Transaction Modal */}
         <Modal
           isOpen={isTransactionModalOpen}
-          onClose={handleCloseTransactionModal}
+          onClose={() => setIsTransactionModalOpen(false)}
         >
-          <div>
-            <TransactionTypeManager
-              fetchTransactionTypes={fetchTransactionTypes} // Pass the fetch function ( to refetch after adding/deleting )
-              transactionTypes={transactionTypesDropdownData || []}
-            />
-          </div>
+          <TransactionTypeManager
+            fetchTransactionTypes={fetchTransactionTypes}
+            transactionTypes={transactionTypesDropdownData || []}
+          />
         </Modal>
 
-        {/* Reusable User Modal */}
         <ListModal
           title="Users"
           isOpen={isUserModalOpen}
@@ -518,34 +536,18 @@ const Tenants = ({ data }: TenantsProps) => {
             return true;
           }}
           renderItem={(user, onEdit) => (
-            <div className="p-4 rounded shadow bg-white text-sm space-y-1 text-gray-800">
-              <p>
-                <strong>Name:</strong> {(user as UserFormType)?.fullName}
-              </p>
-              <p>
-                <strong>Username:</strong> {(user as UserFormType)?.userName}
-              </p>
-              <p>
-                <strong>Gender:</strong>{" "}
-                <span className="uppercase">
-                  {(user as UserFormType)?.gender}
-                </span>
-              </p>
-              <p>
-                <strong>DOB:</strong>{" "}
-                {formatDateOfBirth((user as UserFormType)?.dateOfBirth)}
-              </p>
-              <button
-                onClick={() => onEdit(user)}
-                className="mt-2 text-xs px-3 py-1 bg-blue-500 text-white rounded cursor-pointer"
-              >
-                Edit
-              </button>
-            </div>
+            <EntityCard
+              title={(user as UserFormType)?.fullName as string}
+              fields={[
+                ["Username", (user as UserFormType)?.userName],
+                ["Gender", (user as UserFormType)?.gender],
+                ["DOB", formatDateOfBirth((user as UserFormType)?.dateOfBirth)],
+              ]}
+              onEdit={() => onEdit(user)}
+            />
           )}
         />
 
-        {/* Reusable Property Modal */}
         <ListModal
           title="Properties"
           isOpen={isPropertyModalOpen}
@@ -574,30 +576,14 @@ const Tenants = ({ data }: TenantsProps) => {
             return true;
           }}
           renderItem={(property, onEdit) => (
-            <div className="p-4 rounded shadow bg-white text-sm space-y-1 text-gray-800">
-              <p>
-                <strong>Name:</strong> {(property as Property)?.name}
-              </p>
-              <p>
-                <strong>Address:</strong> {(property as Property)?.address}
-              </p>
-              <p>
-                <strong>Status:</strong>{" "}
-                <span
-                  className={
-                    property?.isActive ? "text-green-600" : "text-red-500"
-                  }
-                >
-                  {property?.isActive ? "Active" : "Inactive"}
-                </span>
-              </p>
-              <button
-                onClick={() => onEdit(property)}
-                className="mt-2 text-xs px-3 py-1 bg-blue-500 text-white rounded cursor-pointer"
-              >
-                Edit
-              </button>
-            </div>
+            <EntityCard
+              title={(property as Property)?.name}
+              fields={[
+                ["Address", (property as Property)?.address],
+                ["Status", property?.isActive ? "Active" : "Inactive"],
+              ]}
+              onEdit={() => onEdit(property)}
+            />
           )}
         />
       </div>
@@ -606,3 +592,80 @@ const Tenants = ({ data }: TenantsProps) => {
 };
 
 export default Tenants;
+
+function SummaryCard({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-4xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-200">
+        {icon}
+      </div>
+      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+        {label}
+      </p>
+      <p className="mt-1 text-2xl font-black text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function QuickAction({
+  label,
+  icon,
+  onClick,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex min-h-23 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 text-center text-xs font-bold text-slate-600 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-700"
+    >
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm transition group-hover:bg-amber-500 group-hover:text-white">
+        {icon}
+      </span>
+      {label}
+    </button>
+  );
+}
+
+function EntityCard({
+  title,
+  fields,
+  onEdit,
+}: {
+  title: string;
+  fields: [string, string | undefined | null][];
+  onEdit: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
+      <h3 className="font-serif text-xl font-bold text-slate-950">{title}</h3>
+
+      <div className="mt-3 space-y-1">
+        {fields.map(([label, value]) => (
+          <p key={label} className="text-slate-600">
+            <strong className="text-slate-900">{label}:</strong>{" "}
+            <span className="capitalize">{value || "—"}</span>
+          </p>
+        ))}
+      </div>
+
+      <button
+        onClick={onEdit}
+        className="mt-4 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white transition hover:bg-amber-600 cursor-pointer"
+      >
+        Edit
+      </button>
+    </div>
+  );
+}

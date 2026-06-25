@@ -8,10 +8,10 @@ import { MdOutlinePercent } from "react-icons/md";
 import { IoReceiptOutline } from "react-icons/io5";
 import FormInput from "../components/elements/FormInput";
 import { RateEntry } from "../types";
+import ButtonLoader from "./elements/ButtonLoader";
 
-// Puerto Rico default IVU tax rates
-const PR_DEFAULT_STATE_TAX = 10.5; // IVU Estatal
-const PR_DEFAULT_CITY_TAX = 1.0;   // IVU Municipal
+const PR_DEFAULT_STATE_TAX = 10.5;
+const PR_DEFAULT_CITY_TAX = 1.0;
 
 function roundToTwo(n: number): number {
   return Math.round(n * 100) / 100;
@@ -26,10 +26,10 @@ function calcCityTax(base: number, rate: number) {
 }
 
 function calcTotal(base: number, stateRate: number, cityRate: number) {
-  return roundToTwo(base + calcStateTax(base, stateRate) + calcCityTax(base, cityRate));
+  return roundToTwo(
+    base + calcStateTax(base, stateRate) + calcCityTax(base, cityRate)
+  );
 }
-
-// ─── Entry Manager ─────────────────────────────────────────────────────────
 
 function EntryManager({
   title,
@@ -42,6 +42,7 @@ function EntryManager({
 }) {
   const router = useRouter();
   const { propertyId } = useProperty();
+
   const [entries, setEntries] = useState<RateEntry[]>(data || []);
   const [formName, setFormName] = useState("");
   const [formValue, setFormValue] = useState("");
@@ -60,6 +61,15 @@ function EntryManager({
     setEntries(data || []);
   }, [data]);
 
+  const resetForm = () => {
+    setFormName("");
+    setFormValue("");
+    setFormTaxable(false);
+    setFormStateTaxRate(PR_DEFAULT_STATE_TAX.toString());
+    setFormCityTaxRate(PR_DEFAULT_CITY_TAX.toString());
+    setEditingId(null);
+  };
+
   const applyDefaultTax = () => {
     setFormStateTaxRate(PR_DEFAULT_STATE_TAX.toString());
     setFormCityTaxRate(PR_DEFAULT_CITY_TAX.toString());
@@ -69,10 +79,11 @@ function EntryManager({
     if (!formName?.trim() || !formValue?.trim()) return;
 
     setButtonLoading(true);
+
     try {
       const sendForm = [
         {
-          propertyId: propertyId,
+          propertyId,
           name: formName,
           value: formValue,
           id: editingId || 0,
@@ -92,32 +103,34 @@ function EntryManager({
       const result = await response.json();
 
       if (result?.result?.status === "200") {
-        Swal.fire(
-          "Success",
-          `${title} "${formName}" has been saved successfully.`,
-          "success"
-        );
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: `${title} "${formName}" has been saved successfully.`,
+          confirmButtonColor: "#d6a800",
+        });
+
         fetchTransactionTypes();
         router.refresh();
-
-        setFormName("");
-        setFormValue("");
-        setFormTaxable(false);
-        setFormStateTaxRate(PR_DEFAULT_STATE_TAX.toString());
-        setFormCityTaxRate(PR_DEFAULT_CITY_TAX.toString());
-        setEditingId(null);
+        resetForm();
       } else {
-        Swal.fire(
-          "Error",
-          result?.result?.message ||
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text:
+            result?.result?.message ||
             `Failed to save ${title?.toLowerCase()}. Please try again.`,
-          "error"
-        );
-        setButtonLoading(false);
-        return;
+          confirmButtonColor: "#d6a800",
+        });
       }
     } catch (error) {
       console.error("Error saving transaction type:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Something went wrong while saving this rate.",
+        confirmButtonColor: "#d6a800",
+      });
     } finally {
       setButtonLoading(false);
     }
@@ -129,113 +142,159 @@ function EntryManager({
       text: "This action cannot be undone.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, delete it",
     }).then(async (result) => {
-      if (result.isConfirmed) {
-        setButtonLoading(true);
-        try {
-          const response = await fetch(`/api/valetTransaction/types/delete`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify([{ id: id }]),
+      if (!result.isConfirmed) return;
+
+      setButtonLoading(true);
+
+      try {
+        const response = await fetch(`/api/valetTransaction/types/delete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify([{ id }]),
+        });
+
+        const resData = await response.json();
+
+        if (resData?.result?.status === "200") {
+          setEntries((prev) => prev?.filter((e) => e?.id !== id));
+          fetchTransactionTypes?.();
+          router.refresh();
+
+          Swal.fire({
+            icon: "success",
+            title: "Deleted",
+            text: `${title} has been deleted.`,
+            confirmButtonColor: "#d6a800",
           });
-
-          const resData = await response.json();
-
-          if (resData?.result?.status === "200") {
-            setEntries((prev) => prev?.filter((e) => e?.id !== id));
-            fetchTransactionTypes?.();
-            router.refresh();
-            Swal.fire("Deleted!", `${title} has been deleted.`, "success");
-          } else {
-            Swal.fire(
-              "Error",
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text:
               resData?.result?.message ||
-                `Failed to delete ${title?.toLowerCase()}.`,
-              "error"
-            );
-            setButtonLoading(false);
-            return;
-          }
-        } catch (error) {
-          console.error("Error deleting transaction type:", error);
-        } finally {
-          setButtonLoading(false);
+              `Failed to delete ${title?.toLowerCase()}.`,
+            confirmButtonColor: "#d6a800",
+          });
         }
+      } catch (error) {
+        console.error("Error deleting transaction type:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Something went wrong while deleting this rate.",
+          confirmButtonColor: "#d6a800",
+        });
+      } finally {
+        setButtonLoading(false);
       }
     });
   };
 
-  // Live preview math
   const baseAmount = parseFloat(formValue) || 0;
   const stateRate = parseFloat(formStateTaxRate) || 0;
   const cityRate = parseFloat(formCityTaxRate) || 0;
-  const previewStateTax = formTaxable && baseAmount > 0 ? calcStateTax(baseAmount, stateRate) : 0;
-  const previewCityTax = formTaxable && baseAmount > 0 ? calcCityTax(baseAmount, cityRate) : 0;
-  const previewTotal = formTaxable && baseAmount > 0
-    ? calcTotal(baseAmount, stateRate, cityRate)
-    : baseAmount;
+
+  const previewStateTax =
+    formTaxable && baseAmount > 0 ? calcStateTax(baseAmount, stateRate) : 0;
+  const previewCityTax =
+    formTaxable && baseAmount > 0 ? calcCityTax(baseAmount, cityRate) : 0;
+  const previewTotal =
+    formTaxable && baseAmount > 0
+      ? calcTotal(baseAmount, stateRate, cityRate)
+      : baseAmount;
 
   return (
-    <div className="overflow-hidden bg-white text-gray-800 relative">
-      <div className="p-4 min-h-full">
-
-        {/* Default Tax reference panel toggle */}
-        <div className="flex justify-end mb-3">
+    <div className="bg-white text-slate-800">
+      <div className="space-y-5 p-5">
+        {/* Tax Panel Toggle */}
+        <div className="flex justify-end">
           <button
             type="button"
             onClick={() => setShowTaxPanel((prev) => !prev)}
-            className={`flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors cursor-pointer ${
+            className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-xs font-black transition ${
               showTaxPanel
-                ? "bg-blue-700 text-white border-blue-700"
-                : "bg-white text-blue-700 border-blue-400 hover:bg-blue-50"
+                ? "border-amber-500 bg-amber-500 text-white shadow-[0_12px_28px_rgba(214,168,0,0.28)]"
+                : "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
             }`}
           >
-            <MdOutlinePercent className="w-3.5 h-3.5" />
+            <MdOutlinePercent className="h-4 w-4" />
             Default Tax
           </button>
         </div>
 
-        {/* Default Tax reference panel */}
         {showTaxPanel && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <h3 className="text-sm font-bold text-blue-800 mb-3 flex items-center gap-2">
-              <MdOutlinePercent className="w-4 h-4" />
-              Puerto Rico IVU — Default Tax Rates
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white border border-blue-300 rounded-md px-3 py-2 text-center">
-                <p className="text-xs text-gray-500">IVU Estatal (State)</p>
-                <p className="text-lg font-bold text-blue-700">{PR_DEFAULT_STATE_TAX}%</p>
+          <section className="rounded-4xl border border-amber-200 bg-linear-to-br from-amber-50 to-white p-5">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-[0_12px_28px_rgba(214,168,0,0.24)]">
+                <MdOutlinePercent className="h-5 w-5" />
               </div>
-              <div className="bg-white border border-blue-300 rounded-md px-3 py-2 text-center">
-                <p className="text-xs text-gray-500">IVU Municipal (City)</p>
-                <p className="text-lg font-bold text-blue-700">{PR_DEFAULT_CITY_TAX}%</p>
+
+              <div>
+                <h3 className="font-serif text-xl font-bold text-slate-950">
+                  Puerto Rico IVU
+                </h3>
+                <p className="text-xs font-semibold text-slate-500">
+                  Default tax rates for taxable valet services.
+                </p>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-3 leading-tight">
-              Puerto Rico standard IVU rates. Combined total:{" "}
-              <strong>{PR_DEFAULT_STATE_TAX + PR_DEFAULT_CITY_TAX}%</strong>. Tax
-              is calculated on top of the base amount.
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl border border-amber-200 bg-white p-4 text-center shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                  IVU Estatal
+                </p>
+                <p className="mt-1 font-serif text-3xl font-bold text-amber-700">
+                  {PR_DEFAULT_STATE_TAX}%
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-amber-200 bg-white p-4 text-center shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                  IVU Municipal
+                </p>
+                <p className="mt-1 font-serif text-3xl font-bold text-amber-700">
+                  {PR_DEFAULT_CITY_TAX}%
+                </p>
+              </div>
+            </div>
+
+            <p className="mt-4 text-xs leading-6 text-slate-500">
+              Combined default rate:{" "}
+              <strong className="text-slate-950">
+                {PR_DEFAULT_STATE_TAX + PR_DEFAULT_CITY_TAX}%
+              </strong>
+              . Tax is calculated on top of the base amount.
             </p>
-          </div>
+          </section>
         )}
 
-        {/* Add Rate Form */}
-        <form className="flex flex-col gap-3 mb-4">
-          {/* Name + Amount row */}
-          <div className="flex flex-col md:flex-row lg:flex-row items-center gap-2">
-            <FormInput
-              name="formName"
-              placeholder={`Enter ${title}`}
-              icon={<FaRegCreditCard />}
-              value={formName}
-              onChange={(e) => setFormName(e.target.value)}
-              onClear={() => setFormName("")}
-            />
-            <div className="flex gap-2 items-center w-full md:w-auto">
+        {/* Form */}
+        <section className="rounded-4xl border border-slate-200 bg-slate-50/70 p-5">
+          <div className="mb-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+              {editingId ? "Update Rate" : "Add New Rate"}
+            </p>
+            <p className="mt-1 text-sm font-medium text-slate-500">
+              Create valet payment rates and optionally attach IVU tax.
+            </p>
+          </div>
+
+          <form className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_1fr_auto]">
+              <FormInput
+                name="formName"
+                placeholder={`Enter ${title}`}
+                icon={<FaRegCreditCard />}
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                onClear={() => setFormName("")}
+              />
+
               <FormInput
                 name="formValue"
                 placeholder="Enter amount"
@@ -244,203 +303,227 @@ function EntryManager({
                 onChange={(e) => setFormValue(e.target.value)}
                 onClear={() => setFormValue("")}
               />
+
               <button
                 type="button"
-                disabled={buttonLoading}
+                disabled={buttonLoading || !formName.trim() || !formValue.trim()}
                 onClick={handleSubmit}
-                className="cursor-pointer whitespace-nowrap bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-6 font-semibold shadow-md tracking-tight rounded"
-              >
-                {editingId ? "Update" : "Add"}
-              </button>
-            </div>
-          </div>
-
-          {/* Tax toggle row */}
-          <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-            <label className="flex items-center gap-2 cursor-pointer select-none pt-1">
-              <div
-                onClick={() => setFormTaxable((prev) => !prev)}
-                className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors cursor-pointer ${
-                  formTaxable ? "bg-blue-600" : "bg-gray-300"
+                className={`flex h-12 items-center justify-center rounded-2xl px-7 text-sm font-black text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)] transition ${
+                  buttonLoading || !formName.trim() || !formValue.trim()
+                    ? "cursor-not-allowed bg-amber-500/60 opacity-70"
+                    : "cursor-pointer bg-amber-500 hover:bg-amber-600"
                 }`}
               >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                    formTaxable ? "translate-x-5" : "translate-x-1"
+                {buttonLoading ? <ButtonLoader /> : editingId ? "Update" : "Add"}
+              </button>
+            </div>
+
+            {/* Tax Toggle */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-sm font-extrabold text-slate-950">
+                    Taxable Rate
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Enable this when IVU should be added to the base rate.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setFormTaxable((prev) => !prev)}
+                  className={`relative flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full transition ${
+                    formTaxable ? "bg-amber-500" : "bg-slate-300"
                   }`}
-                />
+                >
+                  <span
+                    className={`absolute h-6 w-6 rounded-full bg-white shadow-md transition-transform ${
+                      formTaxable ? "translate-x-7" : "translate-x-1"
+                    }`}
+                  />
+                </button>
               </div>
-              <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+
+              <div className="mt-3 inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600">
                 {formTaxable ? "Includes Tax" : "No Tax"}
-              </span>
-            </label>
+              </div>
 
-            {/* Editable tax rate inputs */}
-            {formTaxable && (
-              <div className="flex flex-col gap-2 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  {/* State tax input */}
-                  <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-md px-3 py-1.5">
-                    <span className="text-xs text-gray-500 whitespace-nowrap">IVU Estatal:</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.1"
+              {formTaxable && (
+                <div className="mt-4 space-y-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <TaxInput
+                      label="IVU Estatal"
                       value={formStateTaxRate}
-                      onChange={(e) => setFormStateTaxRate(e.target.value)}
-                      className="w-14 text-sm font-bold text-blue-700 bg-transparent focus:outline-none text-center"
+                      onChange={setFormStateTaxRate}
                     />
-                    <span className="text-sm text-blue-700 font-bold">%</span>
-                  </div>
 
-                  {/* City tax input */}
-                  <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-md px-3 py-1.5">
-                    <span className="text-xs text-gray-500 whitespace-nowrap">IVU Municipal:</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.1"
+                    <TaxInput
+                      label="IVU Municipal"
                       value={formCityTaxRate}
-                      onChange={(e) => setFormCityTaxRate(e.target.value)}
-                      className="w-14 text-sm font-bold text-blue-700 bg-transparent focus:outline-none text-center"
+                      onChange={setFormCityTaxRate}
                     />
-                    <span className="text-sm text-blue-700 font-bold">%</span>
                   </div>
 
-                  {/* Reset to defaults button */}
                   <button
                     type="button"
                     onClick={applyDefaultTax}
-                    className="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer whitespace-nowrap"
+                    className="text-xs font-bold text-amber-600 transition hover:text-amber-700"
                   >
                     Reset to PR defaults
                   </button>
                 </div>
+              )}
+            </div>
+
+            {formTaxable && baseAmount > 0 && (
+              <section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <IoReceiptOutline className="h-4 w-4 text-amber-600" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+                    Tax Breakdown Preview
+                  </span>
+                </div>
+
+                <div className="space-y-2 text-sm">
+                  <PreviewRow label="Base amount" value={`$${baseAmount.toFixed(2)}`} />
+                  <PreviewRow
+                    label={`IVU Estatal (${stateRate}%)`}
+                    value={`+$${previewStateTax.toFixed(2)}`}
+                  />
+                  <PreviewRow
+                    label={`IVU Municipal (${cityRate}%)`}
+                    value={`+$${previewCityTax.toFixed(2)}`}
+                  />
+
+                  <div className="flex justify-between border-t border-amber-200 pt-2 font-black text-amber-800">
+                    <span>Total to charge</span>
+                    <span>${previewTotal.toFixed(2)}</span>
+                  </div>
+                </div>
+              </section>
+            )}
+          </form>
+        </section>
+
+        {/* Rate List */}
+        <section className="rounded-4xl border border-slate-200 bg-white p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                Available Rates
+              </p>
+              <p className="mt-1 text-xs font-semibold text-slate-500">
+                {entries?.length || 0} rate(s)
+              </p>
+            </div>
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-200">
+              <FaRegMoneyBill1 className="h-4 w-4" />
+            </div>
+          </div>
+
+          <div className="max-h-72 overflow-y-auto pr-1">
+            {entries?.length === 0 ? (
+              <div className="flex min-h-32 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 text-center">
+                <p className="text-sm font-semibold text-slate-400">
+                  No {title}s yet.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {entries.map((entry) => {
+                  const base = Number(entry.value);
+                  const sRate = entry.stateTaxRate ?? 0;
+                  const cRate = entry.cityTaxRate ?? 0;
+                  const sTax = entry.taxable ? calcStateTax(base, sRate) : 0;
+                  const cTax = entry.taxable ? calcCityTax(base, cRate) : 0;
+                  const total = entry.taxable
+                    ? calcTotal(base, sRate, cRate)
+                    : base;
+
+                  return (
+                    <article
+                      key={entry.id}
+                      className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition hover:border-amber-200 hover:bg-amber-50/40"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-sm font-extrabold text-slate-950">
+                            {entry.name}
+                          </h3>
+
+                          <p className="mt-1 font-serif text-3xl font-bold text-amber-700">
+                            ${base.toFixed(2)}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={buttonLoading}
+                          onClick={() => deleteEntry(entry.id)}
+                          className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white text-slate-400 shadow-sm transition hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+                        >
+                          ×
+                        </button>
+                      </div>
+
+                      {entry.taxable && (
+                        <div className="mt-4 rounded-2xl border border-amber-200 bg-white p-3 text-xs">
+                          <div className="mb-2 inline-flex rounded-full bg-amber-50 px-2.5 py-1 font-bold text-amber-700">
+                            + {sRate + cRate}% tax
+                          </div>
+
+                          {sRate > 0 && (
+                            <PreviewRow
+                              label={`Est. (${sRate}%)`}
+                              value={`$${sTax.toFixed(2)}`}
+                            />
+                          )}
+
+                          {cRate > 0 && (
+                            <PreviewRow
+                              label={`Mun. (${cRate}%)`}
+                              value={`$${cTax.toFixed(2)}`}
+                            />
+                          )}
+
+                          <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 font-black text-slate-950">
+                            <span>Total</span>
+                            <span>${total.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
               </div>
             )}
           </div>
-
-          {/* Live tax preview */}
-          {formTaxable && baseAmount > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-md px-4 py-2 text-sm">
-              <div className="flex items-center gap-2 mb-1">
-                <IoReceiptOutline className="w-4 h-4 text-blue-600 shrink-0" />
-                <span className="text-xs font-semibold text-blue-700 uppercase tracking-wide">
-                  Tax Breakdown Preview
-                </span>
-              </div>
-              <div className="space-y-0.5 text-gray-600 text-xs pl-6">
-                <div className="flex justify-between">
-                  <span>Base amount:</span>
-                  <span className="font-medium">${baseAmount.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>IVU Estatal ({stateRate}%):</span>
-                  <span className="font-medium">+${previewStateTax.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>IVU Municipal ({cityRate}%):</span>
-                  <span className="font-medium">+${previewCityTax.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between border-t border-blue-300 pt-1 mt-1 font-bold text-blue-700 text-sm">
-                  <span>Total to charge:</span>
-                  <span>${previewTotal.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </form>
-
-        {/* Rate List */}
-        <div className="max-h-52 overflow-y-auto">
-          {entries?.length === 0 ? (
-            <p className="text-gray-500 italic">No {title}s yet.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {entries.map((entry) => {
-                const base = Number(entry.value);
-                const sRate = entry.stateTaxRate ?? 0;
-                const cRate = entry.cityTaxRate ?? 0;
-                const sTax = entry.taxable ? calcStateTax(base, sRate) : 0;
-                const cTax = entry.taxable ? calcCityTax(base, cRate) : 0;
-                const total = entry.taxable ? calcTotal(base, sRate, cRate) : base;
-
-                return (
-                  <div
-                    key={entry.id}
-                    className="flex flex-col bg-blue-600 text-white text-sm px-3 py-1.5 rounded-lg shadow min-w-28"
-                  >
-                    {/* Name + delete */}
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold">{entry.name}</span>
-                      <button
-                        type="button"
-                        disabled={buttonLoading}
-                        onClick={() => deleteEntry(entry.id)}
-                        className="ml-1 text-white hover:text-red-300 cursor-pointer leading-none"
-                      >
-                        ×
-                      </button>
-                    </div>
-
-                    {/* Base price */}
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <span className="text-gray-300 text-xs">
-                        ${base.toFixed(2)}
-                      </span>
-                      {entry.taxable && (
-                        <span className="text-yellow-300 text-xs ml-1 font-medium">
-                          + {sRate + cRate}% tax
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Tax breakdown */}
-                    {entry.taxable && (sRate > 0 || cRate > 0) && (
-                      <div className="mt-1 pt-1 border-t border-blue-400 text-xs text-blue-100 space-y-0.5">
-                        {sRate > 0 && (
-                          <div className="flex justify-between gap-2">
-                            <span>Est. ({sRate}%):</span>
-                            <span>${sTax.toFixed(2)}</span>
-                          </div>
-                        )}
-                        {cRate > 0 && (
-                          <div className="flex justify-between gap-2">
-                            <span>Mun. ({cRate}%):</span>
-                            <span>${cTax.toFixed(2)}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between gap-2 font-bold text-white border-t border-blue-400 pt-0.5">
-                          <span>Total:</span>
-                          <span>${total.toFixed(2)}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        </section>
       </div>
     </div>
   );
 }
-
-// ─── TransactionTypeManager ────────────────────────────────────────────────
 
 const TransactionTypeManager: React.FC<{
   transactionTypes: RateEntry[];
   fetchTransactionTypes: () => Promise<void>;
 }> = ({ transactionTypes, fetchTransactionTypes }) => {
   return (
-    <div>
-      <div className="w-full bg-gradient-to-r from-blue-900 to-blue-800 text-white py-4 px-4 text-center rounded-t-sm">
-        <h1 className="text-2xl font-extrabold drop-shadow-lg">Rates</h1>
-        <p className="text-sm drop-shadow-sm mt-2">
-          Manage the available rates in your system.
+    <div className="overflow-hidden rounded-4xl bg-white">
+      <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/60 to-white px-5 py-6 text-center">
+        <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+          Rate Center
+        </span>
+
+        <h1 className="mt-3 font-serif text-3xl font-bold text-slate-950">
+          Rates
+        </h1>
+
+        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
+          Manage available valet rates, taxable services, and live tax
+          calculations.
         </p>
       </div>
 
@@ -454,3 +537,43 @@ const TransactionTypeManager: React.FC<{
 };
 
 export default TransactionTypeManager;
+
+function TaxInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="rounded-2xl border border-amber-200 bg-amber-50/60 px-4 py-3">
+      <span className="block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+        {label}
+      </span>
+
+      <div className="mt-1 flex items-center gap-2">
+        <input
+          type="number"
+          min="0"
+          max="100"
+          step="0.1"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full bg-transparent text-2xl font-black text-amber-700 outline-none"
+        />
+        <span className="text-sm font-black text-amber-700">%</span>
+      </div>
+    </label>
+  );
+}
+
+function PreviewRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-3 text-slate-600">
+      <span>{label}</span>
+      <span className="font-bold text-slate-900">{value}</span>
+    </div>
+  );
+}

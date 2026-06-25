@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-
 import { useProperty } from "../context/PropertyContext";
 import {
   carParts,
@@ -11,6 +10,7 @@ import { CarPart, TicketDetails } from "../types";
 import { handleFetchTicketDetails } from "../helpers/dashboardHelpers";
 
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
+import { FaCommentDots } from "react-icons/fa6";
 
 import TicketDetailsModal from "./TicketDetailsModal";
 import PageLoader from "./elements/PageLoader";
@@ -23,25 +23,29 @@ interface Survey {
   rating: number;
 }
 
-// Render stars with half-star support
 const renderStars = (rating: number, size: "sm" | "md" = "md") => {
   const stars = [];
-  const iconClass = size === "sm" ? "w-4 h-4" : "w-5 h-5";
+  const iconClass = size === "sm" ? "h-4 w-4" : "h-5 w-5";
+
   for (let i = 1; i <= 5; i++) {
     if (rating >= i) {
       stars.push(<FaStar key={i} className={`${iconClass} text-amber-400`} />);
     } else if (rating >= i - 0.5) {
-      stars.push(<FaStarHalfAlt key={i} className={`${iconClass} text-amber-400`} />);
+      stars.push(
+        <FaStarHalfAlt key={i} className={`${iconClass} text-amber-400`} />
+      );
     } else {
-      stars.push(<FaRegStar key={i} className={`${iconClass} text-gray-300`} />);
+      stars.push(<FaRegStar key={i} className={`${iconClass} text-slate-300`} />);
     }
   }
+
   return stars;
 };
 
 const Surveys = () => {
   const { propertyId } = useProperty();
   const saveClickedRef = useRef(false);
+
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState<Survey[]>([]);
   const [ticketDetails, setTicketDetails] = useState<TicketDetails>(
@@ -60,13 +64,15 @@ const Surveys = () => {
 
   const frontViewLabelsMap = generateLabelsMap(carParts.frontViewCar);
   const rearViewLabelsMap = generateLabelsMap(carParts.rearViewCar);
-  const passengerViewLabelsMap = generateLabelsMap(carParts.passengerViewCar); // Right-Side View
-  const driverViewLabelsMap = generateLabelsMap(carParts.driverViewCar); // Left-Side View
+  const passengerViewLabelsMap = generateLabelsMap(carParts.passengerViewCar);
+  const driverViewLabelsMap = generateLabelsMap(carParts.driverViewCar);
 
   useEffect(() => {
     const fetchSurveys = async () => {
       if (!propertyId) return;
+
       setLoading(true);
+
       try {
         const res = await fetch("/api/patronRating/getAll", {
           method: "POST",
@@ -77,120 +83,181 @@ const Surveys = () => {
         const data = await res.json();
 
         if (data?.status === "200") {
-          setLoading(false);
           setReport(data?.data || []);
         } else {
-          setLoading(false);
           console.log("Failed to fetch surveys", data?.message);
-          return;
         }
       } catch (error) {
-        setLoading(false);
         console.error("Failed to fetch surveys", error);
-        return;
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchSurveys();
   }, [propertyId]);
 
-  // Calculate average rating
   const calculateAverageRating = () => {
     if (report.length === 0) return 0;
     const total = report.reduce((sum, survey) => sum + survey.rating, 0);
     return total / report.length;
   };
+
   const averageRating = calculateAverageRating();
+  const latestSurveys = [...report].sort((a, b) => (a.id < b.id ? 1 : -1));
 
   return (
     <>
       {loading === true && propertyId && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="flex flex-col h-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm">
+          <div className="flex flex-col items-center">
             <PageLoader />
-            <p className="text-white text-sm font-light mt-1 relative bottom-[80px] md:bottom-[150px] lg:bottom-[175px]">
+            <p className="relative bottom-20 mt-1 text-sm font-medium text-white md:bottom-37.5 lg:bottom-43.75">
               Loading data, please wait a moment...
             </p>
           </div>
         </div>
       )}
 
-      <div className="min-h-screen py-6 px-4">
-        <div className="max-w-4xl mx-auto space-y-4">
-          {/* Header with average rating */}
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-gray-900">
-              Service Feedback
-            </h1>
-            <div className="flex items-center gap-2">
-              {renderStars(averageRating, "sm")}
-              <span className="text-sm font-medium text-gray-500">
-                ({averageRating.toFixed(1)})
-              </span>
+      <div className="min-h-screen bg-[#f8f5ed] px-4 py-8 border-x border-amber-200">
+        <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(214,168,0,0.18),transparent_34%),radial-gradient(circle_at_bottom,rgba(15,23,42,0.08),transparent_42%)]" />
+
+        <div className="relative mx-auto max-w-6xl space-y-7">
+          <section className="overflow-hidden rounded-4xl border border-amber-200/70 bg-white/90 p-6 shadow-[0_30px_90px_rgba(15,23,42,0.10)] backdrop-blur-xl md:p-8">
+            <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+              <div>
+                <span className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+                  Guest Experience
+                </span>
+
+                <h1 className="mt-4 font-serif text-4xl font-bold tracking-tight text-slate-950 md:text-5xl">
+                  Service Feedback
+                </h1>
+
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+                  Review guest ratings, comments, and linked valet ticket
+                  details to monitor the quality of every service interaction.
+                </p>
+              </div>
+
+              <div className="rounded-4xl border border-amber-200 bg-linear-to-br from-amber-50 to-white px-6 py-5 text-center shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  Average Rating
+                </p>
+
+                <div className="mt-2 flex items-center justify-center gap-2">
+                  {renderStars(averageRating, "sm")}
+                </div>
+
+                <p className="mt-2 font-serif text-3xl font-bold text-amber-700">
+                  {averageRating.toFixed(1)}
+                </p>
+              </div>
             </div>
-          </div>
+          </section>
+
+          <section className="grid grid-cols-1 gap-5 md:grid-cols-3">
+            <SummaryCard
+              label="Total Feedback"
+              value={String(report.length)}
+              icon={<FaCommentDots />}
+            />
+
+            <SummaryCard
+              label="Average Score"
+              value={averageRating.toFixed(1)}
+              icon={<FaStar />}
+            />
+
+            <SummaryCard
+              label="Latest Reviews"
+              value={String(latestSurveys.length)}
+              icon={<FaRegStar />}
+            />
+          </section>
 
           {report.length === 0 && !loading ? (
-            <div className="text-center py-20 text-gray-400">
-              <svg className="w-10 h-10 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
-              </svg>
-              <p className="font-medium text-gray-600">No feedback yet</p>
-            </div>
+            <section className="rounded-4xl border border-slate-200 bg-white p-10 text-center shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-200">
+                <FaCommentDots className="h-7 w-7" />
+              </div>
+
+              <h2 className="font-serif text-3xl font-bold text-slate-950">
+                No feedback yet
+              </h2>
+
+              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
+                Guest ratings and comments will appear here after completed
+                valet experiences.
+              </p>
+            </section>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {report
-                ?.sort((a, b) => (a.id < b.id ? 1 : -1))
-                ?.map((survey) => (
-                  <div
-                    key={survey?.id}
-                    onClick={() =>
-                      handleFetchTicketDetails({
-                        id: survey?.ticketId,
-                        setTicketDetails,
-                        setIncidentParts,
-                        setDescriptions,
-                        setDamagedParts,
-                        setShowTicketDetailsModal,
-                      })
-                    }
-                    className="bg-white rounded-xl shadow-sm ring-1 ring-black/5 p-4 cursor-pointer hover:shadow-md transition-shadow"
-                  >
-                    {/* Header: Avatar + Name */}
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                        {survey?.fullName?.[0]?.toUpperCase() || "?"}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-gray-900 text-sm truncate">
-                          {survey?.fullName}
-                        </p>
-                      </div>
+            <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {latestSurveys.map((survey) => (
+                <button
+                  key={survey?.id}
+                  type="button"
+                  onClick={() =>
+                    handleFetchTicketDetails({
+                      id: survey?.ticketId,
+                      setTicketDetails,
+                      setIncidentParts,
+                      setDescriptions,
+                      setDamagedParts,
+                      setShowTicketDetailsModal,
+                    })
+                  }
+                  className="group rounded-4xl border border-slate-200 bg-white p-5 text-left shadow-[0_18px_45px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50/40 hover:shadow-[0_24px_60px_rgba(15,23,42,0.10)]"
+                >
+                  <div className="mb-4 flex items-start gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-amber-400 to-amber-600 text-sm font-black text-white shadow-[0_12px_28px_rgba(214,168,0,0.25)]">
+                      {survey?.fullName?.[0]?.toUpperCase() || "?"}
                     </div>
 
-                    {/* Rating */}
-                    <div className="flex items-center gap-2 mb-2">
-                      {renderStars(survey?.rating, "sm")}
-                      <span className="text-xs text-gray-400">
-                        {survey?.rating?.toFixed(1)}
-                      </span>
-                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-extrabold text-slate-950">
+                        {survey?.fullName || "Guest"}
+                      </p>
 
-                    {/* Comment */}
+                      <div className="mt-1 flex items-center gap-2">
+                        <div className="flex items-center gap-0.5">
+                          {renderStars(survey?.rating, "sm")}
+                        </div>
+
+                        <span className="text-xs font-bold text-slate-400">
+                          {survey?.rating?.toFixed(1)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
                     {survey?.comments ? (
-                      <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">
+                      <p className="line-clamp-4 text-sm leading-6 text-slate-600">
                         &ldquo;{survey?.comments}&rdquo;
                       </p>
                     ) : (
-                      <p className="text-sm italic text-gray-400">No comment provided.</p>
+                      <p className="text-sm italic leading-6 text-slate-400">
+                        No comment provided.
+                      </p>
                     )}
                   </div>
-                ))}
-            </div>
+
+                  <div className="mt-4 flex items-center justify-between">
+                    <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700 ring-1 ring-amber-200 cursor-pointer">
+                      View Ticket
+                    </span>
+
+                    <span className="text-xs font-bold text-slate-400">
+                      #{survey?.ticketId?.slice(0, 8)}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </section>
           )}
         </div>
 
-        {/* Ticket Details Modal */}
         <TicketDetailsModal
           isOpen={showTicketDetailsModal}
           setIsOpen={setShowTicketDetailsModal}
@@ -224,3 +291,27 @@ const Surveys = () => {
 };
 
 export default Surveys;
+
+function SummaryCard({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-4xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-200">
+        {icon}
+      </div>
+
+      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+        {label}
+      </p>
+
+      <p className="mt-1 text-2xl font-black text-slate-950">{value}</p>
+    </div>
+  );
+}

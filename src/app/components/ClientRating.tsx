@@ -3,7 +3,6 @@ import { IoCheckmarkOutline } from "react-icons/io5";
 import { VehicleData } from "../types";
 
 const ClientRating = ({
-  // rating,
   hoveredStars,
   handleMouseEnter,
   handleStarClick,
@@ -14,7 +13,6 @@ const ClientRating = ({
   ratingSectionRef,
   vehicleData,
 }: {
-  // rating: number;
   hoveredStars: number;
   handleMouseEnter: (starIndex: number, isHalf: boolean) => void;
   handleStarClick: (starIndex: number, isHalf: boolean) => void;
@@ -30,84 +28,100 @@ const ClientRating = ({
   return (
     <div
       ref={ratingSectionRef}
-      className="bg-white rounded-2xl p-5 space-y-4"
+      className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
     >
       {vehicleData?.surveySubmitted ? (
-        <div className="text-center py-4">
-          <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <IoCheckmarkOutline className="text-emerald-500 w-7 h-7" />
+        <div className="p-7 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 ring-1 ring-emerald-200">
+            <IoCheckmarkOutline className="h-8 w-8 text-emerald-500" />
           </div>
-          <p className="font-semibold text-gray-900">
+
+          <h3 className="font-serif text-2xl font-bold text-slate-950">
             Thanks for your feedback
             {vehicleData?.firstName ? `, ${vehicleData.firstName}` : ""}!
-          </p>
-          <p className="text-sm text-gray-500 mt-1">
+          </h3>
+
+          <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-500">
             We truly appreciate your rating and look forward to serving you
             again.
           </p>
         </div>
       ) : (
         <>
-          <p className="font-semibold text-gray-900">Rate Your Experience</p>
-          <div className="flex justify-center space-x-1">
-            {[...Array(5)]?.map((_, starIndex) => {
-              const fullValue = starIndex + 1;
-              const halfValue = starIndex + 0.5;
+          <div className="border-b border-slate-200 bg-gradient-to-br from-white via-amber-50/50 to-white p-6 text-center">
+            <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+              Guest Feedback
+            </span>
 
-              return (
-                <div key={starIndex} className="relative w-7 h-7">
-                  {/* Left Half */}
-                  <div
-                    className="absolute left-0 top-0 w-1/2 h-full z-10 cursor-pointer"
-                    onMouseEnter={() => handleMouseEnter(starIndex, true)}
-                    onClick={() => handleStarClick(starIndex, true)}
-                  ></div>
+            <h3 className="mt-3 font-serif text-3xl font-bold text-slate-950">
+              Rate Your Experience
+            </h3>
 
-                  {/* Right Half */}
-                  <div
-                    className="absolute right-0 top-0 w-1/2 h-full z-10 cursor-pointer"
-                    onMouseEnter={() => handleMouseEnter(starIndex, false)}
-                    onClick={() => handleStarClick(starIndex, false)}
-                  ></div>
-
-                  {/* Icon Layer */}
-                  <div className="z-0 flex justify-center items-center w-full h-full">
-                    {hoveredStars >= fullValue ? (
-                      <BsStarFill className="text-amber-400 w-6 h-6" />
-                    ) : hoveredStars >= halfValue ? (
-                      <BsStarHalf className="text-amber-400 w-6 h-6" />
-                    ) : (
-                      <BsStar className="text-gray-300 w-6 h-6" />
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+            <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-500">
+              Your feedback helps us deliver a more premium valet experience.
+            </p>
           </div>
-          <textarea
-            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
-            placeholder="Leave a comment (optional)"
-            rows={3}
-            disabled={submitted}
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-          ></textarea>
 
-          <button
-            type="button"
-            onClick={(e) => handleSubmitRating(e)}
-            disabled={submitted}
-            className={`w-full h-11 font-semibold rounded-xl transition-colors text-sm cursor-pointer ${
-              submitted
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700 text-white"
-            }`}
-          >
-            Submit Rating
-          </button>
+          <div className="space-y-5 p-6">
+            <div className="flex justify-center gap-2">
+              {[...Array(5)]?.map((_, starIndex) => {
+                const fullValue = starIndex + 1;
+                const halfValue = starIndex + 0.5;
+
+                return (
+                  <div key={starIndex} className="relative h-10 w-10">
+                    <div
+                      className="absolute left-0 top-0 z-10 h-full w-1/2 cursor-pointer"
+                      onMouseEnter={() => handleMouseEnter(starIndex, true)}
+                      onClick={() => handleStarClick(starIndex, true)}
+                    />
+
+                    <div
+                      className="absolute right-0 top-0 z-10 h-full w-1/2 cursor-pointer"
+                      onMouseEnter={() => handleMouseEnter(starIndex, false)}
+                      onClick={() => handleStarClick(starIndex, false)}
+                    />
+
+                    <div className="flex h-full w-full items-center justify-center rounded-2xl bg-amber-50 ring-1 ring-amber-100 transition">
+                      {hoveredStars >= fullValue ? (
+                        <BsStarFill className="h-7 w-7 text-amber-500 drop-shadow-sm" />
+                      ) : hoveredStars >= halfValue ? (
+                        <BsStarHalf className="h-7 w-7 text-amber-500 drop-shadow-sm" />
+                      ) : (
+                        <BsStar className="h-7 w-7 text-slate-300" />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <textarea
+              className="h-28 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100 disabled:bg-slate-50 disabled:text-slate-400"
+              placeholder="Leave a comment (optional)"
+              rows={3}
+              disabled={submitted}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+            />
+
+            <button
+              type="button"
+              onClick={(e) => handleSubmitRating(e)}
+              disabled={submitted}
+              className={`flex h-13 w-full items-center justify-center rounded-2xl text-sm font-black transition ${
+                submitted
+                  ? "cursor-not-allowed bg-slate-100 text-slate-400"
+                  : "cursor-pointer bg-amber-500 text-white shadow-[0_16px_36px_rgba(214,168,0,0.32)] hover:bg-amber-600"
+              }`}
+            >
+              Submit Rating
+            </button>
+          </div>
         </>
       )}
     </div>
   );
 };
+
 export default ClientRating;

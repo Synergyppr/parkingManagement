@@ -259,12 +259,14 @@ export const handleParkVehicle = async (
         // Successful login
         Swal.fire({
           title: "Form Sent",
-          html: `<pre style="text-align: left; white-space: pre-wrap;">${JSON.stringify(
-            sendForm,
-            null,
-            2
-          )}</pre>`,
-          icon: "warning",
+          // html: `<pre style="text-align: left; white-space: pre-wrap;">${JSON.stringify(
+          //   sendForm,
+          //   null,
+          //   2
+          // )}</pre>`,
+          // icon: "warning",
+          icon: "success",
+          text: "Vehicle checked in successfully!",
           confirmButtonText: "Continue",
         }).then(async (response) => {
           if (response.isConfirmed) {

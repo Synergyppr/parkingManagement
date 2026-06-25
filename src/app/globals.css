@@ -99,3 +99,12 @@ body {
 .blinking-dot {
   animation: blink 1.2s infinite ease-in-out;
 }
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}

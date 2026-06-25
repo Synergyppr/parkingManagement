@@ -54,7 +54,7 @@ export default function Modal({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex ${placementYClass} ${placementXClass} z-50 p-4`}
+          className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex ${placementYClass} ${placementXClass} z-50 p-4 max-h-[92vh] mt-14 overflow-y-auto`}
           onClick={handleOverlayClick}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -79,7 +79,8 @@ export default function Modal({
             transition={{ duration: 0.25, ease: "easeOut" }}
           >
             <button
-              className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer z-10"
+              className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 
+              transition-colors cursor-pointer z-10"
               onClick={() => {
                 if (onRequestClose) {
                   onRequestClose();
@@ -90,7 +91,7 @@ export default function Modal({
             >
               <span className="text-lg leading-none">&times;</span>
             </button>
-            <div className="max-h-[80vh] overflow-y-auto">{children}</div>
+            <div className="max-h-[85vh] overflow-y-auto">{children}</div>
           </motion.div>
         </motion.div>
       )}

@@ -35,6 +35,7 @@ function EntryManager({
 }) {
   const sortEntries = (arr: Entry[]) =>
     [...arr].sort((a, b) => a.name.localeCompare(b.name));
+
   const [entries, setEntries] = useState<Entry[]>(sortEntries(data || []));
   const [formValue, setFormValue] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -45,15 +46,14 @@ function EntryManager({
     setEntries(sortEntries(data || []));
   }, [data]);
 
-  // Check for duplicates
   const isDuplicate = (name: string): boolean => {
     if (!name?.trim()) return false;
 
     if (endpoint === "Model" && parentValue?.id) {
-      // Look inside parent make's models
       const parentMake = data?.find(
         (m) => Number(m?.id) === Number(parentValue?.id)
       );
+
       return (
         parentMake?.models?.some(
           (model) => model.name.toLowerCase() === name.toLowerCase()
@@ -61,7 +61,6 @@ function EntryManager({
       );
     }
 
-    // For Make, Type, and Color, just check entries list
     return entries.some(
       (entry) => entry.name.toLowerCase() === name.toLowerCase()
     );
@@ -71,11 +70,12 @@ function EntryManager({
     if (!item?.trim()) return;
 
     if (isDuplicate(item)) {
-      Swal.fire(
-        "Duplicate",
-        `The ${title?.toLowerCase()} "${item}" already exists.`,
-        "warning"
-      );
+      Swal.fire({
+        icon: "warning",
+        title: "Duplicate",
+        text: `The ${title?.toLowerCase()} "${item}" already exists.`,
+        confirmButtonColor: "#d6a800",
+      });
       return;
     }
 
@@ -86,26 +86,14 @@ function EntryManager({
 
       if (endpoint === "Make" || endpoint === "Model") {
         if (endpoint === "Make") {
-          sendForm = [
-            {
-              id: 0,
-              name: item as string,
-              isActive: true,
-            },
-          ];
+          sendForm = [{ id: 0, name: item as string, isActive: true }];
         } else if (endpoint === "Model") {
           sendForm = [
             {
               id: parentValue?.id || 0,
               name: parentValue?.name || "",
               isActive: true,
-              models: [
-                {
-                  id: 0,
-                  name: item,
-                  isActive: true,
-                },
-              ],
+              models: [{ id: 0, name: item, isActive: true }],
             },
           ];
         } else return;
@@ -130,9 +118,7 @@ function EntryManager({
         "/api/vehicleManager/createOrUpdate/" + endpointName,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(sendForm),
         }
       );
@@ -142,19 +128,22 @@ function EntryManager({
       if (result?.result?.status === "200") {
         setFormValue("");
         fetchVehicleDropdownData();
-        Swal.fire(
-          "Success",
-          `The ${title?.toLowerCase()} "${item}" has been added successfully.`,
-          "success"
-        );
+
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: `The ${title?.toLowerCase()} "${item}" has been added successfully.`,
+          confirmButtonColor: "#d6a800",
+        });
       } else {
-        Swal.fire(
-          "Error",
-          result?.result?.message ||
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text:
+            result?.result?.message ||
             `Failed to add the ${title?.toLowerCase()} "${item}". Please try again.`,
-          "error"
-        );
-        return;
+          confirmButtonColor: "#d6a800",
+        });
       }
     } catch (error) {
       console.error("Error adding vehicle item:", error);
@@ -172,15 +161,14 @@ function EntryManager({
 
     const entryToDelete = entries?.find((entry) => Number(entry?.id) === id);
 
-    // If deleting a Make, collect its models
     let modelsHtml = "";
     if (endpoint === "Make" && entryToDelete?.models?.length) {
       modelsHtml = `
         <div style="margin-top: 12px; text-align: left;">
-          <div style="font-weight: 600; margin-bottom: 6px; color: #444;">
+          <div style="font-weight: 700; margin-bottom: 6px; color: #334155;">
             These models will also be deleted:
           </div>
-          <div style="background: #f8f9fa; padding: 10px 14px; border-radius: 6px; border: 1px solid #e0e0e0; max-height: 150px; overflow-y: auto;">
+          <div style="background: #f8fafc; padding: 10px 14px; border-radius: 14px; border: 1px solid #e2e8f0; max-height: 150px; overflow-y: auto;">
             ${entryToDelete?.models
               .map((m) => `<div style="padding: 2px 0;">• ${m?.name}</div>`)
               .join("")}
@@ -194,19 +182,19 @@ function EntryManager({
       html: `
         <div style="text-align: center;">
           <p style="margin-bottom: 8px;">Are you sure you want to delete:</p>
-          <div style="font-size: 16px; font-weight: bold; color: #d33;">
+          <div style="font-size: 16px; font-weight: bold; color: #b45309;">
             ${entryToDelete?.name}
           </div>
           ${modelsHtml}
-          <p style="margin-top: 12px; color: #666; font-size: 13px;">
+          <p style="margin-top: 12px; color: #64748b; font-size: 13px;">
             This action cannot be undone.
           </p>
         </div>
       `,
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#64748b",
       confirmButtonText: "Yes, delete it!",
     }).then((result) => {
       if (result.isConfirmed) {
@@ -227,11 +215,7 @@ function EntryManager({
 
       if (endpoint === "Make") {
         sendForm = {
-          brandsAndModels: [
-            {
-              id: Number(id),
-            },
-          ],
+          brandsAndModels: [{ id: Number(id) }],
         };
       } else if (endpoint === "Model") {
         sendForm = {
@@ -258,9 +242,7 @@ function EntryManager({
         "/api/vehicleManager/delete/" + endpointName,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(sendForm),
         }
       );
@@ -274,76 +256,96 @@ function EntryManager({
           setEditingId(null);
           setFormValue("");
         }
-        Swal.fire(
-          "Success",
-          `The ${title?.toLowerCase()} "${
+
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: `The ${title?.toLowerCase()} "${
             entry?.name
           }" has been deleted successfully.`,
-          "success"
-        );
+          confirmButtonColor: "#d6a800",
+        });
       } else {
-        Swal.fire(
-          "Error",
-          result?.result?.message ||
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text:
+            result?.result?.message ||
             `Failed to delete the ${title?.toLowerCase()}. Please try again.`,
-          "error"
-        );
-        setButtonLoading(false);
-        return;
+          confirmButtonColor: "#d6a800",
+        });
       }
     } catch (error) {
       console.error("Error deleting vehicle item:", error);
-      setButtonLoading(false);
-      Swal.fire(
-        "Error",
-        `An error occurred while deleting the ${title?.toLowerCase()}. Please try again.`,
-        "error"
-      );
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: `An error occurred while deleting the ${title?.toLowerCase()}. Please try again.`,
+        confirmButtonColor: "#d6a800",
+      });
     } finally {
       setButtonLoading(false);
     }
   };
 
-  // Filter entries by search query
   const filteredEntries = entries?.filter((entry) =>
     entry?.name?.toLowerCase()?.includes(searchQuery?.toLowerCase())
   );
 
   return (
-    <div className="overflow-hidden bg-white text-gray-800 relative">
-      <div className="p-4 min-h-full">
-        <form className="flex items-center gap-2 mb-4">
-          <FormInput
-            name="formValue"
-            placeholder={`Enter ${title?.toLowerCase()}`}
-            icon={icon}
-            value={formValue}
-            onChange={(e) => setFormValue(e.target.value)}
-            onClear={() => setFormValue("")}
-          />
-          <button
-            type="button"
-            disabled={buttonLoading}
-            onClick={() => addVehicleItem(formValue, endpoint)}
-            className={`${
-              buttonLoading
-                ? "bg-opacity-50 cursor-not-allowed py-1"
-                : "cursor-pointer py-2"
-            } ml-auto bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white px-6 font-semibold shadow-md tracking-tight rounded`}
-          >
-            {buttonLoading ? <ButtonLoader /> : editingId ? "Update" : "Add"}
-          </button>
-        </form>
+    <div className="bg-white text-slate-800">
+      <div className="space-y-5 p-5">
+        <section className="rounded-4xl border border-slate-200 bg-slate-50/70 p-4">
+          <p className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+            Add New {title}
+          </p>
 
-        {/*  Search Bar  */}
-        <div className="mb-3">
+          <form className="flex flex-col gap-3 sm:flex-row">
+            <div className="min-w-0 flex-1">
+              <FormInput
+                name="formValue"
+                placeholder={`Enter ${title?.toLowerCase()}`}
+                icon={icon}
+                value={formValue}
+                onChange={(e) => setFormValue(e.target.value)}
+                onClear={() => setFormValue("")}
+              />
+            </div>
+
+            <button
+              type="button"
+              disabled={buttonLoading}
+              onClick={() => addVehicleItem(formValue, endpoint)}
+              className={`h-12 rounded-2xl px-7 text-sm font-black text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)] transition sm:min-w-28.5 ${
+                buttonLoading
+                  ? "cursor-not-allowed bg-amber-500/60"
+                  : "cursor-pointer bg-amber-500 hover:bg-amber-600"
+              }`}
+            >
+              {buttonLoading ? <ButtonLoader /> : editingId ? "Update" : "Add"}
+            </button>
+          </form>
+        </section>
+
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                Current {title}s
+              </p>
+              <p className="text-xs font-semibold text-slate-500">
+                {filteredEntries?.length || 0} result(s)
+              </p>
+            </div>
+          </div>
+
           <FormInput
             name="searchQuery"
             placeholder={`Search ${title?.toLowerCase()}s...`}
             icon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-gray-400"
+                className="h-5 w-5 text-amber-600"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -361,27 +363,29 @@ function EntryManager({
             onClear={() => setSearchQuery("")}
             type="text"
           />
-        </div>
+        </section>
 
-        {/* Scrollable Pills */}
-        <div className="max-h-40 overflow-y-auto">
+        <section className="max-h-56 overflow-y-auto rounded-4xl border border-slate-200 bg-white p-4">
           {Array.isArray(filteredEntries) && filteredEntries?.length === 0 ? (
-            <p className="text-gray-500 italic">
-              No {title?.toLowerCase()}s found.
-            </p>
+            <div className="flex min-h-28 items-center justify-center text-center">
+              <p className="text-sm font-semibold text-slate-400">
+                No {title?.toLowerCase()}s found.
+              </p>
+            </div>
           ) : (
             <div className="flex flex-wrap gap-2">
               {filteredEntries?.map((entry) => (
                 <div
                   key={entry?.id + entry?.name}
-                  className="flex items-center bg-[#ef6c00] text-white text-sm px-3 py-1 rounded-lg shadow"
+                  className="group flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800 shadow-sm"
                 >
-                  {entry?.name}
+                  <span>{entry?.name}</span>
+
                   <button
                     type="button"
                     disabled={buttonLoading}
                     onClick={() => deleteVehicleItem(entry, endpoint)}
-                    className="ml-2 text-white hover:text-red-200 cursor-pointer"
+                    className="flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-white text-amber-700 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
                   >
                     ×
                   </button>
@@ -389,7 +393,7 @@ function EntryManager({
               ))}
             </div>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );
@@ -403,7 +407,6 @@ const VehicleCMS: React.FC<{
   fetchVehicleDropdownData: () => Promise<void>;
 }> = ({
   carMakes,
-  // carModels,
   vehicleTypes,
   vehicleColors,
   fetchVehicleDropdownData,
@@ -434,96 +437,119 @@ const VehicleCMS: React.FC<{
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const tabIcon = (section: string) => {
+    if (section === "Make") return <FaCar />;
+    if (section === "Model") return <FaCarRear />;
+    if (section === "Type") return <PiCarProfileFill />;
+    return <BiSolidSprayCan />;
+  };
+
   return (
-    <div>
-      <div>
-        <div className="w-full bg-gradient-to-r from-blue-900 to-blue-800 text-white py-4 px-4 text-center rounded-t-sm">
-          <h1 className="text-2xl font-extrabold drop-shadow-lg">
-            Vehicle Manager
-          </h1>
-          <p className="text-sm drop-shadow-sm mt-2">
-            Manage your vehicle makes, models, types, and colors.
-          </p>
+    <div className="overflow-hidden rounded-4xl bg-white">
+      <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/60 to-white px-5 py-6 text-center">
+        <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+          Vehicle Catalog
+        </span>
+
+        <h1 className="mt-3 font-serif text-3xl font-bold text-slate-950">
+          Vehicle Manager
+        </h1>
+
+        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
+          Manage makes, models, vehicle types, and colors used across valet
+          check-in forms.
+        </p>
+      </div>
+
+      <div className="border-b border-slate-200 bg-white px-4 py-4">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {labels?.map((section) => {
+            const isActive = activeLabel === section;
+
+            return (
+              <button
+                type="button"
+                key={section}
+                onClick={() => setActiveLabel(section)}
+                className={`flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border text-sm font-black transition ${
+                  isActive
+                    ? "border-amber-500 bg-amber-500 text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)]"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-amber-200 hover:bg-amber-50 hover:text-amber-700"
+                }`}
+              >
+                <span>{tabIcon(section)}</span>
+                {section}
+              </button>
+            );
+          })}
         </div>
+      </div>
 
-        <div className="flex gap-1 p-3 border-b bg-gray-50 justify-center">
-          {labels?.map((section) => (
-            <button
-              type="button"
-              key={section}
-              onClick={() => setActiveLabel(section)}
-              className={`px-4 py-1 rounded-lg text-sm font-medium border cursor-pointer ${
-                activeLabel === section
-                  ? "bg-[#ef6c00] text-white border-[#ef6c00]"
-                  : "bg-white text-[#ef6c00] border-[#ef6c00] hover:bg-orange-50"
-              }`}
-            >
-              {section}
-            </button>
-          ))}
-        </div>
+      <div className="w-full max-w-full text-slate-800">
+        {activeLabel === "Make" && (
+          <EntryManager
+            title="Make"
+            icon={<FaCar />}
+            data={sortEntries(carMakes || [])}
+            endpoint={activeLabel}
+            fetchVehicleDropdownData={fetchVehicleDropdownData}
+          />
+        )}
 
-        <div className="w-full max-w-full mx-auto text-gray-800">
-          {activeLabel === "Make" && (
-            <EntryManager
-              title="Make"
-              icon={<FaCar />}
-              data={sortEntries(carMakes || [])}
-              endpoint={activeLabel}
-              fetchVehicleDropdownData={fetchVehicleDropdownData}
-            />
-          )}
+        {activeLabel === "Model" && (
+          <>
+            <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-4">
+              <p className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                Select Make
+              </p>
 
-          {activeLabel === "Model" && (
-            <>
-              <div className="px-4 bg-white">
-                <FormInput
-                  name="make"
-                  value={form?.make || ""}
-                  onChange={handleChange}
-                  icon={<FaCar />}
-                  type="select"
-                  options={sortEntries(carMakes)}
-                />
-              </div>
-              <EntryManager
-                title="Model"
-                icon={<FaCarRear />}
-                data={filteredModels || []}
-                endpoint={activeLabel}
-                parentValue={{
-                  id: carMakes?.find(
-                    (m) => Number(m?.id) === Number(form?.make)
-                  )?.id as number,
-                  name: carMakes?.find(
-                    (m) => Number(m?.id) === Number(form?.make)
-                  )?.name as string,
-                }}
-                fetchVehicleDropdownData={fetchVehicleDropdownData}
+              <FormInput
+                name="make"
+                value={form?.make || ""}
+                onChange={handleChange}
+                icon={<FaCar />}
+                type="select"
+                options={sortEntries(carMakes)}
               />
-            </>
-          )}
+            </div>
 
-          {activeLabel === "Type" && (
             <EntryManager
-              title="Type"
-              icon={<PiCarProfileFill />}
-              data={sortEntries(vehicleTypes || [])}
+              title="Model"
+              icon={<FaCarRear />}
+              data={filteredModels || []}
               endpoint={activeLabel}
+              parentValue={{
+                id: carMakes?.find(
+                  (m) => Number(m?.id) === Number(form?.make)
+                )?.id as number,
+                name: carMakes?.find(
+                  (m) => Number(m?.id) === Number(form?.make)
+                )?.name as string,
+              }}
               fetchVehicleDropdownData={fetchVehicleDropdownData}
             />
-          )}
+          </>
+        )}
 
-          {activeLabel === "Color" && (
-            <EntryManager
-              title="Color"
-              icon={<BiSolidSprayCan />}
-              data={sortEntries(vehicleColors || [])}
-              endpoint={activeLabel}
-              fetchVehicleDropdownData={fetchVehicleDropdownData}
-            />
-          )}
-        </div>
+        {activeLabel === "Type" && (
+          <EntryManager
+            title="Type"
+            icon={<PiCarProfileFill />}
+            data={sortEntries(vehicleTypes || [])}
+            endpoint={activeLabel}
+            fetchVehicleDropdownData={fetchVehicleDropdownData}
+          />
+        )}
+
+        {activeLabel === "Color" && (
+          <EntryManager
+            title="Color"
+            icon={<BiSolidSprayCan />}
+            data={sortEntries(vehicleColors || [])}
+            endpoint={activeLabel}
+            fetchVehicleDropdownData={fetchVehicleDropdownData}
+          />
+        )}
       </div>
     </div>
   );

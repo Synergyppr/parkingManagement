@@ -30,7 +30,7 @@ const ModalSelect = ({
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         disabled={disabled}
-        className={`w-full text-gray-800 px-2 py-2 border-b border-gray-500 text-sm tracking-tight bg-transparent focus:outline-none focus:border-blue-500 appearance-none transition-all placeholder:none ${
+        className={`w-full text-gray-800 px-2 py-2 border-b border-gray-500 text-sm tracking-tight bg-transparent focus:outline-none focus:border-amber-500 appearance-none transition-all placeholder:none ${
           disabled ? "bg-gray-200 cursor-not-allowed" : ""
         }`}
       >
@@ -40,7 +40,7 @@ const ModalSelect = ({
         htmlFor={id}
         className={`absolute text-sm left-2 px-1 transition-all duration-200 bg-transparent pointer-events-none ${
           isFocused || value
-            ? "top-[-8px] text-xs text-blue-600"
+            ? "top-[-8px] text-xs text-amber-600"
             : "top-[11px] text-gray-500"
         }`}
       >

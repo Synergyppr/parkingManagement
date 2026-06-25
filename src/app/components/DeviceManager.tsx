@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { useProperty } from "../context/PropertyContext";
@@ -6,6 +7,7 @@ import { formatPhoneNumber } from "../lib/clientUtils";
 import { MdOutlineContactPhone } from "react-icons/md";
 import FormInput from "./elements/FormInput";
 import PhoneInputWithAreaCode from "./elements/PhoneInputWithAreaCode";
+import ButtonLoader from "./elements/ButtonLoader";
 
 interface Device {
   id: number | null;
@@ -32,6 +34,13 @@ function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
     setDevices(data || []);
   }, [data]);
 
+  const resetForm = () => {
+    setFormName("");
+    setFormPhone("");
+    setFormAreaCode("");
+    setEditingId(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName?.trim() || !formPhone?.trim()) return;
@@ -40,7 +49,7 @@ function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
 
     try {
       const rawPhone = (formPhone || "").replace(/\D/g, "");
-      const last10 = rawPhone.slice(-10); // always keep only 10 digits
+      const last10 = rawPhone.slice(-10);
       const validAreaCode = formAreaCode || "+1";
 
       const sendForm: Device = {
@@ -61,24 +70,30 @@ function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
       if (result?.result?.status === "200") {
         fetchPropertyDevices();
 
-        Swal.fire(
-          "Success",
-          `Device ${formName} added successfully.`,
-          "success"
-        );
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: `Device ${formName} ${editingId ? "updated" : "added"} successfully.`,
+          confirmButtonColor: "#d6a800",
+        });
 
-        setFormName("");
-        setFormPhone("");
-        setEditingId(null);
+        resetForm();
       } else {
-        Swal.fire(
-          "Error",
-          result?.result?.message || "Failed to save device.",
-          "error"
-        );
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: result?.result?.message || "Failed to save device.",
+          confirmButtonColor: "#d6a800",
+        });
       }
     } catch (error) {
       console.error("Error saving device:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Something went wrong while saving this device.",
+        confirmButtonColor: "#d6a800",
+      });
     } finally {
       setButtonLoading(false);
     }
@@ -88,53 +103,75 @@ function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
     if (!id) return;
 
     Swal.fire({
-      title: "Are you sure?",
+      title: "Delete Device?",
       text: "This device will be deleted permanently.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, delete it",
     }).then(async (result) => {
-      if (result.isConfirmed) {
-        setButtonLoading(true);
-        try {
-          const sendForm = { id: id };
-          const response = await fetch(`/api/devices/delete`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(sendForm),
+      if (!result.isConfirmed) return;
+
+      setButtonLoading(true);
+
+      try {
+        const response = await fetch(`/api/devices/delete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id }),
+        });
+
+        const res = await response.json();
+
+        if (res?.result?.status === "200") {
+          setDevices((prev) => prev?.filter((d) => d?.id !== id));
+          fetchPropertyDevices();
+
+          Swal.fire({
+            icon: "success",
+            title: "Deleted",
+            text: "The device has been deleted.",
+            confirmButtonColor: "#d6a800",
           });
-
-          const res = await response.json();
-
-          if (res?.result?.status === "200") {
-            setDevices((prev) => prev?.filter((d) => d?.id !== id));
-            fetchPropertyDevices();
-
-            Swal.fire("Deleted!", "The device has been deleted.", "success");
-          } else {
-            Swal.fire(
-              "Error",
-              res?.result?.message || "Failed to delete device.",
-              "error"
-            );
-          }
-        } catch (err) {
-          console.error("Error deleting device:", err);
-        } finally {
-          setButtonLoading(false);
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: res?.result?.message || "Failed to delete device.",
+            confirmButtonColor: "#d6a800",
+          });
         }
+      } catch (err) {
+        console.error("Error deleting device:", err);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Something went wrong while deleting this device.",
+          confirmButtonColor: "#d6a800",
+        });
+      } finally {
+        setButtonLoading(false);
       }
     });
   };
 
   return (
-    <div className="overflow-hidden bg-white text-gray-800 relative">
-      <div className="p-4 min-h-full">
-        {/* Add Form */}
-        <form className="flex flex-col sm:flex-row gap-2 mb-4 justify-baseline">
-          <div className="relative top-[3px]">
+    <div className="bg-white text-slate-800">
+      <div className="space-y-5 p-5">
+        {/* Form */}
+        <section className="rounded-[2rem] border border-slate-200 bg-slate-50/70 p-4">
+          <div className="mb-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+              {editingId ? "Update Device" : "Add New Device"}
+            </p>
+            <p className="mt-1 text-sm font-medium text-slate-500">
+              Register a device name and phone number for valet notifications.
+            </p>
+          </div>
+
+          <form className="grid grid-cols-1 gap-3 lg:grid-cols-1">
+            <div className="col-span-1">
             <FormInput
               name="formName"
               placeholder="Device Name"
@@ -143,54 +180,101 @@ function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
               onChange={(e) => setFormName(e.target.value)}
               onClear={() => setFormName("")}
             />
-          </div>
-          <PhoneInputWithAreaCode
-            areaCode={formAreaCode || ""}
-            phoneNumber={formPhone || ""}
-            onAreaCodeChange={(e) => setFormAreaCode(e.target.value)}
-            onPhoneNumberChange={(e) => {
-              const rawValue = e.target.value.replace(/\D/g, "");
-              const formatted = formatPhoneNumber(rawValue);
-              setFormPhone(formatted);
-            }}
-            onClear={() => setFormPhone("")}
-          />
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={buttonLoading}
-            className="cursor-pointer bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-6 font-semibold shadow-md tracking-tight rounded"
-          >
-            {editingId ? "Update" : "Add"}
-          </button>
-        </form>
+            </div>
+
+            <PhoneInputWithAreaCode
+              areaCode={formAreaCode || ""}
+              phoneNumber={formPhone || ""}
+              onAreaCodeChange={(e) => setFormAreaCode(e.target.value)}
+              onPhoneNumberChange={(e) => {
+                const rawValue = e.target.value.replace(/\D/g, "");
+                const formatted = formatPhoneNumber(rawValue);
+                setFormPhone(formatted);
+              }}
+              onClear={() => setFormPhone("")}
+            />
+
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={buttonLoading || !formName.trim() || !formPhone.trim()}
+              className={`flex h-12 items-center justify-center rounded-2xl px-7 text-sm font-black text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)] transition ${
+                buttonLoading || !formName.trim() || !formPhone.trim()
+                  ? "cursor-not-allowed bg-amber-500/60 opacity-70"
+                  : "cursor-pointer bg-amber-500 hover:bg-amber-600"
+              }`}
+            >
+              {buttonLoading ? <ButtonLoader /> : editingId ? "Update" : "Add"}
+            </button>
+          </form>
+
+          {editingId && (
+            <button
+              type="button"
+              onClick={resetForm}
+              className="mt-3 text-xs font-bold text-slate-400 transition hover:text-amber-600"
+            >
+              Cancel editing
+            </button>
+          )}
+        </section>
 
         {/* Device List */}
-        <div className="max-h-40 overflow-y-auto">
-          {devices?.length === 0 ? (
-            <p className="text-gray-500 italic">No devices yet.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {devices?.map((device) => (
-                <div
-                  key={device?.id + device?.name}
-                  className="flex items-center gap-2 bg-blue-600 text-white text-sm px-3 py-1 rounded-lg shadow"
-                >
-                  <span className="font-medium">{device?.name}</span>
-                  <span className="opacity-80 text-xs">({device?.phone})</span>
-                  <button
-                    type="button"
-                    disabled={buttonLoading}
-                    onClick={() => deleteDevice(device?.id as number)}
-                    className="ml-2 text-white hover:text-red-200 cursor-pointer"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
+        <section className="rounded-[2rem] border border-slate-200 bg-white p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                Registered Devices
+              </p>
+              <p className="mt-1 text-xs font-semibold text-slate-500">
+                {devices?.length || 0} device(s)
+              </p>
             </div>
-          )}
-        </div>
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-200">
+              <MdOutlineContactPhone className="h-5 w-5" />
+            </div>
+          </div>
+
+          <div className="max-h-64 overflow-y-auto pr-1">
+            {devices?.length === 0 ? (
+              <div className="flex min-h-32 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 text-center">
+                <p className="text-sm font-semibold text-slate-400">
+                  No devices yet.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {devices?.map((device) => (
+                  <div
+                    key={device?.id + device?.name}
+                    className="group rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition hover:border-amber-200 hover:bg-amber-50/50"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-extrabold text-slate-950">
+                          {device?.name}
+                        </p>
+                        <p className="mt-1 text-xs font-semibold text-slate-500">
+                          {device?.phone}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={buttonLoading}
+                        onClick={() => deleteDevice(device?.id as number)}
+                        className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white text-slate-400 shadow-sm transition hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </div>
   );
@@ -201,13 +285,19 @@ const DeviceCMS: React.FC<{
   fetchPropertyDevices: () => void;
 }> = ({ devices, fetchPropertyDevices }) => {
   return (
-    <div>
-      <div className="w-full bg-gradient-to-r from-blue-900 to-blue-800 text-white py-4 px-4 text-center rounded-t-sm">
-        <h1 className="text-2xl font-extrabold drop-shadow-lg">
+    <div className="overflow-hidden rounded-[2rem] bg-white">
+      <div className="border-b border-slate-200 bg-gradient-to-br from-white via-amber-50/60 to-white px-5 py-6 text-center">
+        <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+          Device Center
+        </span>
+
+        <h1 className="mt-3 font-serif text-3xl font-bold text-slate-950">
           Device Manager
         </h1>
-        <p className="text-sm drop-shadow-sm mt-2">
-          Manage your devices with names and phone numbers.
+
+        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
+          Manage device names and phone numbers used for valet communication and
+          notifications.
         </p>
       </div>
 

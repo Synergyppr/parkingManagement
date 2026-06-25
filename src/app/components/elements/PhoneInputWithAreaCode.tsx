@@ -1,8 +1,8 @@
 // components/elements/PhoneInputWithAreaCode.tsx
 "use client";
+
 import React, { useMemo } from "react";
-import { IoCloseOutline } from "react-icons/io5";
-import { IoPhonePortrait } from "react-icons/io5";
+import { IoCloseOutline, IoPhonePortrait } from "react-icons/io5";
 import countries from "@/app/lib/areaCodes";
 
 interface PhoneInputWithAreaCodeProps {
@@ -35,12 +35,11 @@ export default function PhoneInputWithAreaCode({
 
   return (
     <div className="flex gap-2">
-      {/* Area Code Select */}
       <select
         value={areaCode}
         onChange={onAreaCodeChange}
-        className={`h-11 px-2 bg-white border rounded-xl text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500/20 w-20 shrink-0 appearance-none ${
-          missing ? "border-red-300" : "border-gray-200"
+        className={`h-11 w-24 shrink-0 appearance-none rounded-xl border bg-gradient-to-b from-white to-amber-50/20 px-2 text-sm font-semibold text-slate-900 outline-none shadow-sm transition-all hover:border-amber-300 focus:border-amber-500 focus:ring-4 focus:ring-amber-200/50 ${
+          missing ? "border-red-300 ring-2 ring-red-100" : "border-slate-200"
         }`}
       >
         {uniqueCountries?.map((opt) => (
@@ -50,27 +49,28 @@ export default function PhoneInputWithAreaCode({
         ))}
       </select>
 
-      {/* Phone Number Input */}
       <div className="relative flex-1">
-        <IoPhonePortrait className={`absolute left-3 top-3.5 w-4 h-4 pointer-events-none ${
-          missing ? "text-red-500" : "text-gray-400"
-        }`} />
+        <IoPhonePortrait
+          className={`pointer-events-none absolute left-3 top-3.5 h-4 w-4 ${
+            missing ? "text-red-500" : "text-amber-500"
+          }`}
+        />
+
         <input
           type="text"
           name="phoneNumber"
           placeholder="(XXX) XXX-XXXX"
           value={phoneNumber}
           onChange={onPhoneNumberChange}
-          className={`w-full h-11 pl-9 pr-8 bg-white border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-gray-900 text-sm ${
-            missing ? "border-red-300" : "border-gray-200"
+          className={`h-11 w-full rounded-xl border bg-gradient-to-b from-white to-amber-50/20 pl-9 pr-8 text-sm text-slate-900 outline-none shadow-sm transition-all placeholder:text-slate-400 hover:border-amber-300 focus:border-amber-500 focus:ring-4 focus:ring-amber-200/50 ${
+            missing ? "border-red-300 ring-2 ring-red-100" : "border-slate-200"
           }`}
         />
 
-        {/* Loading spinner or clear button */}
         {isLoading ? (
           <span className="absolute right-3 top-3.5">
             <svg
-              className="w-4 h-4 animate-spin text-blue-500"
+              className="h-4 w-4 animate-spin text-amber-500"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -95,9 +95,9 @@ export default function PhoneInputWithAreaCode({
             <button
               type="button"
               onClick={onClear}
-              className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer"
+              className="absolute right-3 top-3.5 cursor-pointer text-slate-400 transition-colors hover:text-amber-600 focus:outline-none"
             >
-              <IoCloseOutline className="w-4 h-4" />
+              <IoCloseOutline className="h-4 w-4" />
             </button>
           )
         )}

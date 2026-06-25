@@ -3,14 +3,8 @@
 import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FaCheckCircle, FaHourglassHalf, FaTimesCircle } from "react-icons/fa";
+import { KeySquare } from "lucide-react";
 import PageLoader from "@/app/components/elements/PageLoader";
-
-/**
- * Payment Return Page
- *
- * This page is called by PlaceToPay after payment completion (success or pending)
- * URL format: /payment/return?requestId={requestId}&status={status}
- */
 
 interface PaymentStatusData {
   success: boolean;
@@ -38,8 +32,11 @@ interface PaymentStatusData {
 function PaymentReturnContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
   const [loading, setLoading] = useState(true);
-  const [paymentData, setPaymentData] = useState<PaymentStatusData | null>(null);
+  const [paymentData, setPaymentData] = useState<PaymentStatusData | null>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -51,31 +48,29 @@ function PaymentReturnContent() {
       return;
     }
 
-    // Verify payment status
     verifyPaymentStatus(requestId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   const verifyPaymentStatus = async (requestId: string) => {
     try {
-      console.log("Payment Return: Verifying status for request ID:", requestId);
-
-      const response = await fetch(`/api/payments/placetopay/session/${requestId}`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
+      const response = await fetch(
+        `/api/payments/placetopay/session/${requestId}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to verify payment status");
       }
 
       const data: PaymentStatusData = await response.json();
-      console.log("Payment Return: Status verification result:", data);
 
       setPaymentData(data);
       setLoading(false);
 
-      // If approved, auto-redirect to dashboard after 3 seconds
       if (data.isApproved) {
         setTimeout(() => {
           router.push("/dashboard");
@@ -88,250 +83,111 @@ function PaymentReturnContent() {
     }
   };
 
-  if (loading) {
-    return <PageLoader />;
-  }
+  if (loading) return <PageLoader />;
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-8 text-center">
-          <FaTimesCircle className="text-red-500 text-6xl mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Verification Error
-          </h1>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-          >
-            Return to Dashboard
-          </button>
-        </div>
-      </div>
+      <PaymentShell>
+        <StatusCard
+          icon={<FaTimesCircle className="h-16 w-16 text-red-500" />}
+          badge="Verification Error"
+          title="We could not verify your payment"
+          description={error}
+          tone="red"
+          buttonLabel="Return to Dashboard"
+          onClick={() => router.push("/dashboard")}
+        />
+      </PaymentShell>
     );
   }
 
   if (!paymentData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-8 text-center">
-          <FaTimesCircle className="text-gray-400 text-6xl mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            No Payment Data
-          </h1>
-          <p className="text-gray-600 mb-6">
-            Unable to retrieve payment information.
-          </p>
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-          >
-            Return to Dashboard
-          </button>
-        </div>
-      </div>
+      <PaymentShell>
+        <StatusCard
+          icon={<FaTimesCircle className="h-16 w-16 text-slate-400" />}
+          badge="No Data"
+          title="No Payment Data"
+          description="Unable to retrieve payment information."
+          tone="slate"
+          buttonLabel="Return to Dashboard"
+          onClick={() => router.push("/dashboard")}
+        />
+      </PaymentShell>
     );
   }
 
-  // Payment Approved
   if (paymentData.isApproved) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 px-4">
-        <div className="max-w-lg w-full bg-white shadow-xl rounded-lg p-8">
-          <div className="text-center">
-            <FaCheckCircle className="text-green-500 text-7xl mx-auto mb-4 animate-bounce" />
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Payment Successful!
-            </h1>
-            <p className="text-gray-600 mb-6">
-              Your payment has been processed successfully.
-            </p>
-          </div>
-
-          {/* Payment Details */}
-          <div className="bg-gray-50 rounded-lg p-6 mb-6 space-y-3">
-            <div className="flex justify-between">
-              <span className="text-gray-600 font-medium">Request ID:</span>
-              <span className="text-gray-900 font-semibold">
-                {paymentData.requestId}
-              </span>
-            </div>
-
-            {paymentData.payment?.reference && (
-              <div className="flex justify-between">
-                <span className="text-gray-600 font-medium">Reference:</span>
-                <span className="text-gray-900 font-semibold">
-                  {paymentData.payment.reference}
-                </span>
-              </div>
-            )}
-
-            {paymentData.payment?.amount && (
-              <div className="flex justify-between">
-                <span className="text-gray-600 font-medium">Amount:</span>
-                <span className="text-gray-900 font-semibold">
-                  ${paymentData.payment.amount.toFixed(2)}
-                </span>
-              </div>
-            )}
-
-            {paymentData.payment?.authorization && (
-              <div className="flex justify-between">
-                <span className="text-gray-600 font-medium">Authorization:</span>
-                <span className="text-gray-900 font-semibold">
-                  {paymentData.payment.authorization}
-                </span>
-              </div>
-            )}
-
-            {paymentData.payment?.paymentMethod && (
-              <div className="flex justify-between">
-                <span className="text-gray-600 font-medium">Method:</span>
-                <span className="text-gray-900 font-semibold">
-                  {paymentData.payment.paymentMethod}
-                  {paymentData.payment.franchise && ` (${paymentData.payment.franchise})`}
-                </span>
-              </div>
-            )}
-
-            {paymentData.payment?.receipt && (
-              <div className="flex justify-between">
-                <span className="text-gray-600 font-medium">Receipt:</span>
-                <span className="text-gray-900 font-semibold">
-                  {paymentData.payment.receipt}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="text-center">
-            <p className="text-sm text-gray-500 mb-4">
-              Redirecting to dashboard in 3 seconds...
-            </p>
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors shadow-md"
-            >
-              Go to Dashboard Now
-            </button>
-          </div>
-        </div>
-      </div>
+      <PaymentShell>
+        <StatusCard
+          icon={<FaCheckCircle className="h-16 w-16 animate-bounce text-emerald-500" />}
+          badge="Payment Approved"
+          title="Payment Successful!"
+          description="Your payment has been processed successfully."
+          tone="emerald"
+          buttonLabel="Go to Dashboard Now"
+          onClick={() => router.push("/dashboard")}
+          footerText="Redirecting to dashboard in 3 seconds..."
+        >
+          <PaymentDetails paymentData={paymentData} />
+        </StatusCard>
+      </PaymentShell>
     );
   }
 
-  // Payment Pending
   if (paymentData.isPending) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-50 to-yellow-100 px-4">
-        <div className="max-w-lg w-full bg-white shadow-xl rounded-lg p-8">
-          <div className="text-center">
-            <FaHourglassHalf className="text-yellow-500 text-7xl mx-auto mb-4 animate-pulse" />
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Payment Pending
-            </h1>
-            <p className="text-gray-600 mb-6">
-              Your payment is being processed. This may take a few moments.
-            </p>
-          </div>
-
-          {/* Payment Details */}
-          <div className="bg-gray-50 rounded-lg p-6 mb-6 space-y-3">
-            <div className="flex justify-between">
-              <span className="text-gray-600 font-medium">Request ID:</span>
-              <span className="text-gray-900 font-semibold">
-                {paymentData.requestId}
-              </span>
-            </div>
-
-            {paymentData.message && (
-              <div className="pt-3 border-t border-gray-200">
-                <p className="text-sm text-gray-600">{paymentData.message}</p>
-              </div>
-            )}
-          </div>
-
-          <div className="text-center space-y-3">
-            <p className="text-sm text-gray-500">
-              You will receive a confirmation once the payment is processed.
-            </p>
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors shadow-md"
-            >
-              Return to Dashboard
-            </button>
-          </div>
-        </div>
-      </div>
+      <PaymentShell>
+        <StatusCard
+          icon={<FaHourglassHalf className="h-16 w-16 animate-pulse text-amber-500" />}
+          badge="Payment Pending"
+          title="Payment Pending"
+          description="Your payment is being processed. This may take a few moments."
+          tone="amber"
+          buttonLabel="Return to Dashboard"
+          onClick={() => router.push("/dashboard")}
+          footerText="You will receive a confirmation once the payment is processed."
+        >
+          <PaymentDetails paymentData={paymentData} compact />
+        </StatusCard>
+      </PaymentShell>
     );
   }
 
-  // Payment Rejected
   if (paymentData.isRejected) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100 px-4">
-        <div className="max-w-lg w-full bg-white shadow-xl rounded-lg p-8">
-          <div className="text-center">
-            <FaTimesCircle className="text-red-500 text-7xl mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Payment Declined
-            </h1>
-            <p className="text-gray-600 mb-6">
-              {paymentData.message || "Your payment was declined. Please try again."}
-            </p>
-          </div>
-
-          {/* Payment Details */}
-          <div className="bg-gray-50 rounded-lg p-6 mb-6 space-y-3">
-            <div className="flex justify-between">
-              <span className="text-gray-600 font-medium">Request ID:</span>
-              <span className="text-gray-900 font-semibold">
-                {paymentData.requestId}
-              </span>
-            </div>
-
-            <div className="flex justify-between">
-              <span className="text-gray-600 font-medium">Status:</span>
-              <span className="text-red-600 font-semibold">
-                {paymentData.status}
-              </span>
-            </div>
-          </div>
-
-          <div className="text-center space-y-3">
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors shadow-md"
-            >
-              Return to Dashboard
-            </button>
-          </div>
-        </div>
-      </div>
+      <PaymentShell>
+        <StatusCard
+          icon={<FaTimesCircle className="h-16 w-16 text-red-500" />}
+          badge="Payment Declined"
+          title="Payment Declined"
+          description={
+            paymentData.message ||
+            "Your payment was declined. Please try again."
+          }
+          tone="red"
+          buttonLabel="Return to Dashboard"
+          onClick={() => router.push("/dashboard")}
+        >
+          <PaymentDetails paymentData={paymentData} compact />
+        </StatusCard>
+      </PaymentShell>
     );
   }
 
-  // Unknown status
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-8 text-center">
-        <FaTimesCircle className="text-gray-400 text-6xl mx-auto mb-4" />
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Unknown Status
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Payment status: {paymentData.status}
-        </p>
-        <button
-          onClick={() => router.push("/dashboard")}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-        >
-          Return to Dashboard
-        </button>
-      </div>
-    </div>
+    <PaymentShell>
+      <StatusCard
+        icon={<FaTimesCircle className="h-16 w-16 text-slate-400" />}
+        badge="Unknown Status"
+        title="Unknown Status"
+        description={`Payment status: ${paymentData.status}`}
+        tone="slate"
+        buttonLabel="Return to Dashboard"
+        onClick={() => router.push("/dashboard")}
+      />
+    </PaymentShell>
   );
 }
 
@@ -340,5 +196,189 @@ export default function PaymentReturnPage() {
     <Suspense fallback={<PageLoader />}>
       <PaymentReturnContent />
     </Suspense>
+  );
+}
+
+function PaymentShell({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f8f5ed] px-4 py-10 text-slate-950">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(214,168,0,0.20),transparent_34%),radial-gradient(circle_at_bottom,rgba(15,23,42,0.10),transparent_42%)]" />
+
+      <div className="relative w-full max-w-xl">{children}</div>
+    </main>
+  );
+}
+
+function StatusCard({
+  icon,
+  badge,
+  title,
+  description,
+  tone,
+  buttonLabel,
+  onClick,
+  footerText,
+  children,
+}: {
+  icon: React.ReactNode;
+  badge: string;
+  title: string;
+  description: string;
+  tone: "emerald" | "amber" | "red" | "slate";
+  buttonLabel: string;
+  onClick: () => void;
+  footerText?: string;
+  children?: React.ReactNode;
+}) {
+  const buttonClass =
+    tone === "emerald"
+      ? "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200"
+      : tone === "red"
+      ? "bg-red-500 hover:bg-red-600 shadow-red-200"
+      : "bg-amber-500 hover:bg-amber-600 shadow-amber-200";
+
+  const badgeClass =
+    tone === "emerald"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : tone === "red"
+      ? "border-red-200 bg-red-50 text-red-700"
+      : tone === "slate"
+      ? "border-slate-200 bg-slate-50 text-slate-600"
+      : "border-amber-200 bg-amber-50 text-amber-700";
+
+  return (
+    <section className="overflow-hidden rounded-[2rem] border border-amber-200/70 bg-white/95 shadow-[0_30px_90px_rgba(15,23,42,0.16)] backdrop-blur-xl">
+      <div className="border-b border-slate-200 bg-gradient-to-br from-white via-amber-50/60 to-white px-6 py-7 text-center">
+        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)]">
+          <KeySquare className="h-7 w-7" />
+        </div>
+
+        <span
+          className={`inline-flex rounded-full border px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] shadow-sm ${badgeClass}`}
+        >
+          {badge}
+        </span>
+
+        <div className="mt-5 flex justify-center">{icon}</div>
+
+        <h1 className="mt-4 font-serif text-3xl font-bold tracking-tight text-slate-950">
+          {title}
+        </h1>
+
+        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
+          {description}
+        </p>
+      </div>
+
+      <div className="space-y-5 px-6 py-6">
+        {children}
+
+        {footerText && (
+          <p className="text-center text-sm font-semibold text-slate-500">
+            {footerText}
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={onClick}
+          className={`h-12 w-full rounded-2xl text-sm font-black text-white shadow-lg transition ${buttonClass} cursor-pointer`}
+        >
+          {buttonLabel}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function PaymentDetails({
+  paymentData,
+  compact = false,
+}: {
+  paymentData: PaymentStatusData;
+  compact?: boolean;
+}) {
+  return (
+    <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-4">
+      <DetailRow label="Request ID" value={paymentData.requestId} />
+
+      {paymentData.payment?.reference && !compact && (
+        <DetailRow label="Reference" value={paymentData.payment.reference} />
+      )}
+
+      {paymentData.payment?.amount && (
+        <DetailRow
+          label="Amount"
+          value={`$${paymentData.payment.amount.toFixed(2)}`}
+          highlight
+        />
+      )}
+
+      {paymentData.payment?.authorization && !compact && (
+        <DetailRow
+          label="Authorization"
+          value={paymentData.payment.authorization}
+        />
+      )}
+
+      {paymentData.payment?.paymentMethod && !compact && (
+        <DetailRow
+          label="Method"
+          value={`${paymentData.payment.paymentMethod}${
+            paymentData.payment.franchise
+              ? ` (${paymentData.payment.franchise})`
+              : ""
+          }`}
+        />
+      )}
+
+      {paymentData.payment?.receipt && !compact && (
+        <DetailRow label="Receipt" value={paymentData.payment.receipt} />
+      )}
+
+      {paymentData.message && compact && (
+        <div className="mt-3 border-t border-slate-200 pt-3">
+          <p className="text-sm leading-6 text-slate-600">
+            {paymentData.message}
+          </p>
+        </div>
+      )}
+
+      {paymentData.isRejected && (
+        <DetailRow label="Status" value={paymentData.status} danger />
+      )}
+    </div>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+  highlight = false,
+  danger = false,
+}: {
+  label: string;
+  value: string | number;
+  highlight?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-slate-200 py-3 last:border-b-0">
+      <span className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
+        {label}
+      </span>
+
+      <span
+        className={`text-right text-sm font-black ${
+          danger
+            ? "text-red-600"
+            : highlight
+            ? "text-amber-700"
+            : "text-slate-900"
+        }`}
+      >
+        {value}
+      </span>
+    </div>
   );
 }

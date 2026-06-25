@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import { FaPencil } from "react-icons/fa6";
 import { FaUserPlus } from "react-icons/fa";
@@ -28,6 +29,11 @@ export default function UserListModal({
   const [isUserFormOpen, setIsUserFormOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserForm | null>(null);
 
+  const filteredUsers =
+    users?.filter((user) =>
+      activeTab === "Active" ? user?.isActive : !user?.isActive
+    ) || [];
+
   const handleCloseModal = () => {
     setIsUserFormOpen(false);
     setSelectedUser(null);
@@ -37,24 +43,53 @@ export default function UserListModal({
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose}>
-        <div className="flex justify-between items-center mb-0 border-y-[.5px] border-solid border-gray-800 p-1">
-          <h2 className="text-xl font-bold text-black tracking-tight">
-            Users
-          </h2>
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedUser(null);
-              setIsUserFormOpen(true);
-            }}
-            className="cursor-pointer px-2.5 py-1 rounded-lg text-sm hover:scale-105 duration-700 transition text-blue-500"
-          >
-            <FaUserPlus className="inline w-5 h-5" />
-          </button>
-        </div>
+        <div className="overflow-hidden rounded-[2rem] bg-white">
+          <div className="border-b border-slate-200 bg-gradient-to-br from-white via-amber-50/60 to-white px-5 py-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+                  User Directory
+                </span>
 
-        <div className="overflow-x-auto w-full">
-          <div className="flex w-full">
+                <h2 className="mt-3 font-serif text-3xl font-bold tracking-tight text-slate-950">
+                  Users
+                </h2>
+
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  Manage employee accounts, permissions, and active status.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedUser(null);
+                  setIsUserFormOpen(true);
+                }}
+                className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-amber-500 text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)] transition hover:bg-amber-600"
+                title="Add User"
+              >
+                <FaUserPlus className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 shadow-sm">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                  Showing
+                </p>
+                <p className="text-sm font-extrabold text-slate-950">
+                  {filteredUsers.length} {activeTab.toLowerCase()} users
+                </p>
+              </div>
+
+              <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700 ring-1 ring-amber-200">
+                {activeTab}
+              </span>
+            </div>
+          </div>
+
+          <div className="border-b border-slate-200 px-5 py-4">
             <Tabs
               isSmallScreen={false}
               tabs={["Active", "Inactive"]}
@@ -63,114 +98,128 @@ export default function UserListModal({
               setTransitionState={setTransitionState}
             />
           </div>
-        </div>
 
-        {users?.filter((user) =>
-          activeTab === "Active" ? user?.isActive : !user?.isActive
-        ).length === 0 ? (
-          <div className="text-gray-500 mt-0 min-h-[80px] flex items-center text-center w-full justify-center m-auto tracking-tight italic border border-gray-400 rounded-b-sm">
-            No {activeTab?.toLowerCase()} users found.
-          </div>
-        ) : (
-          <div
-            className={`transition-all duration-500 ease-in-out transform ${
-              transitionState === "fade-out"
-                ? "opacity-0 scale-95"
-                : "opacity-100 scale-100"
-            } border rounded-b-md ${
-              activeTab ? "border-slate-400" : "border-gray-600"
-            }`}
-          >
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto pr-2 p-1">
-              {users
-                ?.filter((user) =>
-                  activeTab === "Active" ? user?.isActive : !user?.isActive
-                )
-                ?.map((user) => (
-                  <li
-                    key={user?.id}
-                    className="rounded-xl shadow-md bg-white text-gray-800 flex flex-col overflow-hidden border border-gray-200 transition-shadow hover:shadow-lg"
-                  >
-                    <div className="flex justify-between px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white">
-                      <div>
-                        <h3 className="text-sm font-semibold">
-                          {user.fullName}
-                        </h3>
-                        <p className="text-xs text-white/80 capitalize">
-                          {user.role}
-                        </p>
+          <div className="p-5">
+            {filteredUsers.length === 0 ? (
+              <div className="flex min-h-[180px] flex-col items-center justify-center rounded-[2rem] border border-dashed border-slate-200 bg-slate-50/70 p-8 text-center">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-200">
+                  <FaUserPlus className="h-5 w-5" />
+                </div>
+
+                <p className="font-serif text-xl font-bold text-slate-950">
+                  No {activeTab.toLowerCase()} users found.
+                </p>
+
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  Add a new user or switch tabs to view another status.
+                </p>
+              </div>
+            ) : (
+              <div
+                className={`transition-all duration-500 ease-in-out ${
+                  transitionState === "fade-out"
+                    ? "scale-95 opacity-0"
+                    : "scale-100 opacity-100"
+                }`}
+              >
+                <ul className="grid max-h-[62vh] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2">
+                  {filteredUsers.map((user) => (
+                    <li
+                      key={user?.id}
+                      className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm transition hover:border-amber-200 hover:bg-amber-50/30 hover:shadow-md"
+                    >
+                      <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-gradient-to-br from-amber-50/80 to-white px-4 py-4">
+                        <div className="min-w-0">
+                          <h3 className="truncate text-sm font-extrabold text-slate-950">
+                            {user.fullName}
+                          </h3>
+
+                          <p className="mt-1 text-xs font-bold capitalize text-amber-700">
+                            {user.role}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedUser({
+                              id: user?.id,
+                              tenantId: "",
+                              role: user?.role === "Admin" ? 1 : 2,
+                              userName: user?.userName,
+                              pin: "",
+                              firstName: user?.fullName?.split(" ")[0] || "",
+                              lastName: user?.fullName?.split(" ")[1] || "",
+                              gender: user?.gender,
+                              dateOfBirth: user?.dateOfBirth || "",
+                              isActive: user?.isActive,
+                            });
+                            setIsUserFormOpen(true);
+                          }}
+                          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm ring-1 ring-amber-200 transition hover:bg-amber-500 hover:text-white"
+                          title="Edit User"
+                        >
+                          <FaPencil className="h-4 w-4" />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => {
-                          setSelectedUser({
-                            id: user?.id,
-                            tenantId: "",
-                            role: user?.role === "Admin" ? 1 : 2,
-                            userName: user?.userName,
-                            pin: "",
-                            firstName: user?.fullName?.split(" ")[0] || "",
-                            lastName: user?.fullName?.split(" ")[1] || "",
-                            gender: user?.gender,
-                            dateOfBirth: user?.dateOfBirth || "",
-                            isActive: user?.isActive,
-                          });
-                          setIsUserFormOpen(true);
-                        }}
-                        className="p-2 rounded hover:bg-white/20 transition cursor-pointer"
-                        title="Edit User"
-                      >
-                        <FaPencil className="w-4 h-4" />
-                      </button>
-                    </div>
 
-                    <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 text-sm space-y-[0px]">
-                      <p>
-                        <strong className="text-gray-700">Username:</strong>{" "}
-                        {user.userName}
-                      </p>
-                      <p className="capitalize">
-                        <strong className="text-gray-700">Gender:</strong>{" "}
-                        {user.gender}
-                      </p>
-                      <p>
-                        <strong className="text-gray-700">DOB:</strong>{" "}
-                        {user?.dateOfBirth
-                          ? formatDateOfBirth(user?.dateOfBirth)
-                          : ""}
-                      </p>
-                      {user?.identifier && (
-                        <p>
-                          <strong className="text-gray-700">Identifier:</strong>{" "}
-                          {user?.identifier}
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-600">
-                        Created:{" "}
-                        {new Date(
-                          user?.createdDateTime as string
-                        ).toLocaleString([], {
-                          year: "numeric",
-                          month: "2-digit",
-                          day: "2-digit",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                      <span
-                        className={`inline-block mt-2 px-3 py-1 text-xs font-semibold rounded-full ${
-                          user.isActive
-                            ? "bg-green-200 text-green-800"
-                            : "bg-red-200 text-red-800"
-                        }`}
-                      >
-                        {user.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-            </ul>
+                      <div className="space-y-2 bg-slate-50/70 p-4 text-sm">
+                        <InfoRow label="Username" value={user.userName} />
+
+                        <InfoRow
+                          label="Gender"
+                          value={user.gender}
+                          capitalize
+                        />
+
+                        <InfoRow
+                          label="DOB"
+                          value={
+                            user?.dateOfBirth
+                              ? formatDateOfBirth(user?.dateOfBirth)
+                              : "—"
+                          }
+                        />
+
+                        {user?.identifier && (
+                          <InfoRow label="Identifier" value={user.identifier} />
+                        )}
+
+                        <div className="pt-2">
+                          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                            Created
+                          </p>
+
+                          <p className="mt-1 text-xs font-semibold text-slate-600">
+                            {new Date(
+                              user?.createdDateTime as string
+                            ).toLocaleString([], {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-black ring-1 ${
+                            user.isActive
+                              ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                              : "bg-red-50 text-red-700 ring-red-200"
+                          }`}
+                        >
+                          {user.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </Modal>
 
       <Modal
@@ -190,5 +239,31 @@ export default function UserListModal({
         />
       </Modal>
     </>
+  );
+}
+
+function InfoRow({
+  label,
+  value,
+  capitalize = false,
+}: {
+  label: string;
+  value?: string | number | null;
+  capitalize?: boolean;
+}) {
+  return (
+    <div>
+      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+        {label}
+      </p>
+
+      <p
+        className={`mt-1 text-sm font-semibold text-slate-700 ${
+          capitalize ? "capitalize" : ""
+        }`}
+      >
+        {value || "—"}
+      </p>
+    </div>
   );
 }

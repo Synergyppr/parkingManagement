@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "../globals.css";
 
 export const metadata: Metadata = {
-  title: "Valet Parking App | Privacy Policy",
+  title: "Privacy Policy - Parkey Valet App",
   description: "Privacy Policy",
   icons: {
     icon: "/favicon.png",

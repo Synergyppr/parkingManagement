@@ -44,8 +44,8 @@ export default function FormInput({
   onClear,
 }: FormInputProps) {
   const basePaddingLeft = icon ? "pl-9" : "pl-3";
-  const baseClass = `${basePaddingLeft} h-11 bg-white border rounded-xl text-sm text-gray-900 w-full outline-none transition-all focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 ${
-    missing ? "border-red-300 ring-2 ring-red-100" : "border-gray-200"
+  const baseClass = `${basePaddingLeft} h-11 bg-white border rounded-xl text-sm text-slate-900 w-full outline-none transition-all duration-300 shadow-sm focus:ring-4 focus:ring-amber-200/50 focus:border-amber-500 hover:border-amber-300 ${
+    missing ? "border-red-300 ring-2 ring-red-100" : "border-slate-200"
   } ${className}`;
 
   return (
@@ -53,7 +53,7 @@ export default function FormInput({
       {icon && (
         <div
           className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${
-            missing ? "text-red-500" : "text-gray-400"
+            missing ? "text-red-500" : "text-amber-500"
           } pointer-events-none`}
         >
           {icon}
@@ -65,7 +65,7 @@ export default function FormInput({
           name={name}
           onChange={onChange}
           value={value || ""}
-          className={`${baseClass} appearance-none pr-8 capitalize`}
+          className={`${baseClass} appearance-none pr-8 capitalize bg-gradient-to-b from-white to-amber-50/20`}
         >
           <option value="">
             Select {name.replace(/([A-Z])/g, " $1").trim()}
@@ -84,7 +84,7 @@ export default function FormInput({
             placeholder={placeholder}
             value={value || ""}
             onChange={onChange}
-            className={`${baseClass} pr-10 capitalize`}
+            className={`${baseClass} pr-10 capitalize bg-gradient-to-b from-white to-amber-50/20`}
             required={required}
           />
 
@@ -93,7 +93,7 @@ export default function FormInput({
             <button
               type="button"
               onClick={onClear}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-amber-600 transition-colors focus:outline-none cursor-pointer"
             >
               <IoCloseOutline className="w-4 h-4" />
             </button>
@@ -104,9 +104,13 @@ export default function FormInput({
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="cursor-pointer absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+              className="cursor-pointer absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-amber-600 transition-colors focus:outline-none"
             >
-              {showPassword ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
+              {showPassword ? (
+                <FaEyeSlash className="w-4 h-4" />
+              ) : (
+                <FaEye className="w-4 h-4" />
+              )}
             </button>
           )}
         </>

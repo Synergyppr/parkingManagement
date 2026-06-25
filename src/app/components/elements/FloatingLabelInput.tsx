@@ -43,16 +43,19 @@ const FloatingLabelInput = ({
         maxLength={maxLength}
         disabled={disabled}
         autoComplete={autoComplete}
-        className={`peer w-full h-11 text-gray-900 px-3 pr-10 border border-gray-200 rounded-xl outline-none transition-all focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm ${
-          disabled ? "bg-gray-100 cursor-not-allowed" : "bg-white"
-        } autofill:bg-white autofill:shadow-[inset_0_0_0px_1000px_white]`}
+        className={`peer h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 pr-11 text-sm text-slate-900 outline-none transition-all duration-200 ${
+          disabled
+            ? "cursor-not-allowed bg-slate-100"
+            : "hover:border-amber-200"
+        } focus:border-amber-400 focus:ring-4 focus:ring-amber-100 autofill:bg-white autofill:shadow-[inset_0_0_0px_1000px_white]`}
       />
+
       <label
         htmlFor={id}
-        className={`absolute text-sm transition-all duration-200 left-3 px-1 bg-white pointer-events-none ${
+        className={`pointer-events-none absolute left-3 bg-white/70 px-1.5 rounded-lg transition-all duration-200 ${
           isFocused || value
-            ? "top-[-8px] text-xs text-blue-600"
-            : "top-3 text-gray-400"
+            ? "-top-2 text-xs font-semibold text-amber-600"
+            : "top-3.5 text-sm text-slate-400"
         }`}
       >
         {label}
@@ -62,10 +65,14 @@ const FloatingLabelInput = ({
         <button
           type="button"
           onClick={() => setShowPassword((prev) => !prev)}
-          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+          className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 transition-colors hover:text-amber-600"
           tabIndex={-1}
         >
-          {showPassword ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
+          {showPassword ? (
+            <FaEyeSlash className="h-4 w-4" />
+          ) : (
+            <FaEye className="h-4 w-4" />
+          )}
         </button>
       )}
     </div>

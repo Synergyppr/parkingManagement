@@ -218,7 +218,7 @@ const CarVector: React.FC<CarVectorProps> = ({
       Swal.fire({
         icon: "warning",
         title: "Missing Descriptions",
-        html: `Please provide descriptions for the following labels:<br/><ul class="text-left ml-[22px] mt-2 text-[16px]">${Array.from(
+        html: `Please provide descriptions for the following labels:<br/><ul class="text-left ml-5.5 mt-2 text-[16px]">${Array.from(
           labelsWithMissingDescriptions
         )
           .map(
@@ -343,7 +343,7 @@ const CarVector: React.FC<CarVectorProps> = ({
           </div>
           <div
             onClick={() => openModal("driver")}
-            className="flex gap-2 absolute bottom-[-10px] right-20 lg:right-20 text-orange-500 tracking-tighter text-sm font-bold drop-shadow-[.2px_.2px_.2px_#000] cursor-pointer hover:underline"
+            className="flex gap-2 absolute -bottom-2.5 right-20 lg:right-20 text-orange-500 tracking-tighter text-sm font-bold drop-shadow-[.2px_.2px_.2px_#000] cursor-pointer hover:underline"
           >
             Driver (Left-Side) View
             <LuListVideo className="relative top-[2.5px]" />
@@ -372,7 +372,7 @@ const CarVector: React.FC<CarVectorProps> = ({
           </div>
           <div
             onClick={() => openModal("driver")}
-            className="flex gap-2 absolute bottom-[-10px] left-[35%] lg:right-20 text-orange-500 tracking-tighter text-sm font-bold drop-shadow-[.2px_.2px_.2px_#000]"
+            className="flex gap-2 absolute -bottom-2.5 left-[35%] lg:right-20 text-orange-500 tracking-tighter text-sm font-bold drop-shadow-[.2px_.2px_.2px_#000]"
           >
             Driver View
           </div>
@@ -1425,12 +1425,12 @@ const CarVector: React.FC<CarVectorProps> = ({
 
       {!hideLabels && (
         <div>
-          <div className="flex gap-2 items-center absolute bottom-[-55px] right-2 text-gray-800 text-sm tracking-tight">
-            <div className="w-3 h-3 bg-blue-100 border-1 border-gray-800"></div>
+          <div className="flex gap-2 items-center absolute -bottom-13.75 right-2 text-gray-800 text-sm tracking-tight">
+            <div className="w-3 h-3 bg-blue-100 border border-gray-800"></div>
             Selectable area
           </div>
-          <div className="flex gap-2 items-center absolute bottom-[-55px] left-2 text-gray-800 text-sm tracking-tight">
-            <div className="w-3 h-3 bg-orange-500 border-1 border-gray-800"></div>
+          <div className="flex gap-2 items-center absolute -bottom-13.75 left-2 text-gray-800 text-sm tracking-tight">
+            <div className="w-3 h-3 bg-orange-500 border border-gray-800"></div>
             Damaged area
           </div>
 
@@ -1441,18 +1441,18 @@ const CarVector: React.FC<CarVectorProps> = ({
             }}
             className={`${
               !isReportAvailable ? "opacity-50" : ""
-            } flex gap-[5px] items-center absolute bottom-[-81px] left-1 text-sm tracking-tight cursor-pointer text-gray-700`}
+            } flex gap-1.25 items-center absolute -bottom-20.25 left-1 text-sm tracking-tight cursor-pointer text-gray-700`}
           >
-            <CiViewList className="w-[14px] h-[14px] text-blue-600" />
+            <CiViewList className="w-3.5 h-3.5 text-blue-600" />
             <span className="relative tracking-tight">View Full Report</span>
           </div>
 
           <div
             className={`${
               isReportAvailable ? "opacity-50" : ""
-            } flex gap-2 absolute bottom-[-81px] right-2 text-blue-600 text-sm tracking-tight`}
+            } flex gap-2 absolute -bottom-20.25 right-2 text-blue-600 text-sm tracking-tight`}
           >
-            <label className="flex items-center gap-[6px] cursor-pointer">
+            <label className="flex items-center gap-1.5 cursor-pointer">
               <input
                 type="checkbox"
                 id={"noIncident"}
@@ -1465,7 +1465,7 @@ const CarVector: React.FC<CarVectorProps> = ({
                 className="sr-only peer"
               />
               <div
-                className={`w-3 h-3 border-1 transition-all duration-150 ${
+                className={`w-3 h-3 border transition-all duration-150 ${
                   noIncident
                     ? "bg-orange-500 border-orange-600"
                     : "border-gray-400"
@@ -1483,7 +1483,7 @@ const CarVector: React.FC<CarVectorProps> = ({
                   </svg>
                 )}
               </div>
-              <span className="text-sm font-light text-gray-800 leading-relaxed relative top-[1px]">
+              <span className="text-sm font-light text-gray-800 leading-relaxed relative top-px">
                 No incident(s) to report
               </span>
             </label>
@@ -1508,7 +1508,7 @@ const CarVector: React.FC<CarVectorProps> = ({
           <button
             type="button"
             onClick={(e) => handleSaveIncidentParts(e)}
-            className="ml-auto cursor-pointer bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
+            className="ml-auto cursor-pointer bg-linear-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
           >
             Save
           </button>
@@ -1532,7 +1532,7 @@ const CarVector: React.FC<CarVectorProps> = ({
           <button
             type="button"
             onClick={(e) => handleSaveIncidentParts(e)}
-            className="ml-auto cursor-pointer bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
+            className="ml-auto cursor-pointer bg-linear-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
           >
             Save
           </button>
@@ -1556,7 +1556,7 @@ const CarVector: React.FC<CarVectorProps> = ({
           <button
             type="button"
             onClick={(e) => handleSaveIncidentParts(e)}
-            className="ml-auto cursor-pointer bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
+            className="ml-auto cursor-pointer bg-linear-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
           >
             Save
           </button>
@@ -1580,7 +1580,7 @@ const CarVector: React.FC<CarVectorProps> = ({
           <button
             type="button"
             onClick={(e) => handleSaveIncidentParts(e)}
-            className="ml-auto cursor-pointer bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
+            className="ml-auto cursor-pointer bg-linear-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
           >
             Save
           </button>

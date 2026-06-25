@@ -29,25 +29,56 @@ export default function PinConfirmationModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="sm">
-      <div className="p-5 space-y-4">
-        <h3 className="font-semibold text-gray-900 text-base">PIN Confirmation</h3>
-        <p className="text-sm text-gray-500">
-          Enter your PIN to confirm the status change:
-        </p>
+      <div className="p-6">
+        {/* Header */}
+        <div className="mb-5 text-center">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 ring-1 ring-amber-200">
+            <span className="text-xl">🔐</span>
+          </div>
 
+          <h3 className="font-serif text-2xl font-bold text-slate-900">
+            PIN Confirmation
+          </h3>
+
+          <p className="mt-2 text-sm text-slate-500">
+            Enter your security PIN to authorize this valet status update.
+          </p>
+        </div>
+
+        {/* PIN Input */}
         <div className="relative w-full">
           <input
             type={showPin ? "text" : "password"}
             name="pin"
-            placeholder="4-digit PIN"
+            placeholder="••••"
             value={pin}
             onChange={(e) => {
               const val = e.target.value;
+
               if (/^\d{0,4}$/.test(val)) {
                 setPin(val);
               }
             }}
-            className="w-full h-11 px-3 pr-10 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-center text-lg tracking-widest font-mono"
+            className="
+              w-full
+              h-14
+              px-4
+              pr-12
+              rounded-2xl
+              border
+              border-slate-200
+              bg-white
+              text-center
+              text-xl
+              tracking-[0.5em]
+              font-mono
+              text-slate-900
+              outline-none
+              transition-all
+              focus:border-amber-400
+              focus:ring-4
+              focus:ring-amber-100
+            "
             maxLength={4}
             inputMode="numeric"
             pattern="\d*"
@@ -57,20 +88,51 @@ export default function PinConfirmationModal({
           <button
             type="button"
             onClick={() => setShowPin(!showPin)}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer"
+            className="
+              absolute
+              right-4
+              top-1/2
+              -translate-y-1/2
+              text-slate-400
+              hover:text-amber-600
+              transition-colors
+              cursor-pointer
+            "
           >
-            {showPin ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
+            {showPin ? (
+              <FaEyeSlash className="h-5 w-5" />
+            ) : (
+              <FaEye className="h-5 w-5" />
+            )}
           </button>
         </div>
 
-        <div className="flex gap-3">
+        <div className="mt-2 text-center text-xs text-slate-400">
+          4-digit operator verification PIN
+        </div>
+
+        {/* Actions */}
+        <div className="mt-6 flex gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 h-11 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors text-sm font-medium cursor-pointer"
+            className="
+              flex-1
+              h-12
+              rounded-2xl
+              border
+              border-slate-200
+              bg-white
+              text-slate-700
+              font-semibold
+              transition-all
+              hover:bg-slate-50
+              cursor-pointer
+            "
           >
             Cancel
           </button>
+
           <button
             disabled={buttonLoader || !pin || !propertyId}
             onClick={() =>
@@ -93,7 +155,22 @@ export default function PinConfirmationModal({
                 setReloadPageData,
               })
             }
-            className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl transition-colors text-sm cursor-pointer flex items-center justify-center"
+            className="
+              flex-1
+              h-12
+              rounded-2xl
+              bg-amber-500
+              hover:bg-amber-600
+              disabled:opacity-60
+              text-white
+              font-bold
+              shadow-[0_10px_30px_rgba(217,174,38,0.28)]
+              transition-all
+              cursor-pointer
+              flex
+              items-center
+              justify-center
+            "
           >
             {buttonLoader ? <ButtonLoader /> : "Confirm"}
           </button>

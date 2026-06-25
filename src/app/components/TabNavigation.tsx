@@ -37,43 +37,50 @@ export default function TabNavigation({
   };
 
   return (
-    <div className="bg-header-bg h-12 text-white relative flex">
-      {tabs?.map((tab) => {
-        const isActive = selected === tab?.key;
-
-        return (
-          <button
-            key={tab?.key}
-            onClick={() => handleSelect(tab?.key)}
-            className={`cursor-pointer relative flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${
-              isActive
-                ? "text-white"
-                : "text-slate-500 hover:text-slate-300"
-            }`}
-          >
-            <div className="relative text-base">
-              {tab?.icon}
-              {unreadTicketIds?.length > 0 && tab?.label === "Requested" && (
-                <span className="absolute -top-1.5 -right-2 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
-                  {unreadTicketIds?.length > 9
-                    ? "9+"
-                    : unreadTicketIds?.length}
-                </span>
+    <div className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/85 px-4 py-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)] backdrop-blur-xl">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-center gap-2 rounded-full border border-slate-200 bg-slate-50/80 p-1 shadow-inner">
+        {tabs?.map((tab) => {
+          const isActive = selected === tab?.key;
+  
+          return (
+            <button
+              key={tab?.key}
+              onClick={() => handleSelect(tab?.key)}
+              className={`group relative flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full px-3 text-xs font-semibold transition-all duration-300 md:flex-none md:px-5 ${
+                isActive
+                  ? "text-slate-950"
+                  : "text-slate-500 hover:bg-white hover:text-slate-800"
+              }`}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="tab-pill"
+                  className="absolute inset-0 rounded-full bg-amber-400 shadow-[0_10px_24px_rgba(217,174,38,0.28)]"
+                  transition={{ type: "spring", stiffness: 180, damping: 22 }}
+                />
               )}
-            </div>
-
-            <span className="text-xs font-medium">{tab?.label}</span>
-
-            {isActive && (
-              <motion.div
-                layoutId="underline"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"
-                transition={{ type: "spring", stiffness: 180, damping: 20 }}
-              />
-            )}
-          </button>
-        );
-      })}
+  
+              <span className="relative flex items-center gap-2">
+                <span
+                  className={`relative text-sm transition-transform duration-300 ${
+                    isActive ? "scale-110" : "group-hover:scale-105"
+                  }`}
+                >
+                  {tab?.icon}
+  
+                  {unreadTicketIds?.length > 0 && tab?.label === "Requested" && (
+                    <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-extrabold leading-none text-white ring-2 ring-white">
+                      {unreadTicketIds?.length > 9 ? "9+" : unreadTicketIds?.length}
+                    </span>
+                  )}
+                </span>
+  
+                <span className="hidden sm:inline">{tab?.label}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

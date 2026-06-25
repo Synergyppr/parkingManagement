@@ -1,4 +1,5 @@
 "use client";
+
 import { Tenant, UserForm, Property } from "../types";
 import ModalInput from "./elements/ModalInput";
 import ModalTextarea from "./elements/ModalTextarea";
@@ -63,151 +64,171 @@ const ModalForm = ({
   loading = false,
   disableSubmit,
 }: ModalFormProps) => {
+  const getFieldValue = (fieldName: string) =>
+    String(
+      (initialData as Record<string, Tenant | UserForm | Property>)[
+        fieldName
+      ] || ""
+    );
+
   return (
-    <form className="p-4 md:p-6 min-w-full mx-auto space-y-4 rounded shadow text-gray-800 flex flex-col">
-      <h2 className="text-xl font-semibold tracking-tight text-blue-500 flex items-center gap-2 mb-6">
-        {title}
-      </h2>
+    <form className="mx-auto flex w-full min-w-full flex-col rounded-[2rem] bg-white text-slate-800">
+      {/* Header */}
+      <div className="border-b border-slate-200 bg-gradient-to-br from-white via-amber-50/60 to-white px-5 py-6 md:px-7">
+        <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+          Configuration
+        </span>
 
-      {fields?.map((field) => {
-        if (field?.hidden) return null;
+        <h2 className="mt-3 font-serif text-3xl font-bold tracking-tight text-slate-950">
+          {title}
+        </h2>
 
-        switch (field.type) {
-          case "textarea":
-            return (
-              <ModalTextarea
-                key={field.id}
-                id={field.id}
-                name={field.name}
-                label={field.label}
-                value={String(
-                  (initialData as Record<string, Tenant | UserForm | Property>)[
-                    field.name
-                  ] || ""
-                )}
-                onChange={onChange}
-                maxLength={field?.maxLength}
-                disabled={field?.disabled}
-                autoComplete={field?.autoComplete}
-                rows={4}
-                // {...commonProps}
-              />
-            );
-          case "select":
-            return (
-              <ModalSelect
-                key={field.id}
-                id={field.id}
-                name={field.name}
-                label={field.label}
-                onChange={onChange}
-                value={String(
-                  (initialData as Record<string, Tenant | UserForm | Property>)[
-                    field.name
-                  ] || ""
-                )}
-                // {...commonProps}
-              >
-                <option value="">Select {field.label}</option>
-                {(field.options || []).map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </ModalSelect>
-            );
-          case "date":
-            return (
-              <div key={field.id} className="mb-4 relative">
-                <input
-                  key={field.id}
-                  id={field.id}
-                  name={field.name}
-                  type="date"
-                  value={String(
-                    (
-                      initialData as Record<
-                        string,
-                        Tenant | UserForm | Property
-                      >
-                    ).dateOfBirth
-                  )}
-                  onChange={onChange}
-                  placeholder=""
-                  className="w-full text-gray-800 px-2 py-2 border-b border-gray-500 text-sm tracking-tight bg-transparent focus:outline-none focus:border-blue-500 transition-all"
-                />
+        <p className="mt-2 text-sm leading-6 text-slate-500">
+          Complete the required details below and save your configuration.
+        </p>
+      </div>
 
-                <label
-                  htmlFor={field?.id}
-                  className={`absolute left-2 px-1 text-sm transition-all duration-200 ${
-                    true
-                      ? "top-[-8px] text-xs text-blue-600"
-                      : "top-[11px] text-gray-500"
-                  }`}
-                >
-                  {field?.label}
-                </label>
+      {/* Body */}
+      <div className="space-y-5 px-5 py-6 md:px-7">
+        {fields?.map((field) => {
+          if (field?.hidden) return null;
+
+          switch (field.type) {
+            case "textarea":
+              return (
+                <div key={field.id} className="rounded-2xl bg-slate-50/70 p-1">
+                  <ModalTextarea
+                    id={field.id}
+                    name={field.name}
+                    label={field.label}
+                    value={getFieldValue(field.name)}
+                    onChange={onChange}
+                    maxLength={field?.maxLength}
+                    disabled={field?.disabled}
+                    autoComplete={field?.autoComplete}
+                    rows={4}
+                  />
+                </div>
+              );
+
+            case "select":
+              return (
+                <div key={field.id} className="rounded-2xl bg-slate-50/70 p-1">
+                  <ModalSelect
+                    id={field.id}
+                    name={field.name}
+                    label={field.label}
+                    onChange={onChange}
+                    value={getFieldValue(field.name)}
+                  >
+                    <option value="">Select {field.label}</option>
+                    {(field.options || []).map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </ModalSelect>
+                </div>
+              );
+
+            case "date":
+              return (
+                <div key={field.id} className="relative rounded-2xl bg-slate-50/70 p-1">
+                  <div className="relative">
+                    <input
+                      id={field.id}
+                      name={field.name}
+                      type="date"
+                      value={String(
+                        (
+                          initialData as Record<
+                            string,
+                            Tenant | UserForm | Property
+                          >
+                        ).dateOfBirth || ""
+                      )}
+                      onChange={onChange}
+                      className="h-13 w-full rounded-2xl border border-slate-200 bg-white px-4 pt-4 text-sm font-medium text-slate-800 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                    />
+
+                    <label
+                      htmlFor={field?.id}
+                      className="pointer-events-none absolute -top-2 left-3 bg-white px-2 text-xs font-bold text-amber-600"
+                    >
+                      {field?.label}
+                    </label>
+                  </div>
+                </div>
+              );
+
+            default:
+              return (
+                <div key={field.id} className="rounded-2xl bg-slate-50/70 p-1">
+                  <ModalInput
+                    id={field.id}
+                    name={field.name}
+                    label={field.label}
+                    value={getFieldValue(field.name)}
+                    type={field.type || "text"}
+                    onChange={onChange}
+                  />
+                </div>
+              );
+          }
+        })}
+
+        {showActiveToggle && typeof isActive === "boolean" && (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-extrabold text-slate-950">
+                  Status
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Toggle whether this record is active in the system.
+                </p>
               </div>
-            );
-          default:
-            return (
-              <ModalInput
-                key={field.id}
-                id={field.id}
-                name={field.name}
-                label={field.label}
-                value={String(
-                  (initialData as Record<string, Tenant | UserForm | Property>)[
-                    field.name
-                  ] || ""
-                )}
-                type={field.type || "text"}
-                onChange={onChange}
-                // {...commonProps}
-              />
-            );
-        }
-      })}
 
-      {showActiveToggle && typeof isActive === "boolean" && (
-        <div className="w-full pt-0 relative flex gap-2">
-          <div
-            className="relative flex items-center justify-between w-14 h-8 cursor-pointer"
-            onClick={onToggleActive}
-          >
-            <div
-              className={`absolute w-full h-full rounded-full transition-all duration-300 ${
-                isActive ? "bg-blue-500" : "bg-gray-300"
-              }`}
-            />
-            <div
-              className={`absolute w-6 h-6 bg-white  rounded-full shadow-md transition-transform duration-300 ${
-                isActive ? "translate-x-[28px]" : "translate-x-[5px]"
-              }`}
-            />
-          </div>
-          <div className="tracking-tight text-sm text-blue-500 relative top-2">
-            {isActive ? "Active" : "Inactive"}
-          </div>
-        </div>
-      )}
+              <button
+                type="button"
+                onClick={onToggleActive}
+                className={`relative flex h-8 w-14 cursor-pointer items-center rounded-full transition-all duration-300 ${
+                  isActive ? "bg-amber-500" : "bg-slate-300"
+                }`}
+              >
+                <span
+                  className={`absolute h-6 w-6 rounded-full bg-white shadow-md transition-transform duration-300 ${
+                    isActive ? "translate-x-[28px]" : "translate-x-[4px]"
+                  }`}
+                />
+              </button>
+            </div>
 
-      <button
-        type="button"
-        disabled={loading || disableSubmit}
-        className={`${
-          loading || disableSubmit
-            ? "cursor-not-allowed bg-opacity-60 opacity-60"
-            : "hover:bg-blue-700 cursor-pointer"
-        } 
-        bg-blue-600 text-white p-3 w-full rounded-md font-semibold shadow`}
-        onClick={(e) => {
-          e.preventDefault();
-          onSubmit();
-        }}
-      >
-        {loading ? <ButtonLoader /> : submitLabel}
-      </button>
+            <div className="mt-3 inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-600">
+              {isActive ? "Active" : "Inactive"}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="sticky bottom-0 border-t border-slate-200 bg-white/95 px-5 py-5 backdrop-blur-xl md:px-7">
+        <button
+          type="button"
+          disabled={loading || disableSubmit}
+          className={`flex h-12 w-full items-center justify-center rounded-2xl text-sm font-black shadow-[0_14px_32px_rgba(214,168,0,0.28)] transition ${
+            loading || disableSubmit
+              ? "cursor-not-allowed bg-amber-500/60 text-white opacity-60"
+              : "cursor-pointer bg-amber-500 text-white hover:bg-amber-600"
+          }`}
+          onClick={(e) => {
+            e.preventDefault();
+            onSubmit();
+          }}
+        >
+          {loading ? <ButtonLoader /> : submitLabel}
+        </button>
+      </div>
     </form>
   );
 };
