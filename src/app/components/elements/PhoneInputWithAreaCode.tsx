@@ -1,6 +1,5 @@
 // components/elements/PhoneInputWithAreaCode.tsx
 "use client";
-
 import React, { useMemo } from "react";
 import { IoCloseOutline, IoPhonePortrait } from "react-icons/io5";
 import countries from "@/app/lib/areaCodes";
@@ -38,7 +37,7 @@ export default function PhoneInputWithAreaCode({
       <select
         value={areaCode}
         onChange={onAreaCodeChange}
-        className={`h-11 w-24 shrink-0 appearance-none rounded-xl border bg-gradient-to-b from-white to-amber-50/20 px-2 text-sm font-semibold text-slate-900 outline-none shadow-sm transition-all hover:border-amber-300 focus:border-amber-500 focus:ring-4 focus:ring-amber-200/50 ${
+        className={`h-11 w-24 shrink-0 appearance-none rounded-xl border bg-linear-to-b from-white to-amber-50/20 px-2 text-sm font-semibold text-slate-900 outline-none shadow-sm transition-all hover:border-amber-300 focus:border-amber-500 focus:ring-4 focus:ring-amber-200/50 ${
           missing ? "border-red-300 ring-2 ring-red-100" : "border-slate-200"
         }`}
       >
@@ -62,7 +61,7 @@ export default function PhoneInputWithAreaCode({
           placeholder="(XXX) XXX-XXXX"
           value={phoneNumber}
           onChange={onPhoneNumberChange}
-          className={`h-11 w-full rounded-xl border bg-gradient-to-b from-white to-amber-50/20 pl-9 pr-8 text-sm text-slate-900 outline-none shadow-sm transition-all placeholder:text-slate-400 hover:border-amber-300 focus:border-amber-500 focus:ring-4 focus:ring-amber-200/50 ${
+          className={`h-11 w-full rounded-xl border bg-linear-to-b from-white to-amber-50/20 pl-9 pr-8 text-sm text-slate-900 outline-none shadow-sm transition-all placeholder:text-slate-400 hover:border-amber-300 focus:border-amber-500 focus:ring-4 focus:ring-amber-200/50 ${
             missing ? "border-red-300 ring-2 ring-red-100" : "border-slate-200"
           }`}
         />

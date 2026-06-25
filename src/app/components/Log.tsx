@@ -6,7 +6,7 @@ import { LogProps } from "../types/pagesProps";
 const Log: React.FC<LogProps> = ({ logs }) => {
   if (!Array.isArray(logs) || logs?.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-[2rem] border border-dashed border-slate-200 bg-slate-50/70 px-6 py-12 text-center">
+      <div className="flex flex-col items-center justify-center rounded-4xl border border-dashed border-slate-200 bg-slate-50/70 px-6 py-12 text-center">
         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-200">
           <CiClock2 className="h-8 w-8" />
         </div>
@@ -32,7 +32,7 @@ const Log: React.FC<LogProps> = ({ logs }) => {
     new Date(dateString)?.toDateString();
 
   return (
-    <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="rounded-4xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-5">
         <span className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
           Activity Timeline
@@ -55,13 +55,13 @@ const Log: React.FC<LogProps> = ({ logs }) => {
                 key={`date-${entry?.createdDateTime}`}
                 className="my-5 flex items-center gap-3"
               >
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent to-amber-200" />
+                <div className="h-px flex-1 bg-linear-to-r from-transparent to-amber-200" />
 
                 <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">
                   {formatDate(entry?.createdDateTime)?.split(" ")[0]}
                 </span>
 
-                <div className="h-px flex-1 bg-gradient-to-r from-amber-200 to-transparent" />
+                <div className="h-px flex-1 bg-linear-to-r from-amber-200 to-transparent" />
               </div>
             );
           }
@@ -77,7 +77,7 @@ const Log: React.FC<LogProps> = ({ logs }) => {
                 </div>
 
                 {index < array.length - 1 && (
-                  <div className="mt-1 w-px flex-1 bg-gradient-to-b from-amber-200 to-slate-200" />
+                  <div className="mt-1 w-px flex-1 bg-linear-to-b from-amber-200 to-slate-200" />
                 )}
               </div>
 

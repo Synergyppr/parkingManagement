@@ -3,8 +3,8 @@ export default function Footer() {
 
   return (
     <footer className="mt-auto border-t border-slate-200 bg-white/90 backdrop-blur-xl">
-      <div className="mx-auto flex min-h-[80px] max-w-7xl flex-col items-center justify-center gap-1 px-6">
-        <div className="h-px w-16 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+      <div className="mx-auto flex min-h-20 max-w-7xl flex-col items-center justify-center gap-1 px-6">
+        <div className="h-px w-16 bg-linear-to-r from-transparent via-amber-400 to-transparent" />
 
         <p className="text-center text-sm text-slate-500">
           Copyright © {currentYear}{" "}

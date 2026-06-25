@@ -3,7 +3,7 @@ const ButtonLoader = () => {
     <div className="flex items-center justify-center" role="status">
       <svg
         aria-hidden="true"
-        className={`fill-[#3B82F6] w-[30px] h-[30px] text-gray-200 animate-spin px-1 transition-all duration-500`}
+        className={`fill-[#3B82F6] w-7.5 h-7.5 text-gray-200 animate-spin px-1 transition-all duration-500`}
         viewBox="0 0 100 101"
         fill="#fff"
         xmlns="http://www.w3.org/2000/svg"

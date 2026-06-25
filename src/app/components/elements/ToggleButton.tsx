@@ -29,7 +29,7 @@ const ToggleButton: React.FC<ToggleButtonProps> = ({
         />
         <div
           className={`absolute w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${
-            value ? "translate-x-[28px]" : "translate-x-[5px]"
+            value ? "translate-x-7" : "translate-x-1.25"
           }`}
         />
       </div>

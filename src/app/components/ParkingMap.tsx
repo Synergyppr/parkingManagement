@@ -218,9 +218,9 @@ const ParkingLot = () => {
           id="parkingBody"
           className={`${
             showParking
-              ? "max-h-[1000px] opacity-100 p-4"
+              ? "max-h-250 opacity-100 p-4"
               : "max-h-0 opacity-0 p-0"
-          } transition-all duration-700 bg-gradient-to-br from-blue-100 to-slate-100 min-h-full`}
+          } transition-all duration-700 bg-linear-to-br from-blue-100 to-slate-100 min-h-full`}
         >
           <div className="grid grid-cols-4 gap-4">
             {slots?.map((slot) => (

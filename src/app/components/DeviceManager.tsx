@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { useProperty } from "../context/PropertyContext";
@@ -160,7 +159,7 @@ function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
     <div className="bg-white text-slate-800">
       <div className="space-y-5 p-5">
         {/* Form */}
-        <section className="rounded-[2rem] border border-slate-200 bg-slate-50/70 p-4">
+        <section className="rounded-4xl border border-slate-200 bg-slate-50/70 p-4">
           <div className="mb-4">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
               {editingId ? "Update Device" : "Add New Device"}
@@ -220,7 +219,7 @@ function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
         </section>
 
         {/* Device List */}
-        <section className="rounded-[2rem] border border-slate-200 bg-white p-4">
+        <section className="rounded-4xl border border-slate-200 bg-white p-4">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
@@ -285,8 +284,8 @@ const DeviceCMS: React.FC<{
   fetchPropertyDevices: () => void;
 }> = ({ devices, fetchPropertyDevices }) => {
   return (
-    <div className="overflow-hidden rounded-[2rem] bg-white">
-      <div className="border-b border-slate-200 bg-gradient-to-br from-white via-amber-50/60 to-white px-5 py-6 text-center">
+    <div className="overflow-hidden rounded-4xl bg-white">
+      <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/60 to-white px-5 py-6 text-center">
         <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
           Device Center
         </span>

@@ -129,7 +129,7 @@ export default function Header() {
           {/* Center logo */}
           <Link
             href="/dashboard"
-            className="absolute left-1/2 flex max-w-[150px] -translate-x-1/2 items-center justify-center gap-2 sm:max-w-none sm:gap-3"
+            className="absolute left-1/2 flex max-w-37.5 -translate-x-1/2 items-center justify-center gap-2 sm:max-w-none sm:gap-3"
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white shadow-lg shadow-amber-200 sm:h-10 sm:w-10">
               <KeySquare className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -225,8 +225,8 @@ export default function Header() {
       {mounted &&
         openLocationModal &&
         createPortal(
-          <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/75 p-2 backdrop-blur-sm sm:p-4">
-            <div className="relative flex h-[94vh] w-full max-w-4xl flex-col overflow-hidden rounded-[1.5rem] border border-white/20 bg-white shadow-[0_30px_90px_rgba(0,0,0,0.45)] sm:h-auto sm:max-h-[92vh] sm:rounded-[2rem]">
+          <div className="fixed inset-0 z-99999 flex items-center justify-center bg-slate-950/75 p-2 backdrop-blur-sm sm:p-4">
+            <div className="relative flex h-[94vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-white/20 bg-white shadow-[0_30px_90px_rgba(0,0,0,0.45)] sm:h-auto sm:max-h-[92vh] sm:rounded-4xl">
               <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-5 sm:py-4">
                 <div className="min-w-0">
                   <h3 className="truncate font-serif text-lg font-bold text-slate-950 sm:text-xl">
@@ -258,8 +258,8 @@ export default function Header() {
         )}
 
       {!openLocationModal && isOutOfArea && (
-        <div className="pointer-events-none fixed inset-0 z-[40] flex items-center justify-center bg-slate-950/75 p-4 text-center text-white backdrop-blur-sm">
-          <div className="pointer-events-auto w-full max-w-md rounded-[2rem] border border-white/10 bg-white/10 px-6 py-8 shadow-[0_30px_90px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:px-8 sm:py-10">
+        <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-slate-950/75 p-4 text-center text-white backdrop-blur-sm">
+          <div className="pointer-events-auto w-full max-w-md rounded-4xl border border-white/10 bg-white/10 px-6 py-8 shadow-[0_30px_90px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:px-8 sm:py-10">
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-amber-400/15 ring-1 ring-amber-300/30 sm:h-20 sm:w-20">
               <PiWarningDiamondBold className="h-9 w-9 text-amber-300 sm:h-11 sm:w-11" />
             </div>

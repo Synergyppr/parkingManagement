@@ -269,10 +269,10 @@ const Location = () => {
   const currentLng = longitude ?? centerDefault.lng;
 
   return (
-    <div className="flex flex-col items-center max-w-full min-w-full lg:min-w-[450px]">
+    <div className="flex flex-col items-center max-w-full min-w-full lg:min-w-112.5">
       <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-2xl space-y-4">
         {/* Toggle Mode Button */}
-        <div className="mb-4 mx-auto flex justify-between md:min-w-[350px] min-w-[450px]">
+        <div className="mb-4 mx-auto flex justify-between md:min-w-87.5 min-w-112.5">
           <button
             onClick={() => {
               const newMode = locationMode === "live" ? "manual" : "live";
@@ -280,7 +280,7 @@ const Location = () => {
               setMessage("Location mode switched to " + newMode);
               if (newMode === "live") requestLocation();
             }}
-            className="text-lg px-3 py-1 bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600 mt-[-3px] ml-[-2px]"
+            className="text-lg px-3 py-1 bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600 -mt-0.75 -ml-0.5"
           >
             Switch to {locationMode === "live" ? "Manual" : "Live"}
           </button>
@@ -329,7 +329,7 @@ const Location = () => {
                 disabled={simulationInProgress}
                 className={`text-sm px-3 py-1.5 rounded-md transition ${
                   simulationInProgress && currentSimulationLabel === "250 → 270"
-                    ? "text-purple-600 bg-white border-purple-600 border-1 rounded-sm cursor-not-allowed"
+                    ? "text-purple-600 bg-white border-purple-600 border rounded-sm cursor-not-allowed"
                     : simulationInProgress &&
                       currentSimulationLabel !== "250 → 270"
                     ? "bg-gray-300 text-white cursor-not-allowed"
@@ -372,7 +372,7 @@ const Location = () => {
                 className={`text-sm px-3 py-1.5 rounded-md transition ${
                   simulationInProgress &&
                   currentSimulationLabel === "COC → CVH → La Concha"
-                    ? "text-teal-600 bg-white border-teal-600 border-1 rounded-sm cursor-not-allowed"
+                    ? "text-teal-600 bg-white border-teal-600 border rounded-sm cursor-not-allowed"
                     : simulationInProgress &&
                       currentSimulationLabel !== "COC → CVH → La Concha"
                     ? "bg-gray-300 text-white cursor-not-allowed"
@@ -566,7 +566,7 @@ const Location = () => {
                       : simulationInProgress
                       ? "cursor-not-allowed border-green-500 bg-green-500 text-white hover:text-white"
                       : "border-green-500 bg-green-500 text-white hover:text-white hover:bg-green-600 cursor-pointer"
-                  } text-sm px-3 py-1 border-1 border-solid rounded-md`}
+                  } text-sm px-3 py-1 border border-solid rounded-md`}
                 >
                   {prop.name}
                 </button>

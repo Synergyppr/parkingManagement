@@ -1,5 +1,4 @@
 "use client";
-
 import { Tenant, UserForm, Property } from "../types";
 import ModalInput from "./elements/ModalInput";
 import ModalTextarea from "./elements/ModalTextarea";
@@ -72,9 +71,9 @@ const ModalForm = ({
     );
 
   return (
-    <form className="mx-auto flex w-full min-w-full flex-col rounded-[2rem] bg-white text-slate-800">
+    <form className="mx-auto flex w-full min-w-full flex-col rounded-4xl bg-white text-slate-800">
       {/* Header */}
-      <div className="border-b border-slate-200 bg-gradient-to-br from-white via-amber-50/60 to-white px-5 py-6 md:px-7">
+      <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/60 to-white px-5 py-6 md:px-7">
         <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
           Configuration
         </span>
@@ -198,7 +197,7 @@ const ModalForm = ({
               >
                 <span
                   className={`absolute h-6 w-6 rounded-full bg-white shadow-md transition-transform duration-300 ${
-                    isActive ? "translate-x-[28px]" : "translate-x-[4px]"
+                    isActive ? "translate-x-7" : "translate-x-1"
                   }`}
                 />
               </button>

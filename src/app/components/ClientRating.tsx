@@ -28,7 +28,7 @@ const ClientRating = ({
   return (
     <div
       ref={ratingSectionRef}
-      className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
+      className="overflow-hidden rounded-4xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
     >
       {vehicleData?.surveySubmitted ? (
         <div className="p-7 text-center">
@@ -48,7 +48,7 @@ const ClientRating = ({
         </div>
       ) : (
         <>
-          <div className="border-b border-slate-200 bg-gradient-to-br from-white via-amber-50/50 to-white p-6 text-center">
+          <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/50 to-white p-6 text-center">
             <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
               Guest Feedback
             </span>

@@ -40,8 +40,8 @@ const ModalSelect = ({
         htmlFor={id}
         className={`absolute text-sm left-2 px-1 transition-all duration-200 bg-transparent pointer-events-none ${
           isFocused || value
-            ? "top-[-8px] text-xs text-amber-600"
-            : "top-[11px] text-gray-500"
+            ? "-top-2 text-xs text-amber-600"
+            : "top-2.75 text-gray-500"
         }`}
       >
         {value ? label : ""}

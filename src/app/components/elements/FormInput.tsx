@@ -65,7 +65,7 @@ export default function FormInput({
           name={name}
           onChange={onChange}
           value={value || ""}
-          className={`${baseClass} appearance-none pr-8 capitalize bg-gradient-to-b from-white to-amber-50/20`}
+          className={`${baseClass} appearance-none pr-8 capitalize bg-linear-to-b from-white to-amber-50/20`}
         >
           <option value="">
             Select {name.replace(/([A-Z])/g, " $1").trim()}
@@ -84,7 +84,7 @@ export default function FormInput({
             placeholder={placeholder}
             value={value || ""}
             onChange={onChange}
-            className={`${baseClass} pr-10 capitalize bg-gradient-to-b from-white to-amber-50/20`}
+            className={`${baseClass} pr-10 capitalize bg-linear-to-b from-white to-amber-50/20`}
             required={required}
           />
 

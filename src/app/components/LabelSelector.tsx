@@ -43,9 +43,10 @@ const LabelSelector: React.FC<Props> = ({
   };
 
   return (
-    <div className="mb-6 rounded-[2rem] border border-amber-200/60 bg-gradient-to-br from-white via-white to-amber-50/40 p-5 shadow-[0_10px_40px_rgba(0,0,0,0.06)]">
+    <div className="mb-6 rounded-4xl border border-amber-200/60 bg-linear-to-br from-white via-white to-amber-50/40 p-5 
+    shadow-[0_10px_40px_rgba(0,0,0,0.06)]">
       <div className="mb-4">
-        <h2 className="bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 bg-clip-text text-[22px] font-black tracking-tight text-transparent">
+        <h2 className="bg-linear-to-r from-amber-500 via-amber-600 to-yellow-600 bg-clip-text text-[22px] font-black tracking-tight text-transparent">
           {title}
         </h2>
   
@@ -55,7 +56,7 @@ const LabelSelector: React.FC<Props> = ({
         </p>
       </div>
   
-      <div className="mb-4 h-px bg-gradient-to-r from-amber-200 via-amber-300 to-transparent" />
+      <div className="mb-4 h-px bg-linear-to-r from-amber-200 via-amber-300 to-transparent" />
   
       <ul className="space-y-3">
         {Object.keys(labelsMap).map((label) => {
@@ -124,7 +125,7 @@ const LabelSelector: React.FC<Props> = ({
                   <textarea
                     required
                     placeholder="Describe the damage..."
-                    className="min-h-[90px] w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-amber-500 focus:ring-4 focus:ring-amber-200/50"
+                    className="min-h-22.5 w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-amber-500 focus:ring-4 focus:ring-amber-200/50"
                     value={descriptions[label] || ""}
                     onChange={(e) =>
                       handleDescriptionChange(label, e.target.value)
