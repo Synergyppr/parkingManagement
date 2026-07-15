@@ -659,14 +659,6 @@ export default function ReceiveForm({
                   </button>
 
                   <div className="flex gap-3">
-                    <button
-                      type="button"
-                      className="md:h-12 h-14 rounded-2xl border border-slate-200 bg-white px-8 text-sm font-semibold text-slate-700 shadow-sm transition 
-                      hover:bg-slate-50 cursor-pointer disabled:opacity-50"
-                    >
-                      Save as Draft
-                    </button>
-
                     {step < 3 ? (
                       <button
                         type="button"

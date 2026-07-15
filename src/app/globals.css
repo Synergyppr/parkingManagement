@@ -100,6 +100,37 @@ body {
   animation: blink 1.2s infinite ease-in-out;
 }
 
+/* Receipt HTML container - isolates Evertec receipt styles */
+.receipt-container {
+  all: initial;
+  display: block;
+  font-family: monospace;
+  font-size: 12px;
+  color: #1e293b;
+  background: #ffffff;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.receipt-container * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.receipt-container table {
+  width: 100% !important;
+  font-size: 11px;
+}
+
+.receipt-container img[src="ath_logo.png"] {
+  display: none;
+}
+
+/* Safe area padding for iOS notch/home indicator */
+.safe-area-bottom {
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+}
+
 @keyframes slideInRight {
   from {
     transform: translateX(100%);

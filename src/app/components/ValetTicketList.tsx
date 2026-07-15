@@ -42,8 +42,10 @@ interface ValetTicketListProps {
 interface TransactionForm {
   amount: number;
   paymentMethod: string;
-  referenceNumber: string;
-  notes?: string | undefined;
+  transactionTypeId: number;
+  notes?: string;
+  pin?: string;
+  value?: number;
 }
 
 // const statusTabs = ["received", "parked", "requested", "ready"];
@@ -78,8 +80,10 @@ export default function ValetTicketList({
   const [transactionForm, setTransactionForm] = useState<TransactionForm>({
     amount: 0,
     paymentMethod: "",
-    referenceNumber: "",
+    transactionTypeId: 0,
     notes: "",
+    pin: "",
+    value: 0,
   });
   const [clickLoader, setClickLoader] = React.useState(false);
   const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });

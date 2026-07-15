@@ -90,14 +90,10 @@ export interface VehicleData {
   placeToVisit?: string;
   status?: string;
   patronId?: string;
+  propertyId?: string;
   notificationId?: string;
   surveySubmitted?: boolean;
-  transactions?: {
-    referenceNumber?: string;
-    transactionDateTime?: string;
-    paymentMethod?: string;
-    amount?: number;
-  }[];
+  transactions?: TicketTransaction[];
 }
 
 export interface VehiclePhoto {
@@ -136,6 +132,7 @@ export interface TicketDetails {
     licensePlate?: string;
     photos?: { url: string }[];
   };
+  transactions?: TicketTransaction[];
   ticketLogs?: {
     id: string;
     createdDateTime: string;
@@ -147,6 +144,33 @@ export interface TicketDetails {
   licensePlate?: string;
   damagedParts?: CarPart[];
   photos?: { url: string }[];
+}
+
+export interface TicketTransactionReceipt {
+  receiptType?: string;
+  receiptText?: string;
+  receiptHtml?: string;
+  createdAtUtc?: string;
+}
+
+export interface TicketTransactionPaymentDetail {
+  paymentTransactionId?: string;
+  trxId?: string;
+  amount?: number;
+  taxAmount?: number;
+  tipAmount?: number;
+  createdAtUtc?: string;
+  receipts?: TicketTransactionReceipt[];
+}
+
+export interface TicketTransaction {
+  id?: string;
+  transaction_type?: string;
+  amount?: number;
+  payment_method?: string;
+  transaction_date_time?: string;
+  application_id?: string;
+  paymentdetail?: TicketTransactionPaymentDetail;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -309,4 +333,40 @@ export interface TaxBreakdown {
   cityTax: number;
   cityTaxRate: number;
   total: number;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+export interface ValetTransactionRequest {
+  ticketId: string;
+  propertyId: string;
+  pin: string;
+  latitude: number;
+  longitude: number;
+  paymentMethod: string;
+  transactionTypeId: number;
+  amount?: number;
+  terminalId?: string;
+  tip?: number;
+  receiptOutput?: string;
+  receiptEmail?: string;
+  notes?: string;
+}
+
+export interface PropertyDevice {
+  id: string;
+  propertyId: string;
+  name: string;
+  phone?: string;
+}
+
+export interface PaymentTerminal {
+  id: string;
+  property_id: string;
+  application_id: string;
+  name: string;
+  terminal_url: string;
+  terminal_id: string;
+  is_default: boolean;
+  is_active: boolean;
 }

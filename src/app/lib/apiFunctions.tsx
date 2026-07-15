@@ -67,6 +67,21 @@ const DeleteDeviceEndpoint = process.env.DELETE_DEVICE_ENDPOINT + "";
 const GetSurveyReportEndpoint = process.env.GET_SURVEY_REPORT_ENDPOINT + "";
 const GetPatronRatingByIdEndpoint =
   process.env.GET_PATRON_RATING_BY_ID_ENDPOINT + "";
+// Evertec Payment Terminals
+const EvertecTerminalGetAllEndpoint =
+  process.env.EVERTEC_TERMINAL_GET_ALL_ENDPOINT + "";
+const EvertecTerminalCreateEndpoint =
+  process.env.EVERTEC_TERMINAL_CREATE_ENDPOINT + "";
+const EvertecTerminalUpdateEndpoint =
+  process.env.EVERTEC_TERMINAL_UPDATE_ENDPOINT + "";
+const EvertecTerminalDeleteEndpoint =
+  process.env.EVERTEC_TERMINAL_DELETE_ENDPOINT + "";
+// Evertec Void, Refund & Journal
+const EvertecVoidEndpoint = process.env.EVERTEC_VOID_ENDPOINT + "";
+const EvertecRefundEndpoint = process.env.EVERTEC_REFUND_ENDPOINT + "";
+const EvertecAthMovilRefundEndpoint =
+  process.env.EVERTEC_ATH_MOVIL_REFUND_ENDPOINT + "";
+const EvertecJournalEndpoint = process.env.EVERTEC_JOURNAL_ENDPOINT + "";
 
 const Endpoints = [
   {
@@ -232,6 +247,38 @@ const Endpoints = [
   {
     name: "Get Patron Rating By ID",
     endpoint: GetPatronRatingByIdEndpoint,
+  },
+  {
+    name: "Get All Terminals",
+    endpoint: EvertecTerminalGetAllEndpoint,
+  },
+  {
+    name: "Create Terminal",
+    endpoint: EvertecTerminalCreateEndpoint,
+  },
+  {
+    name: "Update Terminal",
+    endpoint: EvertecTerminalUpdateEndpoint,
+  },
+  {
+    name: "Delete Terminal",
+    endpoint: EvertecTerminalDeleteEndpoint,
+  },
+  {
+    name: "Evertec Void",
+    endpoint: EvertecVoidEndpoint,
+  },
+  {
+    name: "Evertec Refund",
+    endpoint: EvertecRefundEndpoint,
+  },
+  {
+    name: "Evertec ATH Movil Refund",
+    endpoint: EvertecAthMovilRefundEndpoint,
+  },
+  {
+    name: "Evertec Journal",
+    endpoint: EvertecJournalEndpoint,
   },
 ];
 

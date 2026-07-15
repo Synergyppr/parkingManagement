@@ -5,8 +5,11 @@ import { MdPayments, MdAccessTime } from "react-icons/md";
 import { VehicleData } from "../types";
 
 const TransactionDetails = ({ vehicleData }: { vehicleData: VehicleData }) => {
-  const index = 0;
-  const transaction = vehicleData?.transactions?.[index];
+  const transaction = vehicleData?.transactions?.[0];
+  const detail = transaction?.paymentdetail;
+  const customerReceipt = detail?.receipts?.find(
+    (r) => r.receiptType === "CUSTOMER"
+  );
 
   return (
     <CollapsibleSection title="Transaction Details">
@@ -21,28 +24,41 @@ const TransactionDetails = ({ vehicleData }: { vehicleData: VehicleData }) => {
 
         <DetailCard
           label="Reference #"
-          value={transaction?.referenceNumber || "-"}
+          value={detail?.trxId || "—"}
           icon={<FaReceipt />}
           mono
         />
 
         <DetailCard
-          label="Drop-Off"
+          label="Date"
           value={
-            transaction?.transactionDateTime
-              ? new Date(transaction.transactionDateTime as string).toLocaleString()
-              : "-"
+            transaction?.transaction_date_time
+              ? new Date(transaction.transaction_date_time).toLocaleString()
+              : "—"
           }
           icon={<MdAccessTime />}
         />
 
         <DetailCard
-          label={`${transaction?.paymentMethod || "Payment"} Tariff`}
-          value={`$${transaction?.amount ?? "0.00"}`}
+          label={`${transaction?.payment_method || "Payment"} Tariff`}
+          value={`$${transaction?.amount?.toFixed(2) ?? "0.00"}`}
           icon={<MdPayments />}
           highlight
         />
       </div>
+
+      {/* Customer Receipt HTML */}
+      {customerReceipt?.receiptHtml && (
+        <div className="mt-4">
+          <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+            Customer Receipt
+          </p>
+          <div
+            className="receipt-container overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4"
+            dangerouslySetInnerHTML={{ __html: customerReceipt.receiptHtml }}
+          />
+        </div>
+      )}
     </CollapsibleSection>
   );
 };

@@ -2,8 +2,7 @@ import { PostContentData } from "../../../lib/apiFunctions";
 import { NextResponse } from "next/server";
 
 // Records a courtesy (free pass) transaction for a valet ticket.
-// Submits as a $0 payment with method "Courtesy" and stores:
-//   reason, givenBy (employee), givenAt (ISO datetime), propertyId, ticketId
+// Submits as a $0 payment with method "Courtesy" through ValetTransaction.
 export async function POST(req: Request) {
   const body = await req.json();
 
@@ -18,14 +17,15 @@ export async function POST(req: Request) {
 
   const payload = {
     ticketId,
+    propertyId,
     pin,
-    amount: 0,
-    paymentMethod: "Courtesy",
-    referenceNumber: `CRTS-${Date.now()}`,
-    notes: `COURTESY | Reason: ${reason} | Given by: ${givenBy} | Date: ${givenAt}`,
     latitude: latitude ?? 0,
     longitude: longitude ?? 0,
-    propertyId,
+    paymentMethod: "Courtesy",
+    transactionTypeId: 0,
+    amount: 0,
+    tip: 0,
+    notes: `COURTESY | Reason: ${reason} | Given by: ${givenBy} | Date: ${givenAt}`,
   };
 
   const result = await PostContentData("Valet Transaction", payload);

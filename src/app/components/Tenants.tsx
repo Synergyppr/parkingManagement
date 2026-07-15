@@ -12,8 +12,10 @@ import {
   UserForm as UserFormType,
   Property,
   RateEntry,
+  PaymentTerminal,
 } from "../types";
 import { FaPencil, FaTrash, FaRegCreditCard } from "react-icons/fa6";
+import { MdTerminal } from "react-icons/md";
 import { FaCar } from "react-icons/fa";
 import { MdOutlineImportantDevices } from "react-icons/md";
 import { PiUsersThreeFill } from "react-icons/pi";
@@ -28,6 +30,7 @@ import UserForm from "./UserForm";
 import VehicleManager from "./VehicleManager";
 import DeviceCMS from "./DeviceManager";
 import TransactionTypeManager from "./TransactionTypeManager";
+import TerminalCMS from "./TerminalManager";
 import PageLoader from "./elements/PageLoader";
 
 interface TenantsProps {
@@ -77,6 +80,8 @@ const Tenants = ({ data }: TenantsProps) => {
   const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false);
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
+  const [isTerminalModalOpen, setIsTerminalModalOpen] = useState(false);
+  const [terminalsData, setTerminalsData] = useState<PaymentTerminal[]>([]);
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [isUserFormOpen, setIsUserFormOpen] = useState(false);
   const [isPropertyFormOpen, setIsPropertyFormOpen] = useState(false);
@@ -215,6 +220,40 @@ const Tenants = ({ data }: TenantsProps) => {
     }
   };
 
+  const fetchTerminals = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/terminals/get", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: propertyId as string }),
+      });
+
+      const result = await response.json();
+
+      if (result?.result?.status == "200") {
+        setTerminalsData(result?.result?.data || []);
+        setIsTerminalModalOpen(true);
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to fetch terminals data.",
+          confirmButtonColor: "#d6a800",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching terminals:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenTerminalModal = () => {
+    if (!propertyId) return;
+    fetchTerminals();
+  };
+
   const handleOpenTenantModal = (tenant: Tenant | null) => {
     if (!tenant || !tenant.id) {
       setSelectedTenant(null);
@@ -314,7 +353,7 @@ const Tenants = ({ data }: TenantsProps) => {
             />
             <SummaryCard
               label="Config Modules"
-              value="5"
+              value="6"
               icon={<FaRegCreditCard />}
             />
           </section>
@@ -372,7 +411,7 @@ const Tenants = ({ data }: TenantsProps) => {
                       </p>
                     )}
 
-                    <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+                    <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                       <QuickAction
                         label="Users"
                         icon={<PiUsersThreeFill />}
@@ -419,6 +458,14 @@ const Tenants = ({ data }: TenantsProps) => {
                         onClick={(e) => {
                           e.stopPropagation();
                           handleOpenDeviceModal();
+                        }}
+                      />
+                      <QuickAction
+                        label="Terminals"
+                        icon={<MdTerminal />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenTerminalModal();
                         }}
                       />
                       <QuickAction
@@ -495,6 +542,16 @@ const Tenants = ({ data }: TenantsProps) => {
           <DeviceCMS
             fetchPropertyDevices={fetchPropertyDevices}
             devices={devicesDropdownData || []}
+          />
+        </Modal>
+
+        <Modal
+          isOpen={isTerminalModalOpen}
+          onClose={() => setIsTerminalModalOpen(false)}
+        >
+          <TerminalCMS
+            fetchTerminals={fetchTerminals}
+            terminals={terminalsData}
           />
         </Modal>
 

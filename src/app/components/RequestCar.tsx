@@ -542,7 +542,9 @@ const RequestCar = () => {
               </section>
             )}
   
-            {requested && <TransactionDetails vehicleData={vehicleData!} />}
+            {vehicleData?.status === "ready" && (
+              <TransactionDetails vehicleData={vehicleData} />
+            )}
   
             {requested && (
               <ClientRating
