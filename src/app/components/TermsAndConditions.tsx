@@ -19,28 +19,31 @@ export default function TermsAndConditions() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#f8f5ed] px-4 py-8 text-slate-800">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(214,168,0,0.18),transparent_34%),radial-gradient(circle_at_bottom,rgba(15,23,42,0.08),transparent_42%)]" />
+    <main className="min-h-screen bg-(--primary-soft) px-4 py-8 text-slate-800">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--primary)_18%,transparent),transparent_34%),radial-gradient(circle_at_bottom,rgba(15,23,42,0.08),transparent_42%)]" />
 
-      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-4xl border border-amber-200/70 bg-white/90 shadow-[0_30px_90px_rgba(15,23,42,0.10)] backdrop-blur-xl">
-        <header className="sticky top-0 z-50 border-b border-slate-200 bg-linear-to-br from-white via-amber-50/70 to-white px-5 py-6 md:px-8">
+      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-4xl border border-[color-mix(in_srgb,var(--primary-light)_70%,transparent)] bg-white/90 shadow-[0_30px_90px_rgba(15,23,42,0.10)] backdrop-blur-xl">
+        <header className="sticky top-0 z-50 border-b border-slate-200 bg-linear-to-br from-white via-[color-mix(in_srgb,var(--primary-soft)_70%,transparent)] to-white px-5 py-6 md:px-8">
           <div className="flex flex-col items-center gap-4 text-center md:grid md:grid-cols-[25%_75%] md:text-left">
             <button
               type="button"
               onClick={() => router.push("/")}
-              className="flex items-center gap-3 rounded-full border border-amber-200 bg-white px-4 py-2 shadow-sm transition hover:bg-amber-50 max-w-50"
+              className="flex max-w-50 items-center gap-3 rounded-full border border-(--primary-light) bg-white px-4 py-2 shadow-sm transition hover:bg-(--primary-soft)"
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-500 text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)]">
                 <KeySquare className="h-5 w-5" />
               </div>
 
-              <span className="font-serif text-2xl font-bold text-amber-600">
+              <span className="font-serif text-2xl font-bold text-primary">
                 Parkey
               </span>
             </button>
 
             <div>
-              <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+              <span
+                className="inline-flex rounded-full border border-(--primary-light) bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] 
+              text-primary shadow-sm"
+              >
                 Legal
               </span>
 
@@ -68,7 +71,7 @@ export default function TermsAndConditions() {
                   <li key={href}>
                     <a
                       href={`#${href}`}
-                      className="flex rounded-2xl px-4 py-3 font-bold text-slate-600 transition hover:bg-amber-50 hover:text-amber-700"
+                      className="flex rounded-2xl px-4 py-3 font-bold text-slate-600 transition hover:bg-(--primary-soft) hover:text-primary"
                     >
                       {label}
                     </a>
@@ -138,7 +141,7 @@ export default function TermsAndConditions() {
               <p>
                 If you have any questions about these Terms or our{" "}
                 <a
-                  className="font-bold text-amber-700 underline decoration-amber-300 underline-offset-4 transition hover:text-amber-800"
+                  className="font-bold text-primary underline decoration-(--primary-light) underline-offset-4 transition hover:text-secondary"
                   href="privacy-policy"
                   target="_blank"
                 >
@@ -147,7 +150,7 @@ export default function TermsAndConditions() {
                 , please contact our support team at{" "}
                 <a
                   href="mailto:services@synergyppr.com"
-                  className="font-bold text-amber-700 underline decoration-amber-300 underline-offset-4 transition hover:text-amber-800"
+                  className="font-bold text-primary underline decoration-(--primary-light) underline-offset-4 transition hover:text-secondary"
                 >
                   services@synergyppr.com
                 </a>
@@ -171,7 +174,10 @@ function LegalSection({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-40 border-b border-slate-200 py-6 last:border-b-0">
+    <section
+      id={id}
+      className="scroll-mt-40 border-b border-slate-200 py-6 last:border-b-0"
+    >
       {title && (
         <h2 className="mb-3 font-serif text-2xl font-bold text-slate-950">
           {title}

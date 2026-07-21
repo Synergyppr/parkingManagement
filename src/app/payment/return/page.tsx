@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FaCheckCircle, FaHourglassHalf, FaTimesCircle } from "react-icons/fa";
@@ -49,6 +48,7 @@ function PaymentReturnContent() {
     }
 
     verifyPaymentStatus(requestId);
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -58,7 +58,9 @@ function PaymentReturnContent() {
         `/api/payments/placetopay/session/${requestId}`,
         {
           method: "GET",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
       );
 
@@ -78,12 +80,15 @@ function PaymentReturnContent() {
       }
     } catch (err) {
       console.error("Payment Return: Verification error:", err);
+
       setError(err instanceof Error ? err.message : "Failed to verify payment");
       setLoading(false);
     }
   };
 
-  if (loading) return <PageLoader />;
+  if (loading) {
+    return <PageLoader />;
+  }
 
   if (error) {
     return (
@@ -121,7 +126,9 @@ function PaymentReturnContent() {
     return (
       <PaymentShell>
         <StatusCard
-          icon={<FaCheckCircle className="h-16 w-16 animate-bounce text-emerald-500" />}
+          icon={
+            <FaCheckCircle className="h-16 w-16 animate-bounce text-emerald-500" />
+          }
           badge="Payment Approved"
           title="Payment Successful!"
           description="Your payment has been processed successfully."
@@ -140,11 +147,13 @@ function PaymentReturnContent() {
     return (
       <PaymentShell>
         <StatusCard
-          icon={<FaHourglassHalf className="h-16 w-16 animate-pulse text-amber-500" />}
+          icon={
+            <FaHourglassHalf className="h-16 w-16 animate-pulse text-primary" />
+          }
           badge="Payment Pending"
           title="Payment Pending"
           description="Your payment is being processed. This may take a few moments."
-          tone="amber"
+          tone="primary"
           buttonLabel="Return to Dashboard"
           onClick={() => router.push("/dashboard")}
           footerText="You will receive a confirmation once the payment is processed."
@@ -201,13 +210,15 @@ export default function PaymentReturnPage() {
 
 function PaymentShell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f8f5ed] px-4 py-10 text-slate-950">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(214,168,0,0.20),transparent_34%),radial-gradient(circle_at_bottom,rgba(15,23,42,0.10),transparent_42%)]" />
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-(--primary-soft) px-4 py-10 text-slate-950">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--primary)_20%,transparent),transparent_34%),radial-gradient(circle_at_bottom,rgba(15,23,42,0.10),transparent_42%)]" />
 
       <div className="relative w-full max-w-xl">{children}</div>
     </main>
   );
 }
+
+type StatusTone = "emerald" | "primary" | "red" | "slate";
 
 function StatusCard({
   icon,
@@ -224,7 +235,7 @@ function StatusCard({
   badge: string;
   title: string;
   description: string;
-  tone: "emerald" | "amber" | "red" | "slate";
+  tone: StatusTone;
   buttonLabel: string;
   onClick: () => void;
   footerText?: string;
@@ -235,7 +246,7 @@ function StatusCard({
       ? "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200"
       : tone === "red"
       ? "bg-red-500 hover:bg-red-600 shadow-red-200"
-      : "bg-amber-500 hover:bg-amber-600 shadow-amber-200";
+      : "bg-[var(--primary)] hover:bg-[var(--secondary)] shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_24%,transparent)]";
 
   const badgeClass =
     tone === "emerald"
@@ -244,12 +255,12 @@ function StatusCard({
       ? "border-red-200 bg-red-50 text-red-700"
       : tone === "slate"
       ? "border-slate-200 bg-slate-50 text-slate-600"
-      : "border-amber-200 bg-amber-50 text-amber-700";
+      : "border-[var(--primary-light)] bg-[var(--primary-soft)] text-[var(--primary)]";
 
   return (
-    <section className="overflow-hidden rounded-4xl border border-amber-200/70 bg-white/95 shadow-[0_30px_90px_rgba(15,23,42,0.16)] backdrop-blur-xl">
-      <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/60 to-white px-6 py-7 text-center">
-        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)]">
+    <section className="overflow-hidden rounded-4xl border border-[color-mix(in_srgb,var(--primary-light)_70%,transparent)] bg-white/95 shadow-[0_30px_90px_rgba(15,23,42,0.16)] backdrop-blur-xl">
+      <div className="border-b border-slate-200 bg-linear-to-br from-white via-[color-mix(in_srgb,var(--primary-soft)_60%,transparent)] to-white px-6 py-7 text-center">
+        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)]">
           <KeySquare className="h-7 w-7" />
         </div>
 
@@ -282,7 +293,7 @@ function StatusCard({
         <button
           type="button"
           onClick={onClick}
-          className={`h-12 w-full rounded-2xl text-sm font-black text-white shadow-lg transition ${buttonClass} cursor-pointer`}
+          className={`h-12 w-full cursor-pointer rounded-2xl text-sm font-black text-white shadow-lg transition ${buttonClass}`}
         >
           {buttonLabel}
         </button>
@@ -306,7 +317,7 @@ function PaymentDetails({
         <DetailRow label="Reference" value={paymentData.payment.reference} />
       )}
 
-      {paymentData.payment?.amount && (
+      {paymentData.payment?.amount !== undefined && (
         <DetailRow
           label="Amount"
           value={`$${paymentData.payment.amount.toFixed(2)}`}
@@ -373,7 +384,7 @@ function DetailRow({
           danger
             ? "text-red-600"
             : highlight
-            ? "text-amber-700"
+            ? "text-primary"
             : "text-slate-900"
         }`}
       >

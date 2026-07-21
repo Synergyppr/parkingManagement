@@ -1,13 +1,36 @@
 "use client";
-
-import { useState, useEffect, useRef, SetStateAction } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type SetStateAction,
+} from "react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
+
 import { validateUser } from "../auth/userStoreApi";
 import { useProperty } from "../context/PropertyContext";
 import { joinGroup } from "../lib/SignalRProvider";
 import FloatingLabelInput from "./elements/FloatingLabelInput";
 import PageLoader from "./elements/PageLoader";
+
+const DEFAULT_THEME_COLOR = "#d97706";
+
+const getThemeColor = (
+  variableName = "--primary",
+  fallback = DEFAULT_THEME_COLOR
+) => {
+  if (typeof window === "undefined") {
+    return fallback;
+  }
+
+  const value = window
+    .getComputedStyle(document.documentElement)
+    .getPropertyValue(variableName)
+    .trim();
+
+  return value || fallback;
+};
 
 export default function LoginForm() {
   const {
@@ -24,6 +47,7 @@ export default function LoginForm() {
   } = useProperty();
 
   const router = useRouter();
+
   const [pageLoading, setPageLoading] = useState(true);
   const [buttonLoading, setButtonLoading] = useState(false);
   const [email, setEmail] = useState("");
@@ -38,7 +62,7 @@ export default function LoginForm() {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const unlockLocationToggle = () => {
-    setShowLocationToggle((prev) => !prev);
+    setShowLocationToggle((previous) => !previous);
 
     Swal.fire({
       toast: true,
@@ -47,14 +71,16 @@ export default function LoginForm() {
       title: "Location controls updated",
       showConfirmButton: false,
       timer: 1400,
-      confirmButtonColor: "#d6a800",
+      confirmButtonColor: getThemeColor(),
     });
   };
 
   const handleMobileSecretTap = () => {
     mobileTapCountRef.current += 1;
 
-    if (mobileTapTimerRef.current) clearTimeout(mobileTapTimerRef.current);
+    if (mobileTapTimerRef.current) {
+      clearTimeout(mobileTapTimerRef.current);
+    }
 
     mobileTapTimerRef.current = setTimeout(() => {
       mobileTapCountRef.current = 0;
@@ -67,62 +93,86 @@ export default function LoginForm() {
   };
 
   const handleLongPressStart = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+    }
+
     longPressTimerRef.current = setTimeout(() => {
       unlockLocationToggle();
     }, 1000);
   };
 
   const handleLongPressEnd = () => {
-    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
   };
 
   useEffect(() => {
     const keysPressed: string[] = [];
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      keysPressed.push(e?.key?.toLowerCase());
+    const handleKeyDown = (event: KeyboardEvent) => {
+      keysPressed.push(event?.key?.toLowerCase());
 
-      if (keysPressed.length > 3) keysPressed.shift();
+      if (keysPressed.length > 3) {
+        keysPressed.shift();
+      }
 
       const isCtrlSyn =
-        e.ctrlKey && keysPressed.join("") === "syn" && keysPressed.length === 3;
+        event.ctrlKey &&
+        keysPressed.length === 3 &&
+        keysPressed.join("") === "syn";
 
-      if (isCtrlSyn) unlockLocationToggle();
+      if (isCtrlSyn) {
+        unlockLocationToggle();
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   useEffect(() => {
-    if (!latitude || !longitude) requestLocation();
+    if (!latitude || !longitude) {
+      requestLocation();
+    }
   }, [latitude, longitude, requestLocation]);
 
   useEffect(() => {
     const fetchIpAddress = async () => {
       try {
         const response = await fetch("https://api.ipify.org?format=json");
-        const data = await response.json();
-        setIpAddress(data.ip);
+
+        // if (!response.ok) {
+        //   throw new Error(`IP request failed with status ${response.status}`);
+        // }
+
+        const data: { ip?: string } = await response.json();
+        setIpAddress(data.ip || "");
       } catch (error) {
         console.error("Failed to fetch IP address:", error);
       }
     };
 
     const detectDeviceType = () => {
-      const ua = navigator.userAgent.toLowerCase();
+      const userAgent = navigator.userAgent.toLowerCase();
 
-      if (/mobile|android|iphone|ipod|blackberry|phone/.test(ua)) {
+      if (/mobile|android|iphone|ipod|blackberry|phone/.test(userAgent)) {
         return "mobile";
       }
 
-      if (/tablet|ipad/.test(ua)) {
+      if (/tablet|ipad/.test(userAgent)) {
         return "tablet";
       }
 
       return "desktop";
     };
 
+    // void fetchIpAddress();
     fetchIpAddress();
     setDeviceType(detectDeviceType());
   }, []);
@@ -137,11 +187,15 @@ export default function LoginForm() {
       setPageLoading(false);
     }
   }, [router]);
-
   useEffect(() => {
     return () => {
-      if (mobileTapTimerRef.current) clearTimeout(mobileTapTimerRef.current);
-      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+      if (mobileTapTimerRef.current) {
+        clearTimeout(mobileTapTimerRef.current);
+      }
+
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
     };
   }, []);
 
@@ -272,34 +326,42 @@ export default function LoginForm() {
     }
   };
 
-  const handleLocationMode = () => {
+  const handleLocationMode = async () => {
     if (locationMode === "live") {
       setLocationMode("manual");
-      Swal.fire({
+
+      await Swal.fire({
         icon: "info",
         title: "Manual Mode Activated",
         text: "You can now enter your property details manually.",
-        confirmButtonColor: "#d6a800",
+        confirmButtonColor: getThemeColor(),
       });
-    } else {
-      setLocationMode("live");
-      Swal.fire({
-        icon: "info",
-        title: "Live Mode Activated",
-        text: "Your location will be used to determine your property.",
-        confirmButtonColor: "#d6a800",
-      });
+
+      return;
     }
+
+    setLocationMode("live");
+
+    await Swal.fire({
+      icon: "info",
+      title: "Live Mode Activated",
+      text: "Your location will be used to determine your property.",
+      confirmButtonColor: getThemeColor(),
+    });
   };
 
-  const mailToSupport = () => {};
+  const mailToSupport = () => {
+    window.location.href =
+      "mailto:support@parkeyvalet.com?subject=Parkey%20Valet%20Login%20Support";
+  };
 
   return (
     <>
-      {(redirecting === true || pageLoading === true) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-          <div className="flex h-auto flex-col">
+      {(redirecting || pageLoading) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="flex h-auto flex-col items-center">
             <PageLoader />
+
             <p className="relative bottom-20 mt-1 text-sm font-light text-white md:bottom-37.5 lg:bottom-43.75">
               {redirecting
                 ? "Redirecting to dashboard..."
@@ -309,7 +371,7 @@ export default function LoginForm() {
         </div>
       )}
 
-      <div className="relative z-10 w-full max-w-sm space-y-6 rounded-4xl border border-slate-200 p-8 animate-fade-in transition-opacity duration-500">
+      <div className="relative z-10 w-full max-w-sm animate-fade-in space-y-6 rounded-4xl border border-slate-200/80 bg-white/40 p-8 shadow-[0_18px_50px_rgba(15,23,42,0.08)] transition-opacity duration-500">
         <button
           type="button"
           aria-label="Unlock location controls"
@@ -326,13 +388,15 @@ export default function LoginForm() {
             id="email"
             name="email"
             label="Email"
-            type="email"
+            type="text"
+            // type="email"
             value={email}
             autoComplete="email"
-            onChange={(e: { target: { value: SetStateAction<string> } }) =>
-              setEmail(e.target.value)
+            onChange={(event: { target: { value: SetStateAction<string> } }) =>
+              setEmail(event.target.value)
             }
             maxLength={50}
+            disabled={buttonLoading}
           />
 
           <FloatingLabelInput
@@ -342,36 +406,38 @@ export default function LoginForm() {
             type="password"
             value={password}
             autoComplete="current-password"
-            onChange={(e: { target: { value: SetStateAction<string> } }) =>
-              setPassword(e.target.value)
+            onChange={(event: { target: { value: SetStateAction<string> } }) =>
+              setPassword(event.target.value)
             }
             maxLength={50}
             disabled={buttonLoading}
           />
 
           {showLocationToggle && (
-            <div className="overflow-hidden rounded-2xl border border-amber-200 bg-amber-50/30 shadow-sm">
-              <div className="grid grid-cols-2 p-1">
+            <div className="overflow-hidden rounded-2xl border border-(--primary-light) bg-(--primary-soft)/70 shadow-sm transition-colors duration-300">
+              <div className="grid grid-cols-2 gap-1 p-1">
                 <button
-                  className={`rounded-xl py-2.5 text-sm font-bold transition-all ${
-                    locationMode === "live"
-                      ? "bg-amber-500 text-white shadow-[0_10px_22px_rgba(217,174,38,0.25)]"
-                      : "text-slate-600 hover:bg-white"
-                  }`}
                   type="button"
                   onClick={handleLocationMode}
+                  aria-pressed={locationMode === "live"}
+                  className={`rounded-xl py-2.5 text-sm font-bold transition-all duration-300 ${
+                    locationMode === "live"
+                      ? "bg-primary text-white shadow-[0_10px_22px_color-mix(in_srgb,var(--primary)_28%,transparent)]"
+                      : "text-slate-600 hover:bg-white/90 hover:text-primary"
+                  }`}
                 >
                   Live
                 </button>
 
                 <button
-                  className={`rounded-xl py-2.5 text-sm font-bold transition-all ${
-                    locationMode === "manual"
-                      ? "bg-amber-500 text-white shadow-[0_10px_22px_rgba(217,174,38,0.25)]"
-                      : "text-slate-600 hover:bg-white"
-                  }`}
                   type="button"
                   onClick={handleLocationMode}
+                  aria-pressed={locationMode === "manual"}
+                  className={`rounded-xl py-2.5 text-sm font-bold transition-all duration-300 ${
+                    locationMode === "manual"
+                      ? "bg-primary text-white shadow-[0_10px_22px_color-mix(in_srgb,var(--primary)_28%,transparent)]"
+                      : "text-slate-600 hover:bg-white/90 hover:text-primary"
+                  }`}
                 >
                   Manual
                 </button>
@@ -382,7 +448,9 @@ export default function LoginForm() {
           <button
             type="submit"
             disabled={buttonLoading || pageLoading}
-            className="h-12 w-full cursor-pointer rounded-2xl bg-amber-500 text-sm font-bold text-white shadow-[0_12px_28px_rgba(217,174,38,0.28)] transition-all hover:bg-amber-600 hover:shadow-[0_16px_36px_rgba(217,174,38,0.35)] disabled:opacity-60"
+            className="h-12 w-full cursor-pointer rounded-2xl bg-primary text-sm font-bold text-white shadow-[0_12px_28px_color-mix(in_srgb,var(--primary)_30%,transparent)]
+            transition-all duration-300 hover:-translate-y-0.5  hover:bg-secondary hover:shadow-[0_16px_36px_color-mix(in_srgb,var(--primary)_38%,transparent)]
+            focus:outline-none focus:ring-2 focus:ring-(--primary-light) focus:ring-offset-2 disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-60"
           >
             {buttonLoading ? "Signing in..." : "Sign In"}
           </button>
@@ -390,21 +458,14 @@ export default function LoginForm() {
 
         <p className="text-center text-xs text-slate-400">
           Forgot your password?{" "}
-          {/* <a
-            href="#"
-            className="font-semibold text-amber-600 hover:text-amber-700 hover:underline"
-          >
-            Reset it
-          </a> */}
-          {/* Add contact support mailto */}
-          <span
-            onClick={() => {
-              mailToSupport();
-            }}
-            className="font-semibold text-amber-600 hover:text-amber-700 hover:underline"
+          <button
+            type="button"
+            onClick={mailToSupport}
+            className="cursor-pointer font-semibold text-primary transition-colors duration-200 hover:text-secondary hover:underline focus:outline-none
+            focus-visible:rounded focus-visible:ring-2 focus-visible:ring-(--primary-light)"
           >
             Contact Support
-          </span>
+          </button>
         </p>
       </div>
     </>

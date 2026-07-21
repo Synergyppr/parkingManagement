@@ -16,10 +16,14 @@ const VehicleList = ({
       <button
         type="button"
         onClick={() => setShowExistingVehicles(!showExistingVehicles)}
-        className="flex w-full cursor-pointer items-center justify-between gap-4 bg-linear-to-br from-white via-amber-50/60 to-white px-5 py-4 text-left transition hover:bg-amber-50"
+        className="flex w-full cursor-pointer items-center justify-between gap-4 bg-linear-to-br from-white via-(--primary-soft) to-white px-5 py-4 text-left 
+        transition hover:bg-(--primary-soft)"
       >
         <div className="min-w-0">
-          <span className="inline-flex rounded-full border border-amber-300 bg-white px-3 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-amber-700 shadow-sm">
+          <span
+            className="inline-flex rounded-full border border-(--primary-light) bg-white px-3 py-1 text-[9px] font-black uppercase tracking-[0.16em] 
+          text-primary shadow-sm"
+          >
             Vehicle History
           </span>
 
@@ -33,7 +37,7 @@ const VehicleList = ({
           </p>
         </div>
 
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-amber-200 bg-white text-amber-600 shadow-sm">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-(--primary-light) bg-white text-primary shadow-sm">
           {showExistingVehicles ? (
             <FaChevronUp className="h-4 w-4" />
           ) : (
@@ -46,7 +50,7 @@ const VehicleList = ({
         <div className="border-t border-slate-200 bg-white px-4 pb-4 pt-4">
           {existingVehicles?.length === 0 ? (
             <div className="flex min-h-30 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/70 p-6 text-center">
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-200">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary ring-1 ring-(--primary-light)">
                 <FaCar className="h-5 w-5" />
               </div>
 
@@ -84,12 +88,14 @@ const VehicleList = ({
                     key={idx}
                     type="button"
                     onClick={() => handleSelectVehicle(v, idx)}
-                    className="group relative min-h-35 w-48 shrink-0 cursor-pointer overflow-hidden rounded-3xl border border-slate-200 bg-linear-to-br from-white via-amber-50/30 to-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_18px_45px_rgba(214,168,0,0.16)]"
+                    className="group relative min-h-35 w-48 shrink-0 cursor-pointer overflow-hidden rounded-3xl border border-slate-200 bg-linear-to-br 
+                    from-white via-(--primary-soft) to-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-(--primary-light) 
+                    hover:shadow-[0_18px_45px_color-mix(in_srgb,var(--primary)_16%,transparent)]"
                   >
-                    <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-amber-100/70 transition group-hover:bg-amber-200/80" />
+                    <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-(--primary-soft) transition group-hover:bg-(--primary-light)" />
 
                     <div className="relative z-10">
-                      <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-[0_12px_28px_rgba(214,168,0,0.25)]">
+                      <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-white shadow-[0_12px_28px_color-mix(in_srgb,var(--primary)_25%,transparent)]">
                         <FaCar className="h-5 w-5" />
                       </div>
 
@@ -101,12 +107,15 @@ const VehicleList = ({
                         {v?.licensePlate || "No Plate"}
                       </p>
 
-                      <p className="mt-2 line-clamp-2 text-xs font-bold capitalize leading-5 text-amber-700">
+                      <p className="mt-2 line-clamp-2 text-xs font-bold capitalize leading-5 text-primary">
                         {selectedColor || v?.color} {selectedMake || v?.make}{" "}
                         {selectedModel || v?.model}
                       </p>
 
-                      <span className="mt-3 inline-flex rounded-full border border-amber-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-amber-700">
+                      <span
+                        className="mt-3 inline-flex rounded-full border border-(--primary-light) bg-white px-3 py-1 text-[10px] font-black uppercase 
+                      tracking-[0.12em] text-primary"
+                      >
                         {selectedType || v?.type}
                       </span>
                     </div>

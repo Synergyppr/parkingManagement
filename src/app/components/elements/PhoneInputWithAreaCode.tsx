@@ -37,9 +37,10 @@ export default function PhoneInputWithAreaCode({
       <select
         value={areaCode}
         onChange={onAreaCodeChange}
-        className={`h-11 w-24 shrink-0 appearance-none rounded-xl border bg-linear-to-b from-white to-amber-50/20 px-2 text-sm font-semibold text-slate-900 outline-none shadow-sm transition-all hover:border-amber-300 focus:border-amber-500 focus:ring-4 focus:ring-amber-200/50 ${
-          missing ? "border-red-300 ring-2 ring-red-100" : "border-slate-200"
-        }`}
+        className={`h-11 w-24 shrink-0 appearance-none rounded-xl border bg-linear-to-b from-white to-(--primary-soft) px-2 text-sm font-semibold 
+          text-slate-900 outline-none shadow-sm transition-all hover:border-(--primary-light) focus:border-primary focus:ring-4 focus:ring-(--primary-soft) ${
+            missing ? "border-red-300 ring-2 ring-red-100" : "border-slate-200"
+          }`}
       >
         {uniqueCountries?.map((opt) => (
           <option key={opt?.id} value={opt?.number}>
@@ -51,25 +52,29 @@ export default function PhoneInputWithAreaCode({
       <div className="relative flex-1">
         <IoPhonePortrait
           className={`pointer-events-none absolute left-3 top-3.5 h-4 w-4 ${
-            missing ? "text-red-500" : "text-amber-500"
+            missing ? "text-red-500" : "text-primary"
           }`}
         />
 
         <input
           type="text"
+          inputMode="numeric"
           name="phoneNumber"
           placeholder="(XXX) XXX-XXXX"
           value={phoneNumber}
           onChange={onPhoneNumberChange}
-          className={`h-11 w-full rounded-xl border bg-linear-to-b from-white to-amber-50/20 pl-9 pr-8 text-sm text-slate-900 outline-none shadow-sm transition-all placeholder:text-slate-400 hover:border-amber-300 focus:border-amber-500 focus:ring-4 focus:ring-amber-200/50 ${
-            missing ? "border-red-300 ring-2 ring-red-100" : "border-slate-200"
-          }`}
+          className={`h-11 w-full rounded-xl border bg-linear-to-b from-white to-(--primary-soft) pl-9 pr-8 text-sm text-slate-900 outline-none shadow-sm 
+            transition-all placeholder:text-slate-400 hover:border-(--primary-light) focus:border-primary focus:ring-4 focus:ring-(--primary-soft) ${
+              missing
+                ? "border-red-300 ring-2 ring-red-100"
+                : "border-slate-200"
+            }`}
         />
 
         {isLoading ? (
           <span className="absolute right-3 top-3.5">
             <svg
-              className="h-4 w-4 animate-spin text-amber-500"
+              className="h-4 w-4 animate-spin text-primary"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -94,7 +99,7 @@ export default function PhoneInputWithAreaCode({
             <button
               type="button"
               onClick={onClear}
-              className="absolute right-3 top-3.5 cursor-pointer text-slate-400 transition-colors hover:text-amber-600 focus:outline-none"
+              className="absolute right-3 top-3.5 cursor-pointer text-slate-400 transition-colors hover:text-primary focus:outline-none"
             >
               <IoCloseOutline className="h-4 w-4" />
             </button>

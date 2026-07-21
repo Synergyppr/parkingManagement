@@ -15,6 +15,16 @@ interface Entry {
   models?: Entry[];
 }
 
+const getPrimaryThemeColor = () => {
+  if (typeof window === "undefined") return "#d6a800";
+
+  return (
+    getComputedStyle(document.documentElement)
+      .getPropertyValue("--primary")
+      .trim() || "#d6a800"
+  );
+};
+
 function EntryManager({
   title,
   icon,
@@ -74,7 +84,7 @@ function EntryManager({
         icon: "warning",
         title: "Duplicate",
         text: `The ${title?.toLowerCase()} "${item}" already exists.`,
-        confirmButtonColor: "#d6a800",
+        confirmButtonColor: getPrimaryThemeColor(),
       });
       return;
     }
@@ -133,7 +143,7 @@ function EntryManager({
           icon: "success",
           title: "Success",
           text: `The ${title?.toLowerCase()} "${item}" has been added successfully.`,
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getPrimaryThemeColor(),
         });
       } else {
         Swal.fire({
@@ -142,7 +152,7 @@ function EntryManager({
           text:
             result?.result?.message ||
             `Failed to add the ${title?.toLowerCase()} "${item}". Please try again.`,
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getPrimaryThemeColor(),
         });
       }
     } catch (error) {
@@ -182,7 +192,7 @@ function EntryManager({
       html: `
         <div style="text-align: center;">
           <p style="margin-bottom: 8px;">Are you sure you want to delete:</p>
-          <div style="font-size: 16px; font-weight: bold; color: #b45309;">
+          <div style="font-size: 16px; font-weight: bold; color: ${getPrimaryThemeColor()};">
             ${entryToDelete?.name}
           </div>
           ${modelsHtml}
@@ -263,7 +273,7 @@ function EntryManager({
           text: `The ${title?.toLowerCase()} "${
             entry?.name
           }" has been deleted successfully.`,
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getPrimaryThemeColor(),
         });
       } else {
         Swal.fire({
@@ -272,7 +282,7 @@ function EntryManager({
           text:
             result?.result?.message ||
             `Failed to delete the ${title?.toLowerCase()}. Please try again.`,
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getPrimaryThemeColor(),
         });
       }
     } catch (error) {
@@ -281,7 +291,7 @@ function EntryManager({
         icon: "error",
         title: "Error",
         text: `An error occurred while deleting the ${title?.toLowerCase()}. Please try again.`,
-        confirmButtonColor: "#d6a800",
+        confirmButtonColor: getPrimaryThemeColor(),
       });
     } finally {
       setButtonLoading(false);
@@ -316,10 +326,10 @@ function EntryManager({
               type="button"
               disabled={buttonLoading}
               onClick={() => addVehicleItem(formValue, endpoint)}
-              className={`h-12 rounded-2xl px-7 text-sm font-black text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)] transition sm:min-w-28.5 ${
+              className={`h-12 rounded-2xl px-7 text-sm font-black text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition sm:min-w-28.5 ${
                 buttonLoading
-                  ? "cursor-not-allowed bg-amber-500/60"
-                  : "cursor-pointer bg-amber-500 hover:bg-amber-600"
+                  ? "cursor-not-allowed bg-[color-mix(in_srgb,var(--primary)_60%,transparent)]"
+                  : "cursor-pointer bg-primary hover:bg-secondary"
               }`}
             >
               {buttonLoading ? <ButtonLoader /> : editingId ? "Update" : "Add"}
@@ -333,6 +343,7 @@ function EntryManager({
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
                 Current {title}s
               </p>
+
               <p className="text-xs font-semibold text-slate-500">
                 {filteredEntries?.length || 0} result(s)
               </p>
@@ -345,7 +356,7 @@ function EntryManager({
             icon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-amber-600"
+                className="h-5 w-5 text-primary"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -377,7 +388,7 @@ function EntryManager({
               {filteredEntries?.map((entry) => (
                 <div
                   key={entry?.id + entry?.name}
-                  className="group flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800 shadow-sm"
+                  className="group flex items-center gap-2 rounded-2xl border border-(--primary-light) bg-(--primary-soft) px-3 py-2 text-sm font-bold text-primary shadow-sm"
                 >
                   <span>{entry?.name}</span>
 
@@ -385,7 +396,7 @@ function EntryManager({
                     type="button"
                     disabled={buttonLoading}
                     onClick={() => deleteVehicleItem(entry, endpoint)}
-                    className="flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-white text-amber-700 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+                    className="flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-white text-primary transition hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
                   >
                     ×
                   </button>
@@ -405,12 +416,7 @@ const VehicleCMS: React.FC<{
   vehicleTypes: Entry[];
   vehicleColors: Entry[];
   fetchVehicleDropdownData: () => Promise<void>;
-}> = ({
-  carMakes,
-  vehicleTypes,
-  vehicleColors,
-  fetchVehicleDropdownData,
-}) => {
+}> = ({ carMakes, vehicleTypes, vehicleColors, fetchVehicleDropdownData }) => {
   const labels = ["Make", "Model", "Type", "Color"];
   const [activeLabel, setActiveLabel] = useState(labels[0]);
   const [form, setForm] = useState<{ make?: string }>({});
@@ -446,8 +452,8 @@ const VehicleCMS: React.FC<{
 
   return (
     <div className="overflow-hidden rounded-4xl bg-white">
-      <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/60 to-white px-5 py-6 text-center">
-        <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+      <div className="border-b border-slate-200 bg-linear-to-br from-white via-[color-mix(in_srgb,var(--primary-soft)_60%,transparent)] to-white px-5 py-6 text-center">
+        <span className="inline-flex rounded-full border border-(--primary-light) bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-primary shadow-sm">
           Vehicle Catalog
         </span>
 
@@ -473,8 +479,8 @@ const VehicleCMS: React.FC<{
                 onClick={() => setActiveLabel(section)}
                 className={`flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border text-sm font-black transition ${
                   isActive
-                    ? "border-amber-500 bg-amber-500 text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)]"
-                    : "border-slate-200 bg-white text-slate-600 hover:border-amber-200 hover:bg-amber-50 hover:text-amber-700"
+                    ? "border-primary bg-primary text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)]"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-(--primary-light) hover:bg-(--primary-soft) hover:text-primary"
                 }`}
               >
                 <span>{tabIcon(section)}</span>
@@ -519,9 +525,8 @@ const VehicleCMS: React.FC<{
               data={filteredModels || []}
               endpoint={activeLabel}
               parentValue={{
-                id: carMakes?.find(
-                  (m) => Number(m?.id) === Number(form?.make)
-                )?.id as number,
+                id: carMakes?.find((m) => Number(m?.id) === Number(form?.make))
+                  ?.id as number,
                 name: carMakes?.find(
                   (m) => Number(m?.id) === Number(form?.make)
                 )?.name as string,

@@ -13,6 +13,16 @@ import ButtonLoader from "./elements/ButtonLoader";
 const PR_DEFAULT_STATE_TAX = 10.5;
 const PR_DEFAULT_CITY_TAX = 1.0;
 
+const getPrimaryThemeColor = () => {
+  if (typeof window === "undefined") return "#d6a800";
+
+  return (
+    getComputedStyle(document.documentElement)
+      .getPropertyValue("--primary")
+      .trim() || "#d6a800"
+  );
+};
+
 function roundToTwo(n: number): number {
   return Math.round(n * 100) / 100;
 }
@@ -107,7 +117,7 @@ function EntryManager({
           icon: "success",
           title: "Success",
           text: `${title} "${formName}" has been saved successfully.`,
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getPrimaryThemeColor(),
         });
 
         fetchTransactionTypes();
@@ -120,7 +130,7 @@ function EntryManager({
           text:
             result?.result?.message ||
             `Failed to save ${title?.toLowerCase()}. Please try again.`,
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getPrimaryThemeColor(),
         });
       }
     } catch (error) {
@@ -129,7 +139,7 @@ function EntryManager({
         icon: "error",
         title: "Error",
         text: "Something went wrong while saving this rate.",
-        confirmButtonColor: "#d6a800",
+        confirmButtonColor: getPrimaryThemeColor(),
       });
     } finally {
       setButtonLoading(false);
@@ -168,7 +178,7 @@ function EntryManager({
             icon: "success",
             title: "Deleted",
             text: `${title} has been deleted.`,
-            confirmButtonColor: "#d6a800",
+            confirmButtonColor: getPrimaryThemeColor(),
           });
         } else {
           Swal.fire({
@@ -177,7 +187,7 @@ function EntryManager({
             text:
               resData?.result?.message ||
               `Failed to delete ${title?.toLowerCase()}.`,
-            confirmButtonColor: "#d6a800",
+            confirmButtonColor: getPrimaryThemeColor(),
           });
         }
       } catch (error) {
@@ -186,7 +196,7 @@ function EntryManager({
           icon: "error",
           title: "Error",
           text: "Something went wrong while deleting this rate.",
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getPrimaryThemeColor(),
         });
       } finally {
         setButtonLoading(false);
@@ -217,8 +227,8 @@ function EntryManager({
             onClick={() => setShowTaxPanel((prev) => !prev)}
             className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-xs font-black transition ${
               showTaxPanel
-                ? "border-amber-500 bg-amber-500 text-white shadow-[0_12px_28px_rgba(214,168,0,0.28)]"
-                : "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                ? "border-primary bg-primary text-white shadow-[0_12px_28px_color-mix(in_srgb,var(--primary)_28%,transparent)]"
+                : "border-(--primary-light) bg-(--primary-soft) text-primary hover:bg-(--primary-soft)"
             }`}
           >
             <MdOutlinePercent className="h-4 w-4" />
@@ -227,9 +237,9 @@ function EntryManager({
         </div>
 
         {showTaxPanel && (
-          <section className="rounded-4xl border border-amber-200 bg-linear-to-br from-amber-50 to-white p-5">
+          <section className="rounded-4xl border border-(--primary-light) bg-linear-to-br from-(--primary-soft) to-white p-5">
             <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-[0_12px_28px_rgba(214,168,0,0.24)]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-white shadow-[0_12px_28px_color-mix(in_srgb,var(--primary)_24%,transparent)]">
                 <MdOutlinePercent className="h-5 w-5" />
               </div>
 
@@ -244,20 +254,20 @@ function EntryManager({
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-amber-200 bg-white p-4 text-center shadow-sm">
+              <div className="rounded-2xl border border-(--primary-light) bg-white p-4 text-center shadow-sm">
                 <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
                   IVU Estatal
                 </p>
-                <p className="mt-1 font-serif text-3xl font-bold text-amber-700">
+                <p className="mt-1 font-serif text-3xl font-bold text-primary">
                   {PR_DEFAULT_STATE_TAX}%
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-amber-200 bg-white p-4 text-center shadow-sm">
+              <div className="rounded-2xl border border-(--primary-light) bg-white p-4 text-center shadow-sm">
                 <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
                   IVU Municipal
                 </p>
-                <p className="mt-1 font-serif text-3xl font-bold text-amber-700">
+                <p className="mt-1 font-serif text-3xl font-bold text-primary">
                   {PR_DEFAULT_CITY_TAX}%
                 </p>
               </div>
@@ -306,15 +316,23 @@ function EntryManager({
 
               <button
                 type="button"
-                disabled={buttonLoading || !formName.trim() || !formValue.trim()}
-                onClick={handleSubmit}
-                className={`flex h-12 items-center justify-center rounded-2xl px-7 text-sm font-black text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)] transition ${
+                disabled={
                   buttonLoading || !formName.trim() || !formValue.trim()
-                    ? "cursor-not-allowed bg-amber-500/60 opacity-70"
-                    : "cursor-pointer bg-amber-500 hover:bg-amber-600"
+                }
+                onClick={handleSubmit}
+                className={`flex h-12 items-center justify-center rounded-2xl px-7 text-sm font-black text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition ${
+                  buttonLoading || !formName.trim() || !formValue.trim()
+                    ? "cursor-not-allowed bg-[color-mix(in_srgb,var(--primary)_60%,transparent)] opacity-70"
+                    : "cursor-pointer bg-primary hover:bg-secondary"
                 }`}
               >
-                {buttonLoading ? <ButtonLoader /> : editingId ? "Update" : "Add"}
+                {buttonLoading ? (
+                  <ButtonLoader />
+                ) : editingId ? (
+                  "Update"
+                ) : (
+                  "Add"
+                )}
               </button>
             </div>
 
@@ -334,7 +352,7 @@ function EntryManager({
                   type="button"
                   onClick={() => setFormTaxable((prev) => !prev)}
                   className={`relative flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full transition ${
-                    formTaxable ? "bg-amber-500" : "bg-slate-300"
+                    formTaxable ? "bg-primary" : "bg-slate-300"
                   }`}
                 >
                   <span
@@ -368,7 +386,7 @@ function EntryManager({
                   <button
                     type="button"
                     onClick={applyDefaultTax}
-                    className="text-xs font-bold text-amber-600 transition hover:text-amber-700"
+                    className="text-xs font-bold text-primary transition hover:text-primary"
                   >
                     Reset to PR defaults
                   </button>
@@ -377,16 +395,19 @@ function EntryManager({
             </div>
 
             {formTaxable && baseAmount > 0 && (
-              <section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
+              <section className="rounded-2xl border border-(--primary-light) bg-[color-mix(in_srgb,var(--primary-soft)_70%,transparent)] p-4">
                 <div className="mb-3 flex items-center gap-2">
-                  <IoReceiptOutline className="h-4 w-4 text-amber-600" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+                  <IoReceiptOutline className="h-4 w-4 text-primary" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">
                     Tax Breakdown Preview
                   </span>
                 </div>
 
                 <div className="space-y-2 text-sm">
-                  <PreviewRow label="Base amount" value={`$${baseAmount.toFixed(2)}`} />
+                  <PreviewRow
+                    label="Base amount"
+                    value={`$${baseAmount.toFixed(2)}`}
+                  />
                   <PreviewRow
                     label={`IVU Estatal (${stateRate}%)`}
                     value={`+$${previewStateTax.toFixed(2)}`}
@@ -396,7 +417,7 @@ function EntryManager({
                     value={`+$${previewCityTax.toFixed(2)}`}
                   />
 
-                  <div className="flex justify-between border-t border-amber-200 pt-2 font-black text-amber-800">
+                  <div className="flex justify-between border-t border-(--primary-light) pt-2 font-black text-primary">
                     <span>Total to charge</span>
                     <span>${previewTotal.toFixed(2)}</span>
                   </div>
@@ -418,7 +439,7 @@ function EntryManager({
               </p>
             </div>
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-200">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary ring-1 ring-(--primary-light)">
               <FaRegMoneyBill1 className="h-4 w-4" />
             </div>
           </div>
@@ -445,7 +466,7 @@ function EntryManager({
                   return (
                     <article
                       key={entry.id}
-                      className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition hover:border-amber-200 hover:bg-amber-50/40"
+                      className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition hover:border-(--primary-light) hover:bg-[color-mix(in_srgb,var(--primary-soft)_40%,transparent)]"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -453,7 +474,7 @@ function EntryManager({
                             {entry.name}
                           </h3>
 
-                          <p className="mt-1 font-serif text-3xl font-bold text-amber-700">
+                          <p className="mt-1 font-serif text-3xl font-bold text-primary">
                             ${base.toFixed(2)}
                           </p>
                         </div>
@@ -469,8 +490,8 @@ function EntryManager({
                       </div>
 
                       {entry.taxable && (
-                        <div className="mt-4 rounded-2xl border border-amber-200 bg-white p-3 text-xs">
-                          <div className="mb-2 inline-flex rounded-full bg-amber-50 px-2.5 py-1 font-bold text-amber-700">
+                        <div className="mt-4 rounded-2xl border border-(--primary-light) bg-white p-3 text-xs">
+                          <div className="mb-2 inline-flex rounded-full bg-(--primary-soft) px-2.5 py-1 font-bold text-primary">
                             + {sRate + cRate}% tax
                           </div>
 
@@ -512,8 +533,8 @@ const TransactionTypeManager: React.FC<{
 }> = ({ transactionTypes, fetchTransactionTypes }) => {
   return (
     <div className="overflow-hidden rounded-4xl bg-white">
-      <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/60 to-white px-5 py-6 text-center">
-        <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+      <div className="border-b border-slate-200 bg-linear-to-br from-white via-[color-mix(in_srgb,var(--primary-soft)_60%,transparent)] to-white px-5 py-6 text-center">
+        <span className="inline-flex rounded-full border border-(--primary-light) bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-primary shadow-sm">
           Rate Center
         </span>
 
@@ -548,7 +569,7 @@ function TaxInput({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="rounded-2xl border border-amber-200 bg-amber-50/60 px-4 py-3">
+    <label className="rounded-2xl border border-(--primary-light) bg-[color-mix(in_srgb,var(--primary-soft)_60%,transparent)] px-4 py-3">
       <span className="block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
         {label}
       </span>
@@ -561,9 +582,9 @@ function TaxInput({
           step="0.1"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full bg-transparent text-2xl font-black text-amber-700 outline-none"
+          className="w-full bg-transparent text-2xl font-black text-primary outline-none"
         />
-        <span className="text-sm font-black text-amber-700">%</span>
+        <span className="text-sm font-black text-primary">%</span>
       </div>
     </label>
   );

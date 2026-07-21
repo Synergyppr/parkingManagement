@@ -7,7 +7,7 @@ const PageLoader = () => {
       <div className="relative">
         <svg
           aria-hidden="true"
-          className="h-24 w-24 animate-spin fill-amber-500 text-amber-100 transition-all duration-500"
+          className="h-24 w-24 animate-spin fill-primary text-(--primary-soft) transition-all duration-500"
           viewBox="0 0 100 101"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -22,15 +22,13 @@ const PageLoader = () => {
           />
         </svg>
 
-        <div className="absolute inset-0 rounded-full bg-amber-400/20 blur-xl" />
+        <div className="absolute inset-0 rounded-full bg-[color-mix(in_srgb,var(--primary)_20%,transparent)] blur-xl" />
       </div>
 
       <div className="mt-6 text-center">
-        <h3 className="font-serif text-xl font-bold text-slate-900">
-          Parkey
-        </h3>
+        <h3 className="font-serif text-xl font-bold text-slate-900">Parkey</h3>
 
-        <p className="mt-1 text-xs font-black uppercase tracking-[0.22em] text-amber-600">
+        <p className="mt-1 text-xs font-black uppercase tracking-[0.22em] text-primary">
           Loading Experience
         </p>
       </div>

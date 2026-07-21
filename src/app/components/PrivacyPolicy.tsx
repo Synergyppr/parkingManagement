@@ -20,29 +20,28 @@ export default function PrivacyPolicy() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#f8f5ed] px-4 py-8 text-slate-800">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(214,168,0,0.18),transparent_34%),radial-gradient(circle_at_bottom,rgba(15,23,42,0.08),transparent_42%)]" />
+    <main className="min-h-screen bg-(--primary-soft) px-4 py-8 text-slate-800 transition-colors duration-300">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--primary)_18%,transparent),transparent_34%),radial-gradient(circle_at_bottom,rgba(15,23,42,0.08),transparent_42%)]" />
 
-      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-4xl border border-amber-200/70 bg-white/90 shadow-[0_30px_90px_rgba(15,23,42,0.10)] backdrop-blur-xl">
-        <header className="sticky top-0 z-50 border-b border-slate-200 bg-linear-to-br from-white via-amber-50/70 to-white px-5 py-6 md:px-8">
+      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-4xl border border-(--primary-light) bg-white/90 shadow-[0_30px_90px_rgba(15,23,42,0.10)] backdrop-blur-xl transition-colors duration-300">
+        <header className="sticky top-0 z-50 border-b border-slate-200 bg-linear-to-br from-white via-(--primary-soft) to-white px-5 py-6 transition-colors duration-300 md:px-8">
           <div className="flex flex-col items-center gap-4 text-center md:grid md:grid-cols-[25%_75%] md:text-left">
             <button
               type="button"
               onClick={() => router.push("/")}
-              className="flex items-center gap-3 rounded-full border border-amber-200 bg-white px-4 py-2 shadow-sm transition hover:bg-amber-50 
-              cursor-pointer max-w-50"
+              className="flex max-w-50 cursor-pointer items-center gap-3 rounded-full border border-(--primary-light) bg-white px-4 py-2 shadow-sm transition-all duration-300 hover:bg-(--primary-soft) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--primary-light)"
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-500 text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition-colors duration-300">
                 <KeySquare className="h-5 w-5" />
               </div>
 
-              <span className="font-serif text-2xl font-bold text-amber-600">
+              <span className="font-serif text-2xl font-bold text-primary transition-colors duration-300">
                 Parkey
               </span>
             </button>
 
             <div>
-              <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+              <span className="inline-flex rounded-full border border-(--primary-light) bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-primary shadow-sm transition-colors duration-300">
                 Legal
               </span>
 
@@ -70,7 +69,7 @@ export default function PrivacyPolicy() {
                   <li key={href}>
                     <a
                       href={`#${href}`}
-                      className="flex rounded-2xl px-4 py-3 font-bold text-slate-600 transition hover:bg-amber-50 hover:text-amber-700"
+                      className="flex rounded-2xl px-4 py-3 font-bold text-slate-600 transition-all duration-300 hover:bg-(--primary-soft) hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-(--primary-light)"
                     >
                       {label}
                     </a>
@@ -81,10 +80,11 @@ export default function PrivacyPolicy() {
           </aside>
 
           <section className="rounded-4xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-            <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50/60 px-5 py-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+            <div className="mb-6 rounded-2xl border border-(--primary-light) bg-(--primary-soft) px-5 py-4 transition-colors duration-300">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary transition-colors duration-300">
                 Effective Date
               </p>
+
               <p className="mt-1 text-sm font-bold text-slate-700">
                 July 26, 2025
               </p>
@@ -173,7 +173,7 @@ export default function PrivacyPolicy() {
                 please contact us at{" "}
                 <a
                   href="mailto:services@synergyppr.com"
-                  className="font-bold text-amber-700 underline decoration-amber-300 underline-offset-4 transition hover:text-amber-800"
+                  className="font-bold text-primary underline decoration-(--primary-light) underline-offset-4 transition-colors duration-300 hover:text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-(--primary-light)"
                 >
                   services@synergyppr.com
                 </a>
@@ -183,9 +183,10 @@ export default function PrivacyPolicy() {
               <p className="mt-4">
                 Read our{" "}
                 <a
-                  className="font-bold text-amber-700 underline decoration-amber-300 underline-offset-4 transition hover:text-amber-800"
+                  className="font-bold text-primary underline decoration-(--primary-light) underline-offset-4 transition-colors duration-300 hover:text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-(--primary-light)"
                   href="/terms-and-conditions"
                   target="_blank"
+                  rel="noopener noreferrer"
                 >
                   Terms & Conditions
                 </a>

@@ -73,8 +73,8 @@ const ModalForm = ({
   return (
     <form className="mx-auto flex w-full min-w-full flex-col rounded-4xl bg-white text-slate-800">
       {/* Header */}
-      <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/60 to-white px-5 py-6 md:px-7">
-        <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+      <div className="border-b border-slate-200 bg-linear-to-br from-white via-[color-mix(in_srgb,var(--primary-soft)_60%,transparent)] to-white px-5 py-6 md:px-7">
+        <span className="inline-flex rounded-full border border-(--primary-light) bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-primary shadow-sm">
           Configuration
         </span>
 
@@ -132,7 +132,10 @@ const ModalForm = ({
 
             case "date":
               return (
-                <div key={field.id} className="relative rounded-2xl bg-slate-50/70 p-1">
+                <div
+                  key={field.id}
+                  className="relative rounded-2xl bg-slate-50/70 p-1"
+                >
                   <div className="relative">
                     <input
                       id={field.id}
@@ -147,12 +150,13 @@ const ModalForm = ({
                         ).dateOfBirth || ""
                       )}
                       onChange={onChange}
-                      className="h-13 w-full rounded-2xl border border-slate-200 bg-white px-4 pt-4 text-sm font-medium text-slate-800 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                      className="h-13 w-full rounded-2xl border border-slate-200 bg-white px-4 pt-4 text-sm font-medium text-slate-800 outline-none 
+                      transition focus:border-primary focus:ring-4 focus:ring-(--primary-soft)"
                     />
 
                     <label
                       htmlFor={field?.id}
-                      className="pointer-events-none absolute -top-2 left-3 bg-white px-2 text-xs font-bold text-amber-600"
+                      className="pointer-events-none absolute -top-2 left-3 bg-white px-2 text-xs font-bold text-primary"
                     >
                       {field?.label}
                     </label>
@@ -192,7 +196,7 @@ const ModalForm = ({
                 type="button"
                 onClick={onToggleActive}
                 className={`relative flex h-8 w-14 cursor-pointer items-center rounded-full transition-all duration-300 ${
-                  isActive ? "bg-amber-500" : "bg-slate-300"
+                  isActive ? "bg-primary" : "bg-slate-300"
                 }`}
               >
                 <span
@@ -215,10 +219,10 @@ const ModalForm = ({
         <button
           type="button"
           disabled={loading || disableSubmit}
-          className={`flex h-12 w-full items-center justify-center rounded-2xl text-sm font-black shadow-[0_14px_32px_rgba(214,168,0,0.28)] transition ${
+          className={`flex h-12 w-full items-center justify-center rounded-2xl text-sm font-black shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition ${
             loading || disableSubmit
-              ? "cursor-not-allowed bg-amber-500/60 text-white opacity-60"
-              : "cursor-pointer bg-amber-500 text-white hover:bg-amber-600"
+              ? "cursor-not-allowed bg-[color-mix(in_srgb,var(--primary)_60%,transparent)] text-white opacity-60"
+              : "cursor-pointer bg-primary text-white hover:bg-secondary"
           }`}
           onClick={(e) => {
             e.preventDefault();

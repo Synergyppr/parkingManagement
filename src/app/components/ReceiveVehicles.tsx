@@ -12,7 +12,10 @@ import {
   CarPart,
 } from "@/app/types";
 import { DashboardProps } from "../types/pagesProps";
-import { fetchTicketsData, handleFetchTicketDetails } from "../helpers/dashboardHelpers";
+import {
+  fetchTicketsData,
+  handleFetchTicketDetails,
+} from "../helpers/dashboardHelpers";
 import useAuthRedirect from "../hooks/loginHook";
 import usePropertyListener from "../hooks/usePropertyListener";
 import { useProperty } from "../context/PropertyContext";
@@ -30,12 +33,83 @@ import PinConfirmationModal from "../components/PinConfirmationModal";
 import ValetTicketList from "../components/ValetTicketList";
 import PageLoader from "../components/elements/PageLoader";
 
+const DEFAULT_PRIMARY_COLOR = "#d97706";
+const DEFAULT_SECONDARY_COLOR = "#fbbf24";
+
+const isValidThemeColor = (value: unknown): value is string => {
+  if (typeof value !== "string") return false;
+
+  const color = value.trim();
+
+  return (
+    /^#[0-9a-fA-F]{3}$/.test(color) ||
+    /^#[0-9a-fA-F]{6}$/.test(color) ||
+    /^rgb(a)?\(/i.test(color) ||
+    /^hsl(a)?\(/i.test(color)
+  );
+};
+
+const applyThemeColors = ({
+  primaryColor,
+  secondaryColor,
+}: {
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
+}) => {
+  if (typeof window === "undefined") return;
+
+  const root = document.documentElement;
+
+  const primary = isValidThemeColor(primaryColor)
+    ? primaryColor.trim()
+    : DEFAULT_PRIMARY_COLOR;
+
+  const secondary = isValidThemeColor(secondaryColor)
+    ? secondaryColor.trim()
+    : DEFAULT_SECONDARY_COLOR;
+
+  root.style.setProperty("--primary", primary);
+  root.style.setProperty("--secondary", secondary);
+
+  root.style.setProperty(
+    "--primary-light",
+    `color-mix(in srgb, ${primary} 35%, white)`
+  );
+
+  root.style.setProperty(
+    "--primary-soft",
+    `color-mix(in srgb, ${primary} 10%, white)`
+  );
+
+  root.style.setProperty(
+    "--secondary-light",
+    `color-mix(in srgb, ${secondary} 35%, white)`
+  );
+
+  root.style.setProperty(
+    "--secondary-soft",
+    `color-mix(in srgb, ${secondary} 10%, white)`
+  );
+
+  localStorage.setItem("primaryColor", primary);
+  localStorage.setItem("secondaryColor", secondary);
+};
+
 export default function DashboardClient({
   initialStatus = null,
 }: DashboardProps) {
   const { registerNotificationHandler } = useSignalR();
-  const { propertyId, latitude, longitude, locationMode, requestLocation } =
-    useProperty();
+  const {
+    propertyId,
+    latitude,
+    longitude,
+    locationMode,
+    requestLocation,
+    primaryColor,
+    secondaryColor,
+    setPrimaryColor,
+    setSecondaryColor,
+  } = useProperty();
   const searchParams = useSearchParams();
   const statusFromUrl = searchParams.get("status");
   const ticketIdFromUrl = searchParams.get("ticketId");
@@ -98,6 +172,13 @@ export default function DashboardClient({
   usePropertyListener(); // listen for property changes based on user's location
 
   useEffect(() => {
+    applyThemeColors({
+      primaryColor,
+      secondaryColor,
+    });
+  }, [primaryColor, secondaryColor]);
+
+  useEffect(() => {
     if (initialStatus && validStatuses?.includes(initialStatus)) {
       setActiveTab(initialStatus);
     }
@@ -140,7 +221,7 @@ export default function DashboardClient({
   }, [registerNotificationHandler]);
 
   useEffect(() => {
-    const pageTitle = activeTab  === "received" ? "Check In " : `Tickets `;
+    const pageTitle = activeTab === "received" ? "Check In " : `Tickets `;
 
     // Update page title when unread count changes
     const count = unreadRequestedTickets?.length;
@@ -148,12 +229,12 @@ export default function DashboardClient({
       count > 0
         ? `${pageTitle} - Parkey Valet App (${count > 9 ? "9+" : count})`
         : `${pageTitle} - Parkey Valet App`;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unreadRequestedTickets]);
 
   useEffect(() => {
     if (locationMode === "live") {
-      requestLocation(); // Request user's location
+      requestLocation();
     }
 
     const fetchingAllTickets = async () => {
@@ -163,6 +244,30 @@ export default function DashboardClient({
       });
 
       console.log("Fetched tickets data:", result);
+
+      const endpointPrimaryColor = isValidThemeColor(result?.primaryColor)
+        ? result.primaryColor.trim()
+        : DEFAULT_PRIMARY_COLOR;
+
+      const endpointSecondaryColor = isValidThemeColor(result?.secondaryColor)
+        ? result.secondaryColor.trim()
+        : DEFAULT_SECONDARY_COLOR;
+
+      /*
+       * Store the endpoint colors in PropertyContext.
+       * This makes the colors available to every component using useProperty().
+       */
+      setPrimaryColor(endpointPrimaryColor);
+      setSecondaryColor(endpointSecondaryColor);
+
+      /*
+       * Apply the colors immediately to prevent waiting for the
+       * PropertyContext state update and avoid a theme flash.
+       */
+      applyThemeColors({
+        primaryColor: endpointPrimaryColor,
+        secondaryColor: endpointSecondaryColor,
+      });
 
       setVehicles(result?.tickets || []);
       setReadyVehicles(result?.readyTickets || []);
@@ -178,7 +283,6 @@ export default function DashboardClient({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [propertyId, locationMode, reloadPageData]);
-
   useEffect(() => {
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
@@ -254,21 +358,24 @@ export default function DashboardClient({
   return (
     <>
       {loading === true && propertyId && (
-        <div className="fixed inset-0 bg-black/70 bg-opacity-70 z-50 flex items-center justify-center">
-          <div className="flex flex-col h-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 bg-opacity-70">
+          <div className="flex h-auto flex-col">
             <PageLoader />
-            <p className="text-white text-sm font-light mt-1 relative bottom-20 md:bottom-37.5 lg:bottom-43.75">
+            <p className="relative bottom-20 mt-1 text-sm font-light text-white md:bottom-37.5 lg:bottom-43.75">
               Loading data, please wait a moment...
             </p>
           </div>
         </div>
       )}
+
       <section
-        className="overflow-y-auto overflow-x-hidden min-h-[calc(100vh-140px)] relative z-0"
-        style={{
-          background:
-            "radial-gradient(circle at center, #ffffff 10%, #e0f2ff 90%)",
-        }}
+        className="
+          relative z-0
+          min-h-[calc(100vh-140px)]
+          overflow-x-hidden overflow-y-auto
+          bg-[radial-gradient(circle_at_center,#ffffff_10%,var(--primary-soft)_90%)]
+          transition-colors duration-300
+        "
       >
         <TabNavigation
           selected={activeTab}
@@ -277,7 +384,7 @@ export default function DashboardClient({
           setReloadPageData={setReloadPageData}
         />
 
-        <div className="w-full max-w-7xl mx-auto mt-2">
+        <div className="mx-auto mt-2 w-full max-w-7xl">
           <div className="px-2 md:px-4">
             {/* Received Tab */}
             {activeTab === "received" && (
@@ -297,12 +404,34 @@ export default function DashboardClient({
                   setReloadPageData={setReloadPageData}
                   parkedTickets={vehicles}
                 />
+
                 {/* Add 3 aesthetic cards with react icons and marketing messages */}
-                <div className="mx-auto mt-10 grid max-w-248 grid-cols-1 gap-6 md:gap-4 md:grid-cols-3 mb-6">
+                <div className="mx-auto mb-6 mt-10 grid max-w-248 grid-cols-1 gap-6 md:grid-cols-3 md:gap-4">
                   {/* Rapid Logging */}
-                  <div className="group flex min-h-32.5 items-center gap-5 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm transition-all 
-                  duration-300 hover:-translate-y-1 hover:border-amber-200 hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] mx-4 md:mx-0">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 transition-all duration-300 group-hover:bg-amber-500 group-hover:text-white">
+                  <div
+                    className="
+                      group mx-4 flex min-h-32.5 items-center gap-5
+                      rounded-4xl border border-slate-200
+                      bg-white p-6 shadow-sm
+                      transition-all duration-300
+                      hover:-translate-y-1
+                      hover:border-(--primary-light)
+                      hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)]
+                      md:mx-0
+                    "
+                  >
+                    <div
+                      className="
+                        flex h-14 w-14 shrink-0
+                        items-center justify-center
+                        rounded-2xl
+                        bg-(--primary-soft)
+                        text-primary
+                        transition-all duration-300
+                        group-hover:bg-primary
+                        group-hover:text-white
+                      "
+                    >
                       {/* <FaCarSide className="text-2xl" /> */}
                       <UserKey className="text-2xl" />
                     </div>
@@ -311,6 +440,7 @@ export default function DashboardClient({
                       <h3 className="text-base font-extrabold text-slate-950">
                         Rapid Logging
                       </h3>
+
                       <p className="mt-1 text-sm leading-5 text-slate-500">
                         Average check-in takes less than 45 seconds.
                       </p>
@@ -318,9 +448,30 @@ export default function DashboardClient({
                   </div>
 
                   {/* SMS Notifications */}
-                  <div className="group flex min-h-32.5 items-center gap-5 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm transition-all 
-                  duration-300 hover:-translate-y-1 hover:border-amber-200 hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] mx-4 md:mx-0">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 transition-all duration-300 group-hover:bg-amber-500 group-hover:text-white">
+                  <div
+                    className="
+                      group mx-4 flex min-h-32.5 items-center gap-5
+                      rounded-4xl border border-slate-200
+                      bg-white p-6 shadow-sm
+                      transition-all duration-300
+                      hover:-translate-y-1
+                      hover:border-(--primary-light)
+                      hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)]
+                      md:mx-0
+                    "
+                  >
+                    <div
+                      className="
+                        flex h-14 w-14 shrink-0
+                        items-center justify-center
+                        rounded-2xl
+                        bg-(--primary-soft)
+                        text-primary
+                        transition-all duration-300
+                        group-hover:bg-primary
+                        group-hover:text-white
+                      "
+                    >
                       {/* <FaClock className="text-2xl" /> */}
                       <MessageCircleCheck className="text-2xl" />
                     </div>
@@ -329,6 +480,7 @@ export default function DashboardClient({
                       <h3 className="text-base font-extrabold text-slate-950">
                         SMS Notifications
                       </h3>
+
                       <p className="mt-1 text-sm leading-5 text-slate-500">
                         Guests receive a digital ticket instantly via SMS.
                       </p>
@@ -336,9 +488,30 @@ export default function DashboardClient({
                   </div>
 
                   {/* Paperless Valet */}
-                  <div className="group flex min-h-32.5 items-center gap-5 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm transition-all 
-                  duration-300 hover:-translate-y-1 hover:border-amber-200 hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] mx-4 md:mx-0">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 transition-all duration-300 group-hover:bg-amber-500 group-hover:text-white">
+                  <div
+                    className="
+                      group mx-4 flex min-h-32.5 items-center gap-5
+                      rounded-4xl border border-slate-200
+                      bg-white p-6 shadow-sm
+                      transition-all duration-300
+                      hover:-translate-y-1
+                      hover:border-(--primary-light)
+                      hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)]
+                      md:mx-0
+                    "
+                  >
+                    <div
+                      className="
+                        flex h-14 w-14 shrink-0
+                        items-center justify-center
+                        rounded-2xl
+                        bg-(--primary-soft)
+                        text-primary
+                        transition-all duration-300
+                        group-hover:bg-primary
+                        group-hover:text-white
+                      "
+                    >
                       {/* <FaParking className="text-2xl" /> */}
                       <CircleParking className="text-2xl" />
                     </div>
@@ -347,6 +520,7 @@ export default function DashboardClient({
                       <h3 className="text-base font-extrabold text-slate-950">
                         Paperless Valet
                       </h3>
+
                       <p className="mt-1 text-sm leading-5 text-slate-500">
                         Eco-friendly digital receipts and retrieval requests.
                       </p>
@@ -355,9 +529,10 @@ export default function DashboardClient({
                 </div>
               </div>
             )}
+
             {/* Parked, Requested and Ready Tabs */}
             {loading && activeTab !== "received" ? (
-              <div className="flex items-center justify-center h-full">
+              <div className="flex h-full items-center justify-center">
                 <PageLoader />
               </div>
             ) : (
@@ -369,7 +544,7 @@ export default function DashboardClient({
                   }
                   activeTab={activeTab}
                   unreadTicketIds={unreadTicketIds}
-                  damagedParts={damagedParts}
+                  // damagedParts={damagedParts}
                   handleStatusChange={handleStatusChange}
                   showTransactionModal={showTransactionModal}
                   setShowTransactionModal={setShowTransactionModal}

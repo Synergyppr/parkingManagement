@@ -11,11 +11,96 @@ import { handleFetchTicketDetails } from "../helpers/dashboardHelpers";
 
 import TicketDetailsModal from "./TicketDetailsModal";
 
+const DEFAULT_PRIMARY_COLOR = "#d97706";
+const DEFAULT_SECONDARY_COLOR = "#fbbf24";
+
+const isValidThemeColor = (value: unknown): value is string => {
+  if (typeof value !== "string") return false;
+
+  const color = value.trim();
+
+  return (
+    /^#[0-9a-fA-F]{3}$/.test(color) ||
+    /^#[0-9a-fA-F]{6}$/.test(color) ||
+    /^#[0-9a-fA-F]{8}$/.test(color) ||
+    /^rgb(a)?\(/i.test(color) ||
+    /^hsl(a)?\(/i.test(color)
+  );
+};
+
+const getStoredThemeColor = (
+  key: "primaryColor" | "secondaryColor"
+) => {
+  if (typeof window === "undefined") return null;
+
+  const storedColor = localStorage.getItem(key);
+
+  return isValidThemeColor(storedColor)
+    ? storedColor.trim()
+    : null;
+};
+
+const applyThemeColors = ({
+  primaryColor,
+  secondaryColor,
+}: {
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
+}) => {
+  if (typeof window === "undefined") return;
+
+  const root = document.documentElement;
+
+  const storedPrimaryColor = getStoredThemeColor("primaryColor");
+  const storedSecondaryColor = getStoredThemeColor("secondaryColor");
+
+  const primary = isValidThemeColor(primaryColor)
+    ? primaryColor.trim()
+    : storedPrimaryColor || DEFAULT_PRIMARY_COLOR;
+
+  const secondary = isValidThemeColor(secondaryColor)
+    ? secondaryColor.trim()
+    : storedSecondaryColor || DEFAULT_SECONDARY_COLOR;
+
+  root.style.setProperty("--primary", primary);
+  root.style.setProperty("--secondary", secondary);
+
+  root.style.setProperty(
+    "--primary-light",
+    `color-mix(in srgb, ${primary} 35%, white)`
+  );
+
+  root.style.setProperty(
+    "--primary-soft",
+    `color-mix(in srgb, ${primary} 10%, white)`
+  );
+
+  root.style.setProperty(
+    "--secondary-light",
+    `color-mix(in srgb, ${secondary} 35%, white)`
+  );
+
+  root.style.setProperty(
+    "--secondary-soft",
+    `color-mix(in srgb, ${secondary} 10%, white)`
+  );
+
+  localStorage.setItem("primaryColor", primary);
+  localStorage.setItem("secondaryColor", secondary);
+};
+
 const PAGE_SIZE = 10;
 
 const Report = () => {
   const saveClickedRef = React.useRef(false);
-  const { propertyId, propertyName } = useProperty();
+  const {
+    propertyId,
+    propertyName,
+    primaryColor,
+    secondaryColor,
+    setPrimaryColor,
+    setSecondaryColor,
+  } = useProperty();
 
   const [report, setReport] = useState<ReportEntry[]>([]);
   const [ticketDetails, setTicketDetails] = useState<TicketDetails>(
@@ -39,6 +124,37 @@ const Report = () => {
   const rearViewLabelsMap = generateLabelsMap(carParts.rearViewCar);
   const passengerViewLabelsMap = generateLabelsMap(carParts.passengerViewCar);
   const driverViewLabelsMap = generateLabelsMap(carParts.driverViewCar);
+
+  useEffect(() => {
+    const storedPrimaryColor = getStoredThemeColor("primaryColor");
+    const storedSecondaryColor = getStoredThemeColor("secondaryColor");
+
+    const resolvedPrimaryColor = isValidThemeColor(primaryColor)
+      ? primaryColor.trim()
+      : storedPrimaryColor || DEFAULT_PRIMARY_COLOR;
+
+    const resolvedSecondaryColor = isValidThemeColor(secondaryColor)
+      ? secondaryColor.trim()
+      : storedSecondaryColor || DEFAULT_SECONDARY_COLOR;
+
+    if (primaryColor !== resolvedPrimaryColor) {
+      setPrimaryColor(resolvedPrimaryColor);
+    }
+
+    if (secondaryColor !== resolvedSecondaryColor) {
+      setSecondaryColor(resolvedSecondaryColor);
+    }
+
+    applyThemeColors({
+      primaryColor: resolvedPrimaryColor,
+      secondaryColor: resolvedSecondaryColor,
+    });
+  }, [
+    primaryColor,
+    secondaryColor,
+    setPrimaryColor,
+    setSecondaryColor,
+  ]);
 
   const getReportData = async () => {
     const sendForm = {
@@ -102,16 +218,18 @@ const Report = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f5ed] px-4 py-8">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(214,168,0,0.18),transparent_34%),radial-gradient(circle_at_bottom,rgba(15,23,42,0.08),transparent_42%)]" />
+    <div className="min-h-screen bg-(--primary-soft) px-4 py-8">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--primary)_18%,transparent),transparent_34%),radial-gradient(circle_at_bottom,rgba(15,23,42,0.08),transparent_42%)]" />
 
       <div className="relative mx-auto max-w-6xl space-y-7">
         {/* Hero */}
-        <section className="overflow-hidden rounded-4xl border border-amber-200/70 bg-white/90 p-6 shadow-[0_30px_90px_rgba(15,23,42,0.10)] backdrop-blur-xl md:p-8">
+        <section className="overflow-hidden rounded-4xl border border-[color-mix(in_srgb,var(--primary-light)_70%,transparent)] bg-white/90 p-6 shadow-[0_30px_90px_rgba(15,23,42,0.10)] backdrop-blur-xl md:p-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div>
-              <span className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+              <span className="inline-flex rounded-full border border-(--primary-light) bg-(--primary-soft) px-4 py-1 text-[10px] font-black uppercase 
+              tracking-[0.18em] text-primary">
                 Valet Operations
+
               </span>
 
               <h1 className="mt-4 font-serif text-4xl font-bold tracking-tight text-slate-950 md:text-5xl">
@@ -144,7 +262,7 @@ const Report = () => {
               value={search}
               onChange={handleSearchChange}
               className="h-14 w-full rounded-2xl border border-slate-200 bg-white px-5 pr-4 text-sm font-medium text-slate-900 shadow-sm outline-none 
-              transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100 my-auto"
+              transition placeholder:text-slate-400 focus:border-primary focus:ring-4 focus:ring-(--primary-soft) my-auto"
             />
           </div>
 
@@ -158,7 +276,7 @@ const Report = () => {
               </p>
             </div>
 
-            {/* <div className="h-11 w-11 rounded-2xl bg-amber-50 ring-1 ring-amber-200" /> */}
+            {/* <div className="h-11 w-11 rounded-2xl bg-[var(--primary-soft)] ring-1 ring-[var(--primary-light)]" /> */}
           </div>
         </section>
 
@@ -188,11 +306,11 @@ const Report = () => {
                 key={entry?.id}
                 type="button"
                 onClick={() => openDetails(entry?.id)}
-                className={`grid w-full grid-cols-6 items-center px-5 py-4 text-left text-sm transition hover:bg-amber-50/50 ${
+                className={`grid w-full grid-cols-6 items-center px-5 py-4 text-left text-sm transition hover:bg-(--primary-soft)/50 ${
                   i < report.length - 1 ? "border-b border-slate-100" : ""
                 }`}
               >
-                <span className="font-mono font-black tracking-wide text-amber-600">
+                <span className="font-mono font-black tracking-wide text-primary">
                   #{entry?.ticketNumber}
                 </span>
 
@@ -212,7 +330,7 @@ const Report = () => {
                   {entry?.date || "—"}
                 </span>
 
-                <span className="text-right text-sm font-black text-amber-600 cursor-pointer">
+                <span className="text-right text-sm font-black text-primary cursor-pointer">
                   View
                 </span>
               </button>
@@ -237,11 +355,12 @@ const Report = () => {
                 key={entry?.id}
                 type="button"
                 onClick={() => openDetails(entry?.id)}
-                className="w-full rounded-3xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:border-amber-200 hover:bg-amber-50/40"
+                className="w-full rounded-3xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:border-(--primary-light) 
+                hover:bg-(--primary-soft)/40"
               >
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-mono text-sm font-black tracking-wide text-amber-600">
+                    <p className="font-mono text-sm font-black tracking-wide text-primary">
                       #{entry?.ticketNumber}
                     </p>
                     <h3 className="mt-1 text-lg font-extrabold capitalize text-slate-950">
@@ -249,7 +368,7 @@ const Report = () => {
                     </h3>
                   </div>
 
-                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700 ring-1 ring-amber-200">
+                  <span className="rounded-full bg-(--primary-soft) px-3 py-1 text-xs font-black text-primary ring-1 ring-(--primary-light)">
                     View
                   </span>
                 </div>
@@ -300,7 +419,8 @@ const Report = () => {
             <button
               onClick={handlePrevPage}
               disabled={pageNumber === 1}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-amber-50 hover:text-amber-700 disabled:opacity-40"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition 
+              hover:bg-(--primary-soft) hover:text-primary disabled:opacity-40"
             >
               &lsaquo;
             </button>
@@ -312,7 +432,8 @@ const Report = () => {
             <button
               onClick={handleNextPage}
               disabled={pageNumber === totalPages}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-amber-50 hover:text-amber-700 disabled:opacity-40"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition 
+              hover:bg-(--primary-soft) hover:text-primary disabled:opacity-40"
             >
               &rsaquo;
             </button>

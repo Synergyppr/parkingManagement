@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { PropertyProvider } from "./context/PropertyContext";
-import Footer from "@/app/components/Footer";
+// import Footer from "@/app/components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,8 +36,8 @@ export default function RootLayout({
       >
         <div className="flex flex-col min-h-screen">
           <PropertyProvider>
-            <main className="grow">{children}</main>
-            <Footer />
+            <main className="grow z-20">{children}</main>
+            {/* <Footer /> */}
           </PropertyProvider>
         </div>
       </body>

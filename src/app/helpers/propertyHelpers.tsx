@@ -269,6 +269,8 @@ export const getPropertiesByTenant = async (
 
     const result = data?.result?.data;
 
+    console.log("Data", data);
+
     setInitialProperties(result || []);
     setProperties(result || []);
     setIsPropertyModalOpen(true);

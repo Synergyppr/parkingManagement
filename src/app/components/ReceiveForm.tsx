@@ -283,7 +283,7 @@ export default function ReceiveForm({
           <div className="animate-fade-in">
             {/* Header */}
             <div className="mb-8 text-center">
-              <span className="inline-flex rounded-full border border-amber-300 bg-white px-5 py-1 text-[10px] font-semibold text-amber-600 shadow-sm">
+              <span className="inline-flex rounded-full border border-(--primary-light) bg-white px-5 py-1 text-[10px] font-semibold text-primary shadow-sm">
                 Guest Intake Phase
               </span>
 
@@ -298,7 +298,7 @@ export default function ReceiveForm({
             </div>
 
             <div className="relative overflow-hidden rounded-4xl border border-slate-200/80 bg-white/80 px-5 py-8 shadow-sm backdrop-blur-xl md:px-10">
-              <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-amber-100/40" />
+              <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-(--primary-soft)" />
 
               {/* Stepper */}
               <div className="mb-10 flex md:gap-0 gap-4 items-center justify-center">
@@ -308,9 +308,9 @@ export default function ReceiveForm({
                       <div
                         className={`flex h-12 w-12 items-center justify-center rounded-full text-sm shadow-md transition-all ${
                           s < step
-                            ? "bg-amber-400 text-slate-950"
+                            ? "bg-primary text-slate-250"
                             : s === step
-                            ? "bg-amber-400 text-slate-950 shadow-amber-200"
+                            ? "bg-primary text-white shadow-[0_10px_24px_color-mix(in_srgb,var(--primary)_24%,transparent)]"
                             : "bg-white text-slate-500 ring-1 ring-slate-200"
                         }`}
                       >
@@ -337,7 +337,7 @@ export default function ReceiveForm({
                     {s < 3 && (
                       <div
                         className={`mx-5 hidden h-px w-20 md:block ${
-                          s < step ? "bg-amber-400" : "bg-slate-200"
+                          s < step ? "bg-primary" : "bg-slate-200"
                         }`}
                       />
                     )}
@@ -349,7 +349,7 @@ export default function ReceiveForm({
                 {step === 1 && (
                   <div className="space-y-9">
                     <section>
-                      <h3 className="mb-5 border-l-4 border-amber-400 pl-3 font-serif text-lg font-bold text-slate-900">
+                      <h3 className="mb-5 border-l-4 border-primary pl-3 font-serif text-lg font-bold text-slate-900">
                         Basic Information
                       </h3>
 
@@ -450,7 +450,7 @@ export default function ReceiveForm({
                     </section>
 
                     <section>
-                      <h3 className="mb-5 border-l-4 border-amber-400 pl-3 font-serif text-lg font-bold text-slate-900">
+                      <h3 className="mb-5 border-l-4 border-primary pl-3 font-serif text-lg font-bold text-slate-900">
                         Visit Logistics
                       </h3>
 
@@ -469,6 +469,7 @@ export default function ReceiveForm({
                         <FormInput
                           name="pin"
                           type="text"
+                          inputMode="numeric"
                           placeholder="Expected Return / PIN"
                           icon={<MdPassword />}
                           value={form?.pin || ""}
@@ -495,7 +496,7 @@ export default function ReceiveForm({
 
                 {step === 2 && (
                   <div className="space-y-6">
-                    <h3 className="mb-5 border-l-4 border-amber-400 pl-3 font-serif text-lg font-bold text-slate-900">
+                    <h3 className="mb-5 border-l-4 border-primary pl-3 font-serif text-lg font-bold text-slate-900">
                       Vehicle Details
                     </h3>
 
@@ -564,7 +565,7 @@ export default function ReceiveForm({
                 )}
 
                 {step === 3 && (
-                  <div className="w-full overflow-y-auto flex justify-center relative bottom-0 min-h-screen">
+                  <div className="w-full overflow-y-auto flex justify-center relative bottom-0">
                     <CarVector
                       noIncident={noIncident}
                       setNoIncident={setNoIncident}
@@ -595,11 +596,11 @@ export default function ReceiveForm({
                   {selectedVehiclePhotos.length > 0 && (
                     <div className="border border-gray-200 rounded-xl bg-gray-50 p-3 mb-3">
                       <div className="flex items-center gap-2 mb-3">
-                        <IoImagesOutline className="text-blue-600 text-lg" />
+                        <IoImagesOutline className="text-primary text-lg" />
                         <span className="text-sm font-medium text-gray-700">
                           Previous Photos
                         </span>
-                        <span className="bg-blue-100 text-blue-700 text-xs rounded-full px-1.5 py-0.5 font-semibold">
+                        <span className="bg-(--primary-soft) text-primary text-xs rounded-full px-1.5 py-0.5 font-semibold">
                           {selectedVehiclePhotos.length}
                         </span>
                       </div>
@@ -653,18 +654,19 @@ export default function ReceiveForm({
                     onClick={() =>
                       step === 1 ? handleClearForm(true) : setStep(step - 1)
                     }
-                    className="md:h-12 h-14 rounded-2xl px-6 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50 cursor-pointer"
+                    className="md:h-12 h-14 rounded-2xl px-6 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50 
+                    cursor-pointer border border-slate-200"
                   >
                     {step === 1 ? "Reset Form" : "Back"}
                   </button>
 
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 md:justify-between justify-center">
                     {step < 3 ? (
                       <button
                         type="button"
                         onClick={handleNext}
-                        className="md:h-12 h-14 rounded-2xl bg-amber-400 px-8 text-sm font-extrabold text-slate-950 shadow-sm transition hover:bg-amber-500
-                        cursor-pointer disabled:opacity-50"
+                        className="md:h-12 h-14 rounded-2xl bg-primary px-8 text-sm font-extrabold text-white shadow-sm transition hover:bg-secondary
+                        cursor-pointer disabled:opacity-50 mx-auto w-full"
                       >
                         Confirm & Proceed
                       </button>
@@ -736,7 +738,7 @@ export default function ReceiveForm({
                             setPhotos
                           );
                         }}
-                        className="h-12 rounded-2xl bg-amber-400 px-8 text-sm font-extrabold text-slate-950 shadow-sm transition hover:bg-amber-500 
+                        className="h-12 rounded-2xl bg-primary px-8 text-sm font-extrabold text-slate-950 shadow-sm transition hover:bg-secondary 
                         disabled:opacity-60 cursor-pointer"
                       >
                         {loader ? "Submitting..." : "Submit"}
@@ -759,7 +761,7 @@ export default function ReceiveForm({
 
             <button
               onClick={handleSubmitAnother}
-              className="h-11 px-6 bg-amber-400 hover:bg-amber-500 text-slate-950 font-semibold rounded-xl transition-colors text-sm flex items-center gap-2 cursor-pointer"
+              className="h-11 px-6 bg-primary hover:bg-secondary text-slate-950 font-semibold rounded-xl transition-colors text-sm flex items-center gap-2 cursor-pointer"
             >
               <CiRedo className="w-4 h-4" />
               Submit Another Vehicle

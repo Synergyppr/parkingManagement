@@ -1,3 +1,6 @@
+
+
+
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -22,6 +25,7 @@ import { PiUsersThreeFill } from "react-icons/pi";
 import { BsFillBuildingsFill } from "react-icons/bs";
 import { useProperty } from "../context/PropertyContext";
 import { formatDateOfBirth } from "../lib/clientUtils";
+
 import Modal from "./Modal";
 import TenantForm from "./TenantForm"; // To configure tenant
 import ListModal from "./ListModal";
@@ -32,6 +36,95 @@ import DeviceCMS from "./DeviceManager";
 import TransactionTypeManager from "./TransactionTypeManager";
 import TerminalCMS from "./TerminalManager";
 import PageLoader from "./elements/PageLoader";
+
+
+const DEFAULT_PRIMARY_COLOR = "#d97706";
+const DEFAULT_SECONDARY_COLOR = "#fbbf24";
+
+const isValidThemeColor = (value: unknown): value is string => {
+  if (typeof value !== "string") return false;
+
+  const color = value.trim();
+
+  return (
+    /^#[0-9a-fA-F]{3}$/.test(color) ||
+    /^#[0-9a-fA-F]{6}$/.test(color) ||
+    /^#[0-9a-fA-F]{8}$/.test(color) ||
+    /^rgb(a)?\(/i.test(color) ||
+    /^hsl(a)?\(/i.test(color)
+  );
+};
+
+const getStoredThemeColor = (
+  key: "primaryColor" | "secondaryColor"
+) => {
+  if (typeof window === "undefined") return null;
+
+  const storedColor = localStorage.getItem(key);
+
+  return isValidThemeColor(storedColor)
+    ? storedColor.trim()
+    : null;
+};
+
+const applyThemeColors = ({
+  primaryColor,
+  secondaryColor,
+}: {
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
+}) => {
+  if (typeof window === "undefined") return;
+
+  const root = document.documentElement;
+
+  const storedPrimaryColor = getStoredThemeColor("primaryColor");
+  const storedSecondaryColor = getStoredThemeColor("secondaryColor");
+
+  const primary = isValidThemeColor(primaryColor)
+    ? primaryColor.trim()
+    : storedPrimaryColor || DEFAULT_PRIMARY_COLOR;
+
+  const secondary = isValidThemeColor(secondaryColor)
+    ? secondaryColor.trim()
+    : storedSecondaryColor || DEFAULT_SECONDARY_COLOR;
+
+  root.style.setProperty("--primary", primary);
+  root.style.setProperty("--secondary", secondary);
+
+  root.style.setProperty(
+    "--primary-light",
+    `color-mix(in srgb, ${primary} 35%, white)`
+  );
+
+  root.style.setProperty(
+    "--primary-soft",
+    `color-mix(in srgb, ${primary} 10%, white)`
+  );
+
+  root.style.setProperty(
+    "--secondary-light",
+    `color-mix(in srgb, ${secondary} 35%, white)`
+  );
+
+  root.style.setProperty(
+    "--secondary-soft",
+    `color-mix(in srgb, ${secondary} 10%, white)`
+  );
+
+  localStorage.setItem("primaryColor", primary);
+  localStorage.setItem("secondaryColor", secondary);
+};
+
+const getPrimaryThemeColor = () => {
+  if (typeof window === "undefined") return "#d6a800";
+
+  return (
+    getComputedStyle(document.documentElement)
+      .getPropertyValue("--primary")
+      .trim() || "#d6a800"
+  );
+};
 
 interface TenantsProps {
   data: {
@@ -58,7 +151,13 @@ interface DropdownData {
 
 const Tenants = ({ data }: TenantsProps) => {
   const tenants = data?.data;
-  const { propertyId } = useProperty();
+  const {
+    propertyId,
+    primaryColor,
+    secondaryColor,
+    setPrimaryColor,
+    setSecondaryColor,
+  } = useProperty();
   const router = useRouter();
 
   const [tenantData, setTenantData] = useState(data?.data);
@@ -88,6 +187,37 @@ const Tenants = ({ data }: TenantsProps) => {
   const [selectedEntity, setSelectedEntity] = useState<
     UserFormType | Property | null
   >(null);
+
+  useEffect(() => {
+    const storedPrimaryColor = getStoredThemeColor("primaryColor");
+    const storedSecondaryColor = getStoredThemeColor("secondaryColor");
+
+    const resolvedPrimaryColor = isValidThemeColor(primaryColor)
+      ? primaryColor.trim()
+      : storedPrimaryColor || DEFAULT_PRIMARY_COLOR;
+
+    const resolvedSecondaryColor = isValidThemeColor(secondaryColor)
+      ? secondaryColor.trim()
+      : storedSecondaryColor || DEFAULT_SECONDARY_COLOR;
+
+    if (primaryColor !== resolvedPrimaryColor) {
+      setPrimaryColor(resolvedPrimaryColor);
+    }
+
+    if (secondaryColor !== resolvedSecondaryColor) {
+      setSecondaryColor(resolvedSecondaryColor);
+    }
+
+    applyThemeColors({
+      primaryColor: resolvedPrimaryColor,
+      secondaryColor: resolvedSecondaryColor,
+    });
+  }, [
+    primaryColor,
+    secondaryColor,
+    setPrimaryColor,
+    setSecondaryColor,
+  ]);
 
   const handleCloseForm = (form?: string) => {
     if (form === "user") setIsUserFormOpen(false);
@@ -152,7 +282,7 @@ const Tenants = ({ data }: TenantsProps) => {
           icon: "error",
           title: "Error",
           text: "Failed to fetch dropdown data.",
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getPrimaryThemeColor(),
         });
       }
     } catch (error) {
@@ -181,7 +311,7 @@ const Tenants = ({ data }: TenantsProps) => {
           icon: "error",
           title: "Error",
           text: "Failed to fetch dropdown data.",
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getPrimaryThemeColor(),
         });
       }
     } catch (error) {
@@ -210,7 +340,7 @@ const Tenants = ({ data }: TenantsProps) => {
           icon: "error",
           title: "Error",
           text: "Failed to fetch dropdown data.",
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getPrimaryThemeColor(),
         });
       }
     } catch (error) {
@@ -239,7 +369,7 @@ const Tenants = ({ data }: TenantsProps) => {
           icon: "error",
           title: "Error",
           text: "Failed to fetch terminals data.",
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getPrimaryThemeColor(),
         });
       }
     } catch (error) {
@@ -310,14 +440,17 @@ const Tenants = ({ data }: TenantsProps) => {
         </div>
       )}
 
-      <div className="min-h-screen bg-[#f8f5ed] px-4 py-8">
-        <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(214,168,0,0.18),transparent_34%),radial-gradient(circle_at_bottom,rgba(15,23,42,0.08),transparent_42%)]" />
+      <div className="min-h-screen bg-(--primary-soft) px-4 py-8">
+        <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--primary)_18%,transparent),transparent_34%),radial-gradient(circle_at_bottom,rgba(15,23,42,0.08),transparent_42%)]" />
 
         <div className="relative mx-auto max-w-6xl space-y-7">
-          <section className="overflow-hidden rounded-4xl border border-amber-200/70 bg-white/90 p-6 shadow-[0_30px_90px_rgba(15,23,42,0.10)] backdrop-blur-xl md:p-8">
+          <section className="overflow-hidden rounded-4xl border border-[color-mix(in_srgb,var(--primary-light)_70%,transparent)] bg-white/90 p-6 shadow-[0_30px_90px_rgba(15,23,42,0.10)] backdrop-blur-xl md:p-8">
             <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
               <div>
-                <span className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+                <span
+                  className="inline-flex rounded-full border border-(--primary-light) bg-(--primary-soft) px-4 py-1 text-[10px] font-black uppercase 
+                tracking-[0.18em] text-primary"
+                >
                   System Settings
                 </span>
 
@@ -333,7 +466,8 @@ const Tenants = ({ data }: TenantsProps) => {
 
               <button
                 onClick={() => handleOpenTenantModal(null)}
-                className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-amber-500 px-6 text-sm font-extrabold text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)] transition hover:bg-amber-600"
+                className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-primary px-6 text-sm font-extrabold text-white 
+                shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition hover:bg-secondary"
               >
                 Add Tenant
               </button>
@@ -362,7 +496,7 @@ const Tenants = ({ data }: TenantsProps) => {
             {tenants?.map((tenant) => (
               <div
                 key={tenant?.id}
-                className="group rounded-4xl border border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:border-amber-200 hover:shadow-[0_24px_60px_rgba(15,23,42,0.10)]"
+                className="group rounded-4xl border border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] transition"
                 onClick={() => {
                   if (!selectedTenantId)
                     setSelectedTenantId(tenant?.id as string);
@@ -399,7 +533,7 @@ const Tenants = ({ data }: TenantsProps) => {
                         {tenant?.description?.length > 130 && (
                           <button
                             type="button"
-                            className="ml-1 cursor-pointer font-bold text-amber-600 hover:text-amber-700"
+                            className="ml-1 cursor-pointer font-bold text-primary"
                             onClick={(e) => {
                               e.stopPropagation();
                               setSeeMore(!seeMore);
@@ -486,7 +620,8 @@ const Tenants = ({ data }: TenantsProps) => {
                         e.stopPropagation();
                         handleOpenTenantModal(tenant);
                       }}
-                      className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-700 transition hover:bg-amber-500 hover:text-white"
+                      className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-(--primary-light) bg-(--primary-soft) 
+                      text-primary transition"
                       title="Edit"
                     >
                       <FaPencil className="h-4 w-4" />
@@ -498,7 +633,8 @@ const Tenants = ({ data }: TenantsProps) => {
                         e.stopPropagation();
                         handleTenantDelete(tenant?.id as string, router);
                       }}
-                      className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-red-100 bg-white text-red-500 transition hover:bg-red-50"
+                      className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-red-100 bg-white text-red-500 transition 
+                      hover:bg-red-50"
                       title="Delete"
                     >
                       <FaTrash className="h-4 w-4" />
@@ -661,7 +797,7 @@ function SummaryCard({
 }) {
   return (
     <div className="rounded-4xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-200">
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary ring-1 ring-(--primary-light)">
         {icon}
       </div>
       <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
@@ -685,9 +821,10 @@ function QuickAction({
     <button
       type="button"
       onClick={onClick}
-      className="group flex min-h-23 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 text-center text-xs font-bold text-slate-600 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-700"
+      className="group flex min-h-23 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 text-center 
+      text-xs font-bold text-slate-600 transition"
     >
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm transition group-hover:bg-amber-500 group-hover:text-white">
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-primary shadow-sm transition">
         {icon}
       </span>
       {label}
@@ -719,7 +856,7 @@ function EntityCard({
 
       <button
         onClick={onEdit}
-        className="mt-4 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white transition hover:bg-amber-600 cursor-pointer"
+        className="mt-4 rounded-xl bg-[var(--primary-soft)]0 px-4 py-2 text-xs font-bold text-white transition bg-secondary cursor-pointer"
       >
         Edit
       </button>

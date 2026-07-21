@@ -21,7 +21,7 @@ const ModalSelect = ({
   const [isFocused, setIsFocused] = useState(false);
 
   return (
-    <div className="mb-4 relative">
+    <div className="relative mb-4">
       <select
         id={id}
         name={name}
@@ -30,17 +30,19 @@ const ModalSelect = ({
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         disabled={disabled}
-        className={`w-full text-gray-800 px-2 py-2 border-b border-gray-500 text-sm tracking-tight bg-transparent focus:outline-none focus:border-amber-500 appearance-none transition-all placeholder:none ${
-          disabled ? "bg-gray-200 cursor-not-allowed" : ""
-        }`}
+        className={`w-full appearance-none border-b border-gray-500 bg-transparent px-2 py-2 text-sm tracking-tight text-gray-800 transition-all 
+          placeholder:none focus:border-primary focus:outline-none ${
+            disabled ? "cursor-not-allowed bg-gray-200" : ""
+          }`}
       >
         {children}
       </select>
+
       <label
         htmlFor={id}
-        className={`absolute text-sm left-2 px-1 transition-all duration-200 bg-transparent pointer-events-none ${
+        className={`pointer-events-none absolute left-2 bg-transparent px-1 text-sm transition-all duration-200 ${
           isFocused || value
-            ? "-top-2 text-xs text-amber-600"
+            ? "-top-2 text-xs text-primary"
             : "top-2.75 text-gray-500"
         }`}
       >

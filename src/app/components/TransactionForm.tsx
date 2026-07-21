@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import FormInput from "./elements/FormInput";
+
 import { FaCreditCard } from "react-icons/fa";
 import {
   MdCardGiftcard,
@@ -11,8 +11,11 @@ import {
   MdPayment,
 } from "react-icons/md";
 import { RiSecurePaymentFill } from "react-icons/ri";
+
 import { TaxBreakdown, PaymentTerminal } from "../types";
 import { useProperty } from "../context/PropertyContext";
+
+import FormInput from "./elements/FormInput";
 
 interface TransactionForm {
   amount: number;
@@ -46,9 +49,17 @@ interface TransactionType {
 }
 
 const PAYMENT_METHODS = [
-  { key: "ecr", label: "Card (POS)", icon: <FaCreditCard className="h-4 w-4" /> },
+  {
+    key: "ecr",
+    label: "Card (POS)",
+    icon: <FaCreditCard className="h-4 w-4" />,
+  },
   { key: "athm", label: "ATH Movil", icon: <MdPayment className="h-4 w-4" /> },
-  { key: "p2p", label: "Card (Online)", icon: <MdPayment className="h-4 w-4" /> },
+  {
+    key: "p2p",
+    label: "Card (Online)",
+    icon: <MdPayment className="h-4 w-4" />,
+  },
   { key: "cash", label: "Cash", icon: <MdPayment className="h-4 w-4" /> },
 ];
 
@@ -73,8 +84,25 @@ function buildTaxBreakdown(type: TransactionType): TaxBreakdown | null {
   const cityTax = roundToTwo(base * (cRate / 100));
   const total = roundToTwo(base + stateTax + cityTax);
 
-  return { base, stateTax, stateTaxRate: sRate, cityTax, cityTaxRate: cRate, total };
+  return {
+    base,
+    stateTax,
+    stateTaxRate: sRate,
+    cityTax,
+    cityTaxRate: cRate,
+    total,
+  };
 }
+
+const getPrimaryThemeColor = () => {
+  if (typeof window === "undefined") return "#d6a800";
+
+  return (
+    getComputedStyle(document.documentElement)
+      .getPropertyValue("--primary")
+      .trim() || "#d6a800"
+  );
+};
 
 export default function TransactionForm({
   form,
@@ -95,13 +123,14 @@ export default function TransactionForm({
     longitude: ctxLongitude,
   } = useProperty();
 
-  const pc: string | undefined = undefined;
   const isAdmin = userRole?.toLowerCase() === "admin" || userRole === "1";
 
   const [loader, setLoader] = useState(false);
   const [showPin, setShowPin] = useState(false);
   const [courtesyLoading, setCourtesyLoading] = useState(false);
-  const [transactionTypes, setTransactionTypes] = useState<TransactionType[]>([]);
+  const [transactionTypes, setTransactionTypes] = useState<TransactionType[]>(
+    []
+  );
   const [terminals, setTerminals] = useState<PaymentTerminal[]>([]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
   const [selectedTerminalId, setSelectedTerminalId] = useState("");
@@ -220,7 +249,7 @@ export default function TransactionForm({
         icon: "warning",
         title: "Missing Information",
         text: "Please select a transaction type first.",
-        confirmButtonColor: pc || "#d6a800",
+        confirmButtonColor: getPrimaryThemeColor(),
       });
       return;
     }
@@ -230,7 +259,7 @@ export default function TransactionForm({
         icon: "warning",
         title: "Missing Information",
         text: "Please select a payment method.",
-        confirmButtonColor: pc || "#d6a800",
+        confirmButtonColor: getPrimaryThemeColor(),
       });
       return;
     }
@@ -240,7 +269,7 @@ export default function TransactionForm({
         icon: "warning",
         title: "PIN Required",
         text: "Please enter your 4-digit PIN before continuing.",
-        confirmButtonColor: pc || "#d6a800",
+        confirmButtonColor: getPrimaryThemeColor(),
       });
       return;
     }
@@ -250,19 +279,20 @@ export default function TransactionForm({
         icon: "error",
         title: "Error",
         text: "Ticket ID is missing. Please try again.",
-        confirmButtonColor: pc || "#d6a800",
+        confirmButtonColor: getPrimaryThemeColor(),
       });
       return;
     }
 
-    const needsTerminal = selectedPaymentMethod === "ecr" || selectedPaymentMethod === "athm";
+    const needsTerminal =
+      selectedPaymentMethod === "ecr" || selectedPaymentMethod === "athm";
 
     if (needsTerminal && !selectedTerminalId) {
       Swal.fire({
         icon: "warning",
         title: "Terminal Required",
         text: "Please select a terminal for card/ATH Movil payments.",
-        confirmButtonColor: pc || "#d6a800",
+        confirmButtonColor: getPrimaryThemeColor(),
       });
       return;
     }
@@ -293,13 +323,21 @@ export default function TransactionForm({
 
       Swal.fire({
         title: "Processing Payment",
-        html: `<p>Sending payment request...</p><p class="text-sm mt-2 font-semibold">Amount: $${(totalAmount + effectiveTip).toFixed(2)}</p>`,
+        html: `<p>Sending payment request...</p><p class="text-sm mt-2 font-semibold">Amount: $${(
+          totalAmount + effectiveTip
+        ).toFixed(2)}</p>`,
         allowOutsideClick: false,
         showConfirmButton: false,
         didOpen: () => Swal.showLoading(),
       });
 
-      console.log("[TransactionForm] ECR DEBUG:", { isEcr, tipState: tip, effectiveTip, hasTipInPayload: "tip" in payload, payload });
+      console.log("[TransactionForm] ECR DEBUG:", {
+        isEcr,
+        tipState: tip,
+        effectiveTip,
+        hasTipInPayload: "tip" in payload,
+        payload,
+      });
 
       const res = await fetch("/api/valetTransaction/pay", {
         method: "POST",
@@ -317,7 +355,8 @@ export default function TransactionForm({
         Swal.fire({
           icon: "success",
           title: "Payment Successful",
-          text: result?.result?.message || "Transaction completed successfully!",
+          text:
+            result?.result?.message || "Transaction completed successfully!",
           showConfirmButton: false,
           timer: 2500,
         });
@@ -327,8 +366,10 @@ export default function TransactionForm({
         Swal.fire({
           icon: "error",
           title: "Payment Failed",
-          text: result?.result?.message || "The payment was not approved. Please try again.",
-          confirmButtonColor: pc || "#d6a800",
+          text:
+            result?.result?.message ||
+            "The payment was not approved. Please try again.",
+          confirmButtonColor: getPrimaryThemeColor(),
         });
       }
     } catch (error) {
@@ -339,7 +380,7 @@ export default function TransactionForm({
         icon: "error",
         title: "Payment Error",
         text: "Something went wrong. Please try again.",
-        confirmButtonColor: pc || "#d6a800",
+        confirmButtonColor: getPrimaryThemeColor(),
       });
     } finally {
       setLoader(false);
@@ -352,7 +393,7 @@ export default function TransactionForm({
         icon: "warning",
         title: "PIN Required",
         text: "Please enter your 4-digit PIN before continuing.",
-        confirmButtonColor: pc || "#d6a800",
+        confirmButtonColor: getPrimaryThemeColor(),
       });
       return;
     }
@@ -366,14 +407,18 @@ export default function TransactionForm({
       icon: "question",
       showCancelButton: true,
       confirmButtonText: "Apply Courtesy",
-      confirmButtonColor: pc || "#d6a800",
+      confirmButtonColor: getPrimaryThemeColor(),
       cancelButtonText: "Cancel",
       preConfirm: () => {
-        const el = document.getElementById("courtesy-reason") as HTMLTextAreaElement;
+        const el = document.getElementById(
+          "courtesy-reason"
+        ) as HTMLTextAreaElement;
         const val = el?.value?.trim();
 
         if (!val) {
-          Swal.showValidationMessage("A reason is required to apply a courtesy.");
+          Swal.showValidationMessage(
+            "A reason is required to apply a courtesy."
+          );
           return false;
         }
 
@@ -416,7 +461,9 @@ export default function TransactionForm({
           html: `
             <p>The valet fee has been waived.</p>
             <p class="mt-2 text-sm text-gray-500">Reason: <em>${reason}</em></p>
-            <p class="text-sm text-gray-500">Given by: <strong>${accountUser || "Unknown"}</strong></p>
+            <p class="text-sm text-gray-500">Given by: <strong>${
+              accountUser || "Unknown"
+            }</strong></p>
           `,
           showConfirmButton: false,
           timer: 3000,
@@ -427,8 +474,10 @@ export default function TransactionForm({
         Swal.fire({
           icon: "error",
           title: "Courtesy Failed",
-          text: result?.result?.message || "Could not apply courtesy. Please try again.",
-          confirmButtonColor: pc || "#d6a800",
+          text:
+            result?.result?.message ||
+            "Could not apply courtesy. Please try again.",
+          confirmButtonColor: getPrimaryThemeColor(),
         });
       }
     } catch (error) {
@@ -437,7 +486,7 @@ export default function TransactionForm({
         icon: "error",
         title: "Error",
         text: "Something went wrong.",
-        confirmButtonColor: pc || "#d6a800",
+        confirmButtonColor: getPrimaryThemeColor(),
       });
     } finally {
       setCourtesyLoading(false);
@@ -450,10 +499,7 @@ export default function TransactionForm({
         <div>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p
-                className="text-[11px] font-extrabold uppercase tracking-[0.2em]"
-                style={{ color: pc || "#d97706" }}
-              >
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-primary transition-colors duration-300">
                 Payment Session
               </p>
 
@@ -466,14 +512,7 @@ export default function TransactionForm({
               </p>
             </div>
 
-            <div
-              className="rounded-full border px-4 py-2 text-xs font-extrabold"
-              style={{
-                borderColor: pc ? `${pc}40` : "#fde68a",
-                backgroundColor: pc ? `${pc}15` : "#fffbeb",
-                color: pc || "#b45309",
-              }}
-            >
+            <div className="rounded-full border border-(--primary-light) bg-(--primary-soft) px-4 py-2 text-xs font-extrabold text-primary transition-colors duration-300">
               Secure Checkout
             </div>
           </div>
@@ -483,18 +522,12 @@ export default function TransactionForm({
         <section>
           <div className="mb-3 flex items-center justify-between gap-3">
             <h3 className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-700">
-              <MdOutlineReceiptLong style={{ color: pc || "#d97706" }} />
+              <MdOutlineReceiptLong className="text-primary transition-colors duration-300" />
               Select Rate
             </h3>
 
             {selectedTransactionType && (
-              <span
-                className="rounded-full px-3 py-1 text-xs font-extrabold"
-                style={{
-                  backgroundColor: pc ? `${pc}15` : "#fffbeb",
-                  color: pc || "#b45309",
-                }}
-              >
+              <span className="rounded-full bg-(--primary-soft) px-3 py-1 text-xs font-extrabold text-primary transition-colors duration-300">
                 {selectedTransactionType.name}
               </span>
             )}
@@ -525,26 +558,17 @@ export default function TransactionForm({
                         value: option.value,
                       }));
                     }}
-                    className={`group flex items-center justify-between rounded-2xl border p-4 text-left transition cursor-pointer ${
+                    className={`group flex cursor-pointer items-center justify-between rounded-2xl border p-4 text-left transition-all duration-300 ${
                       active
-                        ? "shadow-lg"
-                        : "border-slate-200 bg-white hover:bg-slate-50/40"
+                        ? "border-(--primary-light) bg-(--primary-soft) shadow-[0_12px_30px_color-mix(in_srgb,var(--primary)_18%,transparent)]"
+                        : "border-slate-200 bg-white hover:border-(--primary-light) hover:bg-(--primary-soft)"
                     }`}
-                    style={
-                      active
-                        ? {
-                            borderColor: pc ? `${pc}80` : "#fbbf24",
-                            backgroundColor: pc ? `${pc}15` : "#fffbeb",
-                          }
-                        : undefined
-                    }
                   >
                     <div>
                       <p
-                        className={`text-sm font-extrabold ${
-                          active ? "" : "text-slate-900"
+                        className={`text-sm font-extrabold transition-colors duration-300 ${
+                          active ? "text-primary" : "text-slate-900"
                         }`}
-                        style={active ? { color: pc || "#92400e" } : undefined}
                       >
                         {option.name}
                       </p>
@@ -556,10 +580,9 @@ export default function TransactionForm({
 
                     <div className="text-right">
                       <p
-                        className={`text-lg font-black ${
-                          active ? "" : "text-slate-900"
+                        className={`text-lg font-black transition-colors duration-300 ${
+                          active ? "text-primary" : "text-slate-900"
                         }`}
-                        style={active ? { color: pc || "#b45309" } : undefined}
                       >
                         ${optionTotal.toFixed(2)}
                       </p>
@@ -618,7 +641,7 @@ export default function TransactionForm({
         {/* SECURITY PIN */}
         <section>
           <h3 className="mb-3 flex items-center gap-2 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-700">
-            <RiSecurePaymentFill style={{ color: pc || "#d97706" }} />
+            <RiSecurePaymentFill className="text-primary transition-colors duration-300" />
             Security PIN
           </h3>
 
@@ -665,14 +688,11 @@ export default function TransactionForm({
                     setSelectedPaymentMethod(method.key);
                     if (method.key === "ecr") setTip(0);
                   }}
-                  className={`flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border text-sm font-extrabold transition ${
-                    active ? "text-white shadow-lg" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                  }`}
-                  style={
+                  className={`flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border text-sm font-extrabold transition-all duration-300 ${
                     active
-                      ? { backgroundColor: pc || "#f59e0b", borderColor: pc || "#f59e0b" }
-                      : undefined
-                  }
+                      ? "border-primary bg-primary text-white shadow-[0_10px_24px_color-mix(in_srgb,var(--primary)_26%,transparent)]"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-(--primary-light) hover:bg-(--primary-soft) hover:text-primary"
+                  }`}
                 >
                   {method.icon}
                   {method.label}
@@ -683,7 +703,8 @@ export default function TransactionForm({
         </section>
 
         {/* TERMINAL SELECTION — only for card/athm */}
-        {(selectedPaymentMethod === "ecr" || selectedPaymentMethod === "athm") && (
+        {(selectedPaymentMethod === "ecr" ||
+          selectedPaymentMethod === "athm") && (
           <section>
             <h3 className="mb-3 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-700">
               Terminal
@@ -694,18 +715,16 @@ export default function TransactionForm({
                 No terminals configured for this property.
               </div>
             ) : terminals.length === 1 ? (
-              <div
-                className="flex items-center gap-3 rounded-2xl border p-4"
-                style={{
-                  borderColor: pc ? `${pc}80` : "#fbbf24",
-                  backgroundColor: pc ? `${pc}15` : "#fffbeb",
-                }}
-              >
-                <FaCreditCard style={{ color: pc || "#d97706" }} />
+              <div className="flex items-center gap-3 rounded-2xl border border-(--primary-light) bg-(--primary-soft) p-4 transition-colors duration-300">
+                <FaCreditCard className="text-primary transition-colors duration-300" />
                 <div>
-                  <p className="text-sm font-extrabold text-slate-800">{terminals[0].name}</p>
+                  <p className="text-sm font-extrabold text-slate-800">
+                    {terminals[0].name}
+                  </p>
                   <p className="text-xs text-slate-500">
-                    {terminals[0].is_default ? "Default terminal" : "Auto-selected (only terminal)"}
+                    {terminals[0].is_default
+                      ? "Default terminal"
+                      : "Auto-selected (only terminal)"}
                   </p>
                 </div>
               </div>
@@ -719,21 +738,16 @@ export default function TransactionForm({
                       key={terminal.id}
                       type="button"
                       onClick={() => setSelectedTerminalId(terminal.id)}
-                      className={`flex items-center gap-3 rounded-2xl border p-4 text-left transition cursor-pointer ${
-                        active ? "shadow-md" : "border-slate-200 bg-white hover:bg-slate-50"
-                      }`}
-                      style={
+                      className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 text-left transition-all duration-300 ${
                         active
-                          ? {
-                              borderColor: pc ? `${pc}80` : "#fbbf24",
-                              backgroundColor: pc ? `${pc}15` : "#fffbeb",
-                            }
-                          : undefined
-                      }
+                          ? "border-(--primary-light) bg-(--primary-soft) shadow-[0_10px_24px_color-mix(in_srgb,var(--primary)_18%,transparent)]"
+                          : "border-slate-200 bg-white hover:border-(--primary-light) hover:bg-(--primary-soft)"
+                      }`}
                     >
                       <FaCreditCard
-                        className="h-4 w-4"
-                        style={{ color: active ? pc || "#d97706" : "#94a3b8" }}
+                        className={`h-4 w-4 transition-colors duration-300 ${
+                          active ? "text-primary" : "text-slate-400"
+                        }`}
                       />
                       <div>
                         <p className="text-sm font-extrabold text-slate-800">
@@ -753,7 +767,8 @@ export default function TransactionForm({
         )}
 
         {/* RECEIPT PREFERENCES */}
-        {(selectedPaymentMethod === "ecr" || selectedPaymentMethod === "athm") && (
+        {(selectedPaymentMethod === "ecr" ||
+          selectedPaymentMethod === "athm") && (
           <section>
             <h3 className="mb-3 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-700">
               Receipt
@@ -768,14 +783,11 @@ export default function TransactionForm({
                     key={opt.key}
                     type="button"
                     onClick={() => setReceiptOutput(opt.key)}
-                    className={`rounded-xl border px-3 py-2 text-xs font-bold transition cursor-pointer ${
-                      active ? "text-white" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                    }`}
-                    style={
+                    className={`rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-300 cursor-pointer ${
                       active
-                        ? { backgroundColor: pc || "#f59e0b", borderColor: pc || "#f59e0b" }
-                        : undefined
-                    }
+                        ? "border-primary bg-primary text-white shadow-[0_8px_20px_color-mix(in_srgb,var(--primary)_24%,transparent)]"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-(--primary-light) hover:bg-(--primary-soft) hover:text-primary"
+                    }`}
                   >
                     {opt.label}
                   </button>
@@ -790,7 +802,8 @@ export default function TransactionForm({
                   placeholder="Receipt email (optional)"
                   value={receiptEmail === "no" ? "" : receiptEmail}
                   onChange={(e) => setReceiptEmail(e.target.value || "no")}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition 
+                  focus:border-primary focus:ring-4 focus:ring-(--primary-soft)"
                 />
               </div>
             )}
@@ -813,14 +826,11 @@ export default function TransactionForm({
                     key={amount}
                     type="button"
                     onClick={() => setTip(amount)}
-                    className={`rounded-xl border px-3 py-2 text-sm font-bold transition cursor-pointer ${
-                      active ? "text-white" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                    }`}
-                    style={
+                    className={`rounded-xl border px-3 py-2 text-sm font-bold transition-all duration-300 cursor-pointer ${
                       active
-                        ? { backgroundColor: pc || "#f59e0b", borderColor: pc || "#f59e0b" }
-                        : undefined
-                    }
+                        ? "border-primary bg-primary text-white shadow-[0_8px_20px_color-mix(in_srgb,var(--primary)_24%,transparent)]"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-(--primary-light) hover:bg-(--primary-soft) hover:text-primary"
+                    }`}
                   >
                     {amount === 0 ? "None" : `$${amount}`}
                   </button>
@@ -839,30 +849,22 @@ export default function TransactionForm({
           <textarea
             name="notes"
             value={form.notes || ""}
-            onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
+            onChange={(e) =>
+              setForm((prev) => ({ ...prev, notes: e.target.value }))
+            }
             placeholder="Add any special handling instructions or transaction notes..."
-            className="h-24 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
-            style={{
-              borderColor: undefined,
-            }}
+            className="h-24 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-(--primary-soft)"
           />
         </section>
 
         {/* COURTESY — ADMIN ONLY */}
         {isAdmin && (
-          <section
-            className="rounded-2xl border p-4"
-            style={{
-              borderColor: pc ? `${pc}40` : "#fde68a",
-              backgroundColor: pc ? `${pc}08` : "#fffbeb80",
-            }}
-          >
+          <section className="rounded-2xl border border-(--primary-light) bg-(--primary-soft) p-4 transition-colors duration-300">
             <button
               type="button"
               onClick={handleCourtesy}
               disabled={courtesyLoading || !form?.pin || form.pin.length !== 4}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-extrabold text-white shadow-lg transition hover:opacity-90 disabled:opacity-50 cursor-pointer"
-              style={{ backgroundColor: pc || "#f59e0b" }}
+              className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-extrabold text-white shadow-[0_12px_28px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition-all duration-300 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
               <MdCardGiftcard className="h-4 w-4" />
               {courtesyLoading ? "Applying..." : "Give Courtesy"}
@@ -912,8 +914,7 @@ export default function TransactionForm({
                 !form?.pin ||
                 form.pin.length !== 4
               }
-              className="h-14 rounded-2xl px-10 text-sm font-extrabold text-white shadow-lg transition hover:opacity-90 disabled:opacity-50 cursor-pointer"
-              style={{ backgroundColor: pc || "#f59e0b" }}
+              className="h-14 cursor-pointer rounded-2xl bg-primary px-10 text-sm font-extrabold text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition-all duration-300 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loader ? "Processing..." : "Submit Payment"}
             </button>

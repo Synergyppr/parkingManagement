@@ -15,6 +15,8 @@ interface Property {
   address: string;
   createdAtDateTime: string;
   isActive: boolean;
+  primaryColor: string;
+  secondaryColor: string;
 }
 
 interface Props {
@@ -39,10 +41,13 @@ export default function PropertyListModal({
     <>
       <Modal isOpen={isOpen} onClose={onClose}>
         <div className="overflow-hidden rounded-4xl bg-white">
-          <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/60 to-white px-5 py-6">
+          <div className="border-b border-slate-200 bg-linear-to-br from-white via-[color-mix(in_srgb,var(--primary-soft)_60%,transparent)] to-white px-5 py-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+                <span
+                  className="inline-flex rounded-full border border-(--primary-light) bg-white px-4 py-1 text-[10px] font-black uppercase 
+                tracking-[0.18em] text-primary shadow-sm"
+                >
                   Property Directory
                 </span>
 
@@ -62,7 +67,8 @@ export default function PropertyListModal({
                   setSelectedProperty(null);
                   setIsPropertyFormOpen(true);
                 }}
-                className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-amber-500 text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)] transition hover:bg-amber-600"
+                className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-primary text-white 
+                shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition hover:bg-secondary"
                 title="Add property"
               >
                 <FaPlus className="h-4 w-4" />
@@ -79,7 +85,7 @@ export default function PropertyListModal({
                 </p>
               </div>
 
-              <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700 ring-1 ring-amber-200">
+              <span className="rounded-full bg-(--primary-soft) px-3 py-1 text-xs font-black text-primary ring-1 ring-(--primary-light)">
                 Locations
               </span>
             </div>
@@ -87,8 +93,8 @@ export default function PropertyListModal({
 
           <div className="p-5">
             {!properties || properties.length === 0 ? (
-              <div className="flex min-h-45 flex-col items-center justify-center rounded-4xl border border-dashed border-amber-200 bg-amber-50/40 p-8 text-center">
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-amber-600 ring-1 ring-amber-200">
+              <div className="flex min-h-45 flex-col items-center justify-center rounded-4xl border border-dashed border-(--primary-light) bg-[color-mix(in_srgb,var(--primary-soft)_40%,transparent)] p-8 text-center">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-primary ring-1 ring-(--primary-light)">
                   <FaPlus className="h-4 w-4" />
                 </div>
 
@@ -105,9 +111,13 @@ export default function PropertyListModal({
                 {properties.map((property) => (
                   <li
                     key={property?.id}
-                    className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:border-amber-200 hover:bg-amber-50/30 hover:shadow-md"
+                    className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 
+                    hover:border-(--primary-light) hover:bg-[color-mix(in_srgb,var(--primary-soft)_30%,transparent)] hover:shadow-md"
                   >
-                    <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-amber-100/60 transition group-hover:bg-amber-200/70" />
+                    <div
+                      className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[color-mix(in_srgb,var(--primary-soft)_60%,transparent)] transition 
+                    group-hover:bg-[color-mix(in_srgb,var(--primary-light)_70%,transparent)]"
+                    />
 
                     <button
                       type="button"
@@ -125,7 +135,8 @@ export default function PropertyListModal({
                         });
                         setIsPropertyFormOpen(true);
                       }}
-                      className="absolute right-4 top-4 z-20 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-amber-200 bg-white text-amber-600 shadow-sm transition hover:scale-105 hover:bg-amber-500 hover:text-white"
+                      className="absolute right-4 top-4 z-20 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border 
+                      border-(--primary-light) bg-white text-primary shadow-sm transition hover:scale-105 hover:bg-primary hover:text-white"
                       title="Edit property"
                     >
                       <FaPencil className="h-3.5 w-3.5" />
@@ -133,7 +144,7 @@ export default function PropertyListModal({
 
                     <div className="relative z-10 p-5 pr-16">
                       <div className="mb-4">
-                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">
                           Property
                         </p>
 
@@ -163,7 +174,7 @@ export default function PropertyListModal({
                           </span>
                         </div>
 
-                        <div className="border-t border-amber-100 pt-3">
+                        <div className="border-t border-(--primary-soft) pt-3">
                           <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
                             Created
                           </p>
@@ -214,6 +225,8 @@ export default function PropertyListModal({
                   address: selectedProperty?.address ?? "",
                   createdAtDateTime: selectedProperty?.createdAtDateTime ?? "",
                   isActive: selectedProperty?.isActive ?? false,
+                  primaryColor: selectedProperty?.primaryColor ?? "",
+                  secondaryColor: selectedProperty?.secondaryColor ?? "",
                 }
               : null
           }

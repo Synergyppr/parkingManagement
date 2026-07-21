@@ -17,7 +17,7 @@ interface ValetTicketListProps {
   setVehicles: Dispatch<React.SetStateAction<Ticket[]>>;
   activeTab: string;
   unreadTicketIds: Ticket[];
-  damagedParts?: CarPart[];
+  // damagedParts?: CarPart[];
   handleStatusChange: (
     id: string,
     status: "" | "received" | "parked" | "requested" | "ready" | null
@@ -58,7 +58,7 @@ export default function ValetTicketList({
   setVehicles,
   activeTab,
   unreadTicketIds,
-  damagedParts,
+  // damagedParts,
   handleStatusChange,
   showTransactionModal,
   setShowTransactionModal,
@@ -168,7 +168,7 @@ export default function ValetTicketList({
             </h1>
 
             {activeTab !== "received" && filteredVehicles?.length > 0 && (
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-extrabold text-amber-700">
+              <span className="rounded-full bg-(--primary-soft) px-3 py-1 text-xs font-extrabold text-primary">
                 {filteredVehicles.length} {getStatusLabel(activeTab)}
               </span>
             )}
@@ -194,8 +194,8 @@ export default function ValetTicketList({
                   }}
                   className={`rounded-full px-4 py-2 text-xs font-bold transition ${
                     isActive
-                      ? "border border-amber-300 bg-white text-amber-700 shadow-sm"
-                      : "text-slate-500 hover:text-amber-700"
+                      ? "border border-[var(--primary-light)] bg-white text-[var(--primary)] shadow-sm"
+                      : "text-slate-500 hover:text-[var(--primary)]"
                   }`}
                 >
                   {getStatusLabel(tab)}
@@ -219,11 +219,13 @@ export default function ValetTicketList({
       <div className="mb-8 grid gap-3 lg:grid-cols-[1fr_auto_auto]">
         <div className="relative">
           <FiSearch className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by Ticket ID, Guest Name, or License Plate..."
-            className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-medium text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-amber-300 focus:ring-4 focus:ring-amber-100"
+            className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-medium text-slate-700 shadow-sm outline-none 
+            transition placeholder:text-slate-400 focus:border-(--primary-light) focus:ring-4 focus:ring-(--primary-soft)"
           />
         </div>
 
@@ -239,8 +241,8 @@ export default function ValetTicketList({
         <button
           type="button"
           onClick={() => (window.location.href = "/check-in?status=received")}
-          className="h-12 rounded-2xl bg-amber-500 px-7 text-sm font-extrabold text-white shadow-[0_12px_28px_rgba(217,174,38,0.28)] transition 
-          hover:bg-amber-600 cursor-pointer"
+          className="h-12 rounded-2xl bg-primary px-7 text-sm font-extrabold text-white shadow-[0_12px_28px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition 
+          hover:bg-secondary cursor-pointer"
         >
           New Check-in
         </button>
@@ -299,14 +301,14 @@ export default function ValetTicketList({
                   onClick={() => handleMarkAsRead(vehicle, "view")}
                   className={`group cursor-pointer rounded-2xl border bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 
                     hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] ${
-                    !vehicle?.isRead && vehicle?.status === "requested"
-                      ? "border-l-4 border-l-amber-500"
-                      : "border-slate-200"
-                  }`}
+                      !vehicle?.isRead && vehicle?.status === "requested"
+                        ? "border-l-4 border-l-primary"
+                        : "border-slate-200"
+                    }`}
                 >
                   <div className="mb-5 flex items-start justify-between gap-4">
                     <div className="flex min-w-0 gap-3">
-                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-amber-500" />
+                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
 
                       <div className="min-w-0">
                         <h3 className="line-clamp-2 text-lg font-extrabold leading-snug text-slate-900">
@@ -318,7 +320,9 @@ export default function ValetTicketList({
                           className="mt-1 font-mono text-sm font-bold tracking-wide text-slate-500 transition"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigator.clipboard.writeText(vehicle?.ticketNumber);
+                            navigator.clipboard.writeText(
+                              vehicle?.ticketNumber
+                            );
                           }}
                           title="Click to copy"
                         >
@@ -353,14 +357,14 @@ export default function ValetTicketList({
 
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="flex items-center gap-2 truncate text-sm font-bold text-slate-700 cursor-default">
+                      <p className="flex items-center gap-2 truncate text-sm font-bold text-slate-700 cursor-default capitalize">
                         <FiUser className="h-4 w-4 shrink-0 text-slate-400" />
                         {vehicle?.firstName} {vehicle?.lastName}
                       </p>
                     </div>
 
                     <div className="flex shrink-0 items-center gap-2">
-                      {damagedParts && (
+                      {/* {damagedParts && (
                         <button
                           type="button"
                           onClick={(e) => {
@@ -374,17 +378,17 @@ export default function ValetTicketList({
                               setShowTicketDetailsModal,
                             });
                           }}
-                          className="text-sm font-extrabold text-amber-600 transition hover:text-amber-700 cursor-pointer"
+                          className="text-sm font-extrabold text-primary transition hover:text-secondary cursor-pointer"
                         >
                           View details
                         </button>
-                      )}
+                      )} */}
 
                       {activeTab !== "ready" && (
                         <button
                           disabled={pageLoading}
                           type="button"
-                          className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-700 transition hover:bg-amber-500 
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-(--primary-soft) text-primary transition hover:bg-primary 
                           hover:text-white disabled:opacity-60 cursor-pointer"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -402,7 +406,24 @@ export default function ValetTicketList({
                         </button>
                       )}
 
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-50 text-amber-600 cursor-default">
+                      <div className="flex items-center justify-between rounded-full bg-(--primary-soft) text-primary cursor-default py-2.5 px-4 gap-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleFetchTicketDetails({
+                              id: vehicle?.id,
+                              setTicketDetails,
+                              setIncidentParts,
+                              setDescriptions,
+                              setDamagedParts,
+                              setShowTicketDetailsModal,
+                            });
+                          }}
+                          className="text-xs font-extrabold text-primary transition hover:text-secondary cursor-pointer"
+                        >
+                          View details
+                        </button>
                         <LuCar className="h-4 w-4" />
                       </div>
                     </div>
@@ -417,7 +438,7 @@ export default function ValetTicketList({
                       left: `${mousePos.x + 12}px`,
                     }}
                   >
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-600 border-t-transparent" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                   </div>
                 )}
               </React.Fragment>
@@ -426,8 +447,8 @@ export default function ValetTicketList({
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white px-6 py-24 text-center shadow-sm">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50">
-            <MdOutlineCarCrash className="h-8 w-8 text-amber-500" />
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-(--primary-soft)">
+            <MdOutlineCarCrash className="h-8 w-8 text-primary" />
           </div>
 
           <p className="text-lg font-extrabold text-slate-700">
@@ -440,7 +461,7 @@ export default function ValetTicketList({
 
           {/* <button
             disabled={pageLoading}
-            className={`mt-5 h-11 rounded-xl bg-amber-500 px-6 text-sm font-bold text-white transition`}
+            className={`mt-5 h-11 rounded-xl bg-[var(--primary)] px-6 text-sm font-bold text-white transition`}
           >
             Got it!
           </button> */}
@@ -457,7 +478,7 @@ export default function ValetTicketList({
 
           {/* <button
             type="button"
-            className="mt-5 text-sm font-extrabold text-amber-600 transition hover:text-amber-700"
+            className="mt-5 text-sm font-extrabold text-[var(--primary)] transition hover:text-[var(--secondary)]"
           >
             Load archived tickets
           </button> */}

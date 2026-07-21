@@ -7,7 +7,10 @@ const Log: React.FC<LogProps> = ({ logs }) => {
   if (!Array.isArray(logs) || logs?.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-4xl border border-dashed border-slate-200 bg-slate-50/70 px-6 py-12 text-center">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-200">
+        <div
+          className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary ring-1 
+        ring-(--primary-light)"
+        >
           <CiClock2 className="h-8 w-8" />
         </div>
 
@@ -34,7 +37,10 @@ const Log: React.FC<LogProps> = ({ logs }) => {
   return (
     <div className="rounded-4xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-5">
-        <span className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+        <span
+          className="inline-flex rounded-full border border-(--primary-light) bg-(--primary-soft) px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] 
+        text-primary"
+        >
           Activity Timeline
         </span>
       </div>
@@ -55,13 +61,16 @@ const Log: React.FC<LogProps> = ({ logs }) => {
                 key={`date-${entry?.createdDateTime}`}
                 className="my-5 flex items-center gap-3"
               >
-                <div className="h-px flex-1 bg-linear-to-r from-transparent to-amber-200" />
+                <div className="h-px flex-1 bg-linear-to-r from-transparent to-(--primary-light)" />
 
-                <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">
+                <span
+                  className="rounded-full border border-(--primary-light) bg-(--primary-soft) px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] 
+                text-primary"
+                >
                   {formatDate(entry?.createdDateTime)?.split(" ")[0]}
                 </span>
 
-                <div className="h-px flex-1 bg-linear-to-r from-amber-200 to-transparent" />
+                <div className="h-px flex-1 bg-linear-to-r from-(--primary-light) to-transparent" />
               </div>
             );
           }
@@ -72,12 +81,15 @@ const Log: React.FC<LogProps> = ({ logs }) => {
               className="flex gap-4"
             >
               <div className="flex flex-col items-center">
-                <div className="mt-1.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500 shadow-[0_6px_16px_rgba(214,168,0,0.28)]">
+                <div
+                  className="mt-1.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary 
+                shadow-[0_6px_16px_color-mix(in_srgb,var(--primary)_28%,transparent)]"
+                >
                   <div className="h-1.5 w-1.5 rounded-full bg-white" />
                 </div>
 
                 {index < array.length - 1 && (
-                  <div className="mt-1 w-px flex-1 bg-linear-to-b from-amber-200 to-slate-200" />
+                  <div className="mt-1 w-px flex-1 bg-linear-to-b from-(--primary-light) to-slate-200" />
                 )}
               </div>
 
@@ -94,7 +106,7 @@ const Log: React.FC<LogProps> = ({ logs }) => {
                           {entry?.oldValue}
                         </span>
                         {" → "}
-                        <span className="capitalize text-amber-700">
+                        <span className="capitalize text-primary">
                           {entry?.newValue}
                         </span>
                       </p>
@@ -107,9 +119,7 @@ const Log: React.FC<LogProps> = ({ logs }) => {
 
                       <p className="mt-1 text-xs font-bold text-slate-500">
                         {entry?.oldValue} →{" "}
-                        <span className="text-amber-700">
-                          {entry?.newValue}
-                        </span>
+                        <span className="text-primary">{entry?.newValue}</span>
                       </p>
                     </>
                   ) : (

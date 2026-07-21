@@ -53,6 +53,7 @@ const TransactionDetails = ({ vehicleData }: { vehicleData: VehicleData }) => {
           <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
             Customer Receipt
           </p>
+
           <div
             className="receipt-container overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4"
             dangerouslySetInnerHTML={{ __html: customerReceipt.receiptHtml }}
@@ -82,14 +83,14 @@ const DetailCard = ({
     <div
       className={`rounded-2xl border p-4 ${
         highlight
-          ? "border-amber-200 bg-amber-50/80"
+          ? "border-(--primary-light) bg-[color-mix(in_srgb,var(--primary-soft)_80%,transparent)]"
           : "border-slate-200 bg-slate-50/80"
       }`}
     >
       <div className="mb-2 flex items-center gap-2">
         <div
           className={`flex h-8 w-8 items-center justify-center rounded-xl ${
-            highlight ? "bg-amber-500 text-white" : "bg-white text-amber-600"
+            highlight ? "bg-primary text-white" : "bg-white text-primary"
           }`}
         >
           {icon}
@@ -97,7 +98,7 @@ const DetailCard = ({
 
         <p
           className={`text-[10px] font-black uppercase tracking-[0.18em] ${
-            highlight ? "text-amber-700" : "text-slate-400"
+            highlight ? "text-primary" : "text-slate-400"
           }`}
         >
           {label}
@@ -133,19 +134,20 @@ const CollapsibleSection: React.FC<{
     <div className="overflow-hidden rounded-4xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
       <button
         onClick={() => setOpen(!open)}
-        className="flex w-full cursor-pointer items-center justify-between px-6 py-5 text-left transition hover:bg-amber-50/50"
+        className="flex w-full cursor-pointer items-center justify-between px-6 py-5 text-left transition hover:bg-[color-mix(in_srgb,var(--primary-soft)_50%,transparent)]"
         type="button"
       >
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-600">
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-primary">
             Receipt
           </p>
+
           <h3 className="mt-1 font-serif text-xl font-bold text-slate-950">
             {title}
           </h3>
         </div>
 
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 text-amber-600 ring-1 ring-amber-200">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-(--primary-soft) text-primary ring-1 ring-(--primary-light)">
           <RxCaretRight
             className={`h-5 w-5 transform transition-transform duration-300 ${
               open ? "rotate-90" : ""

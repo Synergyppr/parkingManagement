@@ -1,14 +1,22 @@
 "use client";
+
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useProperty } from "../context/PropertyContext";
 import { handleLogout } from "../helpers/authHelpers";
 
-import { IoLogOut, IoSettings, IoClose } from "react-icons/io5";
+import {
+  IoLogOut,
+  IoSettings,
+  IoClose,
+  IoColorPaletteOutline,
+} from "react-icons/io5";
 import { MdHomeFilled } from "react-icons/md";
 import { HiDocumentReport } from "react-icons/hi";
 import { FaCar, FaComment } from "react-icons/fa6";
 import { KeySquare } from "lucide-react";
+
+import ThemeSelector from "./ThemeSelector";
 
 export default function OffCanvas({
   setIsMenuOpen,
@@ -42,15 +50,15 @@ export default function OffCanvas({
   const navItemClass = (active: boolean) =>
     `group flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold transition-all ${
       active
-        ? "border border-amber-200 bg-amber-50 text-amber-700 shadow-sm"
+        ? "border border-[var(--primary-light)] bg-[var(--primary-soft)] text-[var(--primary)] shadow-sm"
         : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
     }`;
 
   const iconClass = (active: boolean) =>
     `flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition ${
       active
-        ? "bg-amber-500 text-white shadow-[0_10px_24px_rgba(217,174,38,0.24)]"
-        : "bg-slate-100 text-slate-500 group-hover:bg-amber-50 group-hover:text-amber-600"
+        ? "bg-[var(--primary)] text-white shadow-[0_10px_24px_color-mix(in_srgb,var(--primary)_24%,transparent)]"
+        : "bg-slate-100 text-slate-500 group-hover:bg-[var(--primary-soft)] group-hover:text-[var(--primary)]"
     }`;
 
   return (
@@ -61,13 +69,13 @@ export default function OffCanvas({
       />
 
       <aside className="fixed right-0 top-0 z-9999 flex h-dvh w-[88vw] max-w-90 animate-[slideInRight_0.3s_ease-out] flex-col overflow-hidden border-l border-slate-200 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.28)]">
-        <div className="relative overflow-hidden border-b border-slate-200 bg-linear-to-br from-white via-amber-50/60 to-white p-5">
-          <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-amber-100/70" />
+        <div className="relative overflow-hidden border-b border-slate-200 bg-linear-to-br from-white via-(--primary-soft) to-white p-5">
+          <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-(--primary-soft)" />
 
           <div className="relative flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white shadow-[0_14px_32px_rgba(217,174,38,0.28)]">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)]">
                   <KeySquare className="h-5 w-5" />
                 </div>
 
@@ -75,7 +83,8 @@ export default function OffCanvas({
                   <h2 className="truncate font-serif text-2xl font-bold text-slate-950">
                     {displayPropertyName}
                   </h2>
-                  <p className="truncate text-xs font-bold uppercase tracking-[0.18em] text-amber-700">
+
+                  <p className="truncate text-xs font-bold uppercase tracking-[0.18em] text-primary">
                     {propertySubtitle}
                   </p>
                 </div>
@@ -84,8 +93,9 @@ export default function OffCanvas({
 
             <button
               type="button"
-              className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-amber-50 hover:text-amber-600"
+              className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-(--primary-soft) hover:text-primary"
               onClick={() => setIsMenuOpen(false)}
+              aria-label="Close menu"
               title="Close menu"
             >
               <IoClose className="h-5 w-5" />
@@ -94,7 +104,7 @@ export default function OffCanvas({
 
           <div className="relative mt-5 rounded-2xl border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur-xl">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-amber-400 to-amber-600 text-base font-black text-white shadow-[0_12px_28px_rgba(217,174,38,0.25)]">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-(--primary-light) to-primary text-base font-black text-white shadow-[0_12px_28px_color-mix(in_srgb,var(--primary)_25%,transparent)]">
                 {accountUser ? accountUser.charAt(0).toUpperCase() : "U"}
               </div>
 
@@ -102,6 +112,7 @@ export default function OffCanvas({
                 <p className="truncate text-sm font-extrabold text-slate-950">
                   {accountUser || "User"}
                 </p>
+
                 <p className="text-xs font-semibold text-slate-400">
                   Active employee session
                 </p>
@@ -125,18 +136,19 @@ export default function OffCanvas({
                 <span className={iconClass(pathname.includes("dashboard"))}>
                   <MdHomeFilled className="h-4 w-4" />
                 </span>
+
                 Dashboard
               </Link>
 
-              {/* Add Vehicles Link */}
               <Link
                 href="/check-in"
                 onClick={() => setIsMenuOpen(false)}
-                className={navItemClass(pathname.includes("vehicles"))}
+                className={navItemClass(pathname.includes("check-in"))}
               >
-                <span className={iconClass(pathname.includes("vehicles"))}>
+                <span className={iconClass(pathname.includes("check-in"))}>
                   <FaCar className="h-4 w-4" />
                 </span>
+
                 Check-In / Vehicles
               </Link>
 
@@ -148,6 +160,7 @@ export default function OffCanvas({
                 <span className={iconClass(pathname.includes("tenants"))}>
                   <IoSettings className="h-4 w-4" />
                 </span>
+
                 Tenant Configuration
               </Link>
 
@@ -159,6 +172,7 @@ export default function OffCanvas({
                 <span className={iconClass(pathname.includes("report"))}>
                   <HiDocumentReport className="h-4 w-4" />
                 </span>
+
                 Ticket Report
               </Link>
 
@@ -170,6 +184,7 @@ export default function OffCanvas({
                 <span className={iconClass(pathname.includes("surveys"))}>
                   <FaComment className="h-4 w-4" />
                 </span>
+
                 Service Feedback
               </Link>
             </div>
@@ -177,7 +192,7 @@ export default function OffCanvas({
 
           <div className="my-5 h-px bg-slate-200" />
 
-          <div>
+          <div className="mb-5">
             <p className="mb-2 px-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
               Client
             </p>
@@ -190,8 +205,37 @@ export default function OffCanvas({
               <span className={iconClass(pathname.includes("request"))}>
                 <FaCar className="h-4 w-4" />
               </span>
+
               Request Car
             </Link>
+          </div>
+
+          <div className="my-5 h-px bg-slate-200" />
+
+          <div>
+            <div className="mb-2 flex items-center gap-2 px-2">
+              <IoColorPaletteOutline className="h-4 w-4 text-primary" />
+
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
+                Appearance
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 shadow-sm transition-colors duration-300">
+              <div className="mb-3">
+                <p className="text-sm font-extrabold text-slate-950">
+                  Application Theme
+                </p>
+
+                <p className="mt-0.5 text-xs font-medium leading-5 text-slate-400">
+                  Choose the primary color used throughout Parkey.
+                </p>
+              </div>
+
+              <div className="min-w-0">
+                <ThemeSelector />
+              </div>
+            </div>
           </div>
         </nav>
 
@@ -212,6 +256,7 @@ export default function OffCanvas({
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-red-500">
               <IoLogOut className="h-4 w-4" />
             </span>
+
             Log Out
           </button>
 
@@ -220,7 +265,7 @@ export default function OffCanvas({
               href="/privacy-policy"
               target="_blank"
               onClick={() => setIsMenuOpen(false)}
-              className="text-xs font-medium text-slate-400 transition hover:text-amber-600"
+              className="text-xs font-medium text-slate-400 transition hover:text-primary"
             >
               Privacy Policy
             </Link>
@@ -229,7 +274,7 @@ export default function OffCanvas({
               href="/terms-and-conditions"
               target="_blank"
               onClick={() => setIsMenuOpen(false)}
-              className="text-xs font-medium text-slate-400 transition hover:text-amber-600"
+              className="text-xs font-medium text-slate-400 transition hover:text-primary"
             >
               Terms and Conditions
             </Link>

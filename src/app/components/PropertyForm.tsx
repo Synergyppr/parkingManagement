@@ -6,7 +6,7 @@ import ModalInput from "./elements/ModalInput";
 import { useProperty } from "../context/PropertyContext";
 import Swal from "sweetalert2";
 
-interface Property {
+export interface Property {
   id?: string;
   tenantId?: string;
   tenant?: string;
@@ -17,6 +17,8 @@ interface Property {
   address: string;
   createdAtDateTime: string;
   isActive: boolean;
+  primaryColor: string;
+  secondaryColor: string;
 }
 
 interface PropertyFormProps {
@@ -26,6 +28,16 @@ interface PropertyFormProps {
   onSuccess?: () => void;
   setModalOpen: (isOpen: boolean) => void;
 }
+
+const getPrimaryThemeColor = () => {
+  if (typeof window === "undefined") return "#d6a800";
+
+  return (
+    getComputedStyle(document.documentElement)
+      .getPropertyValue("--primary")
+      .trim() || "#d6a800"
+  );
+};
 
 export default function ModalPropertyForm({
   tenantId,
@@ -59,6 +71,8 @@ export default function ModalPropertyForm({
     radius: data?.radius || 0,
     createdAtDateTime: data?.createdAtDateTime || new Date().toISOString(),
     isActive: true,
+    primaryColor: "",
+    secondaryColor: "",
     ...data,
   });
 
@@ -81,7 +95,7 @@ export default function ModalPropertyForm({
         icon: "warning",
         title: "Missing fields",
         text: "Please fill in all required fields.",
-        confirmButtonColor: "#d6a800",
+        confirmButtonColor: getPrimaryThemeColor(),
       });
       return;
     }
@@ -137,7 +151,7 @@ export default function ModalPropertyForm({
           icon: "error",
           title: "Error",
           text: result?.result?.message || "Something went wrong.",
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getPrimaryThemeColor(),
         });
       }
     } catch (error) {
@@ -147,7 +161,7 @@ export default function ModalPropertyForm({
         icon: "error",
         title: "Error",
         text: "Something went wrong.",
-        confirmButtonColor: "#d6a800",
+        confirmButtonColor: getPrimaryThemeColor(),
       });
     } finally {
       setLoading(false);
@@ -160,13 +174,14 @@ export default function ModalPropertyForm({
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col overflow-hidden rounded-4xl bg-white text-slate-800">
-      <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/60 to-white px-5 py-6 md:px-7">
-        <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+      <div className="border-b border-slate-200 bg-linear-to-br from-white via-[color-mix(in_srgb,var(--primary-soft)_60%,transparent)] to-white px-5 py-6 md:px-7">
+        <span className="inline-flex rounded-full border border-(--primary-light) bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] 
+        text-primary shadow-sm">
           Property Setup
         </span>
 
         <div className="mt-3 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)]">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)]">
             <FaBuilding className="h-5 w-5" />
           </div>
 
@@ -252,7 +267,7 @@ export default function ModalPropertyForm({
                 type="button"
                 onClick={toggleIsActive}
                 className={`relative flex h-8 w-14 cursor-pointer items-center rounded-full transition-all duration-300 ${
-                  form?.isActive ? "bg-amber-500" : "bg-slate-300"
+                  form?.isActive ? "bg-primary" : "bg-slate-300"
                 }`}
               >
                 <span
@@ -275,10 +290,10 @@ export default function ModalPropertyForm({
           type="button"
           disabled={loading || !hasChanges}
           onClick={handleSubmit}
-          className={`flex h-12 w-full items-center justify-center rounded-2xl text-sm font-black text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)] transition ${
+          className={`flex h-12 w-full items-center justify-center rounded-2xl text-sm font-black text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition ${
             loading || !hasChanges
-              ? "cursor-not-allowed bg-amber-500/60 opacity-60"
-              : "cursor-pointer bg-amber-500 hover:bg-amber-600"
+              ? "cursor-not-allowed bg-[color-mix(in_srgb,var(--primary)_60%,transparent)] opacity-60"
+              : "cursor-pointer bg-primary hover:bg-secondary"
           }`}
         >
           {loading

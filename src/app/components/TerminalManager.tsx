@@ -13,6 +13,16 @@ interface TerminalManagerProps {
   fetchTerminals: () => void;
 }
 
+const getPrimaryThemeColor = () => {
+  if (typeof window === "undefined") return "#d6a800";
+
+  return (
+    getComputedStyle(document.documentElement)
+      .getPropertyValue("--primary")
+      .trim() || "#d6a800"
+  );
+};
+
 function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
   const { propertyId, accountUser } = useProperty();
   const [terminals, setTerminals] = useState<PaymentTerminal[]>(data || []);
@@ -45,8 +55,14 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName?.trim() || !formTerminalUrl?.trim() || !formTerminalId?.trim())
+
+    if (
+      !formName?.trim() ||
+      !formTerminalUrl?.trim() ||
+      !formTerminalId?.trim()
+    ) {
       return;
+    }
 
     setButtonLoading(true);
 
@@ -69,23 +85,24 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
 
       const response = await fetch("/api/terminals/createOrEdit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(payload),
       });
 
       const result = await response.json();
 
-      if (
-        result?.result?.status === "200" ||
-        result?.result?.status === 200
-      ) {
+      if (result?.result?.status === "200" || result?.result?.status === 200) {
         fetchTerminals();
 
         Swal.fire({
           icon: "success",
           title: "Success",
-          text: `Terminal "${formName}" ${editingId ? "updated" : "added"} successfully.`,
-          confirmButtonColor: "#d6a800",
+          text: `Terminal "${formName}" ${
+            editingId ? "updated" : "added"
+          } successfully.`,
+          confirmButtonColor: getPrimaryThemeColor(),
         });
 
         resetForm();
@@ -94,16 +111,17 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
           icon: "error",
           title: "Error",
           text: result?.result?.message || "Failed to save terminal.",
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getPrimaryThemeColor(),
         });
       }
     } catch (error) {
       console.error("Error saving terminal:", error);
+
       Swal.fire({
         icon: "error",
         title: "Error",
         text: "Something went wrong while saving this terminal.",
-        confirmButtonColor: "#d6a800",
+        confirmButtonColor: getPrimaryThemeColor(),
       });
     } finally {
       setButtonLoading(false);
@@ -129,7 +147,9 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
       try {
         const response = await fetch("/api/terminals/delete", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
             id,
             updated_by: accountUser || "system",
@@ -146,23 +166,24 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
             icon: "success",
             title: "Deleted",
             text: "The terminal has been deleted.",
-            confirmButtonColor: "#d6a800",
+            confirmButtonColor: getPrimaryThemeColor(),
           });
         } else {
           Swal.fire({
             icon: "error",
             title: "Error",
             text: res?.result?.message || "Failed to delete terminal.",
-            confirmButtonColor: "#d6a800",
+            confirmButtonColor: getPrimaryThemeColor(),
           });
         }
       } catch (err) {
         console.error("Error deleting terminal:", err);
+
         Swal.fire({
           icon: "error",
           title: "Error",
           text: "Something went wrong while deleting this terminal.",
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getPrimaryThemeColor(),
         });
       } finally {
         setButtonLoading(false);
@@ -179,6 +200,7 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
               {editingId ? "Update Terminal" : "Add New Terminal"}
             </p>
+
             <p className="mt-1 text-sm font-medium text-slate-500">
               Configure payment ECR terminals for card and ATH Movil
               transactions.
@@ -218,8 +240,9 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
                 type="checkbox"
                 checked={formIsDefault}
                 onChange={(e) => setFormIsDefault(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 accent-amber-500"
+                className="h-4 w-4 rounded border-slate-300 accent-primary"
               />
+
               <span className="text-sm font-semibold text-slate-700">
                 Set as default terminal
               </span>
@@ -234,22 +257,16 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
                 !formTerminalUrl.trim() ||
                 !formTerminalId.trim()
               }
-              className={`flex h-12 items-center justify-center rounded-2xl px-7 text-sm font-black text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)] transition ${
+              className={`flex h-12 items-center justify-center rounded-2xl px-7 text-sm font-black text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition ${
                 buttonLoading ||
                 !formName.trim() ||
                 !formTerminalUrl.trim() ||
                 !formTerminalId.trim()
-                  ? "cursor-not-allowed bg-amber-500/60 opacity-70"
-                  : "cursor-pointer bg-amber-500 hover:bg-amber-600"
+                  ? "cursor-not-allowed bg-[color-mix(in_srgb,var(--primary)_60%,transparent)] opacity-70"
+                  : "cursor-pointer bg-primary hover:bg-secondary"
               }`}
             >
-              {buttonLoading ? (
-                <ButtonLoader />
-              ) : editingId ? (
-                "Update"
-              ) : (
-                "Add"
-              )}
+              {buttonLoading ? <ButtonLoader /> : editingId ? "Update" : "Add"}
             </button>
           </form>
 
@@ -257,7 +274,7 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
             <button
               type="button"
               onClick={resetForm}
-              className="mt-3 text-xs font-bold text-slate-400 transition hover:text-amber-600"
+              className="mt-3 text-xs font-bold text-slate-400 transition hover:text-primary"
             >
               Cancel editing
             </button>
@@ -271,12 +288,13 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
                 Registered Terminals
               </p>
+
               <p className="mt-1 text-xs font-semibold text-slate-500">
                 {terminals?.length || 0} terminal(s)
               </p>
             </div>
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-200">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary ring-1 ring-(--primary-light)">
               <FaCreditCard className="h-5 w-5" />
             </div>
           </div>
@@ -293,7 +311,7 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
                 {terminals?.map((terminal) => (
                   <div
                     key={terminal.id}
-                    className="group rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition hover:border-amber-200 hover:bg-amber-50/50"
+                    className="group rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition hover:border-(--primary-light) hover:bg-[color-mix(in_srgb,var(--primary-soft)_50%,transparent)]"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
@@ -301,15 +319,18 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
                           <p className="truncate text-sm font-extrabold text-slate-950">
                             {terminal.name}
                           </p>
+
                           {terminal.is_default && (
-                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black text-amber-700">
+                            <span className="rounded-full bg-(--primary-soft) px-2 py-0.5 text-[10px] font-black text-primary">
                               DEFAULT
                             </span>
                           )}
                         </div>
+
                         <p className="mt-1 text-xs font-semibold text-slate-500">
                           ID: {terminal.terminal_id}
                         </p>
+
                         <p className="text-xs text-slate-400">
                           {terminal.terminal_url}
                         </p>
@@ -320,7 +341,7 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
                           type="button"
                           disabled={buttonLoading}
                           onClick={() => handleEdit(terminal)}
-                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white text-slate-400 shadow-sm transition hover:bg-amber-50 hover:text-amber-600 disabled:opacity-50"
+                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white text-slate-400 shadow-sm transition hover:bg-(--primary-soft) hover:text-primary disabled:opacity-50"
                           title="Edit"
                         >
                           <svg
@@ -367,8 +388,8 @@ const TerminalCMS: React.FC<{
 }> = ({ terminals, fetchTerminals }) => {
   return (
     <div className="overflow-hidden rounded-4xl bg-white">
-      <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/60 to-white px-5 py-6 text-center">
-        <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+      <div className="border-b border-slate-200 bg-linear-to-br from-white via-[color-mix(in_srgb,var(--primary-soft)_60%,transparent)] to-white px-5 py-6 text-center">
+        <span className="inline-flex rounded-full border border-(--primary-light) bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-primary shadow-sm">
           Payment Terminals
         </span>
 
@@ -382,10 +403,7 @@ const TerminalCMS: React.FC<{
         </p>
       </div>
 
-      <TerminalManager
-        fetchTerminals={fetchTerminals}
-        data={terminals || []}
-      />
+      <TerminalManager fetchTerminals={fetchTerminals} data={terminals || []} />
     </div>
   );
 };

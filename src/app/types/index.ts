@@ -16,6 +16,8 @@ export interface TicketResponseData {
   vehicleTypes: VehicleType[];
   vehicleColors: VehicleColor[];
   statuses: string[];
+  primaryColor: string;
+  secondaryColor: string;
 }
 
 export interface Ticket {
@@ -238,6 +240,8 @@ export interface Property {
   latitude: number;
   longitude: number;
   radius: number;
+  primaryColor: string;
+  secondaryColor: string;
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -314,14 +318,14 @@ export interface RateEntry {
   isActive: boolean;
   taxable?: boolean;
   stateTaxRate?: number; // percentage e.g. 10.5 (IVU Estatal - Puerto Rico)
-  cityTaxRate?: number;  // percentage e.g. 1.0  (IVU Municipal - Puerto Rico)
+  cityTaxRate?: number; // percentage e.g. 1.0  (IVU Municipal - Puerto Rico)
 }
 
 export interface CourtesyRecord {
   ticketId: string;
   reason: string;
-  givenBy: string;       // accountUser (email/username)
-  givenAt: string;       // ISO datetime string
+  givenBy: string; // accountUser (email/username)
+  givenAt: string; // ISO datetime string
   propertyId: string;
   pin: string;
 }

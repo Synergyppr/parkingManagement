@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FaBan, FaArrowLeft, FaInfoCircle } from "react-icons/fa";
@@ -42,21 +41,24 @@ function PaymentCancelContent() {
   };
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f8f5ed] px-4 py-10 text-slate-950">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(214,168,0,0.20),transparent_34%),radial-gradient(circle_at_bottom,rgba(15,23,42,0.10),transparent_42%)]" />
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-(--primary-soft) px-4 py-10 text-slate-950">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--primary)_20%,transparent),transparent_34%),radial-gradient(circle_at_bottom,rgba(15,23,42,0.10),transparent_42%)]" />
 
-      <section className="relative w-full max-w-xl overflow-hidden rounded-[2rem] border border-amber-200/70 bg-white/95 shadow-[0_30px_90px_rgba(15,23,42,0.16)] backdrop-blur-xl">
-        <div className="border-b border-slate-200 bg-gradient-to-br from-white via-amber-50/60 to-white px-6 py-7 text-center">
-          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)]">
+      <section className="relative w-full max-w-xl overflow-hidden rounded-4xl border border-[color-mix(in_srgb,var(--primary-light)_70%,transparent)] bg-white/95 shadow-[0_30px_90px_rgba(15,23,42,0.16)] backdrop-blur-xl">
+        <div className="border-b border-slate-200 bg-linear-to-br from-white via-[color-mix(in_srgb,var(--primary-soft)_60%,transparent)] to-white px-6 py-7 text-center">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)]">
             <KeySquare className="h-7 w-7" />
           </div>
 
-          <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+          <span
+            className="inline-flex rounded-full border border-(--primary-light) bg-(--primary-soft) px-4 py-1 text-[10px] font-black uppercase 
+          tracking-[0.18em] text-primary shadow-sm"
+          >
             Payment Cancelled
           </span>
 
           <div className="mt-5 flex justify-center">
-            <FaBan className="h-16 w-16 text-amber-500" />
+            <FaBan className="h-16 w-16 text-primary" />
           </div>
 
           <h1 className="mt-4 font-serif text-3xl font-bold tracking-tight text-slate-950">
@@ -69,9 +71,9 @@ function PaymentCancelContent() {
         </div>
 
         <div className="space-y-5 px-6 py-6">
-          <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50/70 p-4">
+          <div className="rounded-3xl border border-(--primary-light) bg-[color-mix(in_srgb,var(--primary-soft)_70%,transparent)] p-4">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-amber-600 ring-1 ring-amber-200">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-primary ring-1 ring-(--primary-light)">
                 <FaInfoCircle className="h-5 w-5" />
               </div>
 
@@ -89,7 +91,7 @@ function PaymentCancelContent() {
           </div>
 
           {requestId && (
-            <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-4">
+            <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
               <div className="flex items-center justify-between gap-4">
                 <span className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
                   Request ID
@@ -106,8 +108,7 @@ function PaymentCancelContent() {
             <button
               type="button"
               onClick={handleRetryPayment}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 text-sm font-black text-white shadow-lg 
-              shadow-amber-200 transition hover:bg-amber-600 cursor-pointer"
+              className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-black text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_24%,transparent)] transition hover:bg-secondary"
             >
               <FaArrowLeft className="h-4 w-4" />
               Try Payment Again
@@ -116,8 +117,7 @@ function PaymentCancelContent() {
             <button
               type="button"
               onClick={handleReturnToDashboard}
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-white text-sm font-black text-slate-700 shadow-sm transition 
-              hover:bg-slate-50 hover:text-amber-700 cursor-pointer"
+              className="h-12 w-full cursor-pointer rounded-2xl border border-slate-200 bg-white text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-primary"
             >
               Return to Dashboard
             </button>
@@ -126,7 +126,7 @@ function PaymentCancelContent() {
           <div className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-center">
             <p className="text-sm text-slate-500">
               Automatically redirecting to dashboard in{" "}
-              <span className="font-black text-amber-700">{countdown}</span>{" "}
+              <span className="font-black text-primary">{countdown}</span>{" "}
               seconds...
             </p>
           </div>

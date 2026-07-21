@@ -20,6 +20,16 @@ interface DeviceManagerProps {
   fetchPropertyDevices: () => void;
 }
 
+const getPrimaryThemeColor = () => {
+  if (typeof window === "undefined") return "#d6a800";
+
+  return (
+    getComputedStyle(document.documentElement)
+      .getPropertyValue("--primary")
+      .trim() || "#d6a800"
+  );
+};
+
 function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
   const { propertyId } = useProperty();
   const [devices, setDevices] = useState<Device[]>(data || []);
@@ -73,7 +83,7 @@ function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
           icon: "success",
           title: "Success",
           text: `Device ${formName} ${editingId ? "updated" : "added"} successfully.`,
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getPrimaryThemeColor(),
         });
 
         resetForm();
@@ -82,7 +92,7 @@ function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
           icon: "error",
           title: "Error",
           text: result?.result?.message || "Failed to save device.",
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getPrimaryThemeColor(),
         });
       }
     } catch (error) {
@@ -91,7 +101,7 @@ function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
         icon: "error",
         title: "Error",
         text: "Something went wrong while saving this device.",
-        confirmButtonColor: "#d6a800",
+        confirmButtonColor: getPrimaryThemeColor(),
       });
     } finally {
       setButtonLoading(false);
@@ -131,14 +141,14 @@ function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
             icon: "success",
             title: "Deleted",
             text: "The device has been deleted.",
-            confirmButtonColor: "#d6a800",
+            confirmButtonColor: getPrimaryThemeColor(),
           });
         } else {
           Swal.fire({
             icon: "error",
             title: "Error",
             text: res?.result?.message || "Failed to delete device.",
-            confirmButtonColor: "#d6a800",
+            confirmButtonColor: getPrimaryThemeColor(),
           });
         }
       } catch (err) {
@@ -147,7 +157,7 @@ function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
           icon: "error",
           title: "Error",
           text: "Something went wrong while deleting this device.",
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getPrimaryThemeColor(),
         });
       } finally {
         setButtonLoading(false);
@@ -197,10 +207,10 @@ function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
               type="button"
               onClick={handleSubmit}
               disabled={buttonLoading || !formName.trim() || !formPhone.trim()}
-              className={`flex h-12 items-center justify-center rounded-2xl px-7 text-sm font-black text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)] transition ${
+              className={`flex h-12 items-center justify-center rounded-2xl px-7 text-sm font-black text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition ${
                 buttonLoading || !formName.trim() || !formPhone.trim()
-                  ? "cursor-not-allowed bg-amber-500/60 opacity-70"
-                  : "cursor-pointer bg-amber-500 hover:bg-amber-600"
+                  ? "cursor-not-allowed bg-[color-mix(in_srgb,var(--primary)_60%,transparent)] opacity-70"
+                  : "cursor-pointer bg-primary hover:bg-secondary"
               }`}
             >
               {buttonLoading ? <ButtonLoader /> : editingId ? "Update" : "Add"}
@@ -211,7 +221,7 @@ function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
             <button
               type="button"
               onClick={resetForm}
-              className="mt-3 text-xs font-bold text-slate-400 transition hover:text-amber-600"
+              className="mt-3 text-xs font-bold text-slate-400 transition hover:text-primary"
             >
               Cancel editing
             </button>
@@ -230,7 +240,7 @@ function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
               </p>
             </div>
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-200">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary ring-1 ring-(--primary-light)">
               <MdOutlineContactPhone className="h-5 w-5" />
             </div>
           </div>
@@ -247,7 +257,7 @@ function DeviceManager({ data, fetchPropertyDevices }: DeviceManagerProps) {
                 {devices?.map((device) => (
                   <div
                     key={device?.id + device?.name}
-                    className="group rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition hover:border-amber-200 hover:bg-amber-50/50"
+                    className="group rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition hover:border-(--primary-light) hover:bg-[color-mix(in_srgb,var(--primary-soft)_50%,transparent)]"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -285,8 +295,8 @@ const DeviceCMS: React.FC<{
 }> = ({ devices, fetchPropertyDevices }) => {
   return (
     <div className="overflow-hidden rounded-4xl bg-white">
-      <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/60 to-white px-5 py-6 text-center">
-        <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+      <div className="border-b border-slate-200 bg-linear-to-br from-white via-[color-mix(in_srgb,var(--primary-soft)_60%,transparent)] to-white px-5 py-6 text-center">
+        <span className="inline-flex rounded-full border border-(--primary-light) bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-primary shadow-sm">
           Device Center
         </span>
 

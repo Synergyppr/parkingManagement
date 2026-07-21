@@ -1,7 +1,14 @@
 // PropertyContext.tsx
 
 "use client";
-import { createContext, useContext, useState, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  Dispatch,
+  SetStateAction,
+} from "react";
 
 interface Property {
   id: string;
@@ -9,14 +16,23 @@ interface Property {
   lat: number;
   lng: number;
   radius: number;
+  primaryColor: string;
+  secondaryColor: string;
 }
 
 interface PropertyContextType {
+  tenantId: string;
   propertyId: string;
   propertyName: string;
   latitude: number | null;
   longitude: number | null;
+  radius: number | null;
+  isActive: boolean;
   predefinedProperties: Record<string, Property>;
+  primaryColor: string;
+  setPrimaryColor: Dispatch<SetStateAction<string>>;
+  secondaryColor: string;
+  setSecondaryColor: Dispatch<SetStateAction<string>>;
   isOutOfArea: boolean;
   setPropertyId: (id: string | null) => void;
   setPropertyName: (name: string | null) => void;
@@ -34,11 +50,18 @@ interface PropertyContextType {
 }
 
 const PropertyContext = createContext<PropertyContextType>({
+  tenantId: "",
   propertyId: "",
   propertyName: "",
   latitude: null,
   longitude: null,
+  radius: 0,
+  isActive: true,
   predefinedProperties: {},
+  primaryColor: "",
+  setPrimaryColor: () => {},
+  secondaryColor: "",
+  setSecondaryColor: () => {},
   isOutOfArea: false,
   setPropertyId: () => {},
   setPropertyName: () => {},
@@ -60,14 +83,21 @@ export const PropertyProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
+  const PAULSON_TENANT_ID = "907b5b8a-3e2b-4b5f-bbb3-9f5f99fb5c37";
+
+  const [tenantId] = useState(PAULSON_TENANT_ID);
   const [propertyId, setPropertyId] = useState<string | null>(null);
   const [propertyName, setPropertyName] = useState<string | null>(null);
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
+  const [radius, ] = useState<number | null>(null);
+  const [isActive, ] = useState(true);
   const [locationMode, setLocationMode] = useState<"live" | "manual">("live");
   const [predefinedProperties, setPredefinedProperties] = useState<
     Record<string, Property>
   >({});
+  const [primaryColor, setPrimaryColor] = useState("");
+  const [secondaryColor, setSecondaryColor] = useState("");
   const [isOutOfArea, setIsOutOfArea] = useState<boolean>(false);
   const [accountUser, setAccountUser] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -80,6 +110,8 @@ export const PropertyProvider = ({
         lat: prop.lat,
         lng: prop.lng,
         radius: prop.radius,
+        primaryColor: prop.primaryColor,
+        secondaryColor: prop.secondaryColor
       };
       return acc;
     }, {} as Record<string, Property>);
@@ -99,8 +131,7 @@ export const PropertyProvider = ({
       localStorage.getItem("accountUser");
     if (storedUser) setAccountUser(storedUser);
     const storedRole =
-      sessionStorage.getItem("userRole") ||
-      localStorage.getItem("userRole");
+      sessionStorage.getItem("userRole") || localStorage.getItem("userRole");
     if (storedRole) setUserRole(storedRole);
     if (storedId) setPropertyId(storedId);
     if (storedName) setPropertyName(storedName);
@@ -164,11 +195,18 @@ export const PropertyProvider = ({
   return (
     <PropertyContext.Provider
       value={{
+        tenantId: tenantId ?? "",
         propertyId: propertyId ?? "",
         propertyName: propertyName ?? "",
         latitude,
         longitude,
+        radius,
+        isActive,
         predefinedProperties,
+        primaryColor,
+        setPrimaryColor,
+        secondaryColor,
+        setSecondaryColor,
         isOutOfArea,
         setPropertyId: handlePropertyId,
         setPropertyName: handlePropertyName,

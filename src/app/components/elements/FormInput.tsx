@@ -1,6 +1,6 @@
 // components/elements/FormInput.tsx
 import React from "react";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaChevronDown, FaEye, FaEyeSlash } from "react-icons/fa";
 import { IoCloseOutline } from "react-icons/io5";
 
 interface Option {
@@ -12,7 +12,7 @@ interface FormInputProps {
   name: string;
   value?: string;
   onChange: (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => void;
   placeholder?: string;
   icon?: React.ReactNode;
@@ -25,91 +25,231 @@ interface FormInputProps {
   className?: string;
   missing?: boolean;
   onClear?: () => void;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  disabled?: boolean;
+  autoComplete?: string;
 }
 
 export default function FormInput({
   name,
-  value,
+  value = "",
   onChange,
   placeholder,
   icon,
   type = "text",
-  required,
-  showPasswordToggle,
-  showPassword,
+  required = false,
+  showPasswordToggle = false,
+  showPassword = false,
   setShowPassword,
   options = [],
   className = "",
   missing = false,
   onClear,
+  inputMode = "text",
+  disabled = false,
+  autoComplete,
 }: FormInputProps) {
-  const basePaddingLeft = icon ? "pl-9" : "pl-3";
-  const baseClass = `${basePaddingLeft} h-11 bg-white border rounded-xl text-sm text-slate-900 w-full outline-none transition-all duration-300 shadow-sm focus:ring-4 focus:ring-amber-200/50 focus:border-amber-500 hover:border-amber-300 ${
-    missing ? "border-red-300 ring-2 ring-red-100" : "border-slate-200"
-  } ${className}`;
+  const hasRightAction =
+    type === "select" ||
+    showPasswordToggle ||
+    Boolean(value && !showPasswordToggle && onClear);
+
+  const paddingLeft = icon ? "pl-10" : "pl-3.5";
+  const paddingRight = hasRightAction ? "pr-10" : "pr-3.5";
+
+  const baseClass = `
+    ${paddingLeft}
+    ${paddingRight}
+    h-11
+    w-full
+    rounded-xl
+    border
+    bg-white
+    text-sm
+    text-slate-900
+    shadow-sm
+    outline-none
+    transition-all
+    duration-300
+    placeholder:text-slate-400
+    hover:border-[var(--primary-light)]
+    focus:border-[var(--primary)]
+    focus:ring-4
+    focus:ring-[var(--primary-soft)]
+    disabled:cursor-not-allowed
+    disabled:bg-slate-100
+    disabled:text-slate-400
+    disabled:opacity-70
+    ${
+      missing
+        ? "border-red-300 ring-2 ring-red-100 focus:border-red-500 focus:ring-red-100"
+        : "border-slate-200"
+    }
+    ${className}
+  `
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const resolvedInputType =
+    type === "password" ? (showPassword ? "text" : "password") : "text";
 
   return (
     <div className="relative w-full">
       {icon && (
         <div
-          className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${
-            missing ? "text-red-500" : "text-amber-500"
-          } pointer-events-none`}
+          className={`
+            pointer-events-none
+            absolute
+            left-3
+            top-1/2
+            z-10
+            flex
+            h-4
+            w-4
+            -translate-y-1/2
+            items-center
+            justify-center
+            transition-colors
+            duration-300
+            ${missing ? "text-red-500" : "text-primary"}
+          `}
         >
           {icon}
         </div>
       )}
 
       {type === "select" ? (
-        <select
-          name={name}
-          onChange={onChange}
-          value={value || ""}
-          className={`${baseClass} appearance-none pr-8 capitalize bg-linear-to-b from-white to-amber-50/20`}
-        >
-          <option value="">
-            Select {name.replace(/([A-Z])/g, " $1").trim()}
-          </option>
-          {options.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.name}
+        <>
+          <select
+            name={name}
+            value={value}
+            onChange={onChange}
+            required={required}
+            disabled={disabled}
+            aria-invalid={missing}
+            className={`
+              ${baseClass}
+              cursor-pointer
+              appearance-none
+              capitalize
+              bg-linear-to-b
+              from-white
+              to-(--primary-soft)
+            `}
+          >
+            <option value="">
+              Select {name.replace(/([A-Z])/g, " $1").trim()}
             </option>
-          ))}
-        </select>
+
+            {options.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.name}
+              </option>
+            ))}
+          </select>
+
+          <FaChevronDown
+            aria-hidden="true"
+            className={`
+              pointer-events-none
+              absolute
+              right-3.5
+              top-1/2
+              h-3
+              w-3
+              -translate-y-1/2
+              transition-colors
+              duration-300
+              ${missing ? "text-red-500" : "text-primary"}
+            `}
+          />
+        </>
       ) : (
         <>
           <input
-            type={showPasswordToggle && !showPassword ? "password" : "text"}
+            type={resolvedInputType}
             name={name}
             placeholder={placeholder}
-            value={value || ""}
+            value={value}
             onChange={onChange}
-            className={`${baseClass} pr-10 capitalize bg-linear-to-b from-white to-amber-50/20`}
             required={required}
+            disabled={disabled}
+            autoComplete={autoComplete}
+            inputMode={inputMode}
+            aria-invalid={missing}
+            className={`
+              ${baseClass}
+              bg-linear-to-b
+              from-white
+              to-(--primary-soft)
+            `}
           />
 
-          {/* Show Clear Button */}
-          {value && !showPasswordToggle && (
+          {value && !showPasswordToggle && onClear && !disabled && (
             <button
               type="button"
               onClick={onClear}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-amber-600 transition-colors focus:outline-none cursor-pointer"
+              aria-label={`Clear ${placeholder || name}`}
+              className="
+                absolute
+                right-2.5
+                top-1/2
+                flex
+                h-7
+                w-7
+                -translate-y-1/2
+                cursor-pointer
+                items-center
+                justify-center
+                rounded-full
+                text-slate-400
+                transition-all
+                duration-200
+                hover:bg-(--primary-soft)
+                hover:text-primary
+                focus:outline-none
+                focus-visible:ring-2
+                focus-visible:ring-(--primary-light)
+              "
             >
-              <IoCloseOutline className="w-4 h-4" />
+              <IoCloseOutline className="h-5 w-5" />
             </button>
           )}
 
-          {/* Optional password toggle */}
           {showPasswordToggle && setShowPassword && (
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="cursor-pointer absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-amber-600 transition-colors focus:outline-none"
+              disabled={disabled}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-pressed={showPassword}
+              className="absolute
+                right-2.5
+                top-1/2
+                flex
+                h-7
+                w-7
+                -translate-y-1/2
+                cursor-pointer
+                items-center
+                justify-center
+                rounded-full
+                text-slate-400
+                transition-all
+                duration-200
+                hover:bg-(--primary-soft)
+                hover:text-primary
+                focus:outline-none
+                focus-visible:ring-2
+                focus-visible:ring-(--primary-light)
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+              "
             >
               {showPassword ? (
-                <FaEyeSlash className="w-4 h-4" />
+                <FaEyeSlash className="h-4 w-4" />
               ) : (
-                <FaEye className="w-4 h-4" />
+                <FaEye className="h-4 w-4" />
               )}
             </button>
           )}

@@ -25,7 +25,7 @@ const ModalTextarea = ({
   const [isFocused, setIsFocused] = useState(false);
 
   return (
-    <div className="mb-4 relative">
+    <div className="relative mb-4">
       <textarea
         id={id}
         name={name}
@@ -38,15 +38,17 @@ const ModalTextarea = ({
         disabled={disabled}
         autoComplete={autoComplete}
         rows={rows}
-        className={`w-full text-gray-800 px-2 py-2 border-b border-gray-500 text-sm tracking-tight bg-transparent resize-none focus:outline-none focus:border-amber-500 transition-all ${
-          disabled ? "bg-gray-200 cursor-not-allowed" : ""
-        }`}
+        className={`w-full resize-none border-b border-gray-500 bg-transparent px-2 py-2 text-sm tracking-tight text-gray-800 transition-all 
+          focus:border-primary focus:outline-none ${
+            disabled ? "cursor-not-allowed bg-gray-200" : ""
+          }`}
       />
+
       <label
         htmlFor={id}
-        className={`absolute text-sm left-2 px-1 transition-all duration-200 bg-transparent ${
+        className={`absolute left-2 bg-transparent px-1 text-sm transition-all duration-200 ${
           isFocused || value
-            ? "-top-2 text-xs text-amber-600"
+            ? "-top-2 text-xs text-primary"
             : "top-2.75 text-gray-500"
         }`}
       >

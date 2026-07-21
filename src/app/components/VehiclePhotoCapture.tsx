@@ -251,7 +251,7 @@ export default function VehiclePhotoCapture({
       {/* Fullscreen camera — portaled above everything */}
       {cameraOpen &&
         createPortal(
-          <div className="fixed inset-0 z-[999999] flex flex-col bg-black">
+          <div className="fixed inset-0 z-999999 flex flex-col bg-black">
             {/* Camera viewfinder */}
             <div className="relative flex-1 overflow-hidden">
               {cameraError ? (
@@ -356,7 +356,7 @@ export default function VehiclePhotoCapture({
                 type="button"
                 onClick={handleCapture}
                 disabled={!!cameraError || capturing}
-                className="h-[72px] w-[72px] cursor-pointer rounded-full border-[5px] border-white/70 bg-white transition-transform active:scale-90 disabled:opacity-40"
+                className="h-18 w-18 cursor-pointer rounded-full border-[5px] border-white/70 bg-white transition-transform active:scale-90 disabled:opacity-40"
                 aria-label="Take photo"
               >
                 <span className="block h-full w-full rounded-full bg-white" />

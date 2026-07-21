@@ -43,10 +43,13 @@ export default function UserListModal({
     <>
       <Modal isOpen={isOpen} onClose={onClose}>
         <div className="overflow-hidden rounded-4xl bg-white">
-          <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/60 to-white px-5 py-6">
+          <div className="border-b border-slate-200 bg-linear-to-br from-white via-[color-mix(in_srgb,var(--primary-soft)_60%,transparent)] to-white px-5 py-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+                <span
+                  className="inline-flex rounded-full border border-(--primary-light) bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] 
+                text-primary shadow-sm"
+                >
                   User Directory
                 </span>
 
@@ -65,7 +68,8 @@ export default function UserListModal({
                   setSelectedUser(null);
                   setIsUserFormOpen(true);
                 }}
-                className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-amber-500 text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)] transition hover:bg-amber-600"
+                className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-primary text-white 
+                shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition hover:bg-secondary"
                 title="Add User"
               >
                 <FaUserPlus className="h-5 w-5" />
@@ -77,12 +81,13 @@ export default function UserListModal({
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
                   Showing
                 </p>
+
                 <p className="text-sm font-extrabold text-slate-950">
                   {filteredUsers.length} {activeTab.toLowerCase()} users
                 </p>
               </div>
 
-              <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700 ring-1 ring-amber-200">
+              <span className="rounded-full bg-(--primary-soft) px-3 py-1 text-xs font-black text-primary ring-1 ring-(--primary-light)">
                 {activeTab}
               </span>
             </div>
@@ -101,7 +106,7 @@ export default function UserListModal({
           <div className="p-5">
             {filteredUsers.length === 0 ? (
               <div className="flex min-h-45 flex-col items-center justify-center rounded-4xl border border-dashed border-slate-200 bg-slate-50/70 p-8 text-center">
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-200">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary ring-1 ring-(--primary-light)">
                   <FaUserPlus className="h-5 w-5" />
                 </div>
 
@@ -125,15 +130,16 @@ export default function UserListModal({
                   {filteredUsers.map((user) => (
                     <li
                       key={user?.id}
-                      className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:border-amber-200 hover:bg-amber-50/30 hover:shadow-md"
+                      className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:border-(--primary-light) 
+                      hover:bg-[color-mix(in_srgb,var(--primary-soft)_30%,transparent)] hover:shadow-md"
                     >
-                      <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-linear-to-br from-amber-50/80 to-white px-4 py-4">
+                      <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-linear-to-br from-[color-mix(in_srgb,var(--primary-soft)_80%,transparent)] to-white px-4 py-4">
                         <div className="min-w-0">
                           <h3 className="truncate text-sm font-extrabold text-slate-950">
                             {user.fullName}
                           </h3>
 
-                          <p className="mt-1 text-xs font-bold capitalize text-amber-700">
+                          <p className="mt-1 text-xs font-bold capitalize text-primary">
                             {user.role}
                           </p>
                         </div>
@@ -155,7 +161,8 @@ export default function UserListModal({
                             });
                             setIsUserFormOpen(true);
                           }}
-                          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm ring-1 ring-amber-200 transition hover:bg-amber-500 hover:text-white"
+                          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-white text-primary shadow-sm ring-1 
+                          ring-(--primary-light) transition hover:bg-primary hover:text-white"
                           title="Edit User"
                         >
                           <FaPencil className="h-4 w-4" />

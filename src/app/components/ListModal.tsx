@@ -83,10 +83,11 @@ export default function ListModal<
     <>
       <Modal isOpen={isOpen} onClose={onClose}>
         <div className="mt-2 flex max-h-[90dvh] flex-col overflow-hidden rounded-4xl bg-white">
-          <div className="shrink-0 border-b border-slate-200 bg-linear-to-br from-white via-amber-50/60 to-white px-4 py-4 sm:px-5">
+          <div className="shrink-0 border-b border-slate-200 bg-linear-to-br from-white via-[color-mix(in_srgb,var(--primary-soft)_60%,transparent)] to-white px-4 py-4 sm:px-5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <span className="inline-flex rounded-full border border-amber-300 bg-white px-3 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-amber-700 shadow-sm">
+                <span className="inline-flex rounded-full border border-(--primary-light) bg-white px-3 py-1 text-[9px] font-black uppercase tracking-[0.16em] 
+                text-primary shadow-sm">
                   Directory
                 </span>
 
@@ -105,8 +106,8 @@ export default function ListModal<
                   setSelectedEntity(null);
                   setIsFormOpen(true);
                 }}
-                className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-amber-500 text-white relative top-6
-                shadow-[0_10px_24px_rgba(214,168,0,0.24)] transition hover:bg-amber-600"
+                className="relative top-6 flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-primary text-white 
+                shadow-[0_10px_24px_color-mix(in_srgb,var(--primary)_24%,transparent)] transition hover:bg-secondary"
                 title={`Add ${title}`}
               >
                 <FaPlus className="h-4 w-4" />
@@ -123,7 +124,7 @@ export default function ListModal<
                 </p>
               </div>
 
-              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-black text-amber-700 ring-1 ring-amber-200">
+              <span className="rounded-full bg-(--primary-soft) px-2.5 py-1 text-[10px] font-black text-primary ring-1 ring-(--primary-light)">
                 {activeTab}
               </span>
             </div>
@@ -143,9 +144,11 @@ export default function ListModal<
 
           <div className="min-h-0 flex-1 p-3 sm:p-4">
             {filteredEntities.length === 0 ? (
-              <div className="flex min-h-40 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/70 
-              p-6 text-center">
-                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-200">
+              <div
+                className="flex min-h-40 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/70 
+              p-6 text-center"
+              >
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary ring-1 ring-(--primary-light)">
                   <FaPlus className="h-4 w-4" />
                 </div>
 
@@ -165,12 +168,11 @@ export default function ListModal<
                     : "scale-100 opacity-100"
                 }`}
               >
-                <ul className="grid max-h-[64vh] grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2 pb-28">
+                <ul className="grid max-h-[64vh] grid-cols-1 gap-2 overflow-y-auto pr-1 pb-28 sm:grid-cols-2">
                   {filteredEntities.map((item, index) => (
                     <li
                       key={index}
-                      className="min-w-0 [&>div]:rounded-2xl! [&>div]:p-3!  [&_h3]:text-base! [&_h3]:leading-tight! [&_p]:text-xs! [&_p]:leading-5!
-                      [&_button]:text-xs!"
+                      className="min-w-0 [&>div]:rounded-2xl! [&>div]:p-3! [&_h3]:text-base! [&_h3]:leading-tight! [&_p]:text-xs! [&_p]:leading-5! [&_button]:text-xs!"
                     >
                       {renderItem(item, (item) => fetchUserDetails(item))}
                     </li>

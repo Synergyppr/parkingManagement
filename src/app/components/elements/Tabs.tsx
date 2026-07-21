@@ -47,8 +47,8 @@ const Tabs: React.FC<TabsProps> = ({
             onClick={() => onTabChange(item, i)}
             className={`relative min-w-fit flex-1 cursor-pointer rounded-xl px-4 py-2.5 text-sm font-bold capitalize transition-all duration-200 ${
               isActive
-                ? "bg-amber-500 text-white shadow-[0_10px_24px_rgba(217,174,38,0.28)]"
-                : "text-slate-500 hover:bg-amber-50 hover:text-amber-700"
+                ? "bg-primary text-white shadow-[0_10px_24px_color-mix(in_srgb,var(--primary)_28%,transparent)]"
+                : "text-slate-500 hover:bg-(--primary-soft) hover:text-primary"
             }`}
           >
             {item}

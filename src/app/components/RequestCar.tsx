@@ -153,7 +153,7 @@ const RequestCar = () => {
       text: "Please only request your vehicle when you're ready to leave. To keep wait times short, we ask that you pick up your vehicle within 3–5 minutes of requesting it.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d6a800",
+      confirmButtonColor: "var(--primary)",
       cancelButtonColor: "#64748b",
       confirmButtonText: "Proceed",
       cancelButtonText: "Cancel",
@@ -169,7 +169,7 @@ const RequestCar = () => {
         `,
         icon: "info",
         showCancelButton: true,
-        confirmButtonColor: "#d6a800",
+        confirmButtonColor: "var(--primary)",
         cancelButtonColor: "#64748b",
         confirmButtonText: "Yes, submit",
         cancelButtonText: "Cancel",
@@ -198,7 +198,7 @@ const RequestCar = () => {
                   title: "Vehicle Requested",
                   text: "Your request has been received. Hang tight — your vehicle is on its way!",
                   icon: "success",
-                  confirmButtonColor: "#d6a800",
+                  confirmButtonColor: "var(--primary)",
                 });
               }, 800);
             }, 300);
@@ -208,7 +208,7 @@ const RequestCar = () => {
             title: "Error",
             text: "There was an issue requesting your vehicle. Please try again.",
             icon: "error",
-            confirmButtonColor: "#d6a800",
+            confirmButtonColor: "var(--primary)",
           });
         }
       } catch (error) {
@@ -217,7 +217,7 @@ const RequestCar = () => {
           title: "Network Error",
           text: "Unable to request vehicle. Please try again.",
           icon: "error",
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: "var(--primary)",
         });
       } finally {
         setButtonLoader(false);
@@ -268,7 +268,7 @@ const RequestCar = () => {
             }!`,
             text: "We truly appreciate your rating and look forward to serving you again soon.",
             icon: "success",
-            confirmButtonColor: "#d6a800",
+            confirmButtonColor: "var(--primary)",
           });
         }, 700);
       } else {
@@ -276,7 +276,7 @@ const RequestCar = () => {
           title: "Error",
           text: data?.message || "There was an error submitting your rating.",
           icon: "error",
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: "var(--primary)",
         });
       }
     } catch (error) {
@@ -286,7 +286,7 @@ const RequestCar = () => {
           title: "Error",
           text: "There was an error submitting your rating. Please try again.",
           icon: "error",
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: "var(--primary)",
         });
       }, 700);
     }
@@ -304,7 +304,7 @@ const RequestCar = () => {
         title: "Input Required",
         text: "Please enter a valid Ticket ID.",
         icon: "warning",
-        confirmButtonColor: "#d6a800",
+        confirmButtonColor: "var(--primary)",
       });
       return;
     }
@@ -317,43 +317,47 @@ const RequestCar = () => {
   };
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#f8f5ed]">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(214,168,0,0.22),transparent_35%),radial-gradient(circle_at_bottom,rgba(15,23,42,0.10),transparent_40%)]" />
-  
+    <div className="min-h-screen overflow-hidden bg-[color-mix(in_srgb,var(--primary-soft)_55%,white)]">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,color-mix(in_srgb,var(--primary)_22%,transparent),transparent_35%),radial-gradient(circle_at_bottom,rgba(15,23,42,0.10),transparent_40%)]" />
+
       <div className="relative mx-auto flex min-h-screen max-w-md flex-col px-4 py-8">
         {/* Brand */}
         <div className="mb-8 text-center">
-          <div 
-          onClick={() => window.location.href = "/check-in"}
-          className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-amber-400 to-amber-600 text-white 
-          shadow-[0_18px_45px_rgba(214,168,0,0.35)] cursor-pointer">
+          <div
+            onClick={() => (window.location.href = "/check-in")}
+            className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-(--primary-light) to-primary text-white 
+          shadow-[0_18px_45px_color-mix(in_srgb,var(--primary)_35%,transparent)] cursor-pointer"
+          >
             <KeySquare className="h-6 w-6" />
           </div>
-  
+
           <h1 className="mt-4 font-serif text-4xl font-bold text-slate-950">
             Parkey Valet
           </h1>
-  
-          <p className="mt-2 text-xs font-extrabold uppercase tracking-[0.25em] text-amber-700">
+
+          <p className="mt-2 text-xs font-extrabold uppercase tracking-[0.25em] text-primary">
             Premium Vehicle Retrieval
           </p>
         </div>
-  
+
         {!idFromUrl ? (
-          <section className="rounded-4xl border border-amber-200/70 bg-white/90 p-7 text-center shadow-[0_30px_90px_rgba(15,23,42,0.12)] backdrop-blur-xl">
-            <span className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+          <section className="rounded-4xl border border-(--primary-light) bg-white/90 p-7 text-center shadow-[0_30px_90px_rgba(15,23,42,0.12)] backdrop-blur-xl">
+            <span
+              className="inline-flex rounded-full border border-(--primary-light) bg-(--primary-soft) px-4 py-1 text-[10px] font-black uppercase 
+            tracking-[0.18em] text-primary"
+            >
               Guest Access
             </span>
-  
+
             <h2 className="mt-4 font-serif text-3xl font-bold text-slate-950">
               Find Your Vehicle
             </h2>
-  
+
             <p className="mt-3 text-sm leading-6 text-slate-500">
               Enter your valet ticket number to view status, request retrieval,
               and follow real-time updates.
             </p>
-  
+
             <div className="mt-6 flex gap-2">
               <FormInput
                 name="ticketId"
@@ -363,9 +367,9 @@ const RequestCar = () => {
                 onChange={(e) => handleChange(e)}
                 onClear={() => setTicketId("")}
               />
-  
+
               <button
-                className="h-11 rounded-2xl bg-amber-500 px-5 text-sm font-extrabold text-white shadow-[0_14px_32px_rgba(214,168,0,0.28)] transition hover:bg-amber-600"
+                className="h-11 rounded-2xl bg-[var(--primary-soft)]0 px-5 text-sm font-extrabold text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition bg-secondary cursor-pointer"
                 onClick={handleSubmit}
                 type="button"
               >
@@ -383,14 +387,18 @@ const RequestCar = () => {
                 stroke="currentColor"
                 strokeWidth="2"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </div>
-  
+
             <h2 className="font-serif text-3xl font-bold text-slate-950">
               Vehicle Not Found
             </h2>
-  
+
             <p className="mt-3 text-sm leading-6 text-slate-500">
               We couldn&apos;t find a vehicle associated with this ticket ID.
               Please check your link or contact valet support.
@@ -403,35 +411,42 @@ const RequestCar = () => {
         ) : ticketId ? (
           <div className="space-y-5">
             {/* Hero Ticket Card */}
-            <section className="relative overflow-hidden rounded-4xl border border-amber-200/80 bg-white p-7 shadow-[0_30px_90px_rgba(15,23,42,0.13)]">
-              <div className="absolute -right-14 -top-14 h-36 w-36 rounded-full bg-amber-100/70" />
-  
-              <span className="relative inline-flex rounded-full border border-amber-300 bg-amber-50 px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+            <section className="relative overflow-hidden rounded-4xl border border-(--primary-light) bg-white p-7 shadow-[0_30px_90px_rgba(15,23,42,0.13)]">
+              <div className="absolute -right-14 -top-14 h-36 w-36 rounded-full bg-(--primary-soft)" />
+
+              <span
+                className="relative inline-flex rounded-full border border-(--primary-light) bg-(--primary-soft) px-4 py-1 text-[10px] font-black uppercase 
+              tracking-[0.18em] text-primary"
+              >
                 Valet Ticket Located
               </span>
-  
+
               <p className="relative mt-5 text-sm font-semibold text-slate-500">
                 Hello,
               </p>
-  
+
               <h2 className="relative font-serif text-4xl font-bold leading-tight text-slate-950">
                 {vehicleData?.firstName || vehicleData?.lastName
-                  ? `${vehicleData?.firstName || ""} ${vehicleData?.lastName || ""}`
+                  ? `${vehicleData?.firstName || ""} ${
+                      vehicleData?.lastName || ""
+                    }`
                   : "Guest"}
               </h2>
-  
+
               <div className="relative mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                <p className="font-mono text-xs font-black uppercase tracking-[0.2em] text-amber-700">
+                <p className="font-mono text-xs font-black uppercase tracking-[0.2em] text-primary">
                   #{vehicleData?.ticketNumber}
                 </p>
-  
+
                 <h3 className="mt-2 text-xl font-extrabold capitalize text-slate-950">
                   {vehicleData?.color} {vehicleData?.make} {vehicleData?.model}
                 </h3>
-  
+
                 <p className="mt-1 text-sm font-medium text-slate-500">
                   {vehicleData?.type} • Received{" "}
-                  {new Date(vehicleData?.createdDateTime as string).toLocaleString([], {
+                  {new Date(
+                    vehicleData?.createdDateTime as string
+                  ).toLocaleString([], {
                     year: "numeric",
                     month: "2-digit",
                     day: "2-digit",
@@ -441,7 +456,7 @@ const RequestCar = () => {
                 </p>
               </div>
             </section>
-  
+
             {/* Timeline */}
             <section className="rounded-4xl border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
               <div className="mb-5 flex items-center justify-between">
@@ -453,17 +468,18 @@ const RequestCar = () => {
                     Live Progress
                   </h3>
                 </div>
-  
-                <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-extrabold capitalize text-amber-700 ring-1 ring-amber-200">
+
+                <span className="rounded-full bg-(--primary-soft) px-3 py-1 text-xs font-extrabold capitalize text-primary ring-1 ring-(--primary-light)">
                   {vehicleData?.status}
                 </span>
               </div>
-  
+
               <StatusTimeline currentStatus={vehicleData?.status as string} />
             </section>
-  
-            {(vehicleData?.status === "received" || vehicleData?.status === "parked") && (
-              <section className="rounded-4xl border border-amber-200 bg-linear-to-br from-amber-50 to-white p-6 shadow-sm">
+
+            {(vehicleData?.status === "received" ||
+              vehicleData?.status === "parked") && (
+              <section className="rounded-4xl border border-(--primary-light) bg-linear-to-br from-(--primary-soft) to-white p-6 shadow-sm">
                 <p className="text-sm leading-7 text-slate-700">
                   If you&apos;ve finished your visit{" "}
                   {vehicleData?.placeToVisit && (
@@ -478,23 +494,25 @@ const RequestCar = () => {
                 </p>
               </section>
             )}
-  
+
             {vehicleData?.status === "requested" && (
-              <section className="rounded-4xl bg-linear-to-br from-amber-400 to-amber-600 p-7 text-center text-white shadow-[0_20px_55px_rgba(214,168,0,0.35)]">
+              <section className="rounded-4xl bg-linear-to-br from-(--primary-light) to-primary p-7 text-center text-white shadow-[0_20px_55px_color-mix(in_srgb,var(--primary)_35%,transparent)]">
                 <IoCheckmarkOutline className="mx-auto mb-3 h-10 w-10" />
                 <h3 className="font-serif text-3xl font-bold">
                   Vehicle Requested
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-white/90">
-                  Your vehicle is on its way. Please be ready within 3–5 minutes.
+                  Your vehicle is on its way. Please be ready within 3–5
+                  minutes.
                 </p>
               </section>
             )}
-  
+
             {vehicleData?.status === "ready" && (
               <section className="rounded-4xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
                 <p className="text-sm leading-7 text-slate-700">
-                  Your vehicle has been picked up. We hope you enjoyed your visit
+                  Your vehicle has been picked up. We hope you enjoyed your
+                  visit
                   {vehicleData?.placeToVisit && (
                     <>
                       {" to "}
@@ -507,45 +525,48 @@ const RequestCar = () => {
                 </p>
               </section>
             )}
-  
-            {vehicleData?.status !== "ready" && vehicleData?.status !== "requested" && (
-              <section className="rounded-4xl border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-                <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-slate-50 p-4">
-                  <input
-                    checked={smsConsent}
-                    onChange={() => setSmsConsent(!smsConsent)}
-                    type="checkbox"
-                    className="mt-1 h-4 w-4 accent-amber-500"
-                    disabled={buttonLoader}
-                  />
-  
-                  <span className="text-xs leading-6 text-slate-500">
-                    I agree to receive SMS updates about my valet parking service.
-                    Message & data rates may apply. Reply STOP to cancel, HELP for help.
-                  </span>
-                </label>
-  
-                <button
-                  disabled={!smsConsent || buttonLoader}
-                  onClick={handleRequestCar}
-                  className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 text-sm font-black text-white shadow-[0_16px_36px_rgba(214,168,0,0.32)] transition hover:bg-amber-600 disabled:opacity-50"
-                >
-                  {buttonLoader ? (
-                    <ButtonLoader />
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      Request My Vehicle
-                      <RxCaretRight className="h-5 w-5" />
+
+            {vehicleData?.status !== "ready" &&
+              vehicleData?.status !== "requested" && (
+                <section className="rounded-4xl border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+                  <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-slate-50 p-4">
+                    <input
+                      checked={smsConsent}
+                      onChange={() => setSmsConsent(!smsConsent)}
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 accent-primary"
+                      disabled={buttonLoader}
+                    />
+
+                    <span className="text-xs leading-6 text-slate-500">
+                      I agree to receive SMS updates about my valet parking
+                      service. Message & data rates may apply. Reply STOP to
+                      cancel, HELP for help.
                     </span>
-                  )}
-                </button>
-              </section>
-            )}
-  
+                  </label>
+
+                  <button
+                    disabled={!smsConsent || buttonLoader}
+                    onClick={handleRequestCar}
+                    className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--primary-soft)]0 text-sm font-black text-white 
+                    shadow-[0_16px_36px_color-mix(in_srgb,var(--primary)_32%,transparent)] transition bg-secondary disabled:opacity-50 cursor-pointer"
+                  >
+                    {buttonLoader ? (
+                      <ButtonLoader />
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        Request My Vehicle
+                        <RxCaretRight className="h-5 w-5" />
+                      </span>
+                    )}
+                  </button>
+                </section>
+              )}
+
             {vehicleData?.status === "ready" && (
               <TransactionDetails vehicleData={vehicleData} />
             )}
-  
+
             {requested && (
               <ClientRating
                 hoveredStars={hoveredStars}
@@ -555,7 +576,9 @@ const RequestCar = () => {
                 comment={comment}
                 setComment={setComment}
                 submitted={submitted}
-                ratingSectionRef={ratingSectionRef as React.RefObject<HTMLDivElement>}
+                ratingSectionRef={
+                  ratingSectionRef as React.RefObject<HTMLDivElement>
+                }
                 vehicleData={vehicleData as VehicleData}
               />
             )}
@@ -565,9 +588,9 @@ const RequestCar = () => {
             <PageLoader />
           </div>
         )}
-  
+
         <p className="mt-8 text-center text-xs font-semibold text-slate-500">
-          Powered by <span className="text-amber-700">Parkey Valet</span>
+          Powered by <span className="text-primary">Parkey Valet</span>
         </p>
       </div>
     </div>

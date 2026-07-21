@@ -32,7 +32,7 @@ export default function PinConfirmationModal({
       <div className="p-6">
         {/* Header */}
         <div className="mb-5 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 ring-1 ring-amber-200">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-(--primary-soft) ring-1 ring-(--primary-light)">
             <span className="text-xl">🔐</span>
           </div>
 
@@ -60,24 +60,24 @@ export default function PinConfirmationModal({
               }
             }}
             className="
-              w-full
               h-14
-              px-4
-              pr-12
+              w-full
               rounded-2xl
               border
               border-slate-200
               bg-white
+              px-4
+              pr-12
               text-center
+              font-mono
               text-xl
               tracking-[0.5em]
-              font-mono
               text-slate-900
               outline-none
               transition-all
-              focus:border-amber-400
+              focus:border-primary
               focus:ring-4
-              focus:ring-amber-100
+              focus:ring-(--primary-soft)
             "
             maxLength={4}
             inputMode="numeric"
@@ -93,10 +93,10 @@ export default function PinConfirmationModal({
               right-4
               top-1/2
               -translate-y-1/2
-              text-slate-400
-              hover:text-amber-600
-              transition-colors
               cursor-pointer
+              text-slate-400
+              transition-colors
+              hover:text-primary
             "
           >
             {showPin ? (
@@ -117,17 +117,17 @@ export default function PinConfirmationModal({
             type="button"
             onClick={onClose}
             className="
-              flex-1
               h-12
+              flex-1
+              cursor-pointer
               rounded-2xl
               border
               border-slate-200
               bg-white
-              text-slate-700
               font-semibold
+              text-slate-700
               transition-all
               hover:bg-slate-50
-              cursor-pointer
             "
           >
             Cancel
@@ -156,20 +156,20 @@ export default function PinConfirmationModal({
               })
             }
             className="
-              flex-1
-              h-12
-              rounded-2xl
-              bg-amber-500
-              hover:bg-amber-600
-              disabled:opacity-60
-              text-white
-              font-bold
-              shadow-[0_10px_30px_rgba(217,174,38,0.28)]
-              transition-all
-              cursor-pointer
               flex
+              h-12
+              flex-1
+              cursor-pointer
               items-center
               justify-center
+              rounded-2xl
+              bg-primary
+              font-bold
+              text-white
+              shadow-[0_10px_30px_color-mix(in_srgb,var(--primary)_28%,transparent)]
+              transition-all
+              hover:bg-secondary
+              disabled:opacity-60
             "
           >
             {buttonLoader ? <ButtonLoader /> : "Confirm"}

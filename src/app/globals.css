@@ -139,3 +139,86 @@ body {
     transform: translateX(0);
   }
 }
+
+/* Theme */
+
+:root,
+[data-theme="amber"] {
+  --primary: #d97706;
+  --primary-light: #fbbf24;
+  --primary-soft: #fffbeb;
+
+  --secondary: #f59e0b;
+  --secondary-light: #fcd34d;
+  --secondary-soft: #fef3c7;
+}
+
+[data-theme="sapphire"] {
+  --primary: #2563eb;
+  --primary-light: #60a5fa;
+  --primary-soft: #eff6ff;
+
+  --secondary: #1d4ed8;
+  --secondary-light: #93c5fd;
+  --secondary-soft: #dbeafe;
+}
+
+[data-theme="emerald"] {
+  --primary: #059669;
+  --primary-light: #34d399;
+  --primary-soft: #ecfdf5;
+
+  --secondary: #047857;
+  --secondary-light: #6ee7b7;
+  --secondary-soft: #d1fae5;
+}
+
+[data-theme="royal"] {
+  --primary: #7c3aed;
+  --primary-light: #a78bfa;
+  --primary-soft: #f5f3ff;
+
+  --secondary: #6d28d9;
+  --secondary-light: #c4b5fd;
+  --secondary-soft: #ede9fe;
+}
+
+[data-theme="ruby"] {
+  --primary: #dc2626;
+  --primary-light: #f87171;
+  --primary-soft: #fef2f2;
+
+  --secondary: #b91c1c;
+  --secondary-light: #fca5a5;
+  --secondary-soft: #fee2e2;
+}
+
+[data-theme="teal"] {
+  --primary: #0f766e;
+  --primary-light: #2dd4bf;
+  --primary-soft: #f0fdfa;
+
+  --secondary: #115e59;
+  --secondary-light: #5eead4;
+  --secondary-soft: #ccfbf1;
+}
+
+[data-theme="rose"] {
+  --primary: #db2777;
+  --primary-light: #f472b6;
+  --primary-soft: #fdf2f8;
+
+  --secondary: #be185d;
+  --secondary-light: #f9a8d4;
+  --secondary-soft: #fce7f3;
+}
+
+[data-theme="obsidian"] {
+  --primary: #111827;
+  --primary-light: #d4af37;
+  --primary-soft: #f9f5e7;
+
+  --secondary: #d4af37;
+  --secondary-light: #f4d675;
+  --secondary-soft: #fef9e7;
+}

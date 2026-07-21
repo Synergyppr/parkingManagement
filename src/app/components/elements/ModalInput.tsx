@@ -30,7 +30,7 @@ const ModalInput = ({
   const inputType = isPasswordType && !showPassword ? "password" : "text";
 
   return (
-    <div className="mb-4 relative">
+    <div className="relative mb-4">
       <input
         type={inputType}
         id={id}
@@ -43,15 +43,17 @@ const ModalInput = ({
         maxLength={maxLength}
         disabled={disabled}
         autoComplete={autoComplete}
-        className={`w-full text-gray-800 px-2 py-2 pr-10 border-b border-gray-500 text-sm tracking-tight bg-transparent focus:outline-none focus:border-amber-500 transition-all ${
-          disabled ? "bg-gray-200 cursor-not-allowed" : ""
-        } autofill:bg-white autofill:shadow-[inset_0_0_0px_1000px_white]`}
+        className={`w-full border-b border-gray-500 bg-transparent px-2 py-2 pr-10 text-sm tracking-tight text-gray-800 transition-all focus:border-primary 
+          focus:outline-none ${
+            disabled ? "cursor-not-allowed bg-gray-200" : ""
+          } autofill:bg-white autofill:shadow-[inset_0_0_0px_1000px_white]`}
       />
+
       <label
         htmlFor={id}
-        className={`absolute text-sm left-2 px-1  transition-all duration-200 ${
+        className={`absolute left-2 px-1 text-sm transition-all duration-200 ${
           isFocused || value
-            ? "-top-2 text-xs text-amber-600"
+            ? "-top-2 text-xs text-primary"
             : "top-2.75 text-gray-500"
         }`}
       >
@@ -62,7 +64,7 @@ const ModalInput = ({
         <button
           type="button"
           onClick={() => setShowPassword((prev) => !prev)}
-          className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-600"
+          className="absolute right-2 top-1/2 -translate-y-1/2 transform text-gray-600 transition-colors hover:text-primary"
           tabIndex={-1}
         >
           {showPassword ? <FaEyeSlash /> : <FaEye />}

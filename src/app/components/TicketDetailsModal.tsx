@@ -21,6 +21,16 @@ import {
 } from "react-icons/md";
 import { FaReceipt, FaUser } from "react-icons/fa";
 
+const getThemePrimaryColor = () => {
+  if (typeof window === "undefined") return "#d6a800";
+
+  return (
+    getComputedStyle(document.documentElement)
+      .getPropertyValue("--primary")
+      .trim() || "#d6a800"
+  );
+};
+
 export default function TicketDetailsModal({
   isOpen,
   setIsOpen,
@@ -159,7 +169,8 @@ export default function TicketDetailsModal({
       `,
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: action === "void" ? "#ef4444" : "#f59e0b",
+      confirmButtonColor:
+        action === "void" ? "#ef4444" : getThemePrimaryColor(),
       cancelButtonColor: "#64748b",
       confirmButtonText: `Yes, ${label}`,
       cancelButtonText: "Cancel",
@@ -178,7 +189,7 @@ export default function TicketDetailsModal({
           title: "No Terminal Found",
           text: "No payment terminal is configured for this property. Please add one in Settings.",
           icon: "error",
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getThemePrimaryColor(),
         });
         setActionLoading(false);
         return;
@@ -201,9 +212,7 @@ export default function TicketDetailsModal({
 
       // Extract journal transactions
       const journalTrxList =
-        journalResult?.data?.transactions ||
-        journalResult?.transactions ||
-        [];
+        journalResult?.data?.transactions || journalResult?.transactions || [];
 
       // Find the matching transaction
       const matchedJournalTrx =
@@ -263,9 +272,11 @@ export default function TicketDetailsModal({
       if (isSuccess) {
         await Swal.fire({
           title: `${label} Successful`,
-          text: `The transaction has been ${action === "void" ? "voided" : "refunded"} successfully.`,
+          text: `The transaction has been ${
+            action === "void" ? "voided" : "refunded"
+          } successfully.`,
           icon: "success",
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getThemePrimaryColor(),
         });
         handleCloseTicketDetails();
       } else {
@@ -289,11 +300,15 @@ export default function TicketDetailsModal({
             <p class="mt-2 text-xs text-slate-400">Status: ${responseStatus}</p>
             <details class="mt-2 text-left">
               <summary class="cursor-pointer text-xs text-slate-400">Full response</summary>
-              <pre class="mt-1 max-h-40 overflow-auto rounded bg-slate-50 p-2 text-[10px] text-slate-600">${JSON.stringify(data, null, 2)}</pre>
+              <pre class="mt-1 max-h-40 overflow-auto rounded bg-slate-50 p-2 text-[10px] text-slate-600">${JSON.stringify(
+                data,
+                null,
+                2
+              )}</pre>
             </details>
           `,
           icon: "error",
-          confirmButtonColor: "#d6a800",
+          confirmButtonColor: getThemePrimaryColor(),
         });
       }
     } catch (error) {
@@ -302,7 +317,7 @@ export default function TicketDetailsModal({
         title: "Error",
         text: `An unexpected error occurred while processing the ${action}.`,
         icon: "error",
-        confirmButtonColor: "#d6a800",
+        confirmButtonColor: getThemePrimaryColor(),
       });
     } finally {
       setActionLoading(false);
@@ -313,11 +328,12 @@ export default function TicketDetailsModal({
     <>
       <Modal isOpen={isOpen} onClose={handleCloseTicketDetails} size="lg">
         <div className="overflow-hidden rounded-4xl bg-white">
-          <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/40 to-white px-5 pt-5">
+          <div className="border-b border-slate-200 bg-linear-to-br from-white via-(--primary-soft) to-white px-5 pt-5">
             <div className="mb-4 text-center">
               <span
                 onClick={handleTicketDetailsClick}
-                className="inline-flex cursor-pointer rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-amber-600 shadow-sm transition-all"
+                className="inline-flex cursor-pointer rounded-full border border-(--primary-light) bg-white px-4 py-1 text-[10px] font-bold uppercase 
+                tracking-[0.18em] text-primary shadow-sm transition-all"
               >
                 Ticket Details
               </span>
@@ -397,8 +413,8 @@ export default function TicketDetailsModal({
                     </p>
                   </div>
 
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
-                    <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-amber-600">
+                  <div className="rounded-2xl border border-(--primary-light) bg-(--primary-soft) p-4">
+                    <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
                       License Plate
                     </p>
                     <p className="font-mono text-sm font-extrabold tracking-widest text-slate-950">
@@ -414,7 +430,7 @@ export default function TicketDetailsModal({
                 {photos.length > 0 && (
                   <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="mb-3 flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-(--primary-soft) text-primary">
                         <MdCameraAlt className="h-4 w-4" />
                       </div>
 
@@ -429,7 +445,8 @@ export default function TicketDetailsModal({
                           key={index}
                           type="button"
                           onClick={() => openLightbox(index)}
-                          className="relative aspect-square cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 transition-all duration-200 hover:scale-[1.03] hover:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                          className="relative aspect-square cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 transition-all 
+                          duration-200 hover:scale-[1.03] hover:border-primary focus:outline-none focus:ring-4 focus:ring-(--primary-soft)"
                           aria-label={`View photo ${index + 1}`}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -460,14 +477,15 @@ export default function TicketDetailsModal({
                       className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
                     >
                       {/* Transaction header */}
-                      <div className="border-b border-slate-100 bg-linear-to-r from-amber-50/60 to-white px-5 py-4">
+                      <div className="border-b border-slate-100 bg-linear-to-r from-(--primary-soft) to-white px-5 py-4">
                         <div className="flex items-center gap-2">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500 text-white">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--primary-soft)]0 text-white">
                             <MdReceipt className="h-4 w-4" />
                           </div>
                           <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-600">
-                              Transaction{transactions.length > 1 ? ` #${idx + 1}` : ""}
+                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">
+                              Transaction
+                              {transactions.length > 1 ? ` #${idx + 1}` : ""}
                             </p>
                             {trx.transaction_type && (
                               <p className="text-xs font-semibold text-slate-500">
@@ -482,21 +500,28 @@ export default function TicketDetailsModal({
                       <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
                         <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
                           <div className="mb-2 flex items-center gap-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-amber-600">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-primary">
                               <FaUser className="h-3.5 w-3.5" />
                             </div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                            <p className="text-[10px] font-black capitalize tracking-[0.18em] text-slate-400">
                               Customer
                             </p>
                           </div>
                           <p className="text-sm font-extrabold capitalize text-slate-950">
-                            {`${ticketDetails?.patron?.firstName || "Unknown"} ${ticketDetails?.patron?.lastName || ""}`.trim()}
+                            <span className="capitalize">{`${
+                              ticketDetails?.patron?.firstName || "Unknown"
+                            }`}</span>
+                            <span className="capitalize">
+                              {`${
+                                ticketDetails?.patron?.lastName || ""
+                              }`.trim()}
+                            </span>
                           </p>
                         </div>
 
                         <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
                           <div className="mb-2 flex items-center gap-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-amber-600">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-primary">
                               <FaReceipt className="h-3.5 w-3.5" />
                             </div>
                             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
@@ -510,7 +535,7 @@ export default function TicketDetailsModal({
 
                         <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
                           <div className="mb-2 flex items-center gap-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-amber-600">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-primary">
                               <MdAccessTime className="h-4 w-4" />
                             </div>
                             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
@@ -524,12 +549,12 @@ export default function TicketDetailsModal({
                           </p>
                         </div>
 
-                        <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4">
+                        <div className="rounded-2xl border border-(--primary-light) bg-(--primary-soft)/80 p-4">
                           <div className="mb-2 flex items-center gap-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500 text-white">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--primary-soft)]0 text-white">
                               <MdPayments className="h-4 w-4" />
                             </div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-secondary">
                               {trx.payment_method || "Payment"}
                             </p>
                           </div>
@@ -560,31 +585,34 @@ export default function TicketDetailsModal({
                       )}
 
                       {/* Void / Refund Actions */}
-                      {trx.payment_method === "ECR" && detail?.paymentTransactionId && (
-                        <div className="border-t border-slate-100 px-5 py-4">
-                          <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-                            Actions
-                          </p>
-                          <div className="flex gap-3">
-                            <button
-                              type="button"
-                              disabled={actionLoading}
-                              onClick={() => confirmAction("void", trx)}
-                              className="flex-1 cursor-pointer rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
-                            >
-                              Void
-                            </button>
-                            <button
-                              type="button"
-                              disabled={actionLoading}
-                              onClick={() => confirmAction("refund", trx)}
-                              className="flex-1 cursor-pointer rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700 transition hover:bg-amber-100 disabled:opacity-50"
-                            >
-                              Refund
-                            </button>
+                      {trx.payment_method === "ECR" &&
+                        detail?.paymentTransactionId && (
+                          <div className="border-t border-slate-100 px-5 py-4">
+                            <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                              Actions
+                            </p>
+                            <div className="flex gap-3">
+                              <button
+                                type="button"
+                                disabled={actionLoading}
+                                onClick={() => confirmAction("void", trx)}
+                                className="flex-1 cursor-pointer rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-600 
+                                transition hover:bg-red-100 disabled:opacity-50"
+                              >
+                                Void
+                              </button>
+                              <button
+                                type="button"
+                                disabled={actionLoading}
+                                onClick={() => confirmAction("refund", trx)}
+                                className="flex-1 cursor-pointer rounded-2xl border border-(--primary-light) bg-(--primary-soft) px-4 py-3 text-sm font-bold 
+                                text-secondary transition hover:bg-(--primary-soft) disabled:opacity-50"
+                              >
+                                Refund
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                     </div>
                   );
                 })}
@@ -615,7 +643,10 @@ export default function TicketDetailsModal({
                   </div>
 
                   {viewAllDamagedParts && (
-                    <div className="absolute inset-0 z-20 flex h-[115%] flex-col rounded-2xl border border-amber-200 bg-white/95 p-4 shadow-[0_25px_70px_rgba(15,23,42,0.16)] backdrop-blur-xl">
+                    <div
+                      className="absolute inset-0 z-20 flex h-[115%] flex-col rounded-2xl border border-(--primary-light) bg-white/95 p-4 
+                    shadow-[0_25px_70px_rgba(15,23,42,0.16)] backdrop-blur-xl"
+                    >
                       <h4 className="mb-3 text-center font-serif text-lg font-bold text-slate-950">
                         Incident Report
                       </h4>
@@ -631,7 +662,7 @@ export default function TicketDetailsModal({
                                 ?.replace(/([A-Z])/g, " $1")
                                 .trim()}
                             </p>
-                            <p className="mt-1 text-xs font-medium text-amber-600">
+                            <p className="mt-1 text-xs font-medium text-primary">
                               {part?.description}
                             </p>
                           </div>
@@ -654,7 +685,8 @@ export default function TicketDetailsModal({
                   <button
                     type="button"
                     onClick={() => setViewAllDamagedParts(!viewAllDamagedParts)}
-                    className="h-11 w-full cursor-pointer rounded-2xl bg-amber-500 text-sm font-bold text-white shadow-[0_12px_28px_rgba(217,174,38,0.28)] transition hover:bg-amber-600"
+                    className="h-11 w-full cursor-pointer rounded-2xl bg-[var(--primary-soft)]0 text-sm font-bold text-white 
+                    shadow-[0_12px_28px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition bg-secondary"
                   >
                     {viewAllDamagedParts
                       ? "Hide Description"
@@ -679,14 +711,14 @@ export default function TicketDetailsModal({
         photos.length > 0 &&
         createPortal(
           <div
-            className="fixed inset-0 z-[999999] flex flex-col items-center justify-center bg-black/95"
+            className="fixed inset-0 z-999999 flex flex-col items-center justify-center bg-black/95"
             onClick={closeLightbox}
           >
             {/* Close button — top-right, safe from nav */}
             <button
               type="button"
               onClick={closeLightbox}
-              className="absolute right-3 top-3 z-10 flex cursor-pointer items-center gap-1.5 rounded-full bg-white/20 px-4 py-2 text-sm font-bold text-white transition hover:bg-amber-500"
+              className="absolute right-3 top-3 z-10 flex cursor-pointer items-center gap-1.5 rounded-full bg-white/20 px-4 py-2 text-sm font-bold text-white transition hover:bg-[var(--primary-soft)]0"
               aria-label="Exit fullscreen"
             >
               <MdClose className="text-lg" />
@@ -720,7 +752,7 @@ export default function TicketDetailsModal({
                     e.stopPropagation();
                     prevPhoto();
                   }}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-white/20 p-2 text-white transition hover:bg-amber-500 md:left-4"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-white/20 p-2 text-white transition hover:bg-[var(--primary-soft)]0 md:left-4"
                   aria-label="Previous photo"
                 >
                   <MdChevronLeft className="text-3xl" />
@@ -732,7 +764,7 @@ export default function TicketDetailsModal({
                     e.stopPropagation();
                     nextPhoto();
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-white/20 p-2 text-white transition hover:bg-amber-500 md:right-4"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-white/20 p-2 text-white transition hover:bg-[var(--primary-soft)]0 md:right-4"
                   aria-label="Next photo"
                 >
                   <MdChevronRight className="text-3xl" />
@@ -752,7 +784,7 @@ export default function TicketDetailsModal({
                     onClick={() => setLightboxIndex(index)}
                     className={`h-12 w-12 shrink-0 cursor-pointer overflow-hidden rounded-lg border-2 transition-all ${
                       index === lightboxIndex
-                        ? "scale-110 border-amber-400"
+                        ? "scale-110 border-primary"
                         : "border-white/30 opacity-60 hover:opacity-100"
                     }`}
                     aria-label={`Go to photo ${index + 1}`}

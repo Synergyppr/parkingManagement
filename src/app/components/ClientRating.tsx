@@ -48,8 +48,8 @@ const ClientRating = ({
         </div>
       ) : (
         <>
-          <div className="border-b border-slate-200 bg-linear-to-br from-white via-amber-50/50 to-white p-6 text-center">
-            <span className="inline-flex rounded-full border border-amber-300 bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+          <div className="border-b border-slate-200 bg-linear-to-br from-white via-[color-mix(in_srgb,var(--primary-soft)_50%,transparent)] to-white p-6 text-center">
+            <span className="inline-flex rounded-full border border-(--primary-light) bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-primary shadow-sm">
               Guest Feedback
             </span>
 
@@ -82,11 +82,11 @@ const ClientRating = ({
                       onClick={() => handleStarClick(starIndex, false)}
                     />
 
-                    <div className="flex h-full w-full items-center justify-center rounded-2xl bg-amber-50 ring-1 ring-amber-100 transition">
+                    <div className="flex h-full w-full items-center justify-center rounded-2xl bg-(--primary-soft) ring-1 ring-(--primary-light) transition">
                       {hoveredStars >= fullValue ? (
-                        <BsStarFill className="h-7 w-7 text-amber-500 drop-shadow-sm" />
+                        <BsStarFill className="h-7 w-7 text-primary drop-shadow-sm" />
                       ) : hoveredStars >= halfValue ? (
-                        <BsStarHalf className="h-7 w-7 text-amber-500 drop-shadow-sm" />
+                        <BsStarHalf className="h-7 w-7 text-primary drop-shadow-sm" />
                       ) : (
                         <BsStar className="h-7 w-7 text-slate-300" />
                       )}
@@ -97,7 +97,8 @@ const ClientRating = ({
             </div>
 
             <textarea
-              className="h-28 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100 disabled:bg-slate-50 disabled:text-slate-400"
+              className="h-28 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition 
+              placeholder:text-slate-400 focus:border-primary focus:ring-4 focus:ring-(--primary-soft) disabled:bg-slate-50 disabled:text-slate-400"
               placeholder="Leave a comment (optional)"
               rows={3}
               disabled={submitted}
@@ -112,7 +113,7 @@ const ClientRating = ({
               className={`flex h-13 w-full items-center justify-center rounded-2xl text-sm font-black transition ${
                 submitted
                   ? "cursor-not-allowed bg-slate-100 text-slate-400"
-                  : "cursor-pointer bg-amber-500 text-white shadow-[0_16px_36px_rgba(214,168,0,0.32)] hover:bg-amber-600"
+                  : "cursor-pointer bg-primary text-white shadow-[0_16px_36px_color-mix(in_srgb,var(--primary)_32%,transparent)] hover:bg-secondary"
               }`}
             >
               Submit Rating
