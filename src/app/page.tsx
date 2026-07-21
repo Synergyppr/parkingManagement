@@ -6,7 +6,6 @@ import { KeySquare } from "lucide-react";
 
 import { authOptions } from "./auth/authOptions";
 import LoginForm from "./components/LoginForm";
-import ThemeSelector from "./components/ThemeSelector";
 
 export default async function LoginPage() {
   const session = await getServerSession(authOptions);
@@ -44,9 +43,9 @@ export default async function LoginPage() {
         />
       </div>
 
-      <div className="absolute right-4 top-4 z-30 sm:right-6 sm:top-6">
+      {/* <div className="absolute right-4 top-4 z-30 sm:right-6 sm:top-6">
         <ThemeSelector />
-      </div>
+      </div> */}
 
       <main className="relative z-10 flex min-h-screen items-center justify-center px-4 py-24 sm:py-20">
         <div
