@@ -17,6 +17,8 @@ import { KeySquare } from "lucide-react";
 
 import ThemeSelector from "./ThemeSelector";
 
+// Navigation Sidebar
+
 export default function OffCanvas({
   setIsMenuOpen,
   isMenuOpen,

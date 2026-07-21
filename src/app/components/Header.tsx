@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -16,7 +16,206 @@ import { handleLogout } from "../helpers/authHelpers";
 
 import Location from "./Location";
 import OffCanvas from "./OffCanvas";
-// import ThemeSelector from "./ThemeSelector";
+
+
+type ThemePalette = {
+  name: string;
+  primary: string;
+  primaryLight: string;
+  primarySoft: string;
+  secondary: string;
+  secondaryLight: string;
+  secondarySoft: string;
+};
+
+const DEFAULT_PRIMARY_COLOR = "#d97706";
+const DEFAULT_SECONDARY_COLOR = "#f59e0b";
+
+const THEME_PALETTES: ThemePalette[] = [
+  {
+    name: "amber",
+    primary: "#d97706",
+    primaryLight: "#fbbf24",
+    primarySoft: "#fffbeb",
+    secondary: "#f59e0b",
+    secondaryLight: "#fcd34d",
+    secondarySoft: "#fef3c7",
+  },
+  {
+    name: "sapphire",
+    primary: "#2563eb",
+    primaryLight: "#60a5fa",
+    primarySoft: "#eff6ff",
+    secondary: "#3b82f6",
+    secondaryLight: "#93c5fd",
+    secondarySoft: "#dbeafe",
+  },
+  {
+    name: "emerald",
+    primary: "#059669",
+    primaryLight: "#34d399",
+    primarySoft: "#ecfdf5",
+    secondary: "#10b981",
+    secondaryLight: "#6ee7b7",
+    secondarySoft: "#d1fae5",
+  },
+  {
+    name: "royal",
+    primary: "#7c3aed",
+    primaryLight: "#a78bfa",
+    primarySoft: "#f5f3ff",
+    secondary: "#8b5cf6",
+    secondaryLight: "#c4b5fd",
+    secondarySoft: "#ede9fe",
+  },
+  {
+    name: "ruby",
+    primary: "#dc2626",
+    primaryLight: "#f87171",
+    primarySoft: "#fef2f2",
+    secondary: "#ef4444",
+    secondaryLight: "#fca5a5",
+    secondarySoft: "#fee2e2",
+  },
+  {
+    name: "teal",
+    primary: "#0f766e",
+    primaryLight: "#2dd4bf",
+    primarySoft: "#f0fdfa",
+    secondary: "#14b8a6",
+    secondaryLight: "#5eead4",
+    secondarySoft: "#ccfbf1",
+  },
+  {
+    name: "rose",
+    primary: "#db2777",
+    primaryLight: "#f472b6",
+    primarySoft: "#fdf2f8",
+    secondary: "#ec4899",
+    secondaryLight: "#f9a8d4",
+    secondarySoft: "#fce7f3",
+  },
+  {
+    name: "obsidian",
+    primary: "#111827",
+    primaryLight: "#d4af37",
+    primarySoft: "#f9f5e7",
+    secondary: "#d4af37",
+    secondaryLight: "#f4d675",
+    secondarySoft: "#fef9e7",
+  },
+];
+
+const isValidThemeColor = (value: unknown): value is string => {
+  if (typeof value !== "string") return false;
+
+  const color = value.trim();
+
+  return (
+    /^#[0-9a-fA-F]{3}$/.test(color) ||
+    /^#[0-9a-fA-F]{6}$/.test(color) ||
+    /^rgb(a)?\(/i.test(color) ||
+    /^hsl(a)?\(/i.test(color)
+  );
+};
+
+const normalizeThemeColor = (value: string) => value.trim().toLowerCase();
+
+const findThemePalette = (
+  primaryColor?: string | null,
+  secondaryColor?: string | null
+) => {
+  if (!isValidThemeColor(primaryColor) || !isValidThemeColor(secondaryColor)) {
+    return undefined;
+  }
+
+  const primary = normalizeThemeColor(primaryColor);
+  const secondary = normalizeThemeColor(secondaryColor);
+
+  return THEME_PALETTES.find(
+    (palette) =>
+      normalizeThemeColor(palette.primary) === primary &&
+      normalizeThemeColor(palette.secondary) === secondary
+  );
+};
+
+const applyGlobalTheme = ({
+  primaryColor,
+  secondaryColor,
+}: {
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
+}) => {
+  if (typeof window === "undefined") return;
+
+  const root = document.documentElement;
+
+  const cachedPrimary = localStorage.getItem("primaryColor");
+  const cachedSecondary = localStorage.getItem("secondaryColor");
+  const cachedThemeName = localStorage.getItem("parkey-theme");
+
+  const primary = isValidThemeColor(primaryColor)
+    ? primaryColor.trim()
+    : isValidThemeColor(cachedPrimary)
+    ? cachedPrimary.trim()
+    : DEFAULT_PRIMARY_COLOR;
+
+  const secondary = isValidThemeColor(secondaryColor)
+    ? secondaryColor.trim()
+    : isValidThemeColor(cachedSecondary)
+    ? cachedSecondary.trim()
+    : DEFAULT_SECONDARY_COLOR;
+
+  const matchedPalette =
+    findThemePalette(primary, secondary) ||
+    THEME_PALETTES.find((palette) => palette.name === cachedThemeName);
+
+  if (matchedPalette) {
+    root.dataset.theme = matchedPalette.name;
+
+    root.style.setProperty("--primary", matchedPalette.primary);
+    root.style.setProperty("--primary-light", matchedPalette.primaryLight);
+    root.style.setProperty("--primary-soft", matchedPalette.primarySoft);
+
+    root.style.setProperty("--secondary", matchedPalette.secondary);
+    root.style.setProperty("--secondary-light", matchedPalette.secondaryLight);
+    root.style.setProperty("--secondary-soft", matchedPalette.secondarySoft);
+
+    localStorage.setItem("primaryColor", matchedPalette.primary);
+    localStorage.setItem("secondaryColor", matchedPalette.secondary);
+    localStorage.setItem("parkey-theme", matchedPalette.name);
+
+    return;
+  }
+
+  root.removeAttribute("data-theme");
+
+  root.style.setProperty("--primary", primary);
+  root.style.setProperty("--secondary", secondary);
+
+  root.style.setProperty(
+    "--primary-light",
+    `color-mix(in srgb, ${primary} 35%, white)`
+  );
+
+  root.style.setProperty(
+    "--primary-soft",
+    `color-mix(in srgb, ${primary} 10%, white)`
+  );
+
+  root.style.setProperty(
+    "--secondary-light",
+    `color-mix(in srgb, ${secondary} 35%, white)`
+  );
+
+  root.style.setProperty(
+    "--secondary-soft",
+    `color-mix(in srgb, ${secondary} 10%, white)`
+  );
+
+  localStorage.setItem("primaryColor", primary);
+  localStorage.setItem("secondaryColor", secondary);
+};
 
 export default function Header() {
   const router = useRouter();
@@ -30,6 +229,8 @@ export default function Header() {
     setPropertyName,
     locationMode,
     requestLocation,
+    primaryColor,
+    secondaryColor,
     setAccountUser,
   } = useProperty();
 
@@ -55,6 +256,13 @@ export default function Header() {
 
   useAuthRedirect();
   usePropertyListener();
+
+  useLayoutEffect(() => {
+    applyGlobalTheme({
+      primaryColor,
+      secondaryColor,
+    });
+  }, [primaryColor, secondaryColor]);
 
   useEffect(() => {
     setMounted(true);

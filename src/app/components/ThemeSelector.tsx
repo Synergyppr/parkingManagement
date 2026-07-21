@@ -94,7 +94,7 @@ const THEMES: ThemeOption[] = [
     label: "Obsidian",
     description: "Dark luxury with gold",
     primary: "#111827",
-    secondary: "#b8941f",
+    secondary: "#d4af37",
     light: "#d4af37",
     soft: "#f9f5e7",
   },
@@ -139,11 +139,13 @@ const findThemeByName = (
 };
 
 const applyThemeVariables = ({
+  name,
   primary,
   secondary,
   light,
   soft,
 }: {
+  name?: ThemeName;
   primary: string;
   secondary: string;
   light?: string;
@@ -152,6 +154,10 @@ const applyThemeVariables = ({
   if (typeof document === "undefined") return;
 
   const root = document.documentElement;
+
+  if (name) {
+    root.setAttribute("data-theme", name);
+  }
 
   root.style.setProperty("--primary", primary);
   root.style.setProperty("--secondary", secondary);
@@ -255,6 +261,7 @@ export default function ThemeSelector() {
     setTheme(initialTheme.name);
 
     applyThemeVariables({
+      name: initialTheme.name,
       primary: normalizeColor(primaryColor, initialTheme.primary),
       secondary: normalizeColor(secondaryColor, initialTheme.secondary),
       light: contextTheme ? contextTheme.light : initialTheme.light,
@@ -281,6 +288,7 @@ export default function ThemeSelector() {
       setTheme(matchedTheme.name);
 
       applyThemeVariables({
+        name: matchedTheme.name,
         primary: matchedTheme.primary,
         secondary: matchedTheme.secondary,
         light: matchedTheme.light,
@@ -295,6 +303,8 @@ export default function ThemeSelector() {
      * The endpoint may contain custom colors that do not match
      * one of the predefined themes.
      */
+    document.documentElement.removeAttribute("data-theme");
+
     applyThemeVariables({
       primary: primaryColor,
       secondary: secondaryColor,
@@ -341,9 +351,9 @@ export default function ThemeSelector() {
       longitude: Number(longitude) || 0,
       primaryColor: selectedTheme.primary,
       secondaryColor: selectedTheme.secondary,
-      name: "string",
-      address: "string",
-      radiusMeters: 0,
+      // name: "string",
+      // address: "string",
+      // radiusMeters: 0,
       isActive: true,
     };
 
@@ -396,6 +406,7 @@ export default function ThemeSelector() {
     setSecondaryColor(selectedTheme.secondary);
 
     applyThemeVariables({
+      name: selectedTheme.name,
       primary: selectedTheme.primary,
       secondary: selectedTheme.secondary,
       light: selectedTheme.light,
@@ -426,6 +437,7 @@ export default function ThemeSelector() {
       setSecondaryColor(previousTheme.secondary);
 
       applyThemeVariables({
+        name: previousTheme.name,
         primary: previousTheme.primary,
         secondary: previousTheme.secondary,
         light: previousTheme.light,
@@ -546,7 +558,9 @@ export default function ThemeSelector() {
                     disabled:cursor-not-allowed disabled:opacity-70
                       ${
                         isSelected
-                          ? "border-(--primary-light) bg-(--primary-soft) shadow-sm"
+                          ? option.name === "obsidian"
+                            ? "border-[#d4af37] bg-[#f9f5e7] shadow-sm"
+                            : "border-(--primary-light) bg-(--primary-soft) shadow-sm"
                           : "border-slate-200 bg-white hover:border-(--primary-light) hover:bg-slate-50"
                       }`}
                   >
@@ -574,7 +588,11 @@ export default function ThemeSelector() {
                     <span className="min-w-0 flex-1">
                       <span
                         className={`block truncate text-sm font-extrabold ${
-                          isSelected ? "text-primary" : "text-slate-900"
+                          isSelected
+                            ? option.name === "obsidian"
+                              ? "text-[#9a7615]"
+                              : "text-primary"
+                            : "text-slate-900"
                         }`}
                       >
                         {option.label}
@@ -588,7 +606,9 @@ export default function ThemeSelector() {
                     <span
                       className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all ${
                         isSelected
-                          ? "bg-primary text-white shadow-[0_6px_16px_color-mix(in_srgb,var(--primary)_25%,transparent)]"
+                          ? option.name === "obsidian"
+                            ? "bg-[#d4af37] text-[#111827] shadow-[0_6px_16px_rgba(212,175,55,0.28)]"
+                            : "bg-primary text-white shadow-[0_6px_16px_color-mix(in_srgb,var(--primary)_25%,transparent)]"
                           : "bg-slate-100 text-transparent group-hover:text-slate-300"
                       }`}
                     >

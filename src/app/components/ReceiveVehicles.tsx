@@ -34,7 +34,92 @@ import ValetTicketList from "../components/ValetTicketList";
 import PageLoader from "../components/elements/PageLoader";
 
 const DEFAULT_PRIMARY_COLOR = "#d97706";
-const DEFAULT_SECONDARY_COLOR = "#fbbf24";
+const DEFAULT_SECONDARY_COLOR = "#f59e0b";
+
+type ThemePalette = {
+  name: string;
+  primary: string;
+  primaryLight: string;
+  primarySoft: string;
+  secondary: string;
+  secondaryLight: string;
+  secondarySoft: string;
+};
+
+const THEME_PALETTES: ThemePalette[] = [
+  {
+    name: "amber",
+    primary: "#d97706",
+    primaryLight: "#fbbf24",
+    primarySoft: "#fffbeb",
+    secondary: "#f59e0b",
+    secondaryLight: "#fcd34d",
+    secondarySoft: "#fef3c7",
+  },
+  {
+    name: "sapphire",
+    primary: "#2563eb",
+    primaryLight: "#60a5fa",
+    primarySoft: "#eff6ff",
+    secondary: "#3b82f6",
+    secondaryLight: "#93c5fd",
+    secondarySoft: "#dbeafe",
+  },
+  {
+    name: "emerald",
+    primary: "#059669",
+    primaryLight: "#34d399",
+    primarySoft: "#ecfdf5",
+    secondary: "#10b981",
+    secondaryLight: "#6ee7b7",
+    secondarySoft: "#d1fae5",
+  },
+  {
+    name: "royal",
+    primary: "#7c3aed",
+    primaryLight: "#a78bfa",
+    primarySoft: "#f5f3ff",
+    secondary: "#8b5cf6",
+    secondaryLight: "#c4b5fd",
+    secondarySoft: "#ede9fe",
+  },
+  {
+    name: "ruby",
+    primary: "#dc2626",
+    primaryLight: "#f87171",
+    primarySoft: "#fef2f2",
+    secondary: "#ef4444",
+    secondaryLight: "#fca5a5",
+    secondarySoft: "#fee2e2",
+  },
+  {
+    name: "teal",
+    primary: "#0f766e",
+    primaryLight: "#2dd4bf",
+    primarySoft: "#f0fdfa",
+    secondary: "#14b8a6",
+    secondaryLight: "#5eead4",
+    secondarySoft: "#ccfbf1",
+  },
+  {
+    name: "rose",
+    primary: "#db2777",
+    primaryLight: "#f472b6",
+    primarySoft: "#fdf2f8",
+    secondary: "#ec4899",
+    secondaryLight: "#f9a8d4",
+    secondarySoft: "#fce7f3",
+  },
+  {
+    name: "obsidian",
+    primary: "#111827",
+    primaryLight: "#d4af37",
+    primarySoft: "#f9f5e7",
+    secondary: "#d4af37",
+    secondaryLight: "#f4d675",
+    secondarySoft: "#fef9e7",
+  },
+];
 
 const isValidThemeColor = (value: unknown): value is string => {
   if (typeof value !== "string") return false;
@@ -46,6 +131,26 @@ const isValidThemeColor = (value: unknown): value is string => {
     /^#[0-9a-fA-F]{6}$/.test(color) ||
     /^rgb(a)?\(/i.test(color) ||
     /^hsl(a)?\(/i.test(color)
+  );
+};
+
+const normalizeThemeColor = (value: string) => value.trim().toLowerCase();
+
+const findThemePalette = (
+  primaryColor?: string | null,
+  secondaryColor?: string | null
+) => {
+  if (!isValidThemeColor(primaryColor) || !isValidThemeColor(secondaryColor)) {
+    return undefined;
+  }
+
+  const primary = normalizeThemeColor(primaryColor);
+  const secondary = normalizeThemeColor(secondaryColor);
+
+  return THEME_PALETTES.find(
+    (palette) =>
+      normalizeThemeColor(palette.primary) === primary &&
+      normalizeThemeColor(palette.secondary) === secondary
   );
 };
 
@@ -68,31 +173,51 @@ const applyThemeColors = ({
     ? secondaryColor.trim()
     : DEFAULT_SECONDARY_COLOR;
 
-  root.style.setProperty("--primary", primary);
-  root.style.setProperty("--secondary", secondary);
+  const matchedPalette = findThemePalette(primary, secondary);
 
-  root.style.setProperty(
-    "--primary-light",
-    `color-mix(in srgb, ${primary} 35%, white)`
-  );
+  if (matchedPalette) {
+    root.dataset.theme = matchedPalette.name;
 
-  root.style.setProperty(
-    "--primary-soft",
-    `color-mix(in srgb, ${primary} 10%, white)`
-  );
+    root.style.setProperty("--primary", matchedPalette.primary);
+    root.style.setProperty("--primary-light", matchedPalette.primaryLight);
+    root.style.setProperty("--primary-soft", matchedPalette.primarySoft);
 
-  root.style.setProperty(
-    "--secondary-light",
-    `color-mix(in srgb, ${secondary} 35%, white)`
-  );
+    root.style.setProperty("--secondary", matchedPalette.secondary);
+    root.style.setProperty("--secondary-light", matchedPalette.secondaryLight);
+    root.style.setProperty("--secondary-soft", matchedPalette.secondarySoft);
+  } else {
+    root.removeAttribute("data-theme");
 
-  root.style.setProperty(
-    "--secondary-soft",
-    `color-mix(in srgb, ${secondary} 10%, white)`
-  );
+    root.style.setProperty("--primary", primary);
+    root.style.setProperty("--secondary", secondary);
+
+    root.style.setProperty(
+      "--primary-light",
+      `color-mix(in srgb, ${primary} 35%, white)`
+    );
+
+    root.style.setProperty(
+      "--primary-soft",
+      `color-mix(in srgb, ${primary} 10%, white)`
+    );
+
+    root.style.setProperty(
+      "--secondary-light",
+      `color-mix(in srgb, ${secondary} 35%, white)`
+    );
+
+    root.style.setProperty(
+      "--secondary-soft",
+      `color-mix(in srgb, ${secondary} 10%, white)`
+    );
+  }
 
   localStorage.setItem("primaryColor", primary);
   localStorage.setItem("secondaryColor", secondary);
+
+  if (matchedPalette) {
+    localStorage.setItem("parkey-theme", matchedPalette.name);
+  }
 };
 
 export default function DashboardClient({
@@ -405,43 +530,27 @@ export default function DashboardClient({
                   parkedTickets={vehicles}
                 />
 
-                {/* Add 3 aesthetic cards with react icons and marketing messages */}
-                <div className="mx-auto mb-6 mt-10 grid max-w-248 grid-cols-1 gap-6 md:grid-cols-3 md:gap-4">
+                {/* Cards with react icons and marketing messages */}
+                <div className="mx-auto mb-6 mt-2 md:mx-4 lg:mx-auto lg:mt-10 grid max-w-248 grid-cols-1 gap-6 md:grid-cols-3 md:gap-4">
                   {/* Rapid Logging */}
                   <div
-                    className="
-                      group mx-4 flex min-h-32.5 items-center gap-5
-                      rounded-4xl border border-slate-200
-                      bg-white p-6 shadow-sm
-                      transition-all duration-300
-                      hover:-translate-y-1
-                      hover:border-(--primary-light)
-                      hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)]
-                      md:mx-0
-                    "
+                    className="group mx-4 lg:flex-row flex-col flex min-h-32.5 items-center gap-5 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300
+                    hover:-translate-y-1 hover:border-(--primary-light) hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] md:mx-0"
                   >
                     <div
-                      className="
-                        flex h-14 w-14 shrink-0
-                        items-center justify-center
-                        rounded-2xl
-                        bg-(--primary-soft)
-                        text-primary
-                        transition-all duration-300
-                        group-hover:bg-primary
-                        group-hover:text-white
-                      "
+                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary transition-all duration-300
+                      group-hover:bg-primary group-hover:text-white"
                     >
                       {/* <FaCarSide className="text-2xl" /> */}
                       <UserKey className="text-2xl" />
                     </div>
 
                     <div>
-                      <h3 className="text-base font-extrabold text-slate-950">
+                      <h3 className="text-base lg:text-left text-center font-extrabold text-slate-950">
                         Rapid Logging
                       </h3>
 
-                      <p className="mt-1 text-sm leading-5 text-slate-500">
+                      <p className="mt-1 text-sm leading-5 text-slate-500 lg:text-left text-center">
                         Average check-in takes less than 45 seconds.
                       </p>
                     </div>
@@ -449,22 +558,11 @@ export default function DashboardClient({
 
                   {/* SMS Notifications */}
                   <div
-                    className="
-                      group mx-4 flex min-h-32.5 items-center gap-5
-                      rounded-4xl border border-slate-200
-                      bg-white p-6 shadow-sm
-                      transition-all duration-300
-                      hover:-translate-y-1
-                      hover:border-(--primary-light)
-                      hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)]
-                      md:mx-0
-                    "
+                    className="group mx-4 flex lg:flex-row flex-col min-h-32.5 items-center gap-5 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm
+                    transition-all duration-300 hover:-translate-y-1 hover:border-(--primary-light) hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] md:mx-0"
                   >
                     <div
-                      className="
-                        flex h-14 w-14 shrink-0
-                        items-center justify-center
-                        rounded-2xl
+                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl
                         bg-(--primary-soft)
                         text-primary
                         transition-all duration-300
@@ -477,11 +575,11 @@ export default function DashboardClient({
                     </div>
 
                     <div>
-                      <h3 className="text-base font-extrabold text-slate-950">
+                      <h3 className="text-base font-extrabold text-slate-950 lg:text-left text-center">
                         SMS Notifications
                       </h3>
 
-                      <p className="mt-1 text-sm leading-5 text-slate-500">
+                      <p className="mt-1 text-sm leading-5 text-slate-500 lg:text-left text-center">
                         Guests receive a digital ticket instantly via SMS.
                       </p>
                     </div>
@@ -490,7 +588,7 @@ export default function DashboardClient({
                   {/* Paperless Valet */}
                   <div
                     className="
-                      group mx-4 flex min-h-32.5 items-center gap-5
+                      group mx-4 flex lg:flex-row flex-col min-h-32.5 items-center gap-5
                       rounded-4xl border border-slate-200
                       bg-white p-6 shadow-sm
                       transition-all duration-300
@@ -501,8 +599,7 @@ export default function DashboardClient({
                     "
                   >
                     <div
-                      className="
-                        flex h-14 w-14 shrink-0
+                      className="flex h-14 w-14 shrink-0
                         items-center justify-center
                         rounded-2xl
                         bg-(--primary-soft)
@@ -517,11 +614,11 @@ export default function DashboardClient({
                     </div>
 
                     <div>
-                      <h3 className="text-base font-extrabold text-slate-950">
+                      <h3 className="text-base font-extrabold text-slate-950 lg:text-left text-center">
                         Paperless Valet
                       </h3>
 
-                      <p className="mt-1 text-sm leading-5 text-slate-500">
+                      <p className="mt-1 text-sm leading-5 text-slate-500 lg:text-left text-center">
                         Eco-friendly digital receipts and retrieval requests.
                       </p>
                     </div>

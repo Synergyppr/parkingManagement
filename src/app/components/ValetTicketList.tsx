@@ -229,23 +229,25 @@ export default function ValetTicketList({
           />
         </div>
 
-        <button
-          type="button"
-          className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-100 px-6 text-sm font-bold text-slate-700 transition 
+        <div className="flex gap-2 w-full justify-end">
+          <button
+            type="button"
+            className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-100 px-6 text-sm font-bold text-slate-700 transition 
           hover:bg-slate-200 cursor-pointer"
-        >
-          <LuArrowUpDown className="h-4 w-4" />
-          Sort: Recent
-        </button>
+          >
+            <LuArrowUpDown className="h-4 w-4" />
+            Sort: Recent
+          </button>
 
-        <button
-          type="button"
-          onClick={() => (window.location.href = "/check-in?status=received")}
-          className="h-12 rounded-2xl bg-primary px-7 text-sm font-extrabold text-white shadow-[0_12px_28px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition 
+          <button
+            type="button"
+            onClick={() => (window.location.href = "/check-in?status=received")}
+            className="h-12 rounded-2xl bg-primary px-7 text-sm font-extrabold text-white shadow-[0_12px_28px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition 
           hover:bg-secondary cursor-pointer"
-        >
-          New Check-in
-        </button>
+          >
+            New Check-in
+          </button>
+        </div>
       </div>
 
       {/* Meta row */}
