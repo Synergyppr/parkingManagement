@@ -1,6 +1,5 @@
 "use client";
-
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Swal from "sweetalert2";
 import { Check, ChevronDown, LoaderCircle, Palette } from "lucide-react";
 
@@ -199,8 +198,6 @@ const getPrimaryThemeColor = () => {
 };
 
 export default function ThemeSelector() {
-  const containerRef = useRef<HTMLDivElement>(null);
-
   const {
     tenantId,
     propertyId,
@@ -213,7 +210,7 @@ export default function ThemeSelector() {
     setPrimaryColor,
     setSecondaryColor,
   } = useProperty();
-
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [theme, setTheme] = useState<ThemeName>(DEFAULT_THEME);
@@ -265,6 +262,9 @@ export default function ThemeSelector() {
     });
 
     setMounted(true);
+
+    // Theme initialization should run once after the component mounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /*
@@ -336,7 +336,7 @@ export default function ThemeSelector() {
 
     const payload = {
       id: propertyId,
-      tenantId: tenantId,
+      tenantId,
       latitude: Number(latitude) || 0,
       longitude: Number(longitude) || 0,
       primaryColor: selectedTheme.primary,
@@ -355,7 +355,12 @@ export default function ThemeSelector() {
       body: JSON.stringify(payload),
     });
 
-    const result = await response.json();
+    const result: {
+      result?: {
+        status?: string | number;
+        message?: string;
+      };
+    } = await response.json();
 
     const requestSucceeded =
       response.ok &&
@@ -366,8 +371,6 @@ export default function ThemeSelector() {
         result?.result?.message || "The property theme could not be updated."
       );
     }
-
-    return result;
   };
 
   const handleThemeChange = async (selectedTheme: ThemeOption) => {
@@ -457,196 +460,151 @@ export default function ThemeSelector() {
   }
 
   return (
-    <div ref={containerRef} className="relative w-full min-w-0 lg:w-auto">
-      <button
-        type="button"
-        onClick={() => setIsOpen((previous) => !previous)}
-        disabled={Boolean(loadingTheme)}
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-        aria-label="Choose property theme"
-        className="
-          flex min-h-11 w-full cursor-pointer items-center
-          justify-between gap-3 rounded-2xl border border-slate-200
-          bg-white px-3 py-2 text-left shadow-sm
-          transition-all duration-300
-          hover:border-(--primary-light)
-          hover:bg-(--primary-soft)
-          focus:outline-none
-          focus-visible:ring-2
-          focus-visible:ring-(--primary-light)
-          disabled:cursor-not-allowed
-          disabled:opacity-70
-          lg:min-h-10 lg:w-48
-        "
-      >
-        <div className="flex min-w-0 items-center gap-3">
-          <span
-            className="
-              flex h-8 w-8 shrink-0 items-center justify-center
-              rounded-xl text-white
-              shadow-[0_8px_20px_color-mix(in_srgb,var(--primary)_25%,transparent)]
-            "
-            style={{
-              background: `linear-gradient(
-                135deg,
-                ${selectedTheme.primary},
-                ${selectedTheme.secondary}
-              )`,
-            }}
-          >
-            {loadingTheme ? (
-              <LoaderCircle className="h-4 w-4 animate-spin" />
-            ) : (
-              <Palette className="h-4 w-4" />
-            )}
-          </span>
-
-          <div className="min-w-0">
-            <p className="truncate text-xs font-black uppercase tracking-[0.12em] text-slate-400">
-              Theme
-            </p>
-
-            <p className="truncate text-sm font-extrabold text-slate-900">
-              {selectedTheme.label}
-            </p>
-          </div>
-        </div>
-
-        <ChevronDown
-          className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-300 ${
-            isOpen ? "rotate-180" : ""
-          }`}
-        />
-      </button>
-
-      {isOpen && (
-        <div
-          role="listbox"
-          aria-label="Choose application theme"
-          className="
-            absolute right-0 top-[calc(100%+0.5rem)] z-10000
-            w-full min-w-65 overflow-hidden rounded-3xl
-            border border-slate-200 bg-white p-2
-            shadow-[0_24px_70px_rgba(15,23,42,0.2)]
-            lg:w-80
-          "
+    <div ref={containerRef} className="w-full min-w-0 lg:w-auto">
+      <div className="w-full overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300">
+        <button
+          type="button"
+          onClick={() => setIsOpen((previous) => !previous)}
+          disabled={Boolean(loadingTheme)}
+          aria-expanded={isOpen}
+          aria-controls="property-theme-options"
+          aria-label="Toggle property theme options"
+          className="flex min-h-11 w-full min-w-full cursor-pointer items-center justify-between gap-3 px-3 py-2 text-left
+          transition-all duration-300 hover:bg-(--primary-soft) focus:outline-none focus-visible:ring-2
+          focus-visible:ring-inset focus-visible:ring-(--primary-light) disabled:cursor-not-allowed disabled:opacity-70
+          lg:min-h-10 lg:w-64"
         >
-          <div className="border-b border-slate-100 px-3 py-3">
-            <p className="text-sm font-extrabold text-slate-950">
-              Choose a theme
-            </p>
+          <div className="flex w-full min-w-0 items-center gap-3">
+            <span
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-white shadow-[0_8px_20px_color-mix(in_srgb,var(--primary)_25%,transparent)]"
+              style={{
+                background: `linear-gradient(
+                  135deg,
+                  ${selectedTheme.primary},
+                  ${selectedTheme.secondary}
+                )`,
+              }}
+            >
+              {loadingTheme ? (
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+              ) : (
+                <Palette className="h-4 w-4" />
+              )}
+            </span>
 
-            <p className="mt-0.5 text-xs font-medium leading-5 text-slate-400">
-              The selected colors will be saved to the active property.
-            </p>
+            <div className="min-w-0">
+              <p className="truncate text-xs font-black uppercase tracking-[0.12em] text-slate-400">
+                Theme
+              </p>
+
+              <p className="truncate text-sm font-extrabold text-slate-900">
+                {selectedTheme.label}
+              </p>
+            </div>
           </div>
 
-          <div className="max-h-80 space-y-1 overflow-y-auto overscroll-contain p-1">
-            {THEMES.map((option) => {
-              const isSelected = option.name === selectedTheme.name;
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-300 ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
 
-              const isSaving = loadingTheme === option.name;
+        <div
+          id="property-theme-options"
+          aria-hidden={!isOpen}
+          className={`grid transition-all duration-300 ease-in-out ${
+            isOpen
+              ? "grid-rows-[1fr] border-t border-slate-100 opacity-100"
+              : "pointer-events-none grid-rows-[0fr] opacity-0"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div className="px-4 pb-2 pt-4">
+              <p className="text-sm font-extrabold text-slate-950">
+                Choose a theme
+              </p>
 
-              return (
-                <button
-                  key={option.name}
-                  type="button"
-                  role="option"
-                  aria-selected={isSelected}
-                  disabled={Boolean(loadingTheme)}
-                  onClick={() => handleThemeChange(option)}
-                  className={`
-                    group flex w-full cursor-pointer items-center
-                    gap-3 rounded-2xl border px-3 py-3 text-left
-                    transition-all duration-200
-                    disabled:cursor-not-allowed
-                    disabled:opacity-70
-                    ${
-                      isSelected
-                        ? `
-                            border-(--primary-light)
-                            bg-(--primary-soft)
-                            shadow-sm
-                          `
-                        : `
-                            border-transparent
-                            hover:border-slate-200
-                            hover:bg-slate-50
-                          `
-                    }
-                  `}
-                >
-                  <span
-                    className="
-                      relative flex h-11 w-11 shrink-0
-                      overflow-hidden rounded-2xl
-                      border border-black/5 shadow-sm
-                    "
-                    style={{
-                      background: option.soft,
-                    }}
-                  >
-                    <span
-                      className="absolute bottom-0 left-0 h-full w-1/2"
-                      style={{
-                        background: option.primary,
-                      }}
-                    />
+              <p className="mt-0.5 text-xs font-medium leading-5 text-slate-400">
+                The selected colors will be saved to the active property.
+              </p>
+            </div>
 
-                    <span
-                      className="absolute right-0 top-0 h-full w-1/2"
-                      style={{
-                        background: option.secondary,
-                      }}
-                    />
-                  </span>
+            <div className="grid gap-2 p-3 sm:grid-cols-1 lg:grid-cols-1 xl:grid-cols-1">
+              {THEMES.map((option) => {
+                const isSelected = option.name === selectedTheme.name;
+                const isSaving = loadingTheme === option.name;
 
-                  <span className="min-w-0 flex-1">
-                    <span
-                      className={`block truncate text-sm font-extrabold ${
-                        isSelected ? "text-primary" : "text-slate-900"
-                      }`}
-                    >
-                      {option.label}
-                    </span>
-
-                    <span className="mt-0.5 block truncate text-xs font-medium text-slate-400">
-                      {option.description}
-                    </span>
-                  </span>
-
-                  <span
-                    className={`
-                      flex h-7 w-7 shrink-0 items-center
-                      justify-center rounded-full transition-all
+                return (
+                  <button
+                    key={option.name}
+                    type="button"
+                    aria-pressed={isSelected}
+                    disabled={Boolean(loadingTheme)}
+                    onClick={() => handleThemeChange(option)}
+                    className={`group flex w-full cursor-pointer items-center gap-3 rounded-2xl border px-3 py-3 text-left transition-all duration-200
+                    disabled:cursor-not-allowed disabled:opacity-70
                       ${
                         isSelected
-                          ? `
-                              bg-primary
-                              text-white
-                              shadow-[0_6px_16px_color-mix(in_srgb,var(--primary)_25%,transparent)]
-                            `
-                          : `
-                              bg-slate-100
-                              text-transparent
-                              group-hover:text-slate-300
-                            `
-                      }
-                    `}
+                          ? "border-(--primary-light) bg-(--primary-soft) shadow-sm"
+                          : "border-slate-200 bg-white hover:border-(--primary-light) hover:bg-slate-50"
+                      }`}
                   >
-                    {isSaving ? (
-                      <LoaderCircle className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Check className="h-4 w-4" />
-                    )}
-                  </span>
-                </button>
-              );
-            })}
+                    <span
+                      className="relative flex h-11 w-11 shrink-0 overflow-hidden rounded-2xl border border-black/5 shadow-sm"
+                      style={{
+                        background: option.soft,
+                      }}
+                    >
+                      <span
+                        className="absolute bottom-0 left-0 h-full w-1/2"
+                        style={{
+                          background: option.primary,
+                        }}
+                      />
+
+                      <span
+                        className="absolute right-0 top-0 h-full w-1/2"
+                        style={{
+                          background: option.secondary,
+                        }}
+                      />
+                    </span>
+
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className={`block truncate text-sm font-extrabold ${
+                          isSelected ? "text-primary" : "text-slate-900"
+                        }`}
+                      >
+                        {option.label}
+                      </span>
+
+                      <span className="mt-0.5 block truncate text-xs font-medium text-slate-400">
+                        {option.description}
+                      </span>
+                    </span>
+
+                    <span
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all ${
+                        isSelected
+                          ? "bg-primary text-white shadow-[0_6px_16px_color-mix(in_srgb,var(--primary)_25%,transparent)]"
+                          : "bg-slate-100 text-transparent group-hover:text-slate-300"
+                      }`}
+                    >
+                      {isSaving ? (
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Check className="h-4 w-4" />
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

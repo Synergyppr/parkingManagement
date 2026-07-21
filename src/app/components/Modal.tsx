@@ -54,7 +54,7 @@ export default function Modal({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex ${placementYClass} ${placementXClass} z-50 p-4 max-h-[92vh] mt-14 overflow-y-auto`}
+          className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex ${placementYClass} ${placementXClass} z-80 p-4 max-h-[90vh] mt-14 overflow-y-auto`}
           onClick={handleOverlayClick}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

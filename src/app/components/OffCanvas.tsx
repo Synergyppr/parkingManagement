@@ -1,5 +1,4 @@
 "use client";
-
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useProperty } from "../context/PropertyContext";
@@ -121,7 +120,7 @@ export default function OffCanvas({
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-4 py-5">
+        <nav className="flex-1 overflow-y-auto px-4 py-5 h-full">
           <div className="mb-5">
             <p className="mb-2 px-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
               Employee
@@ -136,7 +135,6 @@ export default function OffCanvas({
                 <span className={iconClass(pathname.includes("dashboard"))}>
                   <MdHomeFilled className="h-4 w-4" />
                 </span>
-
                 Dashboard
               </Link>
 
@@ -148,7 +146,6 @@ export default function OffCanvas({
                 <span className={iconClass(pathname.includes("check-in"))}>
                   <FaCar className="h-4 w-4" />
                 </span>
-
                 Check-In / Vehicles
               </Link>
 
@@ -160,7 +157,6 @@ export default function OffCanvas({
                 <span className={iconClass(pathname.includes("tenants"))}>
                   <IoSettings className="h-4 w-4" />
                 </span>
-
                 Tenant Configuration
               </Link>
 
@@ -172,7 +168,6 @@ export default function OffCanvas({
                 <span className={iconClass(pathname.includes("report"))}>
                   <HiDocumentReport className="h-4 w-4" />
                 </span>
-
                 Ticket Report
               </Link>
 
@@ -184,7 +179,6 @@ export default function OffCanvas({
                 <span className={iconClass(pathname.includes("surveys"))}>
                   <FaComment className="h-4 w-4" />
                 </span>
-
                 Service Feedback
               </Link>
             </div>
@@ -205,14 +199,13 @@ export default function OffCanvas({
               <span className={iconClass(pathname.includes("request"))}>
                 <FaCar className="h-4 w-4" />
               </span>
-
               Request Car
             </Link>
           </div>
 
           <div className="my-5 h-px bg-slate-200" />
 
-          <div>
+          <div className="my-auto">
             <div className="mb-2 flex items-center gap-2 px-2">
               <IoColorPaletteOutline className="h-4 w-4 text-primary" />
 
@@ -221,21 +214,7 @@ export default function OffCanvas({
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 shadow-sm transition-colors duration-300">
-              <div className="mb-3">
-                <p className="text-sm font-extrabold text-slate-950">
-                  Application Theme
-                </p>
-
-                <p className="mt-0.5 text-xs font-medium leading-5 text-slate-400">
-                  Choose the primary color used throughout Parkey.
-                </p>
-              </div>
-
-              <div className="min-w-0">
-                <ThemeSelector />
-              </div>
-            </div>
+            <ThemeSelector />
           </div>
         </nav>
 
@@ -256,7 +235,6 @@ export default function OffCanvas({
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-red-500">
               <IoLogOut className="h-4 w-4" />
             </span>
-
             Log Out
           </button>
 

@@ -298,10 +298,10 @@ export default function ReceiveForm({
             </div>
 
             <div className="relative overflow-hidden rounded-4xl border border-slate-200/80 bg-white/80 px-5 py-8 shadow-sm backdrop-blur-xl md:px-10">
-              <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-(--primary-soft)" />
+              <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-(--primary-soft) -z-1" />
 
               {/* Stepper */}
-              <div className="mb-10 flex md:gap-0 gap-4 items-center justify-center">
+              <div className="mb-10 flex md:gap-0 gap-4 items-center justify-center z-10">
                 {[1, 2, 3].map((s) => (
                   <div key={s} className="flex items-center">
                     <div className="flex flex-col items-center gap-2">

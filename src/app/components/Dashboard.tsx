@@ -1,12 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import {
-  ChevronRight,
-  Clock,
-  FileText,
-  KeySquare,
-} from "lucide-react";
+import { ChevronRight, Clock, FileText, KeySquare } from "lucide-react";
 import { FaCarSide } from "react-icons/fa6";
 import { FaPlus } from "react-icons/fa";
 
@@ -39,9 +34,7 @@ interface DashboardProps {
 const DEFAULT_PRIMARY_COLOR = "#d97706";
 const DEFAULT_SECONDARY_COLOR = "#fbbf24";
 
-const isValidThemeColor = (
-  value: unknown
-): value is string => {
+const isValidThemeColor = (value: unknown): value is string => {
   if (typeof value !== "string") return false;
 
   const color = value.trim();
@@ -55,16 +48,12 @@ const isValidThemeColor = (
   );
 };
 
-const getStoredThemeColor = (
-  key: "primaryColor" | "secondaryColor"
-) => {
+const getStoredThemeColor = (key: "primaryColor" | "secondaryColor") => {
   if (typeof window === "undefined") return null;
 
   const storedColor = localStorage.getItem(key);
 
-  return isValidThemeColor(storedColor)
-    ? storedColor.trim()
-    : null;
+  return isValidThemeColor(storedColor) ? storedColor.trim() : null;
 };
 
 const applyThemeColors = ({
@@ -78,11 +67,9 @@ const applyThemeColors = ({
 
   const root = document.documentElement;
 
-  const storedPrimaryColor =
-    getStoredThemeColor("primaryColor");
+  const storedPrimaryColor = getStoredThemeColor("primaryColor");
 
-  const storedSecondaryColor =
-    getStoredThemeColor("secondaryColor");
+  const storedSecondaryColor = getStoredThemeColor("secondaryColor");
 
   const primary = isValidThemeColor(primaryColor)
     ? primaryColor.trim()
@@ -128,12 +115,8 @@ const Dashboard = ({
   recentTickets,
   setReloadPageData,
 }: DashboardProps) => {
-  const {
-    primaryColor,
-    secondaryColor,
-    setPrimaryColor,
-    setSecondaryColor,
-  } = useProperty();
+  const { primaryColor, secondaryColor, setPrimaryColor, setSecondaryColor } =
+    useProperty();
 
   /*
    * Apply the colors retrieved from PropertyContext.
@@ -142,21 +125,17 @@ const Dashboard = ({
    * primaryColor and secondaryColor.
    */
   useEffect(() => {
-    const storedPrimaryColor =
-      getStoredThemeColor("primaryColor");
+    const storedPrimaryColor = getStoredThemeColor("primaryColor");
 
-    const storedSecondaryColor =
-      getStoredThemeColor("secondaryColor");
+    const storedSecondaryColor = getStoredThemeColor("secondaryColor");
 
-    const resolvedPrimaryColor =
-      isValidThemeColor(primaryColor)
-        ? primaryColor.trim()
-        : storedPrimaryColor || DEFAULT_PRIMARY_COLOR;
+    const resolvedPrimaryColor = isValidThemeColor(primaryColor)
+      ? primaryColor.trim()
+      : storedPrimaryColor || DEFAULT_PRIMARY_COLOR;
 
-    const resolvedSecondaryColor =
-      isValidThemeColor(secondaryColor)
-        ? secondaryColor.trim()
-        : storedSecondaryColor || DEFAULT_SECONDARY_COLOR;
+    const resolvedSecondaryColor = isValidThemeColor(secondaryColor)
+      ? secondaryColor.trim()
+      : storedSecondaryColor || DEFAULT_SECONDARY_COLOR;
 
     /*
      * Keep PropertyContext synchronized with the resolved colors.
@@ -174,12 +153,7 @@ const Dashboard = ({
       primaryColor: resolvedPrimaryColor,
       secondaryColor: resolvedSecondaryColor,
     });
-  }, [
-    primaryColor,
-    secondaryColor,
-    setPrimaryColor,
-    setSecondaryColor,
-  ]);
+  }, [primaryColor, secondaryColor, setPrimaryColor, setSecondaryColor]);
 
   const openTicket = (ticket: Ticket) => {
     const searchParams = new URLSearchParams({
@@ -193,69 +167,33 @@ const Dashboard = ({
   return (
     <section className="mx-auto max-w-7xl px-4 py-8 md:px-5">
       <div
-        className="
-          mb-8 overflow-hidden rounded-4xl
-          border border-(--primary-light)
-          bg-white
-          shadow-[0_20px_60px_rgba(15,23,42,0.08)]
-          transition-colors duration-300
-        "
+        className="mb-8 overflow-hidden rounded-4xl border border-(--primary-light) bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]
+        transition-colors duration-300"
       >
         <div
-          className="
-            relative overflow-hidden
-            bg-linear-to-br
-            from-white via-(--primary-soft) to-white
-            px-6 py-7
-            transition-colors duration-300
-            md:px-8
-          "
+          className="relative overflow-hidden bg-linear-to-br from-white via-(--primary-soft) to-white px-6 py-7
+          transition-colors duration-300 md:px-8"
         >
           <div
-            className="
-              absolute -right-16 -top-16
-              h-48 w-48 rounded-full
-              bg-[color-mix(in_srgb,var(--primary-light)_30%,transparent)]
-              blur-3xl
-              transition-colors duration-300
-            "
+            className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[color-mix(in_srgb,var(--primary-light)_30%,transparent)] blur-3xl
+            transition-colors duration-300"
           />
 
-          <div
-            className="
-              absolute -left-10 bottom-0
-              h-32 w-32 rounded-full
-              bg-(--primary-soft)
-              blur-2xl
-              transition-colors duration-300
-            "
-          />
+          <div className="absolute -left-10 bottom-0 h-32 w-32 rounded-full bg-(--primary-soft) blur-2xl transition-colors duration-300" />
 
           <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="w-full">
               <span
-                className="
-                  inline-flex rounded-full
-                  border border-(--primary-light)
-                  bg-white px-4 py-1
-                  text-[10px] font-black uppercase
-                  tracking-[0.2em] text-primary
-                  shadow-sm
-                  transition-colors duration-300
-                "
+                className="inline-flex rounded-full border border-(--primary-light) bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.2em] 
+                text-primary shadow-sm transition-colors duration-300"
               >
                 Premium Valet Dashboard
               </span>
 
               <div className="mt-4 flex items-start gap-3 md:items-center">
                 <div
-                  className="
-                    flex h-12 w-12 shrink-0
-                    items-center justify-center rounded-full
-                    bg-primary text-white
-                    shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_30%,transparent)]
-                    transition-all duration-300
-                  "
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_30%,transparent)]
+                  transition-all duration-300"
                 >
                   <KeySquare className="h-6 w-6" />
                 </div>
@@ -279,30 +217,11 @@ const Dashboard = ({
                   onClick={() => {
                     window.location.href = "/check-in";
                   }}
-                  className="
-                    group inline-flex cursor-pointer
-                    items-center gap-3 rounded-2xl
-                    bg-primary px-5 py-3
-                    text-sm font-black text-white
-                    shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)]
-                    transition-all duration-300
-                    hover:-translate-y-0.5
-                    hover:bg-secondary
-                    hover:shadow-[0_18px_40px_color-mix(in_srgb,var(--primary)_34%,transparent)]
-                    focus:outline-none
-                    focus-visible:ring-2
-                    focus-visible:ring-(--primary-light)
-                  "
+                  className="group inline-flex cursor-pointer items-center gap-3 rounded-2xl bg-primary px-5 py-3 text-sm font-black text-white
+                  shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-secondary
+                  hover:shadow-[0_18px_40px_color-mix(in_srgb,var(--primary)_34%,transparent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-(--primary-light)"
                 >
-                  <span
-                    className="
-                      flex h-8 w-8
-                      items-center justify-center rounded-xl
-                      bg-white/20
-                      transition-transform duration-300
-                      group-hover:rotate-90
-                    "
-                  >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 transition-transform duration-300 group-hover:rotate-90">
                     <FaPlus className="h-3.5 w-3.5" />
                   </span>
 
@@ -326,42 +245,23 @@ const Dashboard = ({
         {kpis.map((kpi) => (
           <div
             key={kpi.label}
-            className="
-              rounded-4xl border border-slate-200
-              bg-white p-7 shadow-sm
-              transition-all duration-300
-              hover:-translate-y-0.5
-              hover:border-(--primary-light)
-              hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)]
-            "
+            className="rounded-4xl border border-slate-200 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-0.5
+            hover:border-(--primary-light) hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)]"
           >
             <div className="mb-7 flex items-center justify-between gap-3">
               <div
-                className="
-                  flex h-12 w-12 shrink-0
-                  items-center justify-center rounded-2xl
-                  bg-(--primary-soft) text-primary
-                  ring-1 ring-(--primary-light)
-                  transition-colors duration-300
-                "
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary ring-1 ring-(--primary-light)
+                transition-colors duration-300"
               >
                 {kpi.icon}
               </div>
 
-              <span
-                className="
-                  rounded-full bg-(--primary-soft)
-                  px-3 py-1 text-xs font-black text-primary
-                  transition-colors duration-300
-                "
-              >
+              <span className="rounded-full bg-(--primary-soft) px-3 py-1 text-xs font-black text-primary transition-colors duration-300">
                 {kpi.change}
               </span>
             </div>
 
-            <p className="text-sm font-bold text-slate-500">
-              {kpi.label}
-            </p>
+            <p className="text-sm font-bold text-slate-500">{kpi.label}</p>
 
             <h3 className="mt-1 text-3xl font-black text-slate-950">
               {kpi.value}
@@ -375,13 +275,7 @@ const Dashboard = ({
           <div className="max-w-[91.5vw] rounded-4xl border border-slate-200 bg-white p-4 shadow-sm md:max-w-none md:p-7">
             <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <h2
-                  className="
-                    border-l-4 border-primary pl-3
-                    font-serif text-3xl font-bold text-slate-950
-                    transition-colors duration-300
-                  "
-                >
+                <h2 className="border-l-4 border-primary pl-3 font-serif text-3xl font-bold text-slate-950 transition-colors duration-300">
                   Traffic Flow
                 </h2>
 
@@ -393,8 +287,7 @@ const Dashboard = ({
               </div>
 
               <div
-                className="
-                  flex w-fit shrink-0 items-center gap-1
+                className="flex w-fit shrink-0 items-center gap-1
                   rounded-full
                   border border-(--primary-light)
                   bg-(--primary-soft) p-1
@@ -414,17 +307,9 @@ const Dashboard = ({
                     focus-visible:ring-(--primary-light)
                     ${
                       trafficPeriod === "today"
-                        ? `
-                            bg-primary
-                            text-white
-                            shadow-[0_8px_20px_color-mix(in_srgb,var(--primary)_28%,transparent)]
-                          `
-                        : `
-                            text-primary
-                            hover:bg-white
-                          `
-                    }
-                  `}
+                        ? `bg-primary text-white shadow-[0_8px_20px_color-mix(in_srgb,var(--primary)_28%,transparent)]`
+                        : `text-primary hover:bg-white`
+                    }`}
                 >
                   Today
                 </button>
@@ -433,36 +318,20 @@ const Dashboard = ({
                   type="button"
                   onClick={() => setTrafficPeriod("week")}
                   aria-pressed={trafficPeriod === "week"}
-                  className={`
-                    cursor-pointer rounded-full px-4 py-2
-                    text-xs font-black
-                    transition-all duration-300
-                    focus:outline-none
-                    focus-visible:ring-2
-                    focus-visible:ring-(--primary-light)
+                  className={`cursor-pointer rounded-full px-4 py-2 text-xs font-black transition-all duration-300 focus:outline-none focus-visible:ring-2
+                  focus-visible:ring-(--primary-light)
                     ${
                       trafficPeriod === "week"
-                        ? `
-                            bg-primary
-                            text-white
-                            shadow-[0_8px_20px_color-mix(in_srgb,var(--primary)_28%,transparent)]
-                          `
-                        : `
-                            text-primary
-                            hover:bg-white
-                          `
-                    }
-                  `}
+                        ? `bg-primary text-white shadow-[0_8px_20px_color-mix(in_srgb,var(--primary)_28%,transparent)]`
+                        : `text-primary hover:bg-white`
+                    }`}
                 >
                   Week
                 </button>
               </div>
             </div>
 
-            <TrafficFlowChart
-              data={trafficData}
-              period={trafficPeriod}
-            />
+            <TrafficFlowChart data={trafficData} period={trafficPeriod} />
           </div>
 
           <div className="mt-7 grid max-w-[91.5vw] gap-5 md:max-w-none md:grid-cols-2">
@@ -487,7 +356,6 @@ const Dashboard = ({
           <div className="border-b border-slate-200 p-6">
             <h2 className="flex items-center gap-2 font-serif text-2xl font-bold text-slate-950">
               <Clock className="h-5 w-5 text-primary transition-colors duration-300" />
-
               Recent Activity
             </h2>
           </div>
@@ -496,12 +364,8 @@ const Dashboard = ({
             {recentTickets.length === 0 ? (
               <div className="py-12 text-center">
                 <div
-                  className="
-                    mx-auto mb-3 flex h-12 w-12
-                    items-center justify-center rounded-2xl
-                    bg-(--primary-soft) text-primary
-                    transition-colors duration-300
-                  "
+                  className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary
+                  transition-colors duration-300"
                 >
                   <FaCarSide className="h-5 w-5" />
                 </div>
@@ -517,14 +381,8 @@ const Dashboard = ({
                   className="group flex items-center gap-3 py-5 transition-colors duration-200"
                 >
                   <div
-                    className="
-                      flex h-11 w-11 shrink-0
-                      items-center justify-center rounded-xl
-                      bg-(--primary-soft) text-primary
-                      transition-all duration-300
-                      group-hover:bg-primary
-                      group-hover:text-white
-                    "
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-(--primary-soft) text-primary transition-all duration-300
+                    group-hover:bg-primary group-hover:text-white"
                   >
                     <FaCarSide />
                   </div>
@@ -566,17 +424,8 @@ const Dashboard = ({
                     aria-label={`Open ticket ${
                       ticket.ticketNumber || ticket.id
                     }`}
-                    className="
-                      flex h-8 w-8 shrink-0 cursor-pointer
-                      items-center justify-center rounded-full
-                      text-slate-400
-                      transition-all duration-200
-                      hover:bg-(--primary-soft)
-                      hover:text-primary
-                      focus:outline-none
-                      focus-visible:ring-2
-                      focus-visible:ring-(--primary-light)
-                    "
+                    className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-slate-400 transition-all duration-200
+                    hover:bg-(--primary-soft) hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-(--primary-light)"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>
@@ -589,22 +438,9 @@ const Dashboard = ({
             <button
               type="button"
               onClick={() => setReloadPageData(true)}
-              className="
-                h-11 w-full cursor-pointer rounded-xl
-                border-2 border-primary
-                bg-(--primary-soft)
-                text-sm font-bold text-primary
-                shadow-sm
-                transition-all duration-300
-                hover:-translate-y-0.5
-                hover:bg-primary
-                hover:text-white
-                hover:shadow-[0_12px_28px_color-mix(in_srgb,var(--primary)_28%,transparent)]
-                focus:outline-none
-                focus:ring-2
-                focus:ring-(--primary-light)
-                focus:ring-offset-2
-              "
+              className="h-11 w-full cursor-pointer rounded-xl border-2 border-primary bg-(--primary-soft) text-sm font-bold text-primary shadow-sm
+              transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary hover:text-white hover:shadow-[0_12px_28px_color-mix(in_srgb,var(--primary)_28%,transparent)]
+              focus:outline-none focus:ring-2 focus:ring-(--primary-light) focus:ring-offset-2"
             >
               Refresh Dashboard
             </button>

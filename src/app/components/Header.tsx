@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -39,6 +39,19 @@ export default function Header() {
   const [openLocationModal, setOpenLocationModal] = useState(false);
   const [isOutOfArea, setIsOutOfArea] = useState(false);
   const [showLocationToggle, setShowLocationToggle] = useState(false);
+
+  const mobileGestureTapCountRef = useRef(0);
+  const mobileGestureLastTapRef = useRef(0);
+  const mobileGestureHoldTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const mobileGestureResetTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const mobileGestureHoldTriggeredRef = useRef(false);
+
+  const MOBILE_GESTURE_TAP_WINDOW = 450;
+  const MOBILE_GESTURE_HOLD_DURATION = 850;
 
   useAuthRedirect();
   usePropertyListener();
@@ -85,6 +98,116 @@ export default function Header() {
     };
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (mobileGestureHoldTimerRef.current) {
+        clearTimeout(mobileGestureHoldTimerRef.current);
+      }
+
+      if (mobileGestureResetTimerRef.current) {
+        clearTimeout(mobileGestureResetTimerRef.current);
+      }
+    };
+  }, []);
+
+  const resetMobileLocationGesture = () => {
+    mobileGestureTapCountRef.current = 0;
+    mobileGestureLastTapRef.current = 0;
+    mobileGestureHoldTriggeredRef.current = false;
+
+    if (mobileGestureHoldTimerRef.current) {
+      clearTimeout(mobileGestureHoldTimerRef.current);
+      mobileGestureHoldTimerRef.current = null;
+    }
+
+    if (mobileGestureResetTimerRef.current) {
+      clearTimeout(mobileGestureResetTimerRef.current);
+      mobileGestureResetTimerRef.current = null;
+    }
+  };
+
+  const handleMobileGesturePointerDown = (
+    event: React.PointerEvent<HTMLButtonElement>
+  ) => {
+    if (event.pointerType === "mouse") return;
+
+    const now = Date.now();
+    const elapsedSinceLastTap = now - mobileGestureLastTapRef.current;
+
+    if (
+      mobileGestureTapCountRef.current > 0 &&
+      elapsedSinceLastTap > MOBILE_GESTURE_TAP_WINDOW
+    ) {
+      mobileGestureTapCountRef.current = 0;
+    }
+
+    /*
+     * After two completed taps, the third interaction must be held.
+     */
+    if (mobileGestureTapCountRef.current >= 2) {
+      mobileGestureHoldTriggeredRef.current = false;
+
+      mobileGestureHoldTimerRef.current = setTimeout(() => {
+        mobileGestureHoldTriggeredRef.current = true;
+        mobileGestureTapCountRef.current = 0;
+        mobileGestureLastTapRef.current = 0;
+        mobileGestureHoldTimerRef.current = null;
+
+        if (mobileGestureResetTimerRef.current) {
+          clearTimeout(mobileGestureResetTimerRef.current);
+          mobileGestureResetTimerRef.current = null;
+        }
+
+        setShowLocationToggle((previous) => !previous);
+      }, MOBILE_GESTURE_HOLD_DURATION);
+    }
+  };
+
+  const handleMobileGesturePointerUp = (
+    event: React.PointerEvent<HTMLButtonElement>
+  ) => {
+    if (event.pointerType === "mouse") return;
+
+    if (mobileGestureHoldTimerRef.current) {
+      clearTimeout(mobileGestureHoldTimerRef.current);
+      mobileGestureHoldTimerRef.current = null;
+    }
+
+    if (mobileGestureHoldTriggeredRef.current) {
+      mobileGestureHoldTriggeredRef.current = false;
+      return;
+    }
+
+    /*
+     * Count only normal quick taps. Once two taps are registered,
+     * releasing an incomplete third hold resets the sequence.
+     */
+    if (mobileGestureTapCountRef.current >= 2) {
+      resetMobileLocationGesture();
+      return;
+    }
+
+    mobileGestureTapCountRef.current += 1;
+    mobileGestureLastTapRef.current = Date.now();
+
+    if (mobileGestureResetTimerRef.current) {
+      clearTimeout(mobileGestureResetTimerRef.current);
+    }
+
+    mobileGestureResetTimerRef.current = setTimeout(() => {
+      resetMobileLocationGesture();
+    }, MOBILE_GESTURE_TAP_WINDOW);
+  };
+
+  const handleMobileGesturePointerCancel = () => {
+    if (mobileGestureHoldTimerRef.current) {
+      clearTimeout(mobileGestureHoldTimerRef.current);
+      mobileGestureHoldTimerRef.current = null;
+    }
+
+    resetMobileLocationGesture();
+  };
+
   const propertyShortName = propertyName
     ? propertyName === "Condado Ocean Club"
       ? "COC"
@@ -113,9 +236,7 @@ export default function Header() {
 
   return (
     <>
-      <header
-        className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 shadow-sm backdrop-blur-xl"
-      >
+      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 shadow-sm backdrop-blur-xl">
         <div className="relative mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-2 px-3 sm:px-5">
           <nav className="hidden min-w-0 items-center gap-2 md:flex">
             <Link
@@ -139,7 +260,8 @@ export default function Header() {
                 ${
                   active === "check-in"
                     ? `border border-(--primary-light) bg-(--primary-soft) text-primary shadow-sm`
-                    : `text-slate-600 hover:bg-(--primary-soft) hover:text-primary`}`}
+                    : `text-slate-600 hover:bg-(--primary-soft) hover:text-primary`
+                }`}
             >
               <Clock className="h-4 w-4" />
               Check-in
@@ -235,6 +357,22 @@ export default function Header() {
 
             <button
               type="button"
+              aria-label="Hidden mobile location controls"
+              title=""
+              onPointerDown={handleMobileGesturePointerDown}
+              onPointerUp={handleMobileGesturePointerUp}
+              onPointerCancel={handleMobileGesturePointerCancel}
+              onPointerLeave={(event) => {
+                if (event.pointerType !== "mouse" && event.buttons > 0) {
+                  handleMobileGesturePointerCancel();
+                }
+              }}
+              onContextMenu={(event) => event.preventDefault()}
+              className="-mr-2 flex h-10 w-7 shrink-0 touch-none select-none bg-transparent md:hidden"
+            />
+
+            <button
+              type="button"
               onClick={handleAuthAction}
               aria-label={isLoggedIn ? "Logout" : "Login"}
               title={isLoggedIn ? "Logout" : "Login"}
@@ -276,9 +414,7 @@ export default function Header() {
       {mounted &&
         openLocationModal &&
         createPortal(
-          <div
-            className="fixed inset-0 z-99999 flex items-center justify-center  bg-slate-950/75 p-2 backdrop-blur-sm sm:p-4"
-          >
+          <div className="fixed inset-0 z-99999 flex items-center justify-center  bg-slate-950/75 p-2 backdrop-blur-sm sm:p-4">
             <div
               className="relative flex h-[94vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-white/20 bg-white shadow-[0_30px_90px_rgba(0,0,0,0.45)]
               sm:h-auto sm:max-h-[92vh] sm:rounded-4xl"
@@ -289,9 +425,7 @@ export default function Header() {
               >
                 <div className="min-w-0">
                   <div className="mb-1 flex items-center gap-2">
-                    <div
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm"
-                    >
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
                       <BiCurrentLocation className="h-4 w-4" />
                     </div>
 
@@ -329,9 +463,7 @@ export default function Header() {
         )}
 
       {!openLocationModal && isOutOfArea && (
-        <div
-          className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-slate-950/75 p-4 text-center text-white backdrop-blur-sm"
-        >
+        <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-slate-950/75 p-4 text-center text-white backdrop-blur-sm">
           <div
             className="pointer-events-auto w-full max-w-md rounded-4xl border border-white/10 bg-white/10 px-6 py-8 shadow-[0_30px_90px_rgba(0,0,0,0.35)]
             backdrop-blur-xl sm:px-8 sm:py-10"
@@ -340,9 +472,7 @@ export default function Header() {
               className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--primary)_18%,transparent)] ring-1
               ring-[color-mix(in_srgb,var(--primary-light)_42%,transparent)] transition-colors duration-300 sm:h-20 sm:w-20"
             >
-              <PiWarningDiamondBold
-                className="h-9 w-9 text-(--primary-light) transition-colors duration-300 sm:h-11 sm:w-11"
-              />
+              <PiWarningDiamondBold className="h-9 w-9 text-(--primary-light) transition-colors duration-300 sm:h-11 sm:w-11" />
             </div>
 
             <h2 className="mb-2 font-serif text-xl font-bold sm:text-2xl">
