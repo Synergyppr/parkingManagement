@@ -75,7 +75,10 @@ export default function TabNavigation({
 
                   {unreadTicketIds?.length > 0 &&
                     tab?.label === "Requested" && (
-                      <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-extrabold leading-none text-white ring-2 ring-white">
+                      <span
+                        className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] 
+                      font-extrabold leading-none text-white ring-2 ring-white"
+                      >
                         {unreadTicketIds?.length > 9
                           ? "9+"
                           : unreadTicketIds?.length}

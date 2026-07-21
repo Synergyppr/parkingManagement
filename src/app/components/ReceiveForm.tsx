@@ -325,7 +325,7 @@ export default function ReceiveForm({
                         )}
                       </div>
 
-                      <span className="text-[9px] font-extrabold uppercase tracking-tight text-slate-700">
+                      <span className="text-[9px] font-extrabold uppercase tracking-wide text-slate-700">
                         {s === 1
                           ? "Guest Info"
                           : s === 2

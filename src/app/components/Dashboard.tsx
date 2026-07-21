@@ -383,7 +383,6 @@ const Dashboard = ({
                 </div>
               </div>
 
-              {/* Add new check-in / park new car */}
               <div className="mt-5 flex flex-wrap justify-end gap-3">
                 <button
                   type="button"
@@ -414,7 +413,7 @@ const Dashboard = ({
         </div>
       </div>
 
-      <div className="mb-7 grid grid-cols-2 gap-6 md:grid-cols-4">
+      <div className="mb-7 grid grid-cols-2 gap-3 lg:gap-6 md:grid-cols-4">
         {kpis.map((kpi) => (
           <div
             key={kpi.label}
@@ -429,7 +428,7 @@ const Dashboard = ({
                 {kpi.icon}
               </div>
 
-              <span className="rounded-full bg-(--primary-soft) px-3 py-1 text-xs font-black text-primary transition-colors duration-300">
+              <span className="rounded-full bg-(--primary-soft) px-3 py-1 lg:text-xs text-[10px] font-black text-primary transition-colors duration-300 truncate">
                 {kpi.change}
               </span>
             </div>
