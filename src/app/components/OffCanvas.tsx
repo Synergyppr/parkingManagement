@@ -172,7 +172,7 @@ export default function OffCanvas({
             </div>
           </div>
 
-          <div className="my-5 h-px bg-slate-200" />
+          {/* <div className="my-5 h-px bg-slate-200" /> */}
 
           <div className="mb-5">
             <p className="mb-2 px-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">

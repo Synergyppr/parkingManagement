@@ -772,7 +772,7 @@ export default function ReceiveForm({
                           );
                         }}
                         className="h-12 rounded-2xl bg-primary px-8 text-sm font-extrabold text-white shadow-sm transition hover:bg-secondary 
-                        disabled:opacity-60 cursor-pointer"
+                        disabled:opacity-60 cursor-pointer w-full"
                       >
                         {loader ? "Submitting..." : "Submit"}
                       </button>
