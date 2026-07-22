@@ -492,7 +492,7 @@ function EntryManager({
                       {entry.taxable && (
                         <div className="mt-4 rounded-2xl border border-(--primary-light) bg-white p-3 text-xs">
                           <div className="mb-2 inline-flex rounded-full bg-(--primary-soft) px-2.5 py-1 font-bold text-primary">
-                            + {sRate + cRate}% tax
+                            {sRate > 0 ? " + tax" : "flat rate"}
                           </div>
 
                           {sRate > 0 && (

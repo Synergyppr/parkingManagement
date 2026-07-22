@@ -57,10 +57,10 @@ const PAYMENT_METHODS = [
   { key: "athm", label: "ATH Movil", icon: <MdPayment className="h-4 w-4" /> },
   {
     key: "p2p",
-    label: "Card (Online)",
+    label: "Online Payment",
     icon: <MdPayment className="h-4 w-4" />,
   },
-  { key: "cash", label: "Cash", icon: <MdPayment className="h-4 w-4" /> },
+  // { key: "cash", label: "Cash", icon: <MdPayment className="h-4 w-4" /> },
 ];
 
 const RECEIPT_OPTIONS = [
@@ -638,39 +638,6 @@ export default function TransactionForm({
           </section>
         )}
 
-        {/* SECURITY PIN */}
-        <section>
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-700">
-            <RiSecurePaymentFill className="text-primary transition-colors duration-300" />
-            Security PIN
-          </h3>
-
-          <FormInput
-            name="pin"
-            type="text"
-            inputMode="numeric"
-            placeholder="4-digit PIN"
-            icon={<MdPassword className="h-4 w-4" />}
-            value={form?.pin || ""}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (/^\d{0,4}$/.test(val)) {
-                setForm((prev) => ({ ...prev, pin: val }));
-              }
-            }}
-            required
-            showPasswordToggle
-            showPassword={showPin}
-            setShowPassword={setShowPin}
-            missing={missingFields.includes("pin")}
-            onClear={() => setForm((prev) => ({ ...prev, pin: "" }))}
-          />
-
-          <p className="mt-2 text-xs font-medium text-slate-400">
-            Required for vehicle retrieval verification.
-          </p>
-        </section>
-
         {/* PAYMENT METHOD */}
         <section>
           <h3 className="mb-3 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-700">
@@ -689,7 +656,7 @@ export default function TransactionForm({
                     setSelectedPaymentMethod(method.key);
                     if (method.key === "ecr") setTip(0);
                   }}
-                  className={`flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border text-sm font-extrabold transition-all duration-300 ${
+                  className={`flex h-14 px-2 py-1 cursor-pointer items-center justify-center gap-2 rounded-2xl border text-sm font-extrabold transition-all duration-300 ${
                     active
                       ? "border-primary bg-primary text-white shadow-[0_10px_24px_color-mix(in_srgb,var(--primary)_26%,transparent)]"
                       : "border-slate-200 bg-white text-slate-700 hover:border-(--primary-light) hover:bg-(--primary-soft) hover:text-primary"
@@ -876,6 +843,39 @@ export default function TransactionForm({
             </p>
           </section>
         )}
+
+        {/* SECURITY PIN */}
+        <section>
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-700">
+            <RiSecurePaymentFill className="text-primary transition-colors duration-300" />
+            Security PIN
+          </h3>
+
+          <FormInput
+            name="pin"
+            type="text"
+            inputMode="numeric"
+            placeholder="4-digit PIN"
+            icon={<MdPassword className="h-4 w-4" />}
+            value={form?.pin || ""}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (/^\d{0,4}$/.test(val)) {
+                setForm((prev) => ({ ...prev, pin: val }));
+              }
+            }}
+            required
+            showPasswordToggle
+            showPassword={showPin}
+            setShowPassword={setShowPin}
+            missing={missingFields.includes("pin")}
+            onClear={() => setForm((prev) => ({ ...prev, pin: "" }))}
+          />
+
+          <p className="mt-2 text-xs font-medium text-slate-400">
+            Required for vehicle retrieval verification.
+          </p>
+        </section>
       </form>
 
       {/* STICKY FOOTER */}
@@ -888,11 +888,11 @@ export default function TransactionForm({
 
             <p className="font-serif text-4xl font-bold text-slate-950">
               ${(totalAmount + tip).toFixed(2)}
-              <span className="ml-2 text-xs font-medium text-slate-500">
-                {taxBreakdown ? "incl. tax" : "flat rate"}
-                {tip > 0 ? " + tip" : ""}
-              </span>
             </p>
+            <span className="ml-2 text-xs font-medium text-slate-500 font-serif float-right">
+              {taxBreakdown ? "incl. tax" : "flat rate"}
+              {tip > 0 ? " + tip" : ""}
+            </span>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">

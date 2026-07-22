@@ -1,7 +1,7 @@
 const PageLoader = () => {
   return (
     <div
-      className="flex min-h-[50vh] flex-col items-center justify-center"
+      className="flex min-h-[50vh] flex-col gap-2 items-center justify-center"
       role="status"
     >
       <div className="relative">

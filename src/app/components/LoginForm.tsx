@@ -359,7 +359,7 @@ export default function LoginForm() {
     <>
       {(redirecting || pageLoading) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="flex h-auto flex-col items-center">
+          <div className="flex h-auto flex-col gap-2 items-center">
             <PageLoader />
 
             <p className="relative bottom-20 mt-1 text-sm font-light text-white md:bottom-37.5 lg:bottom-43.75">
