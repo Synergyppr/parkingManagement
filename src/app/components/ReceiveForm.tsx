@@ -66,7 +66,7 @@ export default function ReceiveForm({
   const [loader, setLoader] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showPin, setShowPin] = useState(false);
-  const [noIncident, setNoIncident] = useState(false);
+  const [noIncident, setNoIncident] = useState(true);
   const [incidentParts, setIncidentParts] = useState<CarPart[]>([]);
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
   const [photos, setPhotos] = useState<string[]>([]);
@@ -176,7 +176,7 @@ export default function ReceiveForm({
       if (!form?.model) missing.push("model");
       if (!form?.type) missing.push("type");
       if (!form?.color) missing.push("color");
-      if (!form?.pin) missing.push("pin");
+      // if (!form?.pin) missing.push("pin");
     }
 
     if (step === 2) {
@@ -308,10 +308,10 @@ export default function ReceiveForm({
                       <div
                         className={`flex h-12 w-12 items-center justify-center rounded-full text-sm shadow-md transition-all ${
                           s < step
-                            ? "bg-primary text-slate-250"
+                            ? "bg-primary text-slate-400"
                             : s === step
                             ? "bg-primary text-white shadow-[0_10px_24px_color-mix(in_srgb,var(--primary)_24%,transparent)]"
-                            : "bg-white text-slate-500 ring-1 ring-slate-200"
+                            : "bg-white text-slate-300 ring-1 ring-slate-200"
                         }`}
                       >
                         {s < step ? (
@@ -466,7 +466,7 @@ export default function ReceiveForm({
                           }
                         />
 
-                        <FormInput
+                        {/* <FormInput
                           name="pin"
                           type="text"
                           inputMode="numeric"
@@ -488,7 +488,7 @@ export default function ReceiveForm({
                           onClear={() =>
                             setForm((prev) => ({ ...prev, pin: "" }))
                           }
-                        />
+                        /> */}
                       </div>
                     </section>
                   </div>
@@ -565,25 +565,50 @@ export default function ReceiveForm({
                 )}
 
                 {step === 3 && (
-                  <div className="w-full overflow-y-auto flex justify-center relative bottom-0">
-                    <CarVector
-                      noIncident={noIncident}
-                      setNoIncident={setNoIncident}
-                      incidentParts={incidentParts}
-                      setIncidentParts={setIncidentParts}
-                      descriptions={descriptions}
-                      setDescriptions={setDescriptions}
-                      licensePlate={form?.licensePlate || ""}
-                      findLinkedGroup={findLinkedGroup}
-                      frontViewLabelsMap={frontViewLabelsMap}
-                      rearViewLabelsMap={rearViewLabelsMap}
-                      passengerViewLabelsMap={passengerViewLabelsMap}
-                      driverViewLabelsMap={driverViewLabelsMap}
-                      saveClickedRef={saveClickedRef}
-                      shouldBypassUnloadPromptRef={shouldBypassUnloadPromptRef}
-                      isFormChanged={isFormChanged}
-                      damagedParts={form?.damagedParts}
-                      setHasUnsavedChanges={setHasUnsavedChanges}
+                  <div className="flex flex-col gap-2">
+                    <div className="w-full overflow-y-auto flex justify-center relative bottom-0">
+                      <CarVector
+                        noIncident={noIncident}
+                        setNoIncident={setNoIncident}
+                        incidentParts={incidentParts}
+                        setIncidentParts={setIncidentParts}
+                        descriptions={descriptions}
+                        setDescriptions={setDescriptions}
+                        licensePlate={form?.licensePlate || ""}
+                        findLinkedGroup={findLinkedGroup}
+                        frontViewLabelsMap={frontViewLabelsMap}
+                        rearViewLabelsMap={rearViewLabelsMap}
+                        passengerViewLabelsMap={passengerViewLabelsMap}
+                        driverViewLabelsMap={driverViewLabelsMap}
+                        saveClickedRef={saveClickedRef}
+                        shouldBypassUnloadPromptRef={
+                          shouldBypassUnloadPromptRef
+                        }
+                        isFormChanged={isFormChanged}
+                        damagedParts={form?.damagedParts}
+                        setHasUnsavedChanges={setHasUnsavedChanges}
+                      />
+                    </div>
+                    <FormInput
+                      name="pin"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Expected Return / PIN"
+                      icon={<MdPassword />}
+                      value={form?.pin || ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^\d{0,4}$/.test(val)) {
+                          setForm((prev: Partial<Ticket>) => ({
+                            ...prev,
+                            pin: val,
+                          }));
+                        }
+                      }}
+                      showPasswordToggle
+                      showPassword={showPin}
+                      setShowPassword={setShowPin}
+                      onClear={() => setForm((prev) => ({ ...prev, pin: "" }))}
                     />
                   </div>
                 )}
@@ -712,6 +737,14 @@ export default function ReceiveForm({
                             }
                           }
 
+                          if (!form?.pin) {
+                            Swal.fire({
+                              icon: "error",
+                              title: "Error",
+                              text: "Please enter the employee pin to park the customer vehicle.",
+                            });
+                          }
+
                           handleParkVehicle(
                             e,
                             form,
@@ -738,7 +771,7 @@ export default function ReceiveForm({
                             setPhotos
                           );
                         }}
-                        className="h-12 rounded-2xl bg-primary px-8 text-sm font-extrabold text-slate-950 shadow-sm transition hover:bg-secondary 
+                        className="h-12 rounded-2xl bg-primary px-8 text-sm font-extrabold text-white shadow-sm transition hover:bg-secondary 
                         disabled:opacity-60 cursor-pointer"
                       >
                         {loader ? "Submitting..." : "Submit"}
@@ -751,8 +784,8 @@ export default function ReceiveForm({
           </div>
         ) : (
           <div className="text-center animate-fade-in flex flex-col items-center justify-center py-16 px-6">
-            <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <IoCheckmarkOutline className="text-emerald-500 w-10 h-10" />
+            <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
+              <IoCheckmarkOutline className="text-primary w-10 h-10" />
             </div>
 
             <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -761,7 +794,7 @@ export default function ReceiveForm({
 
             <button
               onClick={handleSubmitAnother}
-              className="h-11 px-6 bg-primary hover:bg-secondary text-slate-950 font-semibold rounded-xl transition-colors text-sm flex items-center gap-2 cursor-pointer"
+              className="h-11 px-6 bg-primary hover:bg-secondary text-white font-semibold rounded-xl transition-colors text-sm flex items-center gap-2 cursor-pointer"
             >
               <CiRedo className="w-4 h-4" />
               Submit Another Vehicle
