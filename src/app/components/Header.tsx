@@ -3,7 +3,16 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Clock, Grid2X2, KeySquare, Menu, User } from "lucide-react";
+import {
+  ChevronDown,
+  Clock,
+  Grid2X2,
+  KeySquare,
+  LogOut,
+  Menu,
+  ShieldCheck,
+  User,
+} from "lucide-react";
 import { GoDotFill } from "react-icons/go";
 import { BiCurrentLocation } from "react-icons/bi";
 import { PiWarningDiamondBold } from "react-icons/pi";
@@ -13,98 +22,114 @@ import useAuthRedirect from "../hooks/loginHook";
 import { useProperty } from "../context/PropertyContext";
 import usePropertyListener from "../hooks/usePropertyListener";
 import { handleLogout } from "../helpers/authHelpers";
+import { THEME_PALETTES } from "../lib/propertyTheme";
 
 import Location from "./Location";
 import OffCanvas from "./OffCanvas";
 
-
-type ThemePalette = {
-  name: string;
-  primary: string;
-  primaryLight: string;
-  primarySoft: string;
-  secondary: string;
-  secondaryLight: string;
-  secondarySoft: string;
-};
-
 const DEFAULT_PRIMARY_COLOR = "#d97706";
 const DEFAULT_SECONDARY_COLOR = "#f59e0b";
 
-const THEME_PALETTES: ThemePalette[] = [
-  {
-    name: "amber",
-    primary: "#d97706",
-    primaryLight: "#fbbf24",
-    primarySoft: "#fffbeb",
-    secondary: "#f59e0b",
-    secondaryLight: "#fcd34d",
-    secondarySoft: "#fef3c7",
-  },
-  {
-    name: "sapphire",
-    primary: "#2563eb",
-    primaryLight: "#60a5fa",
-    primarySoft: "#eff6ff",
-    secondary: "#3b82f6",
-    secondaryLight: "#93c5fd",
-    secondarySoft: "#dbeafe",
-  },
-  {
-    name: "emerald",
-    primary: "#059669",
-    primaryLight: "#34d399",
-    primarySoft: "#ecfdf5",
-    secondary: "#10b981",
-    secondaryLight: "#6ee7b7",
-    secondarySoft: "#d1fae5",
-  },
-  {
-    name: "royal",
-    primary: "#7c3aed",
-    primaryLight: "#a78bfa",
-    primarySoft: "#f5f3ff",
-    secondary: "#8b5cf6",
-    secondaryLight: "#c4b5fd",
-    secondarySoft: "#ede9fe",
-  },
-  {
-    name: "ruby",
-    primary: "#dc2626",
-    primaryLight: "#f87171",
-    primarySoft: "#fef2f2",
-    secondary: "#ef4444",
-    secondaryLight: "#fca5a5",
-    secondarySoft: "#fee2e2",
-  },
-  {
-    name: "teal",
-    primary: "#0f766e",
-    primaryLight: "#2dd4bf",
-    primarySoft: "#f0fdfa",
-    secondary: "#14b8a6",
-    secondaryLight: "#5eead4",
-    secondarySoft: "#ccfbf1",
-  },
-  {
-    name: "rose",
-    primary: "#db2777",
-    primaryLight: "#f472b6",
-    primarySoft: "#fdf2f8",
-    secondary: "#ec4899",
-    secondaryLight: "#f9a8d4",
-    secondarySoft: "#fce7f3",
-  },
-  {
-    name: "obsidian",
-    primary: "#111827",
-    primaryLight: "#d4af37",
-    primarySoft: "#f9f5e7",
-    secondary: "#d4af37",
-    secondaryLight: "#f4d675",
-    secondarySoft: "#fef9e7",
-  },
-];
+type AccountIdentity = {
+  username: string;
+  role: string;
+};
+
+const DEFAULT_ACCOUNT_IDENTITY: AccountIdentity = {
+  username: "User",
+  role: "Employee",
+};
+
+const formatAccountRole = (value: unknown) => {
+  if (typeof value !== "string" || !value.trim()) {
+    return DEFAULT_ACCOUNT_IDENTITY.role;
+  }
+
+  return value
+    .trim()
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+};
+
+const getStoredAccountIdentity = (): AccountIdentity => {
+  if (typeof window === "undefined") {
+    return DEFAULT_ACCOUNT_IDENTITY;
+  }
+
+  const directUsername =
+    localStorage.getItem("username") ||
+    localStorage.getItem("userName") ||
+    localStorage.getItem("accountUsername") ||
+    "";
+
+  const directRole =
+    localStorage.getItem("role") ||
+    localStorage.getItem("userRole") ||
+    localStorage.getItem("accountRole") ||
+    "";
+
+  const possibleUserKeys = [
+    "accountUser",
+    "currentUser",
+    "user",
+    "authUser",
+    "loginUser",
+  ];
+
+  for (const key of possibleUserKeys) {
+    const storedValue = localStorage.getItem(key);
+
+    if (!storedValue) continue;
+
+    try {
+      const parsedValue = JSON.parse(storedValue) as Record<string, unknown>;
+
+      if (parsedValue && typeof parsedValue === "object") {
+        const usernameCandidate =
+          parsedValue.username ??
+          parsedValue.userName ??
+          parsedValue.name ??
+          parsedValue.fullName ??
+          parsedValue.email;
+
+        const roleCandidate =
+          parsedValue.role ??
+          parsedValue.userRole ??
+          parsedValue.accountRole ??
+          parsedValue.roleName;
+
+        const username =
+          typeof usernameCandidate === "string" && usernameCandidate.trim()
+            ? usernameCandidate.trim()
+            : directUsername;
+
+        const role =
+          typeof roleCandidate === "string" && roleCandidate.trim()
+            ? roleCandidate.trim()
+            : directRole;
+
+        if (username || role) {
+          return {
+            username: username || DEFAULT_ACCOUNT_IDENTITY.username,
+            role: formatAccountRole(role),
+          };
+        }
+      }
+    } catch {
+      if (key === "accountUser" && storedValue.trim()) {
+        return {
+          username: storedValue.trim(),
+          role: formatAccountRole(directRole),
+        };
+      }
+    }
+  }
+
+  return {
+    username: directUsername || DEFAULT_ACCOUNT_IDENTITY.username,
+    role: formatAccountRole(directRole),
+  };
+};
 
 const isValidThemeColor = (value: unknown): value is string => {
   if (typeof value !== "string") return false;
@@ -178,8 +203,8 @@ const applyGlobalTheme = ({
     root.style.setProperty("--primary-soft", matchedPalette.primarySoft);
 
     root.style.setProperty("--secondary", matchedPalette.secondary);
-    root.style.setProperty("--secondary-light", matchedPalette.secondaryLight);
-    root.style.setProperty("--secondary-soft", matchedPalette.secondarySoft);
+    root.style.setProperty("--secondary-light", matchedPalette?.secondaryLight);
+    root.style.setProperty("--secondary-soft", matchedPalette?.secondarySoft);
 
     localStorage.setItem("primaryColor", matchedPalette.primary);
     localStorage.setItem("secondaryColor", matchedPalette.secondary);
@@ -240,6 +265,26 @@ export default function Header() {
   const [openLocationModal, setOpenLocationModal] = useState(false);
   const [isOutOfArea, setIsOutOfArea] = useState(false);
   const [showLocationToggle, setShowLocationToggle] = useState(false);
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const [accountIdentity, setAccountIdentity] = useState<AccountIdentity>(
+    DEFAULT_ACCOUNT_IDENTITY
+  );
+  const accountMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+    } else {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+    };
+  }, [isMenuOpen]);
 
   const mobileGestureTapCountRef = useRef(0);
   const mobileGestureLastTapRef = useRef(0);
@@ -266,8 +311,41 @@ export default function Header() {
 
   useEffect(() => {
     setMounted(true);
-    setIsLoggedIn(localStorage.getItem("isLoggedIn") === "true");
+
+    const loggedIn = localStorage.getItem("isLoggedIn") === "true";
+
+    setIsLoggedIn(loggedIn);
+    setAccountIdentity(getStoredAccountIdentity());
   }, []);
+
+  useEffect(() => {
+    if (!isAccountMenuOpen) return;
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      if (
+        accountMenuRef.current &&
+        !accountMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsAccountMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsAccountMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isAccountMenuOpen]);
 
   useEffect(() => {
     setIsOutOfArea(!propertyId);
@@ -427,20 +505,29 @@ export default function Header() {
     : "";
 
   const handleAuthAction = () => {
-    if (isLoggedIn) {
-      handleLogout({
-        propertyId,
-        setPropertyId,
-        setPropertyName,
-        setAccountUser,
-        router,
-      });
-
+    if (!isLoggedIn) {
+      router.push("/");
       return;
     }
 
-    router.push("/");
+    setAccountIdentity(getStoredAccountIdentity());
+    setIsAccountMenuOpen((previous) => !previous);
   };
+
+  const handleAccountLogout = () => {
+    setIsAccountMenuOpen(false);
+
+    handleLogout({
+      propertyId,
+      setPropertyId,
+      setPropertyName,
+      setAccountUser,
+      router,
+    });
+  };
+
+  const accountInitial =
+    accountIdentity.username.trim().charAt(0).toUpperCase() || "U";
 
   return (
     <>
@@ -579,28 +666,98 @@ export default function Header() {
               className="-mr-2 flex h-10 w-7 shrink-0 touch-none select-none bg-transparent md:hidden"
             />
 
-            <button
-              type="button"
-              onClick={handleAuthAction}
-              aria-label={isLoggedIn ? "Logout" : "Login"}
-              title={isLoggedIn ? "Logout" : "Login"}
-              className="relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-100 text-slate-600
-              transition-all duration-300 hover:bg-(--primary-soft) hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-(--primary-light)"
-            >
-              <User className="h-5 w-5" />
+            <div ref={accountMenuRef} className="relative shrink-0">
+              <button
+                type="button"
+                onClick={handleAuthAction}
+                aria-label={isLoggedIn ? "Open account menu" : "Login"}
+                aria-haspopup={isLoggedIn ? "menu" : undefined}
+                aria-expanded={isLoggedIn ? isAccountMenuOpen : undefined}
+                title={isLoggedIn ? "Account" : "Login"}
+                className={`relative flex h-10 items-center justify-center rounded-full transition-all duration-300 cursor-pointer
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-(--primary-light) ${
+                  isLoggedIn
+                    ? "gap-1 bg-slate-100 pl-2.5 pr-2 text-slate-600 hover:bg-(--primary-soft) hover:text-primary"
+                    : "w-10 bg-slate-100 text-slate-600 hover:bg-(--primary-soft) hover:text-primary"
+                }`}
+              >
+                <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-sm">
+                  <User className="h-4 w-4" />
 
-              {isLoggedIn && (
-                <span
-                  className="
-                    absolute bottom-0 right-0
-                    h-3 w-3
-                    rounded-full
-                    border-2 border-white
-                    bg-emerald-500
-                  "
-                />
+                  {isLoggedIn && (
+                    <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
+                  )}
+                </span>
+
+                {isLoggedIn && (
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                      isAccountMenuOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                )}
+              </button>
+
+              {mounted && isLoggedIn && isAccountMenuOpen && (
+                <div
+                  role="menu"
+                  aria-label="Account menu"
+                  className="absolute right-0 top-full z-100 mt-3 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-3xl border
+                  border-slate-200 bg-white/98 shadow-[0_24px_70px_rgba(15,23,42,0.22)] backdrop-blur-xl"
+                >
+                  <div className="relative overflow-hidden border-b border-slate-200 bg-linear-to-br from-white via-(--primary-soft) to-white p-4">
+                    <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-[color-mix(in_srgb,var(--primary)_10%,transparent)]" />
+
+                    <div className="relative flex min-w-0 items-center gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-sm font-black text-white shadow-lg">
+                        {accountInitial}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                          Signed in as
+                        </p>
+
+                        <p className="mt-0.5 truncate text-sm font-bold text-slate-950">
+                          {accountIdentity.username}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3">
+                    <div className="mb-2 flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-(--primary-soft) text-primary">
+                        <ShieldCheck className="h-4 w-4" />
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                          Role
+                        </p>
+                        <p className="truncate text-sm font-semibold text-slate-700">
+                          {accountIdentity.role}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleAccountLogout}
+                      className="flex w-full cursor-pointer items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-bold text-red-600
+                      transition-all duration-200 hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
+                        <LogOut className="h-4 w-4" />
+                      </span>
+
+                      <span>Log out</span>
+                    </button>
+                  </div>
+                </div>
               )}
-            </button>
+            </div>
 
             <button
               type="button"

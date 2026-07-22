@@ -31,7 +31,7 @@ export default function OffCanvas({
 
   const {
     propertyName,
-    accountUser,
+    // accountUser,
     propertyId,
     setPropertyId,
     setPropertyName,
@@ -69,7 +69,10 @@ export default function OffCanvas({
         onClick={() => setIsMenuOpen(false)}
       />
 
-      <aside className="fixed right-0 top-0 z-9999 flex h-dvh w-[88vw] max-w-90 animate-[slideInRight_0.3s_ease-out] flex-col overflow-hidden border-l border-slate-200 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.28)]">
+      <aside
+        className="fixed inset-y-0 right-0 h-screen min-h-screen w-[88vw] max-w-90 flex flex-col overflow-hidden border-l border-slate-200 bg-white
+        shadow-[0_30px_90px_rgba(15,23,42,0.28)] animate-[slideInRight_0.3s_ease-out] z-9999"
+      >
         <div className="relative overflow-hidden border-b border-slate-200 bg-linear-to-br from-white via-(--primary-soft) to-white p-5">
           <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-(--primary-soft)" />
 
@@ -103,7 +106,7 @@ export default function OffCanvas({
             </button>
           </div>
 
-          <div className="relative mt-5 rounded-2xl border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur-xl">
+          {/* <div className="relative mt-5 rounded-2xl border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur-xl">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-(--primary-light) to-primary text-base font-black text-white shadow-[0_12px_28px_color-mix(in_srgb,var(--primary)_25%,transparent)]">
                 {accountUser ? accountUser.charAt(0).toUpperCase() : "U"}
@@ -119,9 +122,8 @@ export default function OffCanvas({
                 </p>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
-
         <nav className="flex-1 overflow-y-auto px-4 py-5 h-full">
           <div className="mb-5">
             <p className="mb-2 px-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
@@ -219,7 +221,6 @@ export default function OffCanvas({
             <ThemeSelector />
           </div>
         </nav>
-
         <div className="border-t border-slate-200 bg-slate-50/80 p-4">
           <button
             type="button"

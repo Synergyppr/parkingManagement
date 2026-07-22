@@ -25,6 +25,7 @@ import {
   findLinkedGroup,
   generateLabelsMap,
 } from "../lib/carPartsLegend";
+import { THEME_PALETTES } from "../lib/propertyTheme";
 
 import TabNavigation from "../components/TabNavigation";
 import ReceiveForm from "../components/ReceiveForm";
@@ -35,91 +36,6 @@ import PageLoader from "../components/elements/PageLoader";
 
 const DEFAULT_PRIMARY_COLOR = "#d97706";
 const DEFAULT_SECONDARY_COLOR = "#f59e0b";
-
-type ThemePalette = {
-  name: string;
-  primary: string;
-  primaryLight: string;
-  primarySoft: string;
-  secondary: string;
-  secondaryLight: string;
-  secondarySoft: string;
-};
-
-const THEME_PALETTES: ThemePalette[] = [
-  {
-    name: "amber",
-    primary: "#d97706",
-    primaryLight: "#fbbf24",
-    primarySoft: "#fffbeb",
-    secondary: "#f59e0b",
-    secondaryLight: "#fcd34d",
-    secondarySoft: "#fef3c7",
-  },
-  {
-    name: "sapphire",
-    primary: "#2563eb",
-    primaryLight: "#60a5fa",
-    primarySoft: "#eff6ff",
-    secondary: "#3b82f6",
-    secondaryLight: "#93c5fd",
-    secondarySoft: "#dbeafe",
-  },
-  {
-    name: "emerald",
-    primary: "#059669",
-    primaryLight: "#34d399",
-    primarySoft: "#ecfdf5",
-    secondary: "#10b981",
-    secondaryLight: "#6ee7b7",
-    secondarySoft: "#d1fae5",
-  },
-  {
-    name: "royal",
-    primary: "#7c3aed",
-    primaryLight: "#a78bfa",
-    primarySoft: "#f5f3ff",
-    secondary: "#8b5cf6",
-    secondaryLight: "#c4b5fd",
-    secondarySoft: "#ede9fe",
-  },
-  {
-    name: "ruby",
-    primary: "#dc2626",
-    primaryLight: "#f87171",
-    primarySoft: "#fef2f2",
-    secondary: "#ef4444",
-    secondaryLight: "#fca5a5",
-    secondarySoft: "#fee2e2",
-  },
-  {
-    name: "teal",
-    primary: "#0f766e",
-    primaryLight: "#2dd4bf",
-    primarySoft: "#f0fdfa",
-    secondary: "#14b8a6",
-    secondaryLight: "#5eead4",
-    secondarySoft: "#ccfbf1",
-  },
-  {
-    name: "rose",
-    primary: "#db2777",
-    primaryLight: "#f472b6",
-    primarySoft: "#fdf2f8",
-    secondary: "#ec4899",
-    secondaryLight: "#f9a8d4",
-    secondarySoft: "#fce7f3",
-  },
-  {
-    name: "obsidian",
-    primary: "#111827",
-    primaryLight: "#d4af37",
-    primarySoft: "#f9f5e7",
-    secondary: "#d4af37",
-    secondaryLight: "#f4d675",
-    secondarySoft: "#fef9e7",
-  },
-];
 
 const isValidThemeColor = (value: unknown): value is string => {
   if (typeof value !== "string") return false;
@@ -179,12 +95,15 @@ const applyThemeColors = ({
     root.dataset.theme = matchedPalette.name;
 
     root.style.setProperty("--primary", matchedPalette.primary);
-    root.style.setProperty("--primary-light", matchedPalette.primaryLight);
-    root.style.setProperty("--primary-soft", matchedPalette.primarySoft);
+    root.style.setProperty(
+      "--primary-light",
+      matchedPalette?.primaryLight as string
+    );
+    root.style.setProperty("--primary-soft", matchedPalette?.primarySoft);
 
-    root.style.setProperty("--secondary", matchedPalette.secondary);
-    root.style.setProperty("--secondary-light", matchedPalette.secondaryLight);
-    root.style.setProperty("--secondary-soft", matchedPalette.secondarySoft);
+    root.style.setProperty("--secondary", matchedPalette?.secondary);
+    root.style.setProperty("--secondary-light", matchedPalette?.secondaryLight);
+    root.style.setProperty("--secondary-soft", matchedPalette?.secondarySoft);
   } else {
     root.removeAttribute("data-theme");
 

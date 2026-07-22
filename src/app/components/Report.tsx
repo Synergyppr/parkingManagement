@@ -8,95 +8,11 @@ import {
 import { useProperty } from "../context/PropertyContext";
 import { CarPart, ReportEntry, TicketDetails } from "../types";
 import { handleFetchTicketDetails } from "../helpers/dashboardHelpers";
+import { THEME_PALETTES, ThemePalette } from "../lib/propertyTheme";
 
 import TicketDetailsModal from "./TicketDetailsModal";
 
 const THEME_STORAGE_KEY = "parkey-theme";
-
-type ThemePalette = {
-  name: string;
-  primary: string;
-  primaryLight: string;
-  primarySoft: string;
-  secondary: string;
-  secondaryLight: string;
-  secondarySoft: string;
-};
-
-const THEME_PALETTES: ThemePalette[] = [
-  {
-    name: "amber",
-    primary: "#d97706",
-    primaryLight: "#fbbf24",
-    primarySoft: "#fffbeb",
-    secondary: "#f59e0b",
-    secondaryLight: "#fcd34d",
-    secondarySoft: "#fef3c7",
-  },
-  {
-    name: "sapphire",
-    primary: "#2563eb",
-    primaryLight: "#60a5fa",
-    primarySoft: "#eff6ff",
-    secondary: "#3b82f6",
-    secondaryLight: "#93c5fd",
-    secondarySoft: "#dbeafe",
-  },
-  {
-    name: "emerald",
-    primary: "#059669",
-    primaryLight: "#34d399",
-    primarySoft: "#ecfdf5",
-    secondary: "#10b981",
-    secondaryLight: "#6ee7b7",
-    secondarySoft: "#d1fae5",
-  },
-  {
-    name: "royal",
-    primary: "#7c3aed",
-    primaryLight: "#a78bfa",
-    primarySoft: "#f5f3ff",
-    secondary: "#8b5cf6",
-    secondaryLight: "#c4b5fd",
-    secondarySoft: "#ede9fe",
-  },
-  {
-    name: "ruby",
-    primary: "#dc2626",
-    primaryLight: "#f87171",
-    primarySoft: "#fef2f2",
-    secondary: "#ef4444",
-    secondaryLight: "#fca5a5",
-    secondarySoft: "#fee2e2",
-  },
-  {
-    name: "teal",
-    primary: "#0f766e",
-    primaryLight: "#2dd4bf",
-    primarySoft: "#f0fdfa",
-    secondary: "#14b8a6",
-    secondaryLight: "#5eead4",
-    secondarySoft: "#ccfbf1",
-  },
-  {
-    name: "rose",
-    primary: "#db2777",
-    primaryLight: "#f472b6",
-    primarySoft: "#fdf2f8",
-    secondary: "#ec4899",
-    secondaryLight: "#f9a8d4",
-    secondarySoft: "#fce7f3",
-  },
-  {
-    name: "obsidian",
-    primary: "#111827",
-    primaryLight: "#d4af37",
-    primarySoft: "#f9f5e7",
-    secondary: "#d4af37",
-    secondaryLight: "#f4d675",
-    secondarySoft: "#fef9e7",
-  },
-];
 
 const isValidThemeColor = (value: unknown): value is string => {
   if (typeof value !== "string") return false;
@@ -114,9 +30,7 @@ const isValidThemeColor = (value: unknown): value is string => {
 
 const normalizeThemeColor = (value: string) => value.trim().toLowerCase();
 
-const getStoredThemeColor = (
-  key: "primaryColor" | "secondaryColor"
-) => {
+const getStoredThemeColor = (key: "primaryColor" | "secondaryColor") => {
   if (typeof window === "undefined") return null;
 
   const storedColor = localStorage.getItem(key);
@@ -259,10 +173,7 @@ const applyThemeColors = ({
   const resolvedPrimary = primaryColor.trim();
   const resolvedSecondary = secondaryColor.trim();
 
-  const contextPalette = findThemePalette(
-    resolvedPrimary,
-    resolvedSecondary
-  );
+  const contextPalette = findThemePalette(resolvedPrimary, resolvedSecondary);
 
   if (contextPalette) {
     applyPalette(contextPalette);
@@ -289,12 +200,8 @@ const PAGE_SIZE = 10;
 
 const Report = () => {
   const saveClickedRef = React.useRef(false);
-  const {
-    propertyId,
-    propertyName,
-    primaryColor,
-    secondaryColor,
-  } = useProperty();
+  const { propertyId, propertyName, primaryColor, secondaryColor } =
+    useProperty();
 
   const [report, setReport] = useState<ReportEntry[]>([]);
   const [ticketDetails, setTicketDetails] = useState<TicketDetails>(
@@ -396,10 +303,11 @@ const Report = () => {
         <section className="overflow-hidden rounded-4xl border border-[color-mix(in_srgb,var(--primary-light)_70%,transparent)] bg-white/90 p-6 shadow-[0_30px_90px_rgba(15,23,42,0.10)] backdrop-blur-xl md:p-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div>
-              <span className="inline-flex rounded-full border border-(--primary-light) bg-(--primary-soft) px-4 py-1 text-[10px] font-black uppercase 
-              tracking-[0.18em] text-primary">
+              <span
+                className="inline-flex rounded-full border border-(--primary-light) bg-(--primary-soft) px-4 py-1 text-[10px] font-black uppercase 
+              tracking-[0.18em] text-primary"
+              >
                 Valet Operations
-
               </span>
 
               <h1 className="mt-4 font-serif text-4xl font-bold tracking-tight text-slate-950 md:text-5xl">

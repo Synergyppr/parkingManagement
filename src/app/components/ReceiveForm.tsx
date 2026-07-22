@@ -654,8 +654,8 @@ export default function ReceiveForm({
                     onClick={() =>
                       step === 1 ? handleClearForm(true) : setStep(step - 1)
                     }
-                    className="md:h-12 h-14 rounded-2xl px-6 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50 
-                    cursor-pointer border border-slate-200"
+                    className="md:h-12 h-14 rounded-2xl px-6 text-sm font-semibold text-slate-600 transition hover:bg-primary/50 disabled:opacity-50 
+                    cursor-pointer border border-primary/50"
                   >
                     {step === 1 ? "Reset Form" : "Back"}
                   </button>

@@ -5,8 +5,13 @@ import { fetchTicketsData } from "../helpers/dashboardHelpers";
 import { useProperty } from "../context/PropertyContext";
 import PageLoader from "../components/elements/PageLoader";
 import Dashboard from "../components/Dashboard";
-import { DashboardData, Ticket, TrafficPeriod, TrafficPoint } from "../components/elements/DashboardHelpers";
-
+import {
+  DashboardData,
+  Ticket,
+  TrafficPeriod,
+  TrafficPoint,
+} from "../components/elements/DashboardHelpers";
+import Footer from "../components/Footer";
 
 export default function DashboardPage() {
   const { propertyId, propertyName, locationMode, requestLocation } =
@@ -167,22 +172,25 @@ export default function DashboardPage() {
   ];
 
   return (
-    <main className="min-h-[90vh] bg-[#f8f5ed] text-slate-950">
-      {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm">
-          <PageLoader />
-        </div>
-      )}
+    <>
+      <main className="min-h-[90vh] bg-[#f8f5ed] text-slate-950">
+        {loading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm">
+            <PageLoader />
+          </div>
+        )}
 
-      <Dashboard
-        propertyName={propertyName}
-        kpis={kpis}
-        trafficPeriod={trafficPeriod}
-        setTrafficPeriod={setTrafficPeriod}
-        trafficData={trafficData}
-        recentTickets={recentTickets}
-        setReloadPageData={setReloadPageData}
-      />
-    </main>
+        <Dashboard
+          propertyName={propertyName}
+          kpis={kpis}
+          trafficPeriod={trafficPeriod}
+          setTrafficPeriod={setTrafficPeriod}
+          trafficData={trafficData}
+          recentTickets={recentTickets}
+          setReloadPageData={setReloadPageData}
+        />
+      </main>
+      <Footer />
+    </>
   );
 }
