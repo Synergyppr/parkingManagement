@@ -57,9 +57,7 @@ export default async function LoginPage() {
               className="flex h-32 w-32 items-center justify-center rounded-full border-2 border-(--primary-light) bg-white
                 shadow-[0_20px_50px_rgba(15,23,42,0.25)] transition-colors duration-500"
             >
-              <div
-                className="absolute inset-2 rounded-full bg-linear-to-tr from-(--primary-soft) to-(--secondary-soft)"
-              />
+              <div className="absolute inset-2 rounded-full bg-linear-to-tr from-(--primary-soft) to-(--secondary-soft)" />
 
               <KeySquare className="relative z-10 h-14 w-14 text-primary transition-colors duration-500" />
             </div>
@@ -74,7 +72,7 @@ export default async function LoginPage() {
             </span>
 
             <h1 className="mt-3 font-serif text-3xl font-bold text-slate-950">
-              Parkey Valet
+              Parkey
             </h1>
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
