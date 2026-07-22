@@ -110,18 +110,8 @@ const getPrimaryThemeColor = () => {
 };
 
 export default function ThemeSelector() {
-  const {
-    tenantId,
-    propertyId,
-    latitude,
-    longitude,
-    // radius,
-    // isActive,
-    primaryColor,
-    secondaryColor,
-    setPrimaryColor,
-    setSecondaryColor,
-  } = useProperty();
+  const { primaryColor, secondaryColor, setPrimaryColor, setSecondaryColor } =
+    useProperty();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -245,49 +235,49 @@ export default function ThemeSelector() {
     };
   }, [isOpen]);
 
-  const persistPropertyTheme = async (selectedTheme: ThemeOption) => {
-    if (!propertyId) {
-      throw new Error("A property must be selected before changing the theme.");
-    }
+  // const persistPropertyTheme = async (selectedTheme: ThemeOption) => {
+  //   if (!propertyId) {
+  //     throw new Error("A property must be selected before changing the theme.");
+  //   }
 
-    const payload = {
-      id: propertyId,
-      tenantId,
-      latitude: Number(latitude) || 0,
-      longitude: Number(longitude) || 0,
-      primaryColor: selectedTheme.primary,
-      secondaryColor: selectedTheme.secondary,
-      // name: "string",
-      // address: "string",
-      // radiusMeters: 0,
-      isActive: true,
-    };
+  //   const payload = {
+  //     id: propertyId,
+  //     tenantId,
+  //     latitude: Number(latitude) || 0,
+  //     longitude: Number(longitude) || 0,
+  //     primaryColor: selectedTheme.primary,
+  //     secondaryColor: selectedTheme.secondary,
+  //     // name: "string",
+  //     // address: "string",
+  //     // radiusMeters: 0,
+  //     isActive: true,
+  //   };
 
-    const response = await fetch("/api/properties/createAndUpdate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+  //   const response = await fetch("/api/properties/createAndUpdate", {
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //     },
+  //     body: JSON.stringify(payload),
+  //   });
 
-    const result: {
-      result?: {
-        status?: string | number;
-        message?: string;
-      };
-    } = await response.json();
+  //   const result: {
+  //     result?: {
+  //       status?: string | number;
+  //       message?: string;
+  //     };
+  //   } = await response.json();
 
-    const requestSucceeded =
-      response.ok &&
-      (result?.result?.status === "200" || result?.result?.status === 200);
+  //   const requestSucceeded =
+  //     response.ok &&
+  //     (result?.result?.status === "200" || result?.result?.status === 200);
 
-    if (!requestSucceeded) {
-      throw new Error(
-        result?.result?.message || "The property theme could not be updated."
-      );
-    }
-  };
+  //   if (!requestSucceeded) {
+  //     throw new Error(
+  //       result?.result?.message || "The property theme could not be updated."
+  //     );
+  //   }
+  // };
 
   const handleThemeChange = async (selectedTheme: ThemeOption) => {
     if (loadingTheme) return;
@@ -320,7 +310,7 @@ export default function ThemeSelector() {
     });
 
     try {
-      await persistPropertyTheme(selectedTheme);
+      // await persistPropertyTheme(selectedTheme);
 
       cacheTheme(selectedTheme);
       setIsOpen(false);

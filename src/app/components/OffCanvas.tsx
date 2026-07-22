@@ -1,21 +1,13 @@
 "use client";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useProperty } from "../context/PropertyContext";
-import { handleLogout } from "../helpers/authHelpers";
 
-import {
-  IoLogOut,
-  IoSettings,
-  IoClose,
-  IoColorPaletteOutline,
-} from "react-icons/io5";
+import { IoSettings, IoClose } from "react-icons/io5";
 import { MdHomeFilled } from "react-icons/md";
 import { HiDocumentReport } from "react-icons/hi";
 import { FaCar, FaComment } from "react-icons/fa6";
 import { KeySquare } from "lucide-react";
-
-import ThemeSelector from "./ThemeSelector";
 
 // Navigation Sidebar
 
@@ -27,16 +19,8 @@ export default function OffCanvas({
   isMenuOpen: boolean;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
 
-  const {
-    propertyName,
-    // accountUser,
-    propertyId,
-    setPropertyId,
-    setPropertyName,
-    setAccountUser,
-  } = useProperty();
+  const { propertyName } = useProperty();
 
   if (!isMenuOpen) return null;
 
@@ -207,9 +191,9 @@ export default function OffCanvas({
             </Link>
           </div>
 
-          <div className="my-5 h-px bg-slate-200" />
+          {/* <div className="my-5 h-px bg-slate-200" /> */}
 
-          <div className="my-auto">
+          {/* <div className="my-auto">
             <div className="mb-2 flex items-center gap-2 px-2">
               <IoColorPaletteOutline className="h-4 w-4 text-primary" />
 
@@ -219,10 +203,10 @@ export default function OffCanvas({
             </div>
 
             <ThemeSelector />
-          </div>
+          </div> */}
         </nav>
         <div className="border-t border-slate-200 bg-slate-50/80 p-4">
-          <button
+          {/* <button
             type="button"
             onClick={() =>
               handleLogout({
@@ -239,7 +223,7 @@ export default function OffCanvas({
               <IoLogOut className="h-4 w-4" />
             </span>
             Log Out
-          </button>
+          </button> */}
 
           <div className="mt-4 flex flex-col gap-1 px-2">
             <Link
