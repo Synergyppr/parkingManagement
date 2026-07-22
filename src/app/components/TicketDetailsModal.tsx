@@ -1546,7 +1546,7 @@ export default function TicketDetailsModal({
                           <p className="text-sm font-extrabold capitalize text-slate-950">
                             <span className="capitalize">{`${
                               ticketDetails?.patron?.firstName || "Unknown"
-                            }`}</span>
+                            }`}</span>{" "}
                             <span className="capitalize">
                               {`${
                                 ticketDetails?.patron?.lastName || ""
