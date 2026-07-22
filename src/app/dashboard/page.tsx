@@ -47,7 +47,7 @@ export default function DashboardPage() {
   const parkedCount = tickets.filter((t) => t.status === "parked").length;
   const requestedCount = tickets.filter((t) => t.status === "requested").length;
   const receivedCount = tickets.filter(
-    (t) => !t.status || t.status === "received"
+    (t) => !t.status || t.status === "received" || t.status === "parked"
   ).length;
   const readyCount =
     readyTickets.length || tickets.filter((t) => t.status === "ready").length;

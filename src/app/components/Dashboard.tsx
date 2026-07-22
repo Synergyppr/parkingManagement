@@ -253,6 +253,17 @@ const Dashboard = ({
     window.location.href = `/check-in?${searchParams.toString()}`;
   };
 
+  const redirectToStatus = (status: string) => {
+    const statuses = ["received", "requested", "parked", "ready"];
+    if (!statuses.includes(status)) return;
+
+    const searchParams = new URLSearchParams({
+      status: status,
+    });
+
+    window.location.href = `/check-in?${searchParams.toString()}`;
+  };
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-8 md:px-5">
       <div
@@ -333,8 +344,9 @@ const Dashboard = ({
         {kpis.map((kpi) => (
           <div
             key={kpi.label}
+            onClick={() => redirectToStatus(kpi?.change?.split(" ")[1])}
             className="rounded-4xl border border-slate-200 bg-white p-4 md:p-4 lg:p-7 shadow-sm transition-all duration-300 hover:-translate-y-0.5
-            hover:border-(--primary-light) hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)]"
+            hover:border-(--primary-light) hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] cursor-pointer"
           >
             <div className="mb-7 flex items-center justify-between gap-3">
               <div
