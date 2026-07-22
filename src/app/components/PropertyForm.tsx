@@ -72,32 +72,36 @@ export default function ModalPropertyForm({
   onSuccess,
   setModalOpen,
 }: PropertyFormProps) {
-  const { latitude, longitude } = useProperty();
+  const { latitude, longitude, setPrimaryColor, setSecondaryColor } =
+    useProperty();
   const [loading, setLoading] = useState(false);
 
   const sourceData = data || originalData;
 
-  const defaultForm: Property = {
-    id: sourceData?.id,
-    tenantId: tenantId || sourceData?.tenantId,
-    tenant: sourceData?.tenant,
-    name: sourceData?.name || "",
-    address: sourceData?.address || "",
-    latitude: sourceData?.latitude ?? latitude ?? 0,
-    longitude: sourceData?.longitude ?? longitude ?? 0,
-    radius: sourceData?.radius ?? 0,
-    createdAtDateTime:
-      sourceData?.createdAtDateTime || new Date().toISOString(),
-    isActive: sourceData?.isActive ?? true,
-    primaryColor: normalizeHexColor(
-      sourceData?.primaryColor,
-      DEFAULT_PRIMARY_COLOR
-    ),
-    secondaryColor: normalizeHexColor(
-      sourceData?.secondaryColor,
-      DEFAULT_SECONDARY_COLOR
-    ),
-  };
+  const defaultForm = useMemo(
+    () => ({
+      id: sourceData?.id,
+      tenantId: tenantId || sourceData?.tenantId,
+      tenant: sourceData?.tenant,
+      name: sourceData?.name || "",
+      address: sourceData?.address || "",
+      latitude: sourceData?.latitude ?? latitude ?? 0,
+      longitude: sourceData?.longitude ?? longitude ?? 0,
+      radius: sourceData?.radius ?? 0,
+      createdAtDateTime:
+        sourceData?.createdAtDateTime || new Date().toISOString(),
+      isActive: sourceData?.isActive ?? true,
+      primaryColor: normalizeHexColor(
+        sourceData?.primaryColor,
+        DEFAULT_PRIMARY_COLOR
+      ),
+      secondaryColor: normalizeHexColor(
+        sourceData?.secondaryColor,
+        DEFAULT_SECONDARY_COLOR
+      ),
+    }),
+    [sourceData, tenantId, latitude, longitude]
+  );
 
   const [form, setForm] = useState<Property>(defaultForm);
 
@@ -237,6 +241,9 @@ export default function ModalPropertyForm({
           showConfirmButton: false,
           timer: 1500,
         });
+
+        setPrimaryColor(normalizedPrimaryColor);
+        setSecondaryColor(normalizedSecondaryColor);
 
         onSuccess?.();
       } else {
@@ -386,7 +393,7 @@ export default function ModalPropertyForm({
               </p>
             </div>
 
-            <ThemeSelector />
+            <ThemeSelector form={form} setForm={setForm} />
           </div>
 
           <div className="space-y-4 p-4">
@@ -509,6 +516,8 @@ export default function ModalPropertyForm({
                       )
                     }
                     className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                    readOnly
+                    disabled
                   />
                 </label>
 
@@ -527,6 +536,8 @@ export default function ModalPropertyForm({
                     maxLength={7}
                     spellCheck={false}
                     className="h-10 w-full bg-transparent px-2 font-mono text-sm font-bold uppercase text-slate-900 outline-none placeholder:text-slate-300"
+                    readOnly
+                    disabled
                   />
                 </div>
 

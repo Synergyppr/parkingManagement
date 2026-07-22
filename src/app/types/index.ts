@@ -153,6 +153,14 @@ export interface TicketTransactionReceipt {
   receiptText?: string;
   receiptHtml?: string;
   createdAtUtc?: string;
+  receipts?: Receipts[];
+}
+
+export interface Receipts {
+  createdAtUtc: string;
+  receiptHtml: string;
+  receiptText: string;
+  receiptType: string;
 }
 
 export interface TicketTransactionPaymentDetail {
@@ -173,6 +181,7 @@ export interface TicketTransaction {
   transaction_date_time?: string;
   application_id?: string;
   paymentdetail?: TicketTransactionPaymentDetail;
+  receipts: Receipts[];
 }
 
 /////////////////////////////////////////////////////////////////////////

@@ -648,6 +648,7 @@ export default function TransactionForm({
           <FormInput
             name="pin"
             type="text"
+            inputMode="numeric"
             placeholder="4-digit PIN"
             icon={<MdPassword className="h-4 w-4" />}
             value={form?.pin || ""}

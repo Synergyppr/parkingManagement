@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Dispatch, SetStateAction } from "react";
 import Swal from "sweetalert2";
 import { Check, ChevronDown, LoaderCircle, Palette } from "lucide-react";
 
 import { useProperty } from "../context/PropertyContext";
 import { ThemeOption, ThemeName, THEMES } from "../lib/propertyTheme";
+import { Property } from "./PropertyForm";
 
 const DEFAULT_THEME: ThemeName = "amber";
 
@@ -109,7 +110,13 @@ const getPrimaryThemeColor = () => {
   );
 };
 
-export default function ThemeSelector() {
+export default function ThemeSelector({
+  form,
+  setForm,
+}: {
+  form: Property;
+  setForm: Dispatch<SetStateAction<Property>>;
+}) {
   const { primaryColor, secondaryColor, setPrimaryColor, setSecondaryColor } =
     useProperty();
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -298,8 +305,13 @@ export default function ThemeSelector() {
      * Update the UI immediately without waiting for the endpoint.
      */
     setTheme(selectedTheme.name);
-    setPrimaryColor(selectedTheme.primary);
-    setSecondaryColor(selectedTheme.secondary);
+    // setPrimaryColor(selectedTheme.primary);
+    // setSecondaryColor(selectedTheme.secondary);
+    setForm({
+      ...form,
+      primaryColor: selectedTheme.primary,
+      secondaryColor: selectedTheme?.secondary,
+    });
 
     applyThemeVariables({
       name: selectedTheme.name,
@@ -315,13 +327,13 @@ export default function ThemeSelector() {
       cacheTheme(selectedTheme);
       setIsOpen(false);
 
-      Swal.fire({
-        icon: "success",
-        title: "Theme Updated",
-        text: `${selectedTheme.label} is now the active property theme.`,
-        showConfirmButton: false,
-        timer: 1600,
-      });
+      // Swal.fire({
+      //   icon: "success",
+      //   title: "Theme Updated",
+      //   text: `${selectedTheme.label} is now the active property theme.`,
+      //   showConfirmButton: false,
+      //   timer: 1600,
+      // });
     } catch (error) {
       console.error("Theme update error:", error);
 
@@ -402,7 +414,7 @@ export default function ThemeSelector() {
 
             <div className="min-w-0">
               <p className="truncate text-xs font-black uppercase tracking-[0.12em] text-slate-400">
-                Theme
+                Theme Selector
               </p>
 
               <p className="truncate text-sm font-extrabold text-slate-900">

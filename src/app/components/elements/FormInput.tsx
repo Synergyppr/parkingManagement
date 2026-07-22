@@ -190,27 +190,8 @@ export default function FormInput({
               type="button"
               onClick={onClear}
               aria-label={`Clear ${placeholder || name}`}
-              className="
-                absolute
-                right-2.5
-                top-1/2
-                flex
-                h-7
-                w-7
-                -translate-y-1/2
-                cursor-pointer
-                items-center
-                justify-center
-                rounded-full
-                text-slate-400
-                transition-all
-                duration-200
-                hover:bg-(--primary-soft)
-                hover:text-primary
-                focus:outline-none
-                focus-visible:ring-2
-                focus-visible:ring-(--primary-light)
-              "
+              className="absolute right-2.5 top-1/2 flex h-7 w-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-slate-400
+              transition-all duration-200 hover:bg-(--primary-soft) hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-(--primary-light)"
             >
               <IoCloseOutline className="h-5 w-5" />
             </button>

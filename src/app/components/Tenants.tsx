@@ -547,16 +547,11 @@ const Tenants = ({ data }: TenantsProps) => {
             </div>
           </section>
 
-          <section className="grid grid-cols-1 gap-5 md:grid-cols-3">
+          <section className="grid grid-cols-2 gap-3 md:grid-cols-2">
             <SummaryCard
               label="Tenants"
               value={String(tenants?.length || 0)}
               icon={<BsFillBuildingsFill />}
-            />
-            <SummaryCard
-              label="Current Property"
-              value={propertyId ? "Connected" : "Missing"}
-              icon={<MdOutlineImportantDevices />}
             />
             <SummaryCard
               label="Config Modules"
