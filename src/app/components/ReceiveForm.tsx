@@ -634,7 +634,7 @@ export default function ReceiveForm({
                 )}
 
                 {step === 3 && (
-                  <div className="flex flex-col gap-2 mb-10">
+                  <div className="flex flex-col gap-2 mb-12">
                     <div className="w-fulloverflow-y-visible flex justify-center relative bottom-0 min-h-full pb-10">
                       <CarVector
                         noIncident={noIncident}

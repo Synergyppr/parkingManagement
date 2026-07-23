@@ -1482,7 +1482,7 @@ const CarVector: React.FC<CarVectorProps> = ({
       </div>
 
       {!hideLabels && (
-        <div>
+        <div className="mt-10 pt-12">
           {/* <div className="flex gap-2 items-center absolute -bottom-13.75 right-2 text-gray-800 text-sm tracking-tight">
             <div className="w-3 h-3 bg-blue-100 border border-gray-800"></div>
             Selectable area
@@ -1500,7 +1500,7 @@ const CarVector: React.FC<CarVectorProps> = ({
             }}
             className={`${
               !isReportAvailable ? "opacity-50" : ""
-            } flex gap-1.25 items-center absolute -bottom-20.25 md:-bottom-8.25 lg:-bottom-8.25 left-1 text-sm tracking-tight cursor-pointer text-gray-700`}
+            } flex gap-1.25 items-center absolute -bottom-10.25 md:-bottom-8.25 lg:-bottom-8.25 left-1 text-sm tracking-tight cursor-pointer text-gray-700`}
           >
             <button
               type="button"
@@ -1519,7 +1519,7 @@ const CarVector: React.FC<CarVectorProps> = ({
           <div
             className={`${
               isReportAvailable ? "opacity-50" : ""
-            } flex gap-2 absolute -bottom-20.25 md:-bottom-8.25 lg:-bottom-8.25 right-2 text-blue-600 text-sm tracking-tight`}
+            } flex gap-2 absolute -bottom-10.25 md:-bottom-8.25 lg:-bottom-8.25 right-2 text-blue-600 text-sm tracking-tight`}
           >
             <label
               className={`flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border px-4 transition sm:w-auto ${
