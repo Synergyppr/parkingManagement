@@ -658,31 +658,6 @@ export default function ReceiveForm({
                         setHasUnsavedChanges={setHasUnsavedChanges}
                       />
                     </div>
-                    <div className="relative bottom-6">
-                      <FormInput
-                        name="pin"
-                        type="password"
-                        // inputMode="numeric"
-                        placeholder="Expected Return / PIN"
-                        icon={<MdPassword />}
-                        value={form?.pin || ""}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (/^\d{0,4}$/.test(val)) {
-                            setForm((prev: Partial<Ticket>) => ({
-                              ...prev,
-                              pin: val,
-                            }));
-                          }
-                        }}
-                        showPasswordToggle
-                        showPassword={showPin}
-                        setShowPassword={setShowPin}
-                        onClear={() =>
-                          setForm((prev) => ({ ...prev, pin: "" }))
-                        }
-                      />
-                    </div>
                   </div>
                 )}
               </form>
@@ -743,6 +718,31 @@ export default function ReceiveForm({
                   </div>
                 </div>
               )}
+
+              {/* PIN */}
+              <div className="mt-4">
+                <FormInput
+                  name="pin"
+                  type="password"
+                  // inputMode="numeric"
+                  placeholder="Expected Return / PIN"
+                  icon={<MdPassword />}
+                  value={form?.pin || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (/^\d{0,4}$/.test(val)) {
+                      setForm((prev: Partial<Ticket>) => ({
+                        ...prev,
+                        pin: val,
+                      }));
+                    }
+                  }}
+                  showPasswordToggle
+                  showPassword={showPin}
+                  setShowPassword={setShowPin}
+                  onClear={() => setForm((prev) => ({ ...prev, pin: "" }))}
+                />
+              </div>
 
               {/* Action buttons  */}
               <div className="mt-8 border-t border-slate-200 pt-6">
@@ -858,7 +858,7 @@ export default function ReceiveForm({
           </div>
         ) : (
           <div className="text-center animate-fade-in flex flex-col items-center justify-center py-16 px-6">
-            <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 bg-secondary/60 rounded-full flex items-center justify-center mx-auto mb-4">
               <IoCheckmarkOutline className="text-primary w-10 h-10" />
             </div>
 

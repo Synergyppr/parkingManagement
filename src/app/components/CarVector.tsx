@@ -1493,6 +1493,7 @@ const CarVector: React.FC<CarVectorProps> = ({
             Damaged area
           </div> */}
 
+          {/* Full report */}
           <div
             aria-disabled={!isReportAvailable}
             onClick={() => {
@@ -1500,7 +1501,7 @@ const CarVector: React.FC<CarVectorProps> = ({
             }}
             className={`${
               !isReportAvailable ? "opacity-50" : ""
-            } flex gap-1.25 items-center absolute -bottom-20.25 left-1 text-sm tracking-tight cursor-pointer text-gray-700`}
+            } flex gap-1.25 items-center absolute -bottom-20.25 md:-bottom-8.25 lg:-bottom-8.25 left-1 text-sm tracking-tight cursor-pointer text-gray-700`}
           >
             <button
               type="button"
@@ -1515,10 +1516,11 @@ const CarVector: React.FC<CarVectorProps> = ({
             </button>
           </div>
 
+          {/* No incident */}
           <div
             className={`${
               isReportAvailable ? "opacity-50" : ""
-            } flex gap-2 absolute -bottom-20.25 right-2 text-blue-600 text-sm tracking-tight`}
+            } flex gap-2 absolute -bottom-20.25 md:-bottom-8.25 lg:-bottom-8.25 right-2 text-blue-600 text-sm tracking-tight`}
           >
             <label
               className={`flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border px-4 transition sm:w-auto ${
