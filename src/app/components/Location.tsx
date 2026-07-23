@@ -139,14 +139,15 @@ const Location = () => {
   }, [simulationInProgress]);
 
   const keyMap = {
-    "250": "plaza250",
-    "270": "plaza270",
+    "250 Plaza": "plaza250",
+    "270 Plaza": "plaza270",
     "Condado Ocean Club": "coc",
     "Condado Vanderbilt": "cvh",
     "La Concha Resort": "laConcha",
   };
 
   useEffect(() => {
+    // console.log("Predefined", predefinedProperties)
     const uniqueProperties = Array.isArray(predefinedProperties)
       ? predefinedProperties.reduce((acc, prop) => {
           const key = keyMap[prop.name as keyof typeof keyMap];
@@ -305,7 +306,7 @@ const Location = () => {
                 onClick={() => {
                   const route = [properties?.plaza250, properties?.plaza270];
                   setPlannedPath(generateInterpolatedPath(route));
-                  setCurrentSimulationLabel("250 → 270");
+                  setCurrentSimulationLabel("250 Plaza → 270 Plaza");
                   simulateDrive({
                     route: route,
                     setLatitude,
@@ -316,7 +317,7 @@ const Location = () => {
                     setSimulationInProgress,
                     setMessage,
                     setSimulatedPath,
-                    logLabel: "250 → 270",
+                    logLabel: "250 Plaza → 270 Plaza",
                     onComplete: () => setCurrentSimulationLabel(null),
                     setSimulationState,
                     intervalRef,
@@ -328,10 +329,11 @@ const Location = () => {
                 }}
                 disabled={simulationInProgress}
                 className={`text-sm px-3 py-1.5 rounded-md transition ${
-                  simulationInProgress && currentSimulationLabel === "250 → 270"
+                  simulationInProgress &&
+                  currentSimulationLabel === "250 Plaza → 270 Plaza"
                     ? "text-purple-600 bg-white border-purple-600 border rounded-sm cursor-not-allowed"
                     : simulationInProgress &&
-                      currentSimulationLabel !== "250 → 270"
+                      currentSimulationLabel !== "250 Plaza → 270 Plaza"
                     ? "bg-gray-300 text-white cursor-not-allowed"
                     : "bg-purple-600 text-white hover:bg-purple-700 cursor-pointer"
                 }`}

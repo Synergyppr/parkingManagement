@@ -193,6 +193,8 @@ export default function ModalPropertyForm({
           secondaryColor: normalizedSecondaryColor,
         };
 
+    // console.log("Updating Property", payload);
+
     try {
       const response = await fetch(endpoint, {
         method: "POST",
