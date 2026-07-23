@@ -364,7 +364,7 @@ export default function ReceiveForm({
                   : "overflow-hidden px-5 py-8 md:px-10"
               }`}
             >
-              <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-(--primary-soft)/80 -z-2" />
+              <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-(--primary-soft)/80 -z-10" />
               {/* Stepper */}
               <div
                 className={`z-10 flex items-center justify-center ${
