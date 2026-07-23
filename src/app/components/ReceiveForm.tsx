@@ -277,7 +277,7 @@ export default function ReceiveForm({
   };
 
   const handleBack = async () => {
-    if (step === 3 && photos.length > 0) {
+    if (photos.length > 0) {
       const result = await Swal.fire({
         icon: "warning",
         title: "Discard pictures?",
