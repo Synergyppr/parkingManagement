@@ -361,7 +361,7 @@ export default function Header() {
     const keysPressed: string[] = [];
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      keysPressed.push(event.key.toLowerCase());
+      keysPressed.push(event?.key?.toLowerCase());
 
       if (keysPressed.length > 3) {
         keysPressed.shift();
