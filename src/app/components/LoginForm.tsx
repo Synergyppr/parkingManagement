@@ -182,7 +182,7 @@ export default function LoginForm() {
 
     if (isLoggedIn === "true") {
       setRedirecting(true);
-      router.replace("/dashboard");
+      router.replace("/check-in");
     } else {
       setPageLoading(false);
     }
