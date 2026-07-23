@@ -269,7 +269,22 @@ export default function Header() {
   const [accountIdentity, setAccountIdentity] = useState<AccountIdentity>(
     DEFAULT_ACCOUNT_IDENTITY
   );
+
   const accountMenuRef = useRef<HTMLDivElement>(null);
+
+  const mobileGestureTapCountRef = useRef(0);
+  const mobileGestureLastTapRef = useRef(0);
+  const mobileGestureHoldTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const mobileGestureResetTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const mobileGestureHoldTriggeredRef = useRef(false);
+
+  const MOBILE_GESTURE_TAP_WINDOW = 650;
+  const MOBILE_GESTURE_HOLD_DURATION = 700;
+  const MOBILE_GESTURE_SEQUENCE_TIMEOUT = 1800;
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -285,19 +300,6 @@ export default function Header() {
       document.body.style.overflow = "";
     };
   }, [isMenuOpen]);
-
-  const mobileGestureTapCountRef = useRef(0);
-  const mobileGestureLastTapRef = useRef(0);
-  const mobileGestureHoldTimerRef = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
-  const mobileGestureResetTimerRef = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
-  const mobileGestureHoldTriggeredRef = useRef(false);
-
-  const MOBILE_GESTURE_TAP_WINDOW = 450;
-  const MOBILE_GESTURE_HOLD_DURATION = 850;
 
   useAuthRedirect();
   usePropertyListener();
@@ -384,6 +386,36 @@ export default function Header() {
     };
   }, []);
 
+  const clearMobileGestureTimers = () => {
+    if (mobileGestureHoldTimerRef.current) {
+      clearTimeout(mobileGestureHoldTimerRef.current);
+      mobileGestureHoldTimerRef.current = null;
+    }
+
+    if (mobileGestureResetTimerRef.current) {
+      clearTimeout(mobileGestureResetTimerRef.current);
+      mobileGestureResetTimerRef.current = null;
+    }
+  };
+
+  const resetMobileLocationGesture = () => {
+    clearMobileGestureTimers();
+
+    mobileGestureTapCountRef.current = 0;
+    mobileGestureLastTapRef.current = 0;
+    mobileGestureHoldTriggeredRef.current = false;
+  };
+
+  const scheduleMobileGestureReset = () => {
+    if (mobileGestureResetTimerRef.current) {
+      clearTimeout(mobileGestureResetTimerRef.current);
+    }
+
+    mobileGestureResetTimerRef.current = setTimeout(() => {
+      resetMobileLocationGesture();
+    }, MOBILE_GESTURE_SEQUENCE_TIMEOUT);
+  };
+
   useEffect(() => {
     return () => {
       if (mobileGestureHoldTimerRef.current) {
@@ -396,26 +428,16 @@ export default function Header() {
     };
   }, []);
 
-  const resetMobileLocationGesture = () => {
-    mobileGestureTapCountRef.current = 0;
-    mobileGestureLastTapRef.current = 0;
-    mobileGestureHoldTriggeredRef.current = false;
-
-    if (mobileGestureHoldTimerRef.current) {
-      clearTimeout(mobileGestureHoldTimerRef.current);
-      mobileGestureHoldTimerRef.current = null;
-    }
-
-    if (mobileGestureResetTimerRef.current) {
-      clearTimeout(mobileGestureResetTimerRef.current);
-      mobileGestureResetTimerRef.current = null;
-    }
-  };
-
   const handleMobileGesturePointerDown = (
     event: React.PointerEvent<HTMLButtonElement>
   ) => {
     if (event.pointerType === "mouse") return;
+
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Pointer capture may not be available in every mobile browser.
+    }
 
     const now = Date.now();
     const elapsedSinceLastTap = now - mobileGestureLastTapRef.current;
@@ -424,24 +446,37 @@ export default function Header() {
       mobileGestureTapCountRef.current > 0 &&
       elapsedSinceLastTap > MOBILE_GESTURE_TAP_WINDOW
     ) {
-      mobileGestureTapCountRef.current = 0;
+      resetMobileLocationGesture();
     }
 
     /*
-     * After two completed taps, the third interaction must be held.
+     * First two interactions are quick taps.
+     * The third interaction must be held.
      */
-    if (mobileGestureTapCountRef.current >= 2) {
+    if (mobileGestureTapCountRef.current === 2) {
       mobileGestureHoldTriggeredRef.current = false;
+
+      if (mobileGestureHoldTimerRef.current) {
+        clearTimeout(mobileGestureHoldTimerRef.current);
+      }
 
       mobileGestureHoldTimerRef.current = setTimeout(() => {
         mobileGestureHoldTriggeredRef.current = true;
-        mobileGestureTapCountRef.current = 0;
-        mobileGestureLastTapRef.current = 0;
         mobileGestureHoldTimerRef.current = null;
 
         if (mobileGestureResetTimerRef.current) {
           clearTimeout(mobileGestureResetTimerRef.current);
           mobileGestureResetTimerRef.current = null;
+        }
+
+        mobileGestureTapCountRef.current = 0;
+        mobileGestureLastTapRef.current = 0;
+
+        if (
+          typeof navigator !== "undefined" &&
+          typeof navigator.vibrate === "function"
+        ) {
+          navigator.vibrate(50);
         }
 
         setShowLocationToggle((previous) => !previous);
@@ -454,6 +489,14 @@ export default function Header() {
   ) => {
     if (event.pointerType === "mouse") return;
 
+    try {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+    } catch {
+      // Pointer capture may not be available in every mobile browser.
+    }
+
     if (mobileGestureHoldTimerRef.current) {
       clearTimeout(mobileGestureHoldTimerRef.current);
       mobileGestureHoldTimerRef.current = null;
@@ -465,10 +508,10 @@ export default function Header() {
     }
 
     /*
-     * Count only normal quick taps. Once two taps are registered,
-     * releasing an incomplete third hold resets the sequence.
+     * If the third press is released before the hold completes,
+     * reset the sequence.
      */
-    if (mobileGestureTapCountRef.current >= 2) {
+    if (mobileGestureTapCountRef.current === 2) {
       resetMobileLocationGesture();
       return;
     }
@@ -476,19 +519,20 @@ export default function Header() {
     mobileGestureTapCountRef.current += 1;
     mobileGestureLastTapRef.current = Date.now();
 
-    if (mobileGestureResetTimerRef.current) {
-      clearTimeout(mobileGestureResetTimerRef.current);
-    }
-
-    mobileGestureResetTimerRef.current = setTimeout(() => {
-      resetMobileLocationGesture();
-    }, MOBILE_GESTURE_TAP_WINDOW);
+    scheduleMobileGestureReset();
   };
 
-  const handleMobileGesturePointerCancel = () => {
-    if (mobileGestureHoldTimerRef.current) {
-      clearTimeout(mobileGestureHoldTimerRef.current);
-      mobileGestureHoldTimerRef.current = null;
+  const handleMobileGesturePointerCancel = (
+    event?: React.PointerEvent<HTMLButtonElement>
+  ) => {
+    if (event) {
+      try {
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+      } catch {
+        // Pointer capture may not be available in every mobile browser.
+      }
     }
 
     resetMobileLocationGesture();
@@ -657,13 +701,14 @@ export default function Header() {
               onPointerDown={handleMobileGesturePointerDown}
               onPointerUp={handleMobileGesturePointerUp}
               onPointerCancel={handleMobileGesturePointerCancel}
-              onPointerLeave={(event) => {
-                if (event.pointerType !== "mouse" && event.buttons > 0) {
-                  handleMobileGesturePointerCancel();
-                }
-              }}
               onContextMenu={(event) => event.preventDefault()}
-              className="-mr-2 flex h-10 w-7 shrink-0 touch-none select-none bg-transparent md:hidden"
+              className="-mr-1 flex h-11 w-11 shrink-0 select-none bg-transparent md:hidden"
+              style={{
+                WebkitTouchCallout: "none",
+                WebkitUserSelect: "none",
+                userSelect: "none",
+                touchAction: "manipulation",
+              }}
             />
 
             <div ref={accountMenuRef} className="relative shrink-0">
