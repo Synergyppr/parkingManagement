@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { LuListVideo } from "react-icons/lu";
-import { CiViewList } from "react-icons/ci";
 
 import { carParts } from "../lib/carPartsLegend";
 
