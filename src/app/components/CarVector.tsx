@@ -1511,8 +1511,8 @@ const CarVector: React.FC<CarVectorProps> = ({
                   : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 opacity-70"
               }`}
             >
-              <CiViewList className="h-4 w-4" />
-              View Full Report
+              {/* <CiViewList className="h-4 w-4" /> */}
+              View Report
             </button>
           </div>
 
@@ -1564,7 +1564,7 @@ const CarVector: React.FC<CarVectorProps> = ({
               </span>
 
               <span className="text-xs font-bold text-slate-700 sm:text-sm">
-                No incident(s) to report
+                No incident to report
               </span>
             </label>
           </div>
