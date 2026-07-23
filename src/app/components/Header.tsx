@@ -175,71 +175,62 @@ const applyGlobalTheme = ({
 
   const root = document.documentElement;
 
-  const cachedPrimary = localStorage.getItem("primaryColor");
-  const cachedSecondary = localStorage.getItem("secondaryColor");
-  const cachedThemeName = localStorage.getItem("parkey-theme");
-
   const primary = isValidThemeColor(primaryColor)
     ? primaryColor.trim()
-    : isValidThemeColor(cachedPrimary)
-    ? cachedPrimary.trim()
     : DEFAULT_PRIMARY_COLOR;
 
   const secondary = isValidThemeColor(secondaryColor)
     ? secondaryColor.trim()
-    : isValidThemeColor(cachedSecondary)
-    ? cachedSecondary.trim()
     : DEFAULT_SECONDARY_COLOR;
 
-  const matchedPalette =
-    findThemePalette(primary, secondary) ||
-    THEME_PALETTES.find((palette) => palette.name === cachedThemeName);
+  const matchedPalette = findThemePalette(primary, secondary);
 
   if (matchedPalette) {
     root.dataset.theme = matchedPalette.name;
 
     root.style.setProperty("--primary", matchedPalette.primary);
-    root.style.setProperty("--primary-light", matchedPalette.primaryLight);
-    root.style.setProperty("--primary-soft", matchedPalette.primarySoft);
+    root.style.setProperty(
+      "--primary-light",
+      matchedPalette?.primaryLight as string
+    );
+    root.style.setProperty("--primary-soft", matchedPalette?.primarySoft);
 
-    root.style.setProperty("--secondary", matchedPalette.secondary);
+    root.style.setProperty("--secondary", matchedPalette?.secondary);
     root.style.setProperty("--secondary-light", matchedPalette?.secondaryLight);
     root.style.setProperty("--secondary-soft", matchedPalette?.secondarySoft);
+  } else {
+    root.removeAttribute("data-theme");
 
-    localStorage.setItem("primaryColor", matchedPalette.primary);
-    localStorage.setItem("secondaryColor", matchedPalette.secondary);
-    localStorage.setItem("parkey-theme", matchedPalette.name);
+    root.style.setProperty("--primary", primary);
+    root.style.setProperty("--secondary", secondary);
 
-    return;
+    root.style.setProperty(
+      "--primary-light",
+      `color-mix(in srgb, ${primary} 35%, white)`
+    );
+
+    root.style.setProperty(
+      "--primary-soft",
+      `color-mix(in srgb, ${primary} 10%, white)`
+    );
+
+    root.style.setProperty(
+      "--secondary-light",
+      `color-mix(in srgb, ${secondary} 35%, white)`
+    );
+
+    root.style.setProperty(
+      "--secondary-soft",
+      `color-mix(in srgb, ${secondary} 10%, white)`
+    );
   }
-
-  root.removeAttribute("data-theme");
-
-  root.style.setProperty("--primary", primary);
-  root.style.setProperty("--secondary", secondary);
-
-  root.style.setProperty(
-    "--primary-light",
-    `color-mix(in srgb, ${primary} 35%, white)`
-  );
-
-  root.style.setProperty(
-    "--primary-soft",
-    `color-mix(in srgb, ${primary} 10%, white)`
-  );
-
-  root.style.setProperty(
-    "--secondary-light",
-    `color-mix(in srgb, ${secondary} 35%, white)`
-  );
-
-  root.style.setProperty(
-    "--secondary-soft",
-    `color-mix(in srgb, ${secondary} 10%, white)`
-  );
 
   localStorage.setItem("primaryColor", primary);
   localStorage.setItem("secondaryColor", secondary);
+
+  if (matchedPalette) {
+    localStorage.setItem("parkey-theme", matchedPalette.name);
+  }
 };
 
 export default function Header() {

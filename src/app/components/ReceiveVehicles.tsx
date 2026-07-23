@@ -413,13 +413,8 @@ export default function DashboardClient({
       )}
 
       <section
-        className="
-          relative z-0
-          min-h-[calc(100vh-140px)]
-          overflow-x-hidden overflow-y-auto
-          bg-[radial-gradient(circle_at_center,#ffffff_10%,var(--primary-soft)_90%)]
-          transition-colors duration-300
-        "
+        className="relative z-0 min-h-[calc(100vh-140px)] overflow-x-hidden overflow-y-auto bg-[radial-gradient(circle_at_center,#ffffff_10%,var(--primary-soft)_90%)]
+        transition-colors duration-300"
       >
         <TabNavigation
           selected={activeTab}
@@ -481,13 +476,8 @@ export default function DashboardClient({
                     transition-all duration-300 hover:-translate-y-1 hover:border-(--primary-light) hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] md:mx-0"
                   >
                     <div
-                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl
-                        bg-(--primary-soft)
-                        text-primary
-                        transition-all duration-300
-                        group-hover:bg-primary
-                        group-hover:text-white
-                      "
+                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary transition-all duration-300
+                      group-hover:bg-primary group-hover:text-white"
                     >
                       {/* <FaClock className="text-2xl" /> */}
                       <MessageCircleCheck className="text-2xl" />
@@ -506,27 +496,12 @@ export default function DashboardClient({
 
                   {/* Paperless Valet */}
                   <div
-                    className="
-                      group mx-4 flex lg:flex-row flex-col min-h-32.5 items-center gap-5
-                      rounded-4xl border border-slate-200
-                      bg-white p-6 shadow-sm
-                      transition-all duration-300
-                      hover:-translate-y-1
-                      hover:border-(--primary-light)
-                      hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)]
-                      md:mx-0
-                    "
+                    className="group mx-4 flex lg:flex-row flex-col min-h-32.5 items-center gap-5 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm
+                    transition-all duration-300 hover:-translate-y-1 hover:border-(--primary-light) hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] md:mx-0"
                   >
                     <div
-                      className="flex h-14 w-14 shrink-0
-                        items-center justify-center
-                        rounded-2xl
-                        bg-(--primary-soft)
-                        text-primary
-                        transition-all duration-300
-                        group-hover:bg-primary
-                        group-hover:text-white
-                      "
+                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary transition-all duration-300
+                      group-hover:bg-primary group-hover:text-white"
                     >
                       {/* <FaParking className="text-2xl" /> */}
                       <CircleParking className="text-2xl" />

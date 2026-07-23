@@ -15,7 +15,7 @@ import {
   type Ticket,
   type TrafficPoint,
 } from "./elements/DashboardHelpers";
-import { THEME_PALETTES, ThemePalette } from "../lib/propertyTheme";
+import { THEME_PALETTES } from "../lib/propertyTheme";
 
 interface DashboardProps {
   propertyName: string;
@@ -32,7 +32,8 @@ interface DashboardProps {
   setReloadPageData: (value: boolean) => void;
 }
 
-const THEME_STORAGE_KEY = "parkey-theme";
+const DEFAULT_PRIMARY_COLOR = "#d97706";
+const DEFAULT_SECONDARY_COLOR = "#f59e0b";
 
 const isValidThemeColor = (value: unknown): value is string => {
   if (typeof value !== "string") return false;
@@ -42,48 +43,12 @@ const isValidThemeColor = (value: unknown): value is string => {
   return (
     /^#[0-9a-fA-F]{3}$/.test(color) ||
     /^#[0-9a-fA-F]{6}$/.test(color) ||
-    /^#[0-9a-fA-F]{8}$/.test(color) ||
     /^rgb(a)?\(/i.test(color) ||
     /^hsl(a)?\(/i.test(color)
   );
 };
 
 const normalizeThemeColor = (value: string) => value.trim().toLowerCase();
-
-const getStoredThemeColor = (key: "primaryColor" | "secondaryColor") => {
-  if (typeof window === "undefined") return null;
-
-  const storedColor = localStorage.getItem(key);
-
-  return isValidThemeColor(storedColor) ? storedColor.trim() : null;
-};
-
-const getStoredPalette = () => {
-  if (typeof window === "undefined") return undefined;
-
-  const storedThemeName = localStorage.getItem(THEME_STORAGE_KEY);
-
-  if (storedThemeName) {
-    const paletteByName = THEME_PALETTES.find(
-      (palette) => palette.name === storedThemeName
-    );
-
-    if (paletteByName) return paletteByName;
-  }
-
-  const storedPrimary = getStoredThemeColor("primaryColor");
-  const storedSecondary = getStoredThemeColor("secondaryColor");
-
-  if (!storedPrimary || !storedSecondary) return undefined;
-
-  return THEME_PALETTES.find(
-    (palette) =>
-      normalizeThemeColor(palette.primary) ===
-        normalizeThemeColor(storedPrimary) &&
-      normalizeThemeColor(palette.secondary) ===
-        normalizeThemeColor(storedSecondary)
-  );
-};
 
 const findThemePalette = (
   primaryColor?: string | null,
@@ -103,54 +68,6 @@ const findThemePalette = (
   );
 };
 
-const applyPalette = (palette: ThemePalette) => {
-  const root = document.documentElement;
-
-  root.dataset.theme = palette.name;
-
-  root.style.setProperty("--primary", palette.primary);
-  root.style.setProperty("--primary-light", palette.primaryLight);
-  root.style.setProperty("--primary-soft", palette.primarySoft);
-
-  root.style.setProperty("--secondary", palette.secondary);
-  root.style.setProperty("--secondary-light", palette.secondaryLight);
-  root.style.setProperty("--secondary-soft", palette.secondarySoft);
-
-  localStorage.setItem("primaryColor", palette.primary);
-  localStorage.setItem("secondaryColor", palette.secondary);
-  localStorage.setItem(THEME_STORAGE_KEY, palette.name);
-};
-
-const applyCustomTheme = (primary: string, secondary: string) => {
-  const root = document.documentElement;
-
-  root.removeAttribute("data-theme");
-
-  root.style.setProperty("--primary", primary);
-  root.style.setProperty("--secondary", secondary);
-
-  root.style.setProperty(
-    "--primary-light",
-    `color-mix(in srgb, ${primary} 35%, white)`
-  );
-  root.style.setProperty(
-    "--primary-soft",
-    `color-mix(in srgb, ${primary} 10%, white)`
-  );
-  root.style.setProperty(
-    "--secondary-light",
-    `color-mix(in srgb, ${secondary} 35%, white)`
-  );
-  root.style.setProperty(
-    "--secondary-soft",
-    `color-mix(in srgb, ${secondary} 10%, white)`
-  );
-
-  localStorage.setItem("primaryColor", primary);
-  localStorage.setItem("secondaryColor", secondary);
-  localStorage.removeItem(THEME_STORAGE_KEY);
-};
-
 const applyThemeColors = ({
   primaryColor,
   secondaryColor,
@@ -160,72 +77,66 @@ const applyThemeColors = ({
 }) => {
   if (typeof window === "undefined") return;
 
-  const hasContextPrimary = isValidThemeColor(primaryColor);
-  const hasContextSecondary = isValidThemeColor(secondaryColor);
+  const root = document.documentElement;
 
-  /*
-   * During the first render PropertyContext may still be empty.
-   * Never overwrite a saved theme with amber while context is loading.
-   */
-  if (!hasContextPrimary || !hasContextSecondary) {
-    const storedPalette = getStoredPalette();
+  const primary = isValidThemeColor(primaryColor)
+    ? primaryColor.trim()
+    : DEFAULT_PRIMARY_COLOR;
 
-    if (storedPalette) {
-      applyPalette(storedPalette);
-      return;
-    }
+  const secondary = isValidThemeColor(secondaryColor)
+    ? secondaryColor.trim()
+    : DEFAULT_SECONDARY_COLOR;
 
-    const storedPrimary = getStoredThemeColor("primaryColor");
-    const storedSecondary = getStoredThemeColor("secondaryColor");
+  const matchedPalette = findThemePalette(primary, secondary);
 
-    if (storedPrimary && storedSecondary) {
-      const storedMatchedPalette = findThemePalette(
-        storedPrimary,
-        storedSecondary
-      );
+  if (matchedPalette) {
+    root.dataset.theme = matchedPalette.name;
 
-      if (storedMatchedPalette) {
-        applyPalette(storedMatchedPalette);
-      } else {
-        applyCustomTheme(storedPrimary, storedSecondary);
-      }
+    root.style.setProperty("--primary", matchedPalette.primary);
+    root.style.setProperty(
+      "--primary-light",
+      matchedPalette?.primaryLight as string
+    );
+    root.style.setProperty("--primary-soft", matchedPalette?.primarySoft);
 
-      return;
-    }
+    root.style.setProperty("--secondary", matchedPalette?.secondary);
+    root.style.setProperty("--secondary-light", matchedPalette?.secondaryLight);
+    root.style.setProperty("--secondary-soft", matchedPalette?.secondarySoft);
+  } else {
+    root.removeAttribute("data-theme");
 
-    applyPalette(THEME_PALETTES[0]);
-    return;
+    root.style.setProperty("--primary", primary);
+    root.style.setProperty("--secondary", secondary);
+
+    root.style.setProperty(
+      "--primary-light",
+      `color-mix(in srgb, ${primary} 35%, white)`
+    );
+
+    root.style.setProperty(
+      "--primary-soft",
+      `color-mix(in srgb, ${primary} 10%, white)`
+    );
+
+    root.style.setProperty(
+      "--secondary-light",
+      `color-mix(in srgb, ${secondary} 35%, white)`
+    );
+
+    root.style.setProperty(
+      "--secondary-soft",
+      `color-mix(in srgb, ${secondary} 10%, white)`
+    );
   }
 
-  const resolvedPrimary = primaryColor.trim();
-  const resolvedSecondary = secondaryColor.trim();
+  localStorage.setItem("primaryColor", primary);
+  localStorage.setItem("secondaryColor", secondary);
 
-  const contextPalette = findThemePalette(resolvedPrimary, resolvedSecondary);
-
-  if (contextPalette) {
-    applyPalette(contextPalette);
-    return;
+  if (matchedPalette) {
+    localStorage.setItem("parkey-theme", matchedPalette.name);
   }
-
-  /*
-   * Context updates can briefly arrive one color at a time.
-   * Preserve the selected stored palette while the pair is mismatched.
-   */
-  const storedPalette = getStoredPalette();
-
-  if (
-    storedPalette &&
-    (normalizeThemeColor(storedPalette.primary) ===
-      normalizeThemeColor(resolvedPrimary) ||
-      normalizeThemeColor(storedPalette.secondary) ===
-        normalizeThemeColor(resolvedSecondary))
-  ) {
-    applyPalette(storedPalette);
-    return;
-  }
-
-  applyCustomTheme(resolvedPrimary, resolvedSecondary);
 };
+
 const Dashboard = ({
   propertyName,
   kpis,
