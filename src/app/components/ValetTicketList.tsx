@@ -286,7 +286,7 @@ export default function ValetTicketList({
       </div>
 
       {/* Search / Actions */}
-      <div className="mb-8 grid gap-3 lg:grid-cols-2">
+      <div className="mb-8 grid gap-3 lg:grid-cols-[70%_30%]">
         <div className="relative">
           <FiSearch className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
 
@@ -313,15 +313,15 @@ export default function ValetTicketList({
       </div>
 
       {/* Meta row */}
-      <div className="mb-7 flex flex-col gap-4 text-sm font-semibold text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-4">
+      <div className="mb-7 flex flex-col gap-4 text-sm font-semibold text-slate-500 sm:flex-row sm:items-center justify-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-4 text-center md:text-left">
           <span className="flex items-center gap-2">
             <FiCalendar className="h-4 w-4" />
             Today, {new Date().toLocaleDateString()}
           </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 text-center md:text-left">
           {totalRecords > 0 && (
             <span>
               Showing {startIndex + 1}–{endIndex} of {totalRecords}
