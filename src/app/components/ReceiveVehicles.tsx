@@ -1,5 +1,6 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import { useSearchParams } from "next/navigation";
 import { CircleParking, MessageCircleCheck, UserKey } from "lucide-react";
@@ -76,8 +77,8 @@ const applyThemeColors = ({
 }: {
   primaryColor?: string | null;
   secondaryColor?: string | null;
-}) => {
-  if (typeof window === "undefined") return;
+}): boolean => {
+  if (typeof window === "undefined") return false;
 
   const root = document.documentElement;
 
@@ -95,54 +96,57 @@ const applyThemeColors = ({
     root.dataset.theme = matchedPalette.name;
 
     root.style.setProperty("--primary", matchedPalette.primary);
-    root.style.setProperty(
-      "--primary-light",
-      matchedPalette?.primaryLight as string
-    );
-    root.style.setProperty("--primary-soft", matchedPalette?.primarySoft);
+    root.style.setProperty("--primary-light", matchedPalette.primaryLight);
+    root.style.setProperty("--primary-soft", matchedPalette.primarySoft);
 
-    root.style.setProperty("--secondary", matchedPalette?.secondary);
-    root.style.setProperty("--secondary-light", matchedPalette?.secondaryLight);
-    root.style.setProperty("--secondary-soft", matchedPalette?.secondarySoft);
-  } else {
-    root.removeAttribute("data-theme");
+    root.style.setProperty("--secondary", matchedPalette.secondary);
+    root.style.setProperty("--secondary-light", matchedPalette.secondaryLight);
+    root.style.setProperty("--secondary-soft", matchedPalette.secondarySoft);
 
-    root.style.setProperty("--primary", primary);
-    root.style.setProperty("--secondary", secondary);
+    localStorage.setItem("primaryColor", matchedPalette.primary);
+    localStorage.setItem("secondaryColor", matchedPalette.secondary);
+    localStorage.setItem("parkey-theme", matchedPalette.name);
 
-    root.style.setProperty(
-      "--primary-light",
-      `color-mix(in srgb, ${primary} 35%, white)`
-    );
-
-    root.style.setProperty(
-      "--primary-soft",
-      `color-mix(in srgb, ${primary} 10%, white)`
-    );
-
-    root.style.setProperty(
-      "--secondary-light",
-      `color-mix(in srgb, ${secondary} 35%, white)`
-    );
-
-    root.style.setProperty(
-      "--secondary-soft",
-      `color-mix(in srgb, ${secondary} 10%, white)`
-    );
+    return true;
   }
+
+  root.removeAttribute("data-theme");
+
+  root.style.setProperty("--primary", primary);
+  root.style.setProperty("--secondary", secondary);
+
+  root.style.setProperty(
+    "--primary-light",
+    `color-mix(in srgb, ${primary} 35%, white)`
+  );
+
+  root.style.setProperty(
+    "--primary-soft",
+    `color-mix(in srgb, ${primary} 10%, white)`
+  );
+
+  root.style.setProperty(
+    "--secondary-light",
+    `color-mix(in srgb, ${secondary} 35%, white)`
+  );
+
+  root.style.setProperty(
+    "--secondary-soft",
+    `color-mix(in srgb, ${secondary} 10%, white)`
+  );
 
   localStorage.setItem("primaryColor", primary);
   localStorage.setItem("secondaryColor", secondary);
+  localStorage.removeItem("parkey-theme");
 
-  if (matchedPalette) {
-    localStorage.setItem("parkey-theme", matchedPalette.name);
-  }
+  return true;
 };
 
 export default function DashboardClient({
   initialStatus = null,
 }: DashboardProps) {
   const { registerNotificationHandler } = useSignalR();
+
   const {
     propertyId,
     latitude,
@@ -154,55 +158,78 @@ export default function DashboardClient({
     setPrimaryColor,
     setSecondaryColor,
   } = useProperty();
+
   const searchParams = useSearchParams();
   const statusFromUrl = searchParams.get("status");
   const ticketIdFromUrl = searchParams.get("ticketId");
 
   const validStatuses = ["received", "parked", "requested", "ready"];
+
   const saveClickedRef = useRef(false);
   const shouldBypassUnloadPromptRef = useRef(false);
+  const dashboardRequestIdRef = useRef(0);
+
   const [loading, setLoading] = useState<boolean>(true);
+  const [themeReady, setThemeReady] = useState<boolean>(false);
   const [buttonLoader, setButtonLoader] = useState<boolean>(false);
-  const [form, setForm] = useState<Partial<Ticket>>({}); // Create Valet Ticket Form
+
+  const [form, setForm] = useState<Partial<Ticket>>({});
   const [initialForm, setInitialForm] = useState<Partial<Ticket>>({});
-  const [vehicles, setVehicles] = useState<Ticket[]>([]); // Valet Tickets in status "parked" and "requested"
-  const [readyVehicles, setReadyVehicles] = useState<Ticket[]>([]); // Valet Tickets in status "ready"
-  const [activeTab, setActiveTab] = useState<string>("received"); // Received, Parked, Requested, Ready
+
+  const [vehicles, setVehicles] = useState<Ticket[]>([]);
+  const [readyVehicles, setReadyVehicles] = useState<Ticket[]>([]);
+
+  const [activeTab, setActiveTab] = useState<string>("received");
+
   const [carBrands, setCarBrands] = useState<CarBrand[]>([]);
   const [vehicleTypes, setVehicleTypes] = useState<DropdownOption[]>([]);
   const [vehicleColors, setVehicleColors] = useState<DropdownOption[]>([]);
+
   const [nextStatus, setNextStatus] = useState<
     "" | "received" | "parked" | "requested" | "ready" | null
   >(null);
+
   const [noIncident, setNoIncident] = useState(false);
   const [incidentParts, setIncidentParts] = useState<CarPart[]>([]);
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
   const [damagedParts, setDamagedParts] = useState<CarPart[]>([]);
-  const [pin, setPin] = useState<string>(""); // PIN to change status
+
+  const [pin, setPin] = useState<string>("");
   const [showPin, setShowPin] = useState<boolean>(false);
+
   const [showPinConfirmationModal, setShowPinConfirmationModal] =
-    useState<boolean>(false); // Show/Hide PIN Confirmation Modal
+    useState<boolean>(false);
+
   const [showTransactionModal, setShowTransactionModal] =
-    useState<boolean>(false); // Show/Hide Transaction Modal
+    useState<boolean>(false);
+
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
-  const [detailsActiveTab, setDetailsActiveTab] = useState<string>("Details"); // Ticket Modal Tabs - Details, Damages, Log
+
+  const [detailsActiveTab, setDetailsActiveTab] = useState<string>("Details");
+
   const [showTicketDetailsModal, setShowTicketDetailsModal] =
     useState<boolean>(false);
+
   const [viewAllDamagedParts, setViewAllDamagedParts] =
-    useState<boolean>(false); // Show/Hide text descriptions of damaged parts
+    useState<boolean>(false);
+
   const [ticketDetails, setTicketDetails] = useState<TicketDetails>(
     {} as TicketDetails
   );
+
   const [reloadPageData, setReloadPageData] = useState<boolean>(false);
+
   const [, setHasUnsavedChanges] = useState<boolean>(true);
+
   const [transitionState, setTransitionState] = useState<string>("fade-in");
 
   const frontViewLabelsMap = generateLabelsMap(carParts.frontViewCar);
   const rearViewLabelsMap = generateLabelsMap(carParts.rearViewCar);
-  const passengerViewLabelsMap = generateLabelsMap(carParts.passengerViewCar); // Right-Side View
-  const driverViewLabelsMap = generateLabelsMap(carParts.driverViewCar); // Left-Side View
 
-  // Get unread ticketIds for current tab
+  const passengerViewLabelsMap = generateLabelsMap(carParts.passengerViewCar);
+
+  const driverViewLabelsMap = generateLabelsMap(carParts.driverViewCar);
+
   const unreadTicketIds =
     vehicles?.filter((msg) => activeTab === msg?.status && !msg?.isRead) || [];
 
@@ -212,133 +239,198 @@ export default function DashboardClient({
 
   const formLicensePlate = ticketDetails?.vehicle?.licensePlate || "";
 
-  useAuthRedirect(); // will redirect if not logged in
-  usePropertyListener(); // listen for property changes based on user's location
+  useAuthRedirect();
+  usePropertyListener();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (!themeReady) return;
+
     applyThemeColors({
       primaryColor,
       secondaryColor,
     });
-  }, [primaryColor, secondaryColor]);
+  }, [primaryColor, secondaryColor, themeReady]);
 
   useEffect(() => {
-    if (initialStatus && validStatuses?.includes(initialStatus)) {
+    if (initialStatus && validStatuses.includes(initialStatus)) {
       setActiveTab(initialStatus);
     }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialStatus]);
 
   useEffect(() => {
-    if (statusFromUrl) {
-      if (validStatuses.includes(statusFromUrl)) {
-        setActiveTab(statusFromUrl);
-      }
+    if (statusFromUrl && validStatuses.includes(statusFromUrl)) {
+      setActiveTab(statusFromUrl);
     }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, statusFromUrl]);
 
   useEffect(() => {
-    if (ticketIdFromUrl) {
-      const ticketExists = vehicles?.some(
-        (ticket) => ticket?.id === ticketIdFromUrl
-      );
-      if (ticketExists) {
-        setSelectedTicketId(ticketIdFromUrl);
-        handleFetchTicketDetails({
-          id: ticketIdFromUrl,
-          setTicketDetails,
-          setIncidentParts,
-          setDescriptions,
-          setDamagedParts,
-          setShowTicketDetailsModal,
-        });
-      }
-    }
+    if (!ticketIdFromUrl) return;
+
+    const ticketExists = vehicles?.some(
+      (ticket) => ticket?.id === ticketIdFromUrl
+    );
+
+    if (!ticketExists) return;
+
+    setSelectedTicketId(ticketIdFromUrl);
+
+    handleFetchTicketDetails({
+      id: ticketIdFromUrl,
+      setTicketDetails,
+      setIncidentParts,
+      setDescriptions,
+      setDamagedParts,
+      setShowTicketDetailsModal,
+    });
   }, [searchParams, ticketIdFromUrl, vehicles]);
 
   useEffect(() => {
-    // Register the SignalR notification handler
     registerNotificationHandler(() => {
       setReloadPageData(true);
     });
   }, [registerNotificationHandler]);
 
   useEffect(() => {
-    const pageTitle = activeTab === "received" ? "Check In " : `Tickets `;
-
-    // Update page title when unread count changes
+    const pageTitle = activeTab === "received" ? "Check In " : "Tickets ";
     const count = unreadRequestedTickets?.length;
+
     document.title =
       count > 0
         ? `${pageTitle} - Parkey Valet App (${count > 9 ? "9+" : count})`
         : `${pageTitle} - Parkey Valet App`;
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unreadRequestedTickets]);
 
   useEffect(() => {
+    let isCurrentRequest = true;
+    const currentRequestId = dashboardRequestIdRef.current + 1;
+
+    dashboardRequestIdRef.current = currentRequestId;
+
     if (locationMode === "live") {
       requestLocation();
     }
 
     const fetchingAllTickets = async () => {
-      const result = await fetchTicketsData({
-        propertyId,
-        setLoading,
-      });
+      setThemeReady(false);
+      setLoading(true);
 
-      console.log("Fetched tickets data:", result);
+      try {
+        const result = await fetchTicketsData({
+          propertyId,
+          setLoading,
+        });
 
-      const endpointPrimaryColor = isValidThemeColor(result?.primaryColor)
-        ? result.primaryColor.trim()
-        : DEFAULT_PRIMARY_COLOR;
+        if (
+          !isCurrentRequest ||
+          dashboardRequestIdRef.current !== currentRequestId
+        ) {
+          return;
+        }
 
-      const endpointSecondaryColor = isValidThemeColor(result?.secondaryColor)
-        ? result.secondaryColor.trim()
-        : DEFAULT_SECONDARY_COLOR;
+        console.log("Fetched tickets data:", result);
 
-      /*
-       * Store the endpoint colors in PropertyContext.
-       * This makes the colors available to every component using useProperty().
-       */
-      setPrimaryColor(endpointPrimaryColor);
-      setSecondaryColor(endpointSecondaryColor);
+        const endpointPrimaryColor = isValidThemeColor(result?.primaryColor)
+          ? result.primaryColor.trim()
+          : DEFAULT_PRIMARY_COLOR;
 
-      /*
-       * Apply the colors immediately to prevent waiting for the
-       * PropertyContext state update and avoid a theme flash.
-       */
-      applyThemeColors({
-        primaryColor: endpointPrimaryColor,
-        secondaryColor: endpointSecondaryColor,
-      });
+        const endpointSecondaryColor = isValidThemeColor(result?.secondaryColor)
+          ? result.secondaryColor.trim()
+          : DEFAULT_SECONDARY_COLOR;
 
-      setVehicles(result?.tickets || []);
-      setReadyVehicles(result?.readyTickets || []);
-      setCarBrands(result?.carBrands || []);
-      setVehicleTypes(result?.vehicleTypes || []);
-      setVehicleColors(result?.vehicleColors || []);
+        const themeWasApplied = applyThemeColors({
+          primaryColor: endpointPrimaryColor,
+          secondaryColor: endpointSecondaryColor,
+        });
+
+        setPrimaryColor(endpointPrimaryColor);
+        setSecondaryColor(endpointSecondaryColor);
+
+        setVehicles(result?.tickets || []);
+        setReadyVehicles(result?.readyTickets || []);
+        setCarBrands(result?.carBrands || []);
+        setVehicleTypes(result?.vehicleTypes || []);
+        setVehicleColors(result?.vehicleColors || []);
+
+        if (themeWasApplied) {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              if (
+                !isCurrentRequest ||
+                dashboardRequestIdRef.current !== currentRequestId
+              ) {
+                return;
+              }
+
+              setThemeReady(true);
+              setLoading(false);
+            });
+          });
+
+          return;
+        }
+
+        setThemeReady(true);
+        setLoading(false);
+      } catch (error) {
+        console.error("Unable to load dashboard data:", error);
+
+        if (
+          !isCurrentRequest ||
+          dashboardRequestIdRef.current !== currentRequestId
+        ) {
+          return;
+        }
+
+        applyThemeColors({
+          primaryColor: DEFAULT_PRIMARY_COLOR,
+          secondaryColor: DEFAULT_SECONDARY_COLOR,
+        });
+
+        setPrimaryColor(DEFAULT_PRIMARY_COLOR);
+        setSecondaryColor(DEFAULT_SECONDARY_COLOR);
+
+        setVehicles([]);
+        setReadyVehicles([]);
+        setCarBrands([]);
+        setVehicleTypes([]);
+        setVehicleColors([]);
+
+        setThemeReady(true);
+        setLoading(false);
+      }
     };
 
     fetchingAllTickets();
 
     return () => {
+      isCurrentRequest = false;
       setReloadPageData(false);
     };
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [propertyId, locationMode, reloadPageData]);
+
   useEffect(() => {
     window.addEventListener("beforeunload", handleBeforeUnload);
+
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Utility function to remove ticketNumber from an object (to ignore it in comparison)
   const omitTicketNumber = (formObj: typeof form) => {
     const newForm = { ...formObj };
+
     delete newForm.ticketNumber;
+
     return newForm;
   };
 
@@ -349,7 +441,7 @@ export default function DashboardClient({
     );
   };
 
-  const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+  const handleBeforeUnload = (event: BeforeUnloadEvent) => {
     if (saveClickedRef.current || shouldBypassUnloadPromptRef.current) {
       saveClickedRef.current = false;
       shouldBypassUnloadPromptRef.current = false;
@@ -357,12 +449,11 @@ export default function DashboardClient({
     }
 
     if (isFormChanged()) {
-      e.preventDefault();
-      e.returnValue = "";
+      event.preventDefault();
+      event.returnValue = "";
     }
   };
 
-  // Handle tab change (Received, Parked, Requested, Ready) to view tickets
   const handleTabChange = (newTab: string) => {
     if (!isFormChanged()) {
       setActiveTab(newTab);
@@ -378,26 +469,42 @@ export default function DashboardClient({
       cancelButtonText: "Cancel",
     }).then((result) => {
       if (result.isConfirmed) {
-        setForm(initialForm); // reset the form
+        setForm(initialForm);
         setActiveTab(newTab);
       }
     });
   };
 
-  // Change selected ticket status
   const handleStatusChange = (
     id: string,
     status: "" | "received" | "parked" | "requested" | "ready" | null
   ) => {
     setSelectedTicketId(id);
     setNextStatus(status);
+
     setTimeout(() => {
       if (activeTab === "requested") {
         setShowTransactionModal(true);
         return;
-      } else setShowPinConfirmationModal(true);
+      }
+
+      setShowPinConfirmationModal(true);
     }, 500);
   };
+
+  if (!themeReady) {
+    return (
+      <div className="fixed inset-0 z-99999 flex items-center justify-center bg-slate-950">
+        <div className="flex flex-col items-center justify-center">
+          <PageLoader />
+
+          <p className="relative bottom-20 mt-1 text-center text-sm font-light text-white md:bottom-37.5 lg:bottom-43.75">
+            Loading property theme...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -405,6 +512,7 @@ export default function DashboardClient({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 bg-opacity-70">
           <div className="flex h-auto flex-col">
             <PageLoader />
+
             <p className="relative bottom-20 mt-1 text-sm font-light text-white md:bottom-37.5 lg:bottom-43.75">
               Loading data, please wait a moment...
             </p>
@@ -425,7 +533,6 @@ export default function DashboardClient({
 
         <div className="mx-auto mt-2 w-full max-w-7xl">
           <div className="px-2 md:px-4">
-            {/* Received Tab */}
             {activeTab === "received" && (
               <div>
                 <ReceiveForm
@@ -444,75 +551,71 @@ export default function DashboardClient({
                   parkedTickets={vehicles}
                 />
 
-                {/* Cards with react icons and marketing messages */}
-                <div className="mx-auto mb-6 mt-2 md:mx-4 lg:mx-auto lg:mt-10 grid max-w-248 grid-cols-1 gap-6 md:grid-cols-3 md:gap-4">
-                  {/* Rapid Logging */}
+                <div className="mx-auto mb-6 mt-2 grid max-w-248 grid-cols-1 gap-6 md:mx-4 md:grid-cols-3 md:gap-4 lg:mx-auto lg:mt-10">
                   <div
-                    className="group mx-4 lg:flex-row flex-col flex min-h-32.5 items-center gap-5 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300
-                    hover:-translate-y-1 hover:border-(--primary-light) hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] md:mx-0"
+                    className="group mx-4 flex min-h-32.5 flex-col items-center gap-5 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm
+                    transition-all duration-300 hover:-translate-y-1 hover:border-(--primary-light)
+                    hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] md:mx-0 lg:flex-row"
                   >
                     <div
-                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary transition-all duration-300
-                      group-hover:bg-primary group-hover:text-white"
+                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary
+                      transition-all duration-300 group-hover:bg-primary group-hover:text-white"
                     >
-                      {/* <FaCarSide className="text-2xl" /> */}
                       <UserKey className="text-2xl" />
                     </div>
 
                     <div>
-                      <h3 className="text-base lg:text-left text-center font-extrabold text-slate-950">
+                      <h3 className="text-center text-base font-extrabold text-slate-950 lg:text-left">
                         Rapid Logging
                       </h3>
 
-                      <p className="mt-1 text-sm leading-5 text-slate-500 lg:text-left text-center">
+                      <p className="mt-1 text-center text-sm leading-5 text-slate-500 lg:text-left">
                         Average check-in takes less than 45 seconds.
                       </p>
                     </div>
                   </div>
 
-                  {/* SMS Notifications */}
                   <div
-                    className="group mx-4 flex lg:flex-row flex-col min-h-32.5 items-center gap-5 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm
-                    transition-all duration-300 hover:-translate-y-1 hover:border-(--primary-light) hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] md:mx-0"
+                    className="group mx-4 flex min-h-32.5 flex-col items-center gap-5 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm
+                    transition-all duration-300 hover:-translate-y-1 hover:border-(--primary-light)
+                    hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] md:mx-0 lg:flex-row"
                   >
                     <div
-                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary transition-all duration-300
-                      group-hover:bg-primary group-hover:text-white"
+                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary
+                      transition-all duration-300 group-hover:bg-primary group-hover:text-white"
                     >
-                      {/* <FaClock className="text-2xl" /> */}
                       <MessageCircleCheck className="text-2xl" />
                     </div>
 
                     <div>
-                      <h3 className="text-base font-extrabold text-slate-950 lg:text-left text-center">
+                      <h3 className="text-center text-base font-extrabold text-slate-950 lg:text-left">
                         SMS Notifications
                       </h3>
 
-                      <p className="mt-1 text-sm leading-5 text-slate-500 lg:text-left text-center">
+                      <p className="mt-1 text-center text-sm leading-5 text-slate-500 lg:text-left">
                         Guests receive a digital ticket instantly via SMS.
                       </p>
                     </div>
                   </div>
 
-                  {/* Paperless Valet */}
                   <div
-                    className="group mx-4 flex lg:flex-row flex-col min-h-32.5 items-center gap-5 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm
-                    transition-all duration-300 hover:-translate-y-1 hover:border-(--primary-light) hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] md:mx-0"
+                    className="group mx-4 flex min-h-32.5 flex-col items-center gap-5 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm
+                    transition-all duration-300 hover:-translate-y-1 hover:border-(--primary-light)
+                    hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] md:mx-0 lg:flex-row"
                   >
                     <div
-                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary transition-all duration-300
-                      group-hover:bg-primary group-hover:text-white"
+                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary
+                      transition-all duration-300 group-hover:bg-primary group-hover:text-white"
                     >
-                      {/* <FaParking className="text-2xl" /> */}
                       <CircleParking className="text-2xl" />
                     </div>
 
                     <div>
-                      <h3 className="text-base font-extrabold text-slate-950 lg:text-left text-center">
+                      <h3 className="text-center text-base font-extrabold text-slate-950 lg:text-left">
                         Paperless Valet
                       </h3>
 
-                      <p className="mt-1 text-sm leading-5 text-slate-500 lg:text-left text-center">
+                      <p className="mt-1 text-center text-sm leading-5 text-slate-500 lg:text-left">
                         Eco-friendly digital receipts and retrieval requests.
                       </p>
                     </div>
@@ -521,7 +624,6 @@ export default function DashboardClient({
               </div>
             )}
 
-            {/* Parked, Requested and Ready Tabs */}
             {loading && activeTab !== "received" ? (
               <div className="flex h-full items-center justify-center">
                 <PageLoader />
@@ -535,7 +637,6 @@ export default function DashboardClient({
                   }
                   activeTab={activeTab}
                   unreadTicketIds={unreadTicketIds}
-                  // damagedParts={damagedParts}
                   handleStatusChange={handleStatusChange}
                   showTransactionModal={showTransactionModal}
                   setShowTransactionModal={setShowTransactionModal}
@@ -558,7 +659,6 @@ export default function DashboardClient({
           </div>
         </div>
 
-        {/* Modal for pin confirmation/authentication */}
         <PinConfirmationModal
           isOpen={showPinConfirmationModal}
           onClose={() => setShowPinConfirmationModal(false)}
@@ -578,7 +678,6 @@ export default function DashboardClient({
           setReloadPageData={setReloadPageData}
         />
 
-        {/* Ticket Details Modal */}
         <TicketDetailsModal
           isOpen={showTicketDetailsModal}
           setIsOpen={setShowTicketDetailsModal}

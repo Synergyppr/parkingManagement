@@ -26,6 +26,7 @@ import { THEME_PALETTES } from "../lib/propertyTheme";
 
 import Location from "./Location";
 import OffCanvas from "./OffCanvas";
+import { Property } from "../types";
 
 const DEFAULT_PRIMARY_COLOR = "#d97706";
 const DEFAULT_SECONDARY_COLOR = "#f59e0b";
@@ -237,7 +238,8 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const active = pathname?.split("/")?.[1] || "dashboard";
-
+  const tenantId = "907b5b8a-3e2b-4b5f-bbb3-9f5f99fb5c37";
+  // const ID_250 = "a7e348d3-8dfb-4f71-8bc5-042ba75d53c7";
   const {
     propertyId,
     setPropertyId,
@@ -246,7 +248,9 @@ export default function Header() {
     locationMode,
     requestLocation,
     primaryColor,
+    setPrimaryColor,
     secondaryColor,
+    setSecondaryColor,
     setAccountUser,
   } = useProperty();
 
@@ -296,11 +300,51 @@ export default function Header() {
   usePropertyListener();
 
   useLayoutEffect(() => {
-    applyGlobalTheme({
-      primaryColor,
-      secondaryColor,
-    });
-  }, [primaryColor, secondaryColor]);
+    // applyGlobalTheme({
+    //   primaryColor,
+    //   secondaryColor,
+    // });
+
+    const fetchPropertyThemeColors = async () => {
+      try {
+        const res = await fetch("/api/properties/getProperties", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: tenantId }),
+        });
+
+        const result = await res.json();
+
+        const selectedProperty = result?.result?.data?.find(
+          (property: Property) => property.id == propertyId
+        );
+
+        const endpointPrimaryColor = isValidThemeColor(
+          selectedProperty?.primaryColor
+        )
+          ? selectedProperty.primaryColor.trim()
+          : DEFAULT_PRIMARY_COLOR;
+
+        const endpointSecondaryColor = isValidThemeColor(
+          selectedProperty?.secondaryColor
+        )
+          ? selectedProperty.secondaryColor.trim()
+          : DEFAULT_SECONDARY_COLOR;
+
+        setPrimaryColor(endpointPrimaryColor);
+        setSecondaryColor(endpointSecondaryColor);
+
+        applyGlobalTheme({
+          primaryColor: endpointPrimaryColor,
+          secondaryColor: endpointSecondaryColor,
+        });
+      } catch (error) {
+        console.error("Error fetching property theme colors:", error);
+      }
+    };
+
+    fetchPropertyThemeColors();
+  }, [primaryColor, secondaryColor, tenantId]);
 
   useEffect(() => {
     setMounted(true);

@@ -1,11 +1,7 @@
 "use client";
-
-import { useEffect } from "react";
 import { ChevronRight, Clock, FileText, KeySquare } from "lucide-react";
 import { FaCarSide } from "react-icons/fa6";
 import { FaPlus } from "react-icons/fa";
-
-import { useProperty } from "../context/PropertyContext";
 
 import {
   ActionCard,
@@ -15,7 +11,6 @@ import {
   type Ticket,
   type TrafficPoint,
 } from "./elements/DashboardHelpers";
-import { THEME_PALETTES } from "../lib/propertyTheme";
 
 interface DashboardProps {
   propertyName: string;
@@ -32,111 +27,6 @@ interface DashboardProps {
   setReloadPageData: (value: boolean) => void;
 }
 
-const DEFAULT_PRIMARY_COLOR = "#d97706";
-const DEFAULT_SECONDARY_COLOR = "#f59e0b";
-
-const isValidThemeColor = (value: unknown): value is string => {
-  if (typeof value !== "string") return false;
-
-  const color = value.trim();
-
-  return (
-    /^#[0-9a-fA-F]{3}$/.test(color) ||
-    /^#[0-9a-fA-F]{6}$/.test(color) ||
-    /^rgb(a)?\(/i.test(color) ||
-    /^hsl(a)?\(/i.test(color)
-  );
-};
-
-const normalizeThemeColor = (value: string) => value.trim().toLowerCase();
-
-const findThemePalette = (
-  primaryColor?: string | null,
-  secondaryColor?: string | null
-) => {
-  if (!isValidThemeColor(primaryColor) || !isValidThemeColor(secondaryColor)) {
-    return undefined;
-  }
-
-  const primary = normalizeThemeColor(primaryColor);
-  const secondary = normalizeThemeColor(secondaryColor);
-
-  return THEME_PALETTES.find(
-    (palette) =>
-      normalizeThemeColor(palette.primary) === primary &&
-      normalizeThemeColor(palette.secondary) === secondary
-  );
-};
-
-const applyThemeColors = ({
-  primaryColor,
-  secondaryColor,
-}: {
-  primaryColor?: string | null;
-  secondaryColor?: string | null;
-}) => {
-  if (typeof window === "undefined") return;
-
-  const root = document.documentElement;
-
-  const primary = isValidThemeColor(primaryColor)
-    ? primaryColor.trim()
-    : DEFAULT_PRIMARY_COLOR;
-
-  const secondary = isValidThemeColor(secondaryColor)
-    ? secondaryColor.trim()
-    : DEFAULT_SECONDARY_COLOR;
-
-  const matchedPalette = findThemePalette(primary, secondary);
-
-  if (matchedPalette) {
-    root.dataset.theme = matchedPalette.name;
-
-    root.style.setProperty("--primary", matchedPalette.primary);
-    root.style.setProperty(
-      "--primary-light",
-      matchedPalette?.primaryLight as string
-    );
-    root.style.setProperty("--primary-soft", matchedPalette?.primarySoft);
-
-    root.style.setProperty("--secondary", matchedPalette?.secondary);
-    root.style.setProperty("--secondary-light", matchedPalette?.secondaryLight);
-    root.style.setProperty("--secondary-soft", matchedPalette?.secondarySoft);
-  } else {
-    root.removeAttribute("data-theme");
-
-    root.style.setProperty("--primary", primary);
-    root.style.setProperty("--secondary", secondary);
-
-    root.style.setProperty(
-      "--primary-light",
-      `color-mix(in srgb, ${primary} 35%, white)`
-    );
-
-    root.style.setProperty(
-      "--primary-soft",
-      `color-mix(in srgb, ${primary} 10%, white)`
-    );
-
-    root.style.setProperty(
-      "--secondary-light",
-      `color-mix(in srgb, ${secondary} 35%, white)`
-    );
-
-    root.style.setProperty(
-      "--secondary-soft",
-      `color-mix(in srgb, ${secondary} 10%, white)`
-    );
-  }
-
-  localStorage.setItem("primaryColor", primary);
-  localStorage.setItem("secondaryColor", secondary);
-
-  if (matchedPalette) {
-    localStorage.setItem("parkey-theme", matchedPalette.name);
-  }
-};
-
 const Dashboard = ({
   propertyName,
   kpis,
@@ -146,15 +36,6 @@ const Dashboard = ({
   recentTickets,
   setReloadPageData,
 }: DashboardProps) => {
-  const { primaryColor, secondaryColor } = useProperty();
-
-  useEffect(() => {
-    applyThemeColors({
-      primaryColor,
-      secondaryColor,
-    });
-  }, [primaryColor, secondaryColor]);
-
   const openTicket = (ticket: Ticket) => {
     const searchParams = new URLSearchParams({
       status: ticket.status || "received",
