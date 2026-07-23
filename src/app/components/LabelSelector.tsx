@@ -84,6 +84,7 @@ const LabelSelector: React.FC<Props> = ({
                   onChange={() => handleToggle(label)}
                   // onClick={() => handleToggle(label)}
                   className="peer sr-only"
+                  autoFocus={false}
                 />
 
                 <div

@@ -236,6 +236,8 @@ export const handlePinSubmit = async ({
 
       const data = await res.json();
 
+      // console.log("PIN Result", data);
+
       if (data?.result?.status === "200") {
         setVehicles([
           ...vehicles.map((vehicle) => {

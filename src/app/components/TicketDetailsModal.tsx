@@ -101,6 +101,7 @@ export default function TicketDetailsModal({
 
   // When clicking on the Ticket Details label 5 times, copy the ticket ID to the clipboard -- FOR TESTING PURPOSES --
   const handleTicketDetailsClick = async () => {
+    // console.log("TICKET DETAILS", ticketDetails);
     const nextCount = ticketTitleClickCount + 1;
 
     if (nextCount >= 5) {
@@ -817,7 +818,7 @@ export default function TicketDetailsModal({
               <div class="summary-item">
                 <span>Reference</span>
                 <strong>
-                  ${escapeHtml(transaction?.paymentdetail?.trxId || "—")}
+                  ${escapeHtml(transaction?.reference_number || "—")}
                 </strong>
               </div>
   
@@ -1465,7 +1466,7 @@ export default function TicketDetailsModal({
                   Created {formatDate(ticketDetails?.createdDateTime || "")}
                 </p>
 
-                {photos.length > 0 && (
+                {Number(ticketDetails?.photos?.length) > 0 && (
                   <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="mb-3 flex items-center gap-2">
                       <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-(--primary-soft) text-primary">
@@ -1473,12 +1474,12 @@ export default function TicketDetailsModal({
                       </div>
 
                       <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500">
-                        Photos ({photos.length})
+                        Photos ({ticketDetails?.photos?.length})
                       </p>
                     </div>
 
                     <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                      {photos.map((photo, index) => (
+                      {ticketDetails?.photos?.map((photo, index) => (
                         <button
                           key={index}
                           type="button"
@@ -1564,8 +1565,39 @@ export default function TicketDetailsModal({
                               Reference #
                             </p>
                           </div>
-                          <p className="font-mono text-sm font-extrabold tracking-wider text-slate-950">
-                            {detail?.trxId || "—"}
+                          <p
+                            onClick={async () => {
+                              if (!trx?.reference_number) return;
+
+                              try {
+                                await navigator.clipboard.writeText(
+                                  trx.reference_number
+                                );
+
+                                Swal.fire({
+                                  toast: true,
+                                  position: "top-end",
+                                  icon: "success",
+                                  title: "Reference number copied",
+                                  showConfirmButton: false,
+                                  timer: 1500,
+                                  timerProgressBar: true,
+                                });
+                              } catch {
+                                Swal.fire({
+                                  toast: true,
+                                  position: "top-end",
+                                  icon: "error",
+                                  title: "Failed to copy",
+                                  showConfirmButton: false,
+                                  timer: 1500,
+                                });
+                              }
+                            }}
+                            className="font-mono truncate text-xs font-extrabold tracking-wider text-slate-950 cursor-pointer transition hover:text-primary"
+                            title="Click to copy"
+                          >
+                            {trx?.reference_number || "—"}
                           </p>
                         </div>
 

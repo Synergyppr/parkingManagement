@@ -237,6 +237,7 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
 
             <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 transition hover:bg-slate-50">
               <input
+                autoFocus={false}
                 type="checkbox"
                 checked={formIsDefault}
                 onChange={(e) => setFormIsDefault(e.target.checked)}

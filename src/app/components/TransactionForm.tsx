@@ -63,12 +63,12 @@ const PAYMENT_METHODS = [
   // { key: "cash", label: "Cash", icon: <MdPayment className="h-4 w-4" /> },
 ];
 
-const RECEIPT_OPTIONS = [
-  { key: "both", label: "POS + Digital" },
-  { key: "pos", label: "POS Only" },
-  { key: "html", label: "Digital Only" },
-  { key: "no", label: "No Receipt" },
-];
+// const RECEIPT_OPTIONS = [
+//   { key: "both", label: "POS + Digital" },
+//   { key: "pos", label: "POS Only" },
+//   { key: "html", label: "Digital Only" },
+//   { key: "no", label: "No Receipt" },
+// ];
 
 function roundToTwo(n: number): number {
   return Math.round(n * 100) / 100;
@@ -735,7 +735,7 @@ export default function TransactionForm({
         )}
 
         {/* RECEIPT PREFERENCES */}
-        {(selectedPaymentMethod === "ecr" ||
+        {/* {(selectedPaymentMethod === "ecr" ||
           selectedPaymentMethod === "athm") && (
           <section>
             <h3 className="mb-3 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-700">
@@ -776,10 +776,10 @@ export default function TransactionForm({
               </div>
             )}
           </section>
-        )}
+        )} */}
 
         {/* TIP — hidden for ECR (terminal handles tips) */}
-        {selectedPaymentMethod !== "ecr" && (
+        {selectedPaymentMethod === "p2p" && (
           <section>
             <h3 className="mb-3 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-700">
               Tip (Optional)

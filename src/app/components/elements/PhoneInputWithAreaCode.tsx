@@ -57,6 +57,7 @@ export default function PhoneInputWithAreaCode({
         />
 
         <input
+          autoFocus={false}
           type="text"
           inputMode="numeric"
           name="phoneNumber"

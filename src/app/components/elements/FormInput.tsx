@@ -177,6 +177,7 @@ export default function FormInput({
             autoComplete={autoComplete}
             inputMode={inputMode}
             aria-invalid={missing}
+            autoFocus={false}
             className={`
               ${baseClass}
               bg-linear-to-b

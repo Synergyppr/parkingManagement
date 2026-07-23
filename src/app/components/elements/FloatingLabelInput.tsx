@@ -48,6 +48,7 @@ const FloatingLabelInput = ({
   return (
     <div className={`relative w-full ${className}`}>
       <input
+        autoFocus={false}
         type={inputType}
         id={id}
         name={name}
@@ -62,22 +63,8 @@ const FloatingLabelInput = ({
         required={required}
         inputMode={inputMode}
         aria-describedby={`${id}-label`}
-        className={`
-          peer
-          h-12
-          w-full
-          rounded-2xl
-          border
-          border-slate-200
-          bg-white
-          px-4
-          text-sm
-          text-slate-900
-          shadow-sm
-          outline-none
-          transition-all
-          duration-200
-          placeholder:text-transparent
+        className={`peer h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 shadow-sm outline-none transition-all
+        duration-200 placeholder:text-transparent
           ${isPasswordType ? "pr-12" : "pr-4"}
           ${
             disabled
@@ -117,12 +104,7 @@ const FloatingLabelInput = ({
           disabled={disabled}
           aria-label={showPassword ? "Hide password" : "Show password"}
           aria-pressed={showPassword}
-          className="absolute right-2.5 top-1/2
-            flex
-            h-8
-            w-8
-            -translate-y-1/2
-            cursor-pointer
+          className="absolute right-2.5 top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer
             items-center
             justify-center
             rounded-full

@@ -32,6 +32,7 @@ const ModalInput = ({
   return (
     <div className="relative mb-4">
       <input
+        autoFocus={false}
         type={inputType}
         id={id}
         name={name}

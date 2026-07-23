@@ -250,6 +250,8 @@ const RequestCar = () => {
         comment,
       };
 
+      // console.log("Rating send form", sendForm);
+
       const res = await fetch("/api/patronRating/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -257,6 +259,8 @@ const RequestCar = () => {
       });
 
       const data = await res.json();
+
+      // console.log("Data", data);
 
       if (data?.status === "200") {
         setSubmitted(true);
@@ -531,6 +535,7 @@ const RequestCar = () => {
                 <section className="rounded-4xl border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
                   <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-slate-50 p-4">
                     <input
+                      autoFocus={false}
                       checked={smsConsent}
                       onChange={() => setSmsConsent(!smsConsent)}
                       type="checkbox"

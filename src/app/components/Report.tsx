@@ -335,6 +335,7 @@ const Report = () => {
         <section className="grid gap-4 md:grid-cols-[1fr_auto]">
           <div className="relative">
             <input
+              autoFocus={false}
               type="text"
               placeholder="Search by ticket #, name, destination..."
               value={search}

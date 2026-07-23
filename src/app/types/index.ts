@@ -182,6 +182,7 @@ export interface TicketTransaction {
   application_id?: string;
   paymentdetail?: TicketTransactionPaymentDetail;
   receipts: Receipts[];
+  reference_number: string;
 }
 
 /////////////////////////////////////////////////////////////////////////

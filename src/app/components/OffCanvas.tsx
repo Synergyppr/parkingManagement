@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useProperty } from "../context/PropertyContext";
@@ -19,8 +20,53 @@ export default function OffCanvas({
   isMenuOpen: boolean;
 }) {
   const pathname = usePathname();
-
   const { propertyName } = useProperty();
+
+  const asideRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const handleOutsideClick = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+
+      if (target && asideRef.current && !asideRef.current.contains(target)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+      }
+    };
+
+    /*
+     * Delay listener registration so the same click that opens the menu
+     * does not immediately close it.
+     */
+    const timeoutId = window.setTimeout(() => {
+      document.addEventListener("mousedown", handleOutsideClick);
+      document.addEventListener("touchstart", handleOutsideClick, {
+        passive: true,
+      });
+    }, 0);
+
+    document.addEventListener("keydown", handleEscape);
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      window.clearTimeout(timeoutId);
+
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+      document.removeEventListener("keydown", handleEscape);
+
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMenuOpen, setIsMenuOpen]);
 
   if (!isMenuOpen) return null;
 
@@ -48,14 +94,18 @@ export default function OffCanvas({
 
   return (
     <>
+      {/* Backdrop */}
       <div
         className="fixed inset-0 z-9998 bg-slate-950/60 backdrop-blur-sm"
-        onClick={() => setIsMenuOpen(false)}
+        aria-hidden="true"
       />
 
       <aside
-        className="fixed inset-y-0 right-0 h-screen min-h-screen w-[88vw] max-w-90 flex flex-col overflow-hidden border-l border-slate-200 bg-white
-        shadow-[0_30px_90px_rgba(15,23,42,0.28)] animate-[slideInRight_0.3s_ease-out] z-9999"
+        ref={asideRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navigation menu"
+        className="fixed inset-y-0 right-0 z-9999 flex h-screen min-h-screen w-[88vw] max-w-90 flex-col overflow-hidden border-l border-slate-200 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.28)] animate-[slideInRight_0.3s_ease-out]"
       >
         <div className="relative overflow-hidden border-b border-slate-200 bg-linear-to-br from-white via-(--primary-soft) to-white p-5">
           <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-(--primary-soft)" />
@@ -89,26 +139,9 @@ export default function OffCanvas({
               <IoClose className="h-5 w-5" />
             </button>
           </div>
-
-          {/* <div className="relative mt-5 rounded-2xl border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur-xl">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-(--primary-light) to-primary text-base font-black text-white shadow-[0_12px_28px_color-mix(in_srgb,var(--primary)_25%,transparent)]">
-                {accountUser ? accountUser.charAt(0).toUpperCase() : "U"}
-              </div>
-
-              <div className="min-w-0">
-                <p className="truncate text-sm font-extrabold text-slate-950">
-                  {accountUser || "User"}
-                </p>
-
-                <p className="text-xs font-semibold text-slate-400">
-                  Active employee session
-                </p>
-              </div>
-            </div>
-          </div> */}
         </div>
-        <nav className="flex-1 overflow-y-auto px-4 py-5 h-full">
+
+        <nav className="h-full flex-1 overflow-y-auto px-4 py-5">
           <div className="mb-5">
             <p className="mb-2 px-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
               Employee
@@ -172,8 +205,6 @@ export default function OffCanvas({
             </div>
           </div>
 
-          {/* <div className="my-5 h-px bg-slate-200" /> */}
-
           <div className="mb-5">
             <p className="mb-2 px-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
               Client
@@ -190,41 +221,9 @@ export default function OffCanvas({
               Request Car
             </Link>
           </div>
-
-          {/* <div className="my-5 h-px bg-slate-200" /> */}
-
-          {/* <div className="my-auto">
-            <div className="mb-2 flex items-center gap-2 px-2">
-              <IoColorPaletteOutline className="h-4 w-4 text-primary" />
-
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
-                Appearance
-              </p>
-            </div>
-
-            <ThemeSelector />
-          </div> */}
         </nav>
-        <div className="border-t border-slate-200 bg-slate-50/80 p-4">
-          {/* <button
-            type="button"
-            onClick={() =>
-              handleLogout({
-                propertyId,
-                setPropertyId,
-                setPropertyName,
-                setAccountUser,
-                router,
-              })
-            }
-            className="flex w-full cursor-pointer items-center gap-3 rounded-2xl border border-red-100 bg-white px-3 py-3 text-sm font-bold text-red-500 transition hover:bg-red-50"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-red-500">
-              <IoLogOut className="h-4 w-4" />
-            </span>
-            Log Out
-          </button> */}
 
+        <div className="border-t border-slate-200 bg-slate-50/80 p-4">
           <div className="mt-4 flex flex-col gap-1 px-2">
             <Link
               href="/privacy-policy"

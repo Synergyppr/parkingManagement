@@ -48,6 +48,7 @@ export default function PinConfirmationModal({
         {/* PIN Input */}
         <div className="relative w-full">
           <input
+            autoFocus={false}
             type={showPin ? "text" : "password"}
             name="pin"
             placeholder="••••"
@@ -59,26 +60,8 @@ export default function PinConfirmationModal({
                 setPin(val);
               }
             }}
-            className="
-              h-14
-              w-full
-              rounded-2xl
-              border
-              border-slate-200
-              bg-white
-              px-4
-              pr-12
-              text-center
-              font-mono
-              text-xl
-              tracking-[0.5em]
-              text-slate-900
-              outline-none
-              transition-all
-              focus:border-primary
-              focus:ring-4
-              focus:ring-(--primary-soft)
-            "
+            className="h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 pr-12 text-center font-mono text-xl tracking-[0.5em]
+            text-slate-900 outline-none transition-all focus:border-primary focus:ring-4 focus:ring-(--primary-soft)"
             maxLength={4}
             inputMode="numeric"
             pattern="\d*"
@@ -88,8 +71,7 @@ export default function PinConfirmationModal({
           <button
             type="button"
             onClick={() => setShowPin(!showPin)}
-            className="
-              absolute
+            className="absolute
               right-4
               top-1/2
               -translate-y-1/2

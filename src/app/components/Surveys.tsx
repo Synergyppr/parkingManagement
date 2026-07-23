@@ -277,14 +277,7 @@ const Surveys = () => {
         const data = await res.json();
 
         if (data?.status === "200") {
-          const surveys = Array.isArray(data?.data)
-            ? data.data
-            : Array.isArray(data?.data?.data)
-            ? data.data.data
-            : Array.isArray(data?.result?.data)
-            ? data.result.data
-            : [];
-
+          const surveys = data?.data?.patronRatings;
           setReport(surveys);
         } else {
           setReport([]);

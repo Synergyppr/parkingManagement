@@ -593,6 +593,7 @@ const Location = () => {
                     value={manualLat}
                     onChange={(e) => setManualLat(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-l-md focus:ring focus:outline-none disabled:bg-gray-100"
+                    autoFocus={false}
                   />
                   <div className="flex flex-col">
                     <button
@@ -629,6 +630,7 @@ const Location = () => {
                     value={manualLng}
                     onChange={(e) => setManualLng(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-l-md focus:ring focus:outline-none disabled:bg-gray-100"
+                    autoFocus={false}
                   />
                   <div className="flex flex-col">
                     <button

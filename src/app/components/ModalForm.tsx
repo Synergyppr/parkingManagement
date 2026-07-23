@@ -138,6 +138,7 @@ const ModalForm = ({
                 >
                   <div className="relative">
                     <input
+                      autoFocus={false}
                       id={field.id}
                       name={field.name}
                       type="date"
@@ -184,9 +185,7 @@ const ModalForm = ({
           <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-extrabold text-slate-950">
-                  Status
-                </p>
+                <p className="text-sm font-extrabold text-slate-950">Status</p>
                 <p className="mt-1 text-xs text-slate-500">
                   Toggle whether this record is active in the system.
                 </p>

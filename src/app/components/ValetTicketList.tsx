@@ -1,11 +1,6 @@
 "use client";
 
-import React, {
-  useEffect,
-  useMemo,
-  useState,
-  type Dispatch,
-} from "react";
+import React, { useEffect, useMemo, useState, type Dispatch } from "react";
 import { CarPart, Ticket, TicketDetails } from "@/app/types";
 import { FaCheck } from "react-icons/fa6";
 import { MdOutlineCarCrash } from "react-icons/md";
@@ -17,7 +12,7 @@ import {
   FiChevronLeft,
   FiChevronRight,
 } from "react-icons/fi";
-import { LuArrowUpDown, LuCar } from "react-icons/lu";
+import { LuCar } from "react-icons/lu";
 import Modal from "./Modal";
 import TransactionForm from "./TransactionForm";
 import {
@@ -128,15 +123,14 @@ export default function ValetTicketList({
   const [currentPage, setCurrentPage] = useState(1);
   const [recordsPerPage, setRecordsPerPage] = useState(12);
 
-  const [transactionForm, setTransactionForm] =
-    useState<TransactionFormState>({
-      amount: 0,
-      paymentMethod: "",
-      transactionTypeId: 0,
-      notes: "",
-      pin: "",
-      value: 0,
-    });
+  const [transactionForm, setTransactionForm] = useState<TransactionFormState>({
+    amount: 0,
+    paymentMethod: "",
+    transactionTypeId: 0,
+    notes: "",
+    pin: "",
+    value: 0,
+  });
 
   const [clickLoader, setClickLoader] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
@@ -226,23 +220,14 @@ export default function ValetTicketList({
 
   const totalRecords = filteredVehicles.length;
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(totalRecords / recordsPerPage)
-  );
+  const totalPages = Math.max(1, Math.ceil(totalRecords / recordsPerPage));
 
   const startIndex = (currentPage - 1) * recordsPerPage;
   const endIndex = Math.min(startIndex + recordsPerPage, totalRecords);
 
-  const paginatedVehicles = filteredVehicles.slice(
-    startIndex,
-    endIndex
-  );
+  const paginatedVehicles = filteredVehicles.slice(startIndex, endIndex);
 
-  const paginationItems = createPaginationItems(
-    currentPage,
-    totalPages
-  );
+  const paginationItems = createPaginationItems(currentPage, totalPages);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -260,12 +245,10 @@ export default function ValetTicketList({
     setCurrentPage(safePage);
 
     window.requestAnimationFrame(() => {
-      document
-        .getElementById("active-ticket-list")
-        ?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
+      document.getElementById("active-ticket-list")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     });
   };
 
@@ -296,18 +279,19 @@ export default function ValetTicketList({
           </div>
 
           <p className="max-w-xl text-sm leading-5 text-slate-500">
-            Managing current high-value vehicle assets securely. Monitor
-            arrival times and status updates in real-time.
+            Managing current high-value vehicle assets securely. Monitor arrival
+            times and status updates in real-time.
           </p>
         </div>
       </div>
 
       {/* Search / Actions */}
-      <div className="mb-8 grid gap-3 lg:grid-cols-[1fr_auto_auto]">
+      <div className="mb-8 grid gap-3 lg:grid-cols-2">
         <div className="relative">
           <FiSearch className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
 
           <input
+            autoFocus={false}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search by Ticket ID, Guest Name, or License Plate..."
@@ -315,25 +299,17 @@ export default function ValetTicketList({
           />
         </div>
 
-        <div className="flex w-full justify-center gap-2 lg:justify-end">
-          <button
-            type="button"
-            className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-slate-100 px-6 text-sm font-bold text-slate-700 transition hover:bg-slate-200"
-          >
-            <LuArrowUpDown className="h-4 w-4" />
-            Sort: Recent
-          </button>
+        <button
+          type="button"
+          onClick={() => {
+            window.location.href = "/check-in?status=received";
+          }}
+          className="h-12 cursor-pointer rounded-2xl bg-primary px-7 text-sm font-extrabold text-white shadow-[0_12px_28px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition hover:bg-secondary"
+        >
+          New Check-in
+        </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              window.location.href = "/check-in?status=received";
-            }}
-            className="h-12 cursor-pointer rounded-2xl bg-primary px-7 text-sm font-extrabold text-white shadow-[0_12px_28px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition hover:bg-secondary"
-          >
-            New Check-in
-          </button>
-        </div>
+        <div className="flex w-full justify-center gap-2 lg:justify-end"></div>
       </div>
 
       {/* Meta row */}
@@ -343,10 +319,6 @@ export default function ValetTicketList({
             <FiCalendar className="h-4 w-4" />
             Today, {new Date().toLocaleDateString()}
           </span>
-
-          <span className="hidden h-4 w-px bg-slate-200 sm:block" />
-
-          <span>Shift: Current Operations</span>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -368,10 +340,7 @@ export default function ValetTicketList({
               aria-label="Records shown per page"
             >
               {RECORD_OPTIONS.map((option) => (
-                <option
-                  key={option}
-                  value={option}
-                >
+                <option key={option} value={option}>
                   {option}
                 </option>
               ))}
@@ -401,35 +370,27 @@ export default function ValetTicketList({
                 : null;
 
               return (
-                <React.Fragment
-                  key={vehicle?.id || vehicle?.ticketNumber}
-                >
-                  {vehicle?.status === "requested" &&
-                    isFirstRead && (
-                      <div
-                        className={`${
-                          unreadTicketIds?.length > 0
-                            ? "block"
-                            : "hidden"
-                        } col-span-full text-center text-xs text-slate-400`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-px flex-1 bg-slate-200" />
+                <React.Fragment key={vehicle?.id || vehicle?.ticketNumber}>
+                  {vehicle?.status === "requested" && isFirstRead && (
+                    <div
+                      className={`${
+                        unreadTicketIds?.length > 0 ? "block" : "hidden"
+                      } col-span-full text-center text-xs text-slate-400`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-px flex-1 bg-slate-200" />
 
-                          <span>Previously read</span>
+                        <span>Previously read</span>
 
-                          <div className="h-px flex-1 bg-slate-200" />
-                        </div>
+                        <div className="h-px flex-1 bg-slate-200" />
                       </div>
-                    )}
+                    </div>
+                  )}
 
                   <div
-                    onClick={() =>
-                      handleMarkAsRead(vehicle, "view")
-                    }
+                    onClick={() => handleMarkAsRead(vehicle, "view")}
                     className={`group cursor-pointer rounded-2xl border bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] ${
-                      !vehicle?.isRead &&
-                      vehicle?.status === "requested"
+                      !vehicle?.isRead && vehicle?.status === "requested"
                         ? "border-l-4 border-l-primary"
                         : "border-slate-200"
                     }`}
@@ -440,8 +401,7 @@ export default function ValetTicketList({
 
                         <div className="min-w-0">
                           <h3 className="line-clamp-2 text-lg font-extrabold leading-snug text-slate-900">
-                            {vehicle?.color} {vehicle?.make}{" "}
-                            {vehicle?.model}
+                            {vehicle?.color} {vehicle?.make} {vehicle?.model}
                           </h3>
 
                           <button
@@ -490,7 +450,6 @@ export default function ValetTicketList({
                       <div className="min-w-0">
                         <p className="flex cursor-default items-center gap-2 truncate text-sm font-bold capitalize text-slate-700">
                           <FiUser className="h-4 w-4 shrink-0 text-slate-400" />
-
                           {vehicle?.firstName} {vehicle?.lastName}
                         </p>
                       </div>
@@ -509,8 +468,8 @@ export default function ValetTicketList({
                                 activeTab === "parked"
                                   ? "requested"
                                   : activeTab === "requested"
-                                    ? "ready"
-                                    : ""
+                                  ? "ready"
+                                  : ""
                               );
                             }}
                             aria-label="Move ticket to next status"
@@ -537,7 +496,6 @@ export default function ValetTicketList({
                             className="cursor-pointer text-xs font-extrabold"
                           >
                             View details{" "}
-
                             <LuCar className="relative bottom-px inline h-4 w-4" />
                           </button>
                         </div>
@@ -581,10 +539,7 @@ export default function ValetTicketList({
 
                 <div className="flex items-center gap-1.5">
                   {paginationItems.map((item) => {
-                    if (
-                      item === "start-ellipsis" ||
-                      item === "end-ellipsis"
-                    ) {
+                    if (item === "start-ellipsis" || item === "end-ellipsis") {
                       return (
                         <span
                           key={item}
@@ -608,9 +563,7 @@ export default function ValetTicketList({
                             : "border border-slate-200 bg-white text-slate-600 hover:border-(--primary-light) hover:bg-(--primary-soft) hover:text-primary"
                         }`}
                         aria-label={`Go to page ${item}`}
-                        aria-current={
-                          isActive ? "page" : undefined
-                        }
+                        aria-current={isActive ? "page" : undefined}
                       >
                         {item}
                       </button>
@@ -641,10 +594,7 @@ export default function ValetTicketList({
                   aria-label="Records per page"
                 >
                   {RECORD_OPTIONS.map((option) => (
-                    <option
-                      key={option}
-                      value={option}
-                    >
+                    <option key={option} value={option}>
                       {option}
                     </option>
                   ))}
@@ -675,8 +625,8 @@ export default function ValetTicketList({
         <div className="mt-12 border-t border-slate-200 pt-10 text-center">
           <p className="mx-auto max-w-md text-sm font-medium leading-6 text-slate-500">
             Use the pagination controls to browse all active{" "}
-            {getStatusLabel(activeTab).toLowerCase()} vehicles, or use
-            the report to find historical records and requested returns.
+            {getStatusLabel(activeTab).toLowerCase()} vehicles, or use the
+            report to find historical records and requested returns.
           </p>
         </div>
       )}

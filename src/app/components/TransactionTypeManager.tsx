@@ -576,6 +576,7 @@ function TaxInput({
 
       <div className="mt-1 flex items-center gap-2">
         <input
+          autoFocus={false}
           type="number"
           min="0"
           max="100"

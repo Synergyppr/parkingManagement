@@ -219,6 +219,8 @@ export const handleParkVehicle = async (
       photos: photos.length > 0 ? photos.map((url) => ({ url })) : undefined,
     };
 
+
+
     // console.log("Submitting form:", sendForm);
 
     // return; // Uncomment this line to prevent actual submission during development

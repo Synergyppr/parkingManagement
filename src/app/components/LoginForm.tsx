@@ -308,7 +308,7 @@ export default function LoginForm() {
           }, 500);
 
           setTimeout(() => {
-            router.push("/dashboard");
+            router.push("/check-in");
           }, 1200);
         }
       });

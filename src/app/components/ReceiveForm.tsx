@@ -276,32 +276,101 @@ export default function ReceiveForm({
     });
   };
 
+  const handleBack = async () => {
+    if (step === 3 && photos.length > 0) {
+      const result = await Swal.fire({
+        icon: "warning",
+        title: "Discard pictures?",
+        text: "Going back will remove the pictures you took with your camera.",
+        showCancelButton: true,
+        confirmButtonText: "Discard pictures",
+        cancelButtonText: "Stay here",
+        confirmButtonColor: "#dc2626",
+        cancelButtonColor: "#64748b",
+        reverseButtons: true,
+        focusCancel: true,
+      });
+
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      // Clear the photos only after confirming discard.
+      setPhotos([]);
+    }
+
+    setStep((currentStep) => Math.max(1, currentStep - 1));
+  };
+
   return (
-    <div className={`${step === 3 ? "pt-2 overflow-y-auto" : "py-6"} mb-2`}>
-      <div className="mx-auto w-full max-w-5xl px-4 min-h-full overflow-y-auto">
+    <div
+      className={`mb-2 ${
+        step === 3 ? "overflow-visible px-2 py-2 sm:px-4" : "py-6"
+      }`}
+    >
+      <div
+        className={`mx-auto w-full ${
+          step === 3 ? "max-w-6xl overflow-visible" : "max-w-5xl px-4"
+        }`}
+      >
         {!submitted ? (
           <div className="animate-fade-in">
             {/* Header */}
-            <div className="mb-8 text-center">
-              <span className="inline-flex rounded-full border border-(--primary-light) bg-white px-5 py-1 text-[10px] font-semibold text-primary shadow-sm">
-                Guest Intake Phase
-              </span>
+            <div
+              className={`text-center transition-all ${
+                step === 3 ? "mb-3" : "mb-8"
+              }`}
+            >
+              {step !== 3 && (
+                <>
+                  <span className="inline-flex rounded-full border border-(--primary-light) bg-white px-5 py-1 text-[10px] font-semibold text-primary shadow-sm">
+                    Guest Intake Phase
+                  </span>
 
-              <h1 className="mt-3 font-serif text-3xl font-bold text-slate-900 md:text-4xl">
-                New Check-in Session
-              </h1>
+                  <h1 className="mt-3 font-serif text-3xl font-bold text-slate-900 md:text-4xl">
+                    New Check-in Session
+                  </h1>
 
-              <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
-                Please initialize the valet session by providing the
-                guest&apos;s primary identification and visit details.
-              </p>
+                  <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
+                    Please initialize the valet session by providing the
+                    guest&apos;s primary identification and visit details.
+                  </p>
+                </>
+              )}
+
+              {step === 3 && (
+                <div className="flex items-center justify-center gap-3">
+                  <div className="h-px max-w-24 flex-1 bg-slate-200" />
+
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">
+                      Vehicle Inspection
+                    </p>
+
+                    <h1 className="mt-0.5 font-serif text-lg font-bold text-slate-900 sm:text-xl">
+                      Review Vehicle Condition
+                    </h1>
+                  </div>
+
+                  <div className="h-px max-w-24 flex-1 bg-slate-200" />
+                </div>
+              )}
             </div>
 
-            <div className="relative overflow-hidden rounded-4xl border border-slate-200/80 bg-white/80 px-5 py-8 shadow-sm backdrop-blur-xl md:px-10">
+            <div
+              className={`relative rounded-4xl border border-slate-200/80 bg-white/80 shadow-sm backdrop-blur-xl ${
+                step === 3
+                  ? "overflow-visible px-2 py-3 sm:px-4 sm:py-4"
+                  : "overflow-hidden px-5 py-8 md:px-10"
+              }`}
+            >
               <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-(--primary-soft) -z-1" />
-
               {/* Stepper */}
-              <div className="mb-10 flex md:gap-0 gap-4 items-center justify-center z-10">
+              <div
+                className={`z-10 flex items-center justify-center ${
+                  step === 3 ? "mb-3 gap-2 sm:gap-4" : "mb-10 gap-4 md:gap-0"
+                }`}
+              >
                 {[1, 2, 3].map((s) => (
                   <div key={s} className="flex items-center">
                     <div className="flex flex-col items-center gap-2">
@@ -345,7 +414,7 @@ export default function ReceiveForm({
                 ))}
               </div>
 
-              <form className="overflow-y-auto h-full">
+              <form className="h-full overflow-y-visible">
                 {step === 1 && (
                   <div className="space-y-9">
                     <section>
@@ -565,8 +634,8 @@ export default function ReceiveForm({
                 )}
 
                 {step === 3 && (
-                  <div className="flex flex-col gap-2">
-                    <div className="w-full overflow-y-auto flex justify-center relative bottom-0">
+                  <div className="flex flex-col gap-2 mb-10">
+                    <div className="w-fulloverflow-y-visible flex justify-center relative bottom-0 min-h-full pb-10">
                       <CarVector
                         noIncident={noIncident}
                         setNoIncident={setNoIncident}
@@ -589,27 +658,31 @@ export default function ReceiveForm({
                         setHasUnsavedChanges={setHasUnsavedChanges}
                       />
                     </div>
-                    <FormInput
-                      name="pin"
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Expected Return / PIN"
-                      icon={<MdPassword />}
-                      value={form?.pin || ""}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (/^\d{0,4}$/.test(val)) {
-                          setForm((prev: Partial<Ticket>) => ({
-                            ...prev,
-                            pin: val,
-                          }));
+                    <div className="relative bottom-6">
+                      <FormInput
+                        name="pin"
+                        type="password"
+                        // inputMode="numeric"
+                        placeholder="Expected Return / PIN"
+                        icon={<MdPassword />}
+                        value={form?.pin || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (/^\d{0,4}$/.test(val)) {
+                            setForm((prev: Partial<Ticket>) => ({
+                              ...prev,
+                              pin: val,
+                            }));
+                          }
+                        }}
+                        showPasswordToggle
+                        showPassword={showPin}
+                        setShowPassword={setShowPin}
+                        onClear={() =>
+                          setForm((prev) => ({ ...prev, pin: "" }))
                         }
-                      }}
-                      showPasswordToggle
-                      showPassword={showPin}
-                      setShowPassword={setShowPin}
-                      onClear={() => setForm((prev) => ({ ...prev, pin: "" }))}
-                    />
+                      />
+                    </div>
                   </div>
                 )}
               </form>
@@ -671,13 +744,14 @@ export default function ReceiveForm({
                 </div>
               )}
 
+              {/* Action buttons  */}
               <div className="mt-8 border-t border-slate-200 pt-6">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <button
                     type="button"
                     disabled={step === 1 && !isFormChanged}
                     onClick={() =>
-                      step === 1 ? handleClearForm(true) : setStep(step - 1)
+                      step === 1 ? handleClearForm(true) : handleBack()
                     }
                     className="md:h-12 h-14 rounded-2xl px-6 text-sm font-semibold text-slate-600 transition hover:bg-primary/50 disabled:opacity-50 
                     cursor-pointer border border-primary/50"
