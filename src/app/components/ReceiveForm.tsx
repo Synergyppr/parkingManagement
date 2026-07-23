@@ -339,7 +339,7 @@ export default function ReceiveForm({
               )}
 
               {step === 3 && (
-                <div className="flex items-center justify-center gap-3">
+                <div className="flex items-center justify-center gap-3 z-10">
                   <div className="h-px max-w-24 flex-1 bg-slate-200" />
 
                   <div>
@@ -364,7 +364,7 @@ export default function ReceiveForm({
                   : "overflow-hidden px-5 py-8 md:px-10"
               }`}
             >
-              <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-(--primary-soft) -z-1" />
+              <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-(--primary-soft)/80 -z-1" />
               {/* Stepper */}
               <div
                 className={`z-10 flex items-center justify-center ${
@@ -720,29 +720,31 @@ export default function ReceiveForm({
               )}
 
               {/* PIN */}
-              <div className="mt-4">
-                <FormInput
-                  name="pin"
-                  type="password"
-                  // inputMode="numeric"
-                  placeholder="Expected Return / PIN"
-                  icon={<MdPassword />}
-                  value={form?.pin || ""}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (/^\d{0,4}$/.test(val)) {
-                      setForm((prev: Partial<Ticket>) => ({
-                        ...prev,
-                        pin: val,
-                      }));
-                    }
-                  }}
-                  showPasswordToggle
-                  showPassword={showPin}
-                  setShowPassword={setShowPin}
-                  onClear={() => setForm((prev) => ({ ...prev, pin: "" }))}
-                />
-              </div>
+              {step === 3 && (
+                <div className="mt-4">
+                  <FormInput
+                    name="pin"
+                    type="password"
+                    // inputMode="numeric"
+                    placeholder="Expected Return / PIN"
+                    icon={<MdPassword />}
+                    value={form?.pin || ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^\d{0,4}$/.test(val)) {
+                        setForm((prev: Partial<Ticket>) => ({
+                          ...prev,
+                          pin: val,
+                        }));
+                      }
+                    }}
+                    showPasswordToggle
+                    showPassword={showPin}
+                    setShowPassword={setShowPin}
+                    onClear={() => setForm((prev) => ({ ...prev, pin: "" }))}
+                  />
+                </div>
+              )}
 
               {/* Action buttons  */}
               <div className="mt-8 border-t border-slate-200 pt-6">
