@@ -475,13 +475,13 @@ function EntryManager({
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {entries.map((entry) => {
                   const base = Number(entry.value);
-                  const sRate = entry.stateTaxRate ?? 0;
-                  const cRate = entry.cityTaxRate ?? 0;
-                  const sTax = entry.taxable ? calcStateTax(base, sRate) : 0;
-                  const cTax = entry.taxable ? calcCityTax(base, cRate) : 0;
-                  const total = entry.taxable
-                    ? calcTotal(base, sRate, cRate)
-                    : base;
+                  // const sRate = entry.stateTaxRate ?? 0;
+                  // const cRate = entry.cityTaxRate ?? 0;
+                  // const sTax = entry.taxable ? calcStateTax(base, sRate) : 0;
+                  // const cTax = entry.taxable ? calcCityTax(base, cRate) : 0;
+                  // const total = entry.taxable
+                  //   ? calcTotal(base, sRate, cRate)
+                  //   : base;
 
                   return (
                     <article
