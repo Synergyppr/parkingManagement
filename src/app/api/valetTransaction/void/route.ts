@@ -1,30 +1,29 @@
 import { NextResponse } from "next/server";
 
-// Evertec.void → POST /api/evertec/transaction/void
-// Voids (cancels) a transaction within the current batch (same day, before settlement).
+// Valet Void → POST VALET_VOID_ENDPOINT
+// Voids (cancels) a transaction.
 export async function POST(req: Request) {
   const body = await req.json();
 
-  if (!body?.propertyId || !body?.paymentTransactionId) {
+  if (!body?.propertyId || !body?.transactionId) {
     return NextResponse.json(
       {
         result: {
           status: "400",
-          message:
-            "Missing required fields: propertyId, paymentTransactionId.",
+          message: "Missing required fields: propertyId, transactionId.",
         },
       },
       { status: 400 }
     );
   }
 
-  const endpoint = process.env.EVERTEC_VOID_ENDPOINT;
+  const endpoint = process.env.VALET_VOID_ENDPOINT;
   if (!endpoint) {
     return NextResponse.json(
       {
         result: {
           status: "500",
-          message: "EVERTEC_VOID_ENDPOINT is not configured.",
+          message: "VALET_VOID_ENDPOINT is not configured.",
         },
       },
       { status: 500 }
@@ -32,17 +31,15 @@ export async function POST(req: Request) {
   }
 
   const payload = {
-    property_id: body.propertyId,
-    app_id: process.env.EVERTEC_APPLICATION_ID || "",
-    terminal_id: body.terminalId ?? "",
-    station_number: "",
-    cashier_id: "",
-    created_by: body.createdBy ?? "",
-    payment_transaction_id: body.paymentTransactionId,
-    target_reference: body.targetReference ?? "",
-    trx_id: body.trxId ?? "",
-    receipt_email: body.receiptEmail ?? "",
-    receipt_output: body.receiptOutput ?? "both",
+    propertyId: body.propertyId,
+    transactionId: body.transactionId,
+    terminalId: body.terminalId ?? "",
+    pin: body.pin ?? "",
+    latitude: body.latitude ?? 0,
+    longitude: body.longitude ?? 0,
+    receiptEmail: body.receiptEmail ?? "yes",
+    receiptOutput: body.receiptOutput ?? "both",
+    notes: body.notes ?? "",
   };
 
   try {

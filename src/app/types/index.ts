@@ -83,6 +83,8 @@ export interface CarPart {
 export interface VehicleData {
   firstName?: string;
   lastName?: string;
+  phoneNumber?: string;
+  areaCode?: string;
   ticketNumber?: string;
   color?: string;
   make?: string;

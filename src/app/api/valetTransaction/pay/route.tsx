@@ -8,12 +8,25 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   const body = await req.json();
 
-  if (!body?.ticketId || !body?.propertyId || !body?.pin) {
+  if (!body?.ticketId || !body?.propertyId) {
     return NextResponse.json(
       {
         result: {
           status: "400",
-          message: "Missing required fields: ticketId, propertyId, pin.",
+          message: "Missing required fields: ticketId, propertyId.",
+        },
+      },
+      { status: 400 }
+    );
+  }
+
+  // PIN is required for non-p2p payments
+  if (body?.paymentMethod !== "p2p" && !body?.pin) {
+    return NextResponse.json(
+      {
+        result: {
+          status: "400",
+          message: "PIN is required.",
         },
       },
       { status: 400 }
@@ -23,18 +36,19 @@ export async function POST(req: Request) {
   const payload = {
     ticketId: body.ticketId,
     propertyId: body.propertyId,
-    pin: body.pin,
+    pin: body.pin || "",
     latitude: body.latitude ?? 0,
     longitude: body.longitude ?? 0,
     paymentMethod: body.paymentMethod,
     transactionTypeId: body.transactionTypeId,
-    // amount: body.amount ?? 0,
+    ...(body.amount !== undefined && { amount: body.amount }),
     terminalId: body.terminalId ?? "",
     applicationId: process.env.EVERTEC_APPLICATION_ID || "",
     ...(body.tip !== undefined && { tip: body.tip }),
     receiptOutput: body.receiptOutput ?? "both",
     receiptEmail: body.receiptEmail ?? "no",
     notes: body.notes ?? "",
+    ...(body.forceDuplicate && { forceDuplicate: body.forceDuplicate }),
   };
 
   console.log("[ValetTransaction] REQUEST:", { payload, hasTip: "tip" in payload, bodyTip: body.tip });

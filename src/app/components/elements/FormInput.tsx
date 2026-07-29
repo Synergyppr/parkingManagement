@@ -16,7 +16,7 @@ interface FormInputProps {
   ) => void;
   placeholder?: string;
   icon?: React.ReactNode;
-  type?: "text" | "password" | "select";
+  type?: "text" | "password" | "select" | "email";
   required?: boolean;
   showPasswordToggle?: boolean;
   setShowPassword?: (show: boolean) => void;
@@ -91,7 +91,7 @@ export default function FormInput({
     .trim();
 
   const resolvedInputType =
-    type === "password" ? (showPassword ? "text" : "password") : "text";
+    type === "password" ? (showPassword ? "text" : "password") : type === "email" ? "email" : "text";
 
   return (
     <div className="relative w-full">

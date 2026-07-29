@@ -39,10 +39,16 @@ export interface PaymentTax {
   base: number;
 }
 
+export interface PaymentAmountDetail {
+  kind: string;
+  amount: number;
+}
+
 export interface PaymentAmount {
   currency: string;
   total: number;
   taxes?: PaymentTax[];
+  details?: PaymentAmountDetail[];
 }
 
 // ============================================================================
@@ -209,4 +215,8 @@ export interface PaymentIntentData {
   transactionTypeId: string;
   transactionDescription: string;
   propertyReference: string;
+  tip?: number;
+  taxable?: boolean;
+  /** Custom return URL after payment — defaults to /payment/return */
+  returnUrl?: string;
 }

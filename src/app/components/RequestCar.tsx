@@ -5,7 +5,8 @@ import Swal from "sweetalert2";
 
 import { RxCaretRight } from "react-icons/rx";
 import { IoCheckmarkOutline } from "react-icons/io5";
-import { FaTicketAlt } from "react-icons/fa";
+import { FaTicketAlt, FaCheckCircle } from "react-icons/fa";
+import { MdPayment } from "react-icons/md";
 
 import { useSignalR, joinGroup, leaveGroup } from "../lib/SignalRProvider";
 import { useProperty } from "../context/PropertyContext";
@@ -18,6 +19,45 @@ import ClientRating from "./ClientRating";
 import TransactionDetails from "./TransactionDetails";
 import FormInput from "./elements/FormInput";
 import { KeySquare } from "lucide-react";
+
+interface RequestTransactionType {
+  id: string;
+  name: string;
+  value: number;
+  taxable?: boolean;
+  stateTaxRate?: number;
+  cityTaxRate?: number;
+}
+
+interface OnlinePaymentResult {
+  success: boolean;
+  requestId: number;
+  status: string;
+  isApproved: boolean;
+  isPending: boolean;
+  isRejected: boolean;
+  message: string;
+  payment?: {
+    reference?: string;
+    amount?: number;
+    authorization?: string;
+    receipt?: string;
+    paymentMethod?: string;
+    franchise?: string;
+  };
+}
+
+function roundToTwo(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+function calculateRateTotal(type: RequestTransactionType): number {
+  if (!type.taxable) return Number(type.value) || 0;
+  const base = Number(type.value) || 0;
+  const stateTax = roundToTwo(base * ((type.stateTaxRate ?? 0) / 100));
+  const cityTax = roundToTwo(base * ((type.cityTaxRate ?? 0) / 100));
+  return roundToTwo(base + stateTax + cityTax);
+}
 
 const RequestCar = () => {
   const { propertyId, setPropertyId } = useProperty();
@@ -37,7 +77,17 @@ const RequestCar = () => {
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
   const [smsConsent, setSmsConsent] = useState(false);
 
+  // Online Payment state
+  const [paymentEmail, setPaymentEmail] = useState("");
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [transactionTypes, setTransactionTypes] = useState<RequestTransactionType[]>([]);
+  const [selectedRateId, setSelectedRateId] = useState("");
+  const [paymentResult, setPaymentResult] = useState<OnlinePaymentResult | null>(null);
+  const [onlineTip, setOnlineTip] = useState(0);
+  const paymentVerifiedRef = useRef(false);
+
   const idFromUrl = searchParams.get("ticket");
+  const paymentReturn = searchParams.get("payment");
   const { registerNotificationHandler } = useSignalR();
 
   useEffect(() => {
@@ -76,6 +126,33 @@ const RequestCar = () => {
       setRequested(true);
     }
   }, [vehicleData]);
+
+  // Fetch transaction types when propertyId is available
+  useEffect(() => {
+    if (vehicleData?.propertyId) {
+      fetchTransactionTypes(vehicleData.propertyId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vehicleData?.propertyId]);
+
+  // Auto-select if only one rate
+  useEffect(() => {
+    if (transactionTypes.length === 1) {
+      setSelectedRateId(transactionTypes[0].id);
+    }
+  }, [transactionTypes]);
+
+  // Handle payment return from PlaceToPay — wait for vehicleData to load first
+  useEffect(() => {
+    if (paymentReturn === "return" && ticketId && vehicleData && !paymentVerifiedRef.current) {
+      const storedRequestId = localStorage.getItem(`p2p_requestId_${ticketId}`);
+      if (storedRequestId) {
+        paymentVerifiedRef.current = true;
+        verifyPayment(storedRequestId);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentReturn, ticketId, vehicleData]);
 
   const fetchVehicleByTicket = async (ticketId: string) => {
     try {
@@ -223,6 +300,164 @@ const RequestCar = () => {
         setButtonLoader(false);
       }
     });
+  };
+
+  const selectedRate = transactionTypes.find((t) => t.id === selectedRateId);
+  const rateTotal = selectedRate ? calculateRateTotal(selectedRate) : 0;
+  const totalToPay = roundToTwo(rateTotal + onlineTip);
+
+  const fetchTransactionTypes = async (propId: string) => {
+    try {
+      const res = await fetch("/api/valetTransaction/types/get", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: propId }),
+      });
+      const data = await res.json();
+      if (data?.result?.status === "200") {
+        setTransactionTypes(data?.result?.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching transaction types:", error);
+    }
+  };
+
+  const verifyPayment = async (requestId: string) => {
+    try {
+      const res = await fetch(
+        `/api/payments/placetopay/session/${requestId}`
+      );
+      if (!res.ok) throw new Error("Failed to verify payment");
+      const data: OnlinePaymentResult = await res.json();
+      setPaymentResult(data);
+
+      if (data.isApproved) {
+        // Record the valet transaction if not already done
+        const intent = localStorage.getItem(`p2p_intent_${ticketId}`);
+        if (intent) {
+          await recordValetTransaction(data, JSON.parse(intent));
+          localStorage.removeItem(`p2p_intent_${ticketId}`);
+        }
+      }
+    } catch (error) {
+      console.error("Payment verification error:", error);
+    }
+  };
+
+  const recordValetTransaction = async (
+    paymentData: OnlinePaymentResult,
+    intent: { transactionTypeId: string; propertyId?: string }
+  ) => {
+    try {
+      const reference = paymentData.payment?.reference || "";
+
+      const res = await fetch("/api/valetTransaction/pay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ticketId,
+          propertyId: intent.propertyId || vehicleData?.propertyId || propertyId || "",
+          pin: "",
+          latitude: 0,
+          longitude: 0,
+          paymentMethod: "p2p",
+          transactionTypeId: Number(intent.transactionTypeId),
+          amount: paymentData.payment?.amount || 0,
+          notes: `PlaceToPay Ref: ${reference}`,
+          receiptOutput: "no",
+          receiptEmail: "no",
+        }),
+      });
+
+      const result = await res.json();
+      console.log("[RequestCar] Valet transaction recorded:", result);
+
+      if (result?.result?.status == "200") {
+        setVehicleData((prev) => (prev ? { ...prev, status: "ready" } : prev));
+        setRequested(true);
+      }
+    } catch (error) {
+      console.error("Error recording valet transaction:", error);
+    }
+  };
+
+  const handlePayOnline = async () => {
+    if (!selectedRate || !paymentEmail || !vehicleData) return;
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(paymentEmail)) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid Email",
+        text: "Please enter a valid email address for your receipt.",
+        confirmButtonColor: "var(--primary)",
+      });
+      return;
+    }
+
+    setPaymentLoading(true);
+
+    try {
+      const baseUrl = window.location.origin;
+      const returnUrl = `${baseUrl}/request?ticket=${ticketId}&payment=return`;
+
+      const res = await fetch("/api/payments/placetopay/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ticketId,
+          patronName: vehicleData.firstName || "Guest",
+          patronSurname: vehicleData.lastName || "",
+          patronEmail: paymentEmail,
+          patronPhone: vehicleData.phoneNumber
+            ? `${vehicleData.areaCode || "+1"}${vehicleData.phoneNumber.replace(/\D/g, "")}`
+            : undefined,
+          amount: selectedRate.value,
+          tip: onlineTip > 0 ? onlineTip : undefined,
+          taxable: selectedRate.taxable ?? false,
+          transactionTypeId: selectedRate.id,
+          transactionDescription: selectedRate.name,
+          propertyReference: vehicleData.propertyId || propertyId || "",
+          returnUrl,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success && data.processUrl) {
+        localStorage.setItem(
+          `p2p_requestId_${ticketId}`,
+          String(data.requestId)
+        );
+        localStorage.setItem(
+          `p2p_intent_${ticketId}`,
+          JSON.stringify({
+            transactionTypeId: selectedRate.id,
+            propertyId: vehicleData.propertyId || propertyId || "",
+          })
+        );
+        window.location.href = data.processUrl;
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Payment Error",
+          text:
+            data.message ||
+            "Could not create payment session. Please try again.",
+          confirmButtonColor: "var(--primary)",
+        });
+      }
+    } catch (error) {
+      console.error("Pay online error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Something went wrong. Please try again.",
+        confirmButtonColor: "var(--primary)",
+      });
+    } finally {
+      setPaymentLoading(false);
+    }
   };
 
   const handleMouseEnter = (starIndex: number, isHalf: boolean) => {
@@ -481,6 +716,114 @@ const RequestCar = () => {
               <StatusTimeline currentStatus={vehicleData?.status as string} />
             </section>
 
+            {/* Payment Result — after returning from PlaceToPay */}
+            {paymentResult?.isApproved && (
+              <section className="rounded-4xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
+                <div className="mb-4 text-center">
+                  <FaCheckCircle className="mx-auto mb-3 h-10 w-10 text-emerald-500" />
+                  <h3 className="font-serif text-2xl font-bold text-slate-950">
+                    Thank You for Your Payment!
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Your payment has been processed successfully.
+                  </p>
+                </div>
+
+                <div className="space-y-0 rounded-2xl border border-emerald-200 bg-white p-4">
+                  {paymentResult.payment?.reference && (
+                    <div className="flex items-center justify-between border-b border-slate-100 py-3">
+                      <span className="text-xs font-black uppercase tracking-wide text-slate-400">
+                        Reference
+                      </span>
+                      <span className="font-mono text-sm font-bold text-slate-900">
+                        {paymentResult.payment.reference}
+                      </span>
+                    </div>
+                  )}
+                  {paymentResult.payment?.amount !== undefined && (
+                    <div className="flex items-center justify-between border-b border-slate-100 py-3">
+                      <span className="text-xs font-black uppercase tracking-wide text-slate-400">
+                        Amount
+                      </span>
+                      <span className="text-sm font-black text-primary">
+                        ${paymentResult.payment.amount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  {paymentResult.payment?.authorization && (
+                    <div className="flex items-center justify-between border-b border-slate-100 py-3">
+                      <span className="text-xs font-black uppercase tracking-wide text-slate-400">
+                        Authorization
+                      </span>
+                      <span className="font-mono text-sm font-bold text-slate-900">
+                        {paymentResult.payment.authorization}
+                      </span>
+                    </div>
+                  )}
+                  {paymentResult.payment?.paymentMethod && (
+                    <div className="flex items-center justify-between border-b border-slate-100 py-3">
+                      <span className="text-xs font-black uppercase tracking-wide text-slate-400">
+                        Method
+                      </span>
+                      <span className="text-sm font-bold text-slate-900">
+                        {paymentResult.payment.paymentMethod}
+                        {paymentResult.payment.franchise
+                          ? ` (${paymentResult.payment.franchise})`
+                          : ""}
+                      </span>
+                    </div>
+                  )}
+                  {paymentResult.payment?.receipt && (
+                    <div className="flex items-center justify-between py-3">
+                      <span className="text-xs font-black uppercase tracking-wide text-slate-400">
+                        Receipt
+                      </span>
+                      <span className="font-mono text-sm font-bold text-slate-900">
+                        {paymentResult.payment.receipt}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {paymentResult?.isPending && (
+              <section className="rounded-4xl border border-(--primary-light) bg-(--primary-soft) p-6 shadow-sm text-center">
+                <h3 className="font-serif text-2xl font-bold text-slate-950">
+                  Payment Processing
+                </h3>
+                <p className="mt-2 text-sm text-slate-500">
+                  Your payment is being verified. You will receive a
+                  confirmation once it&apos;s processed.
+                </p>
+              </section>
+            )}
+
+            {paymentResult?.isRejected && (
+              <section className="rounded-4xl border border-red-200 bg-red-50 p-6 shadow-sm text-center">
+                <h3 className="font-serif text-2xl font-bold text-slate-950">
+                  Payment Declined
+                </h3>
+                <p className="mt-2 text-sm text-slate-500">
+                  {paymentResult.message ||
+                    "Your payment was declined. Please try again."}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaymentResult(null);
+                    localStorage.removeItem(`p2p_requestId_${ticketId}`);
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete("payment");
+                    window.history.replaceState({}, "", url.toString());
+                  }}
+                  className="mt-4 h-12 cursor-pointer rounded-2xl bg-secondary px-8 text-sm font-black text-white transition hover:opacity-90"
+                >
+                  Try Again
+                </button>
+              </section>
+            )}
+
             {(vehicleData?.status === "received" ||
               vehicleData?.status === "parked") && (
               <section className="rounded-4xl border border-(--primary-light) bg-linear-to-br from-(--primary-soft) to-white p-6 shadow-sm">
@@ -529,6 +872,131 @@ const RequestCar = () => {
                 </p>
               </section>
             )}
+
+            {/* Online Payment — show after vehicle is requested so patron can pay */}
+            {vehicleData?.status === "requested" &&
+              !paymentResult?.isApproved && (
+                <section className="rounded-4xl border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+                  <div className="mb-4">
+                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">
+                      Online Payment
+                    </p>
+                    <h3 className="mt-1 font-serif text-2xl font-bold text-slate-950">
+                      Pay Now
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-500">
+                      While your vehicle is being retrieved, complete your payment securely online.
+                    </p>
+                  </div>
+
+                  {/* Rate Selection */}
+                  {transactionTypes.length > 0 ? (
+                    <div className="mb-4 space-y-2">
+                      {transactionTypes.map((rate) => {
+                        const total = calculateRateTotal(rate);
+                        const active = selectedRateId === rate.id;
+                        return (
+                          <button
+                            key={rate.id}
+                            type="button"
+                            onClick={() => setSelectedRateId(rate.id)}
+                            className={`flex w-full cursor-pointer items-center justify-between rounded-2xl border p-4 text-left transition-all ${
+                              active
+                                ? "border-(--primary-light) bg-(--primary-soft) shadow-sm"
+                                : "border-slate-200 bg-white hover:border-(--primary-light)"
+                            }`}
+                          >
+                            <div>
+                              <p
+                                className={`text-sm font-extrabold ${
+                                  active ? "text-primary" : "text-slate-900"
+                                }`}
+                              >
+                                {rate.name}
+                              </p>
+                              <p className="text-xs text-slate-400">
+                                {rate.taxable ? "Taxable rate" : "Flat rate"}
+                              </p>
+                            </div>
+                            <p
+                              className={`text-lg font-black ${
+                                active ? "text-primary" : "text-slate-900"
+                              }`}
+                            >
+                              ${total.toFixed(2)}
+                            </p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="mb-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-sm text-slate-400">
+                      Loading rates...
+                    </div>
+                  )}
+
+                  {/* Tip Selection — show after rate selected */}
+                  {selectedRate && (
+                    <div className="mb-4">
+                      <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+                        Add a Tip
+                      </p>
+                      <div className="flex gap-2">
+                        {[0, 1, 2, 3, 5].map((amount) => {
+                          const active = onlineTip === amount;
+                          return (
+                            <button
+                              key={amount}
+                              type="button"
+                              onClick={() => setOnlineTip(amount)}
+                              className={`flex-1 cursor-pointer rounded-xl border py-3 text-center text-sm font-extrabold transition-all ${
+                                active
+                                  ? "border-(--primary-light) bg-(--primary-soft) text-primary shadow-sm"
+                                  : "border-slate-200 bg-white text-slate-700 hover:border-(--primary-light)"
+                              }`}
+                            >
+                              {amount === 0 ? "None" : `$${amount}`}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Email & Pay Button — show after rate selected */}
+                  {selectedRate && (
+                    <>
+                      <div className="mb-4">
+                        <FormInput
+                          name="paymentEmail"
+                          type="email"
+                          placeholder="Email for receipt"
+                          icon={<MdPayment className="h-4 w-4" />}
+                          value={paymentEmail}
+                          onChange={(e) => setPaymentEmail(e.target.value)}
+                          onClear={() => setPaymentEmail("")}
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={paymentLoading || !paymentEmail}
+                        onClick={handlePayOnline}
+                        className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-secondary text-sm font-black text-white shadow-[0_16px_36px_color-mix(in_srgb,var(--primary)_32%,transparent)] transition disabled:opacity-50"
+                      >
+                        {paymentLoading ? (
+                          <ButtonLoader />
+                        ) : (
+                          <span className="flex items-center gap-2">
+                            <MdPayment className="h-5 w-5" />
+                            Pay ${totalToPay.toFixed(2)} Online
+                          </span>
+                        )}
+                      </button>
+                    </>
+                  )}
+                </section>
+              )}
 
             {vehicleData?.status !== "ready" &&
               vehicleData?.status !== "requested" && (

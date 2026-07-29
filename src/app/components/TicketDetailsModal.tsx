@@ -59,7 +59,7 @@ export default function TicketDetailsModal({
   setHasUnsavedChanges,
   saveClickedRef,
 }: TicketDetailsModalProps) {
-  const { propertyId, accountUser } = useProperty();
+  const { propertyId, latitude, longitude } = useProperty();
 
   const [displayedTab, setDisplayedTab] = useState(detailsActiveTab);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -518,14 +518,46 @@ export default function TicketDetailsModal({
         ? "This will cancel the transaction. Only works if the batch has not been settled."
         : "This will refund the full amount back to the customer's card.";
 
+    const defaultAmount = trx.amount?.toFixed(2) ?? "0.00";
+    const defaultTip = detail?.tipAmount?.toFixed(2) ?? "0.00";
+    const isRefund = action === "refund";
+
+    const inputStyle =
+      "w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+    const labelStyle = "block text-xs font-bold text-slate-500 mb-1";
+
     const confirm = await Swal.fire({
       title: `${label} Transaction`,
       html: `
         <p class="text-sm text-slate-600">${description}</p>
         <div class="mt-3 rounded-xl bg-slate-50 p-3 text-left text-sm">
-          <p><strong>Amount:</strong> $${trx.amount?.toFixed(2) ?? "0.00"}</p>
           <p><strong>Method:</strong> ${trx.payment_method || "—"}</p>
           <p><strong>Type:</strong> ${trx.transaction_type || "—"}</p>
+        </div>
+
+        ${isRefund ? `
+          <div class="mt-4 text-left">
+            <label class="${labelStyle}">Amount</label>
+            <input id="swal-amount" type="number" step="0.01" min="0" value="${defaultAmount}" placeholder="0.00"
+              class="${inputStyle}" />
+          </div>
+          <div class="mt-3 text-left">
+            <label class="${labelStyle}">Tip</label>
+            <input id="swal-tip" type="number" step="0.01" min="0" value="${defaultTip}" placeholder="0.00"
+              class="${inputStyle}" />
+          </div>
+        ` : ""}
+
+        <div class="mt-3 text-left">
+          <label class="${labelStyle}">Notes</label>
+          <textarea id="swal-notes" rows="2" placeholder="Reason for ${action}..."
+            class="${inputStyle} resize-none"></textarea>
+        </div>
+
+        <div class="mt-3 text-left">
+          <label class="${labelStyle}">Security PIN</label>
+          <input id="swal-pin" type="password" inputmode="numeric" maxlength="4" placeholder="4-digit PIN"
+            class="${inputStyle}" />
         </div>
       `,
       icon: "warning",
@@ -536,14 +568,38 @@ export default function TicketDetailsModal({
       confirmButtonText: `Yes, ${label}`,
       cancelButtonText: "Cancel",
       backdrop: "rgba(15,23,42,0.55)",
+      preConfirm: () => {
+        const pin = (document.getElementById("swal-pin") as HTMLInputElement)?.value?.trim();
+        if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+          Swal.showValidationMessage("Please enter a valid 4-digit PIN.");
+          return false;
+        }
+
+        const notes = (document.getElementById("swal-notes") as HTMLTextAreaElement)?.value?.trim() || "";
+
+        if (isRefund) {
+          const amount = parseFloat((document.getElementById("swal-amount") as HTMLInputElement)?.value) || 0;
+          const tip = parseFloat((document.getElementById("swal-tip") as HTMLInputElement)?.value) || 0;
+
+          if (amount <= 0) {
+            Swal.showValidationMessage("Please enter a valid amount.");
+            return false;
+          }
+
+          return { pin, notes, amount, tip };
+        }
+
+        return { pin, notes };
+      },
     });
 
-    if (!confirm.isConfirmed) return;
+    if (!confirm.isConfirmed || !confirm.value) return;
+
+    const { pin, notes } = confirm.value as { pin: string; notes: string; amount?: number; tip?: number };
 
     setActionLoading(true);
 
     try {
-      // Step 1: Get the terminal ID for Evertec communication
       const terminalId = await fetchDefaultTerminalId();
       if (!terminalId) {
         Swal.fire({
@@ -556,40 +612,9 @@ export default function TicketDetailsModal({
         return;
       }
 
-      // Step 2: Call journal to get ECR transaction references
-      const journalRes = await fetch("/api/valetTransaction/journal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          propertyId,
-          terminalId,
-          createdBy: accountUser || "",
-          targetReference: detail?.trxId ?? "",
-        }),
-      });
+      const transactionId =
+        trx.id || detail?.paymentTransactionId || detail?.trxId || trx.reference_number || "";
 
-      const journalData = await journalRes.json();
-      const journalResult = journalData?.result;
-
-      // Extract journal transactions
-      const journalTrxList =
-        journalResult?.data?.transactions || journalResult?.transactions || [];
-
-      // Find the matching transaction
-      const matchedJournalTrx =
-        journalTrxList.find(
-          (jt: Record<string, unknown>) =>
-            jt.trx_id === detail?.trxId ||
-            jt.payment_transaction_id === detail?.paymentTransactionId
-        ) || journalTrxList[0];
-
-      const targetReference =
-        matchedJournalTrx?.reference ??
-        matchedJournalTrx?.target_reference ??
-        detail?.trxId ??
-        "";
-
-      // Step 3: Execute void or refund with terminal + journal data
       const endpoint =
         action === "void"
           ? "/api/valetTransaction/void"
@@ -599,22 +624,30 @@ export default function TicketDetailsModal({
         action === "void"
           ? {
               propertyId,
+              transactionId,
               terminalId,
-              paymentTransactionId: detail?.paymentTransactionId,
-              targetReference,
-              trxId: detail?.trxId,
-              createdBy: accountUser || "",
+              pin,
+              latitude: latitude ?? 0,
+              longitude: longitude ?? 0,
+              receiptEmail: "yes",
+              receiptOutput: "both",
+              notes,
             }
           : {
               propertyId,
+              paymentMethod: "ECR",
+              amount: (confirm.value as { amount: number }).amount,
+              tip: (confirm.value as { tip: number }).tip ?? 0,
               terminalId,
-              paymentMethod: trx.payment_method,
-              amount: trx.amount,
-              trxId: detail?.trxId,
-              originalTrxId: detail?.trxId,
-              phoneNumber: ticketDetails?.patron?.phoneNumber ?? "",
-              createdBy: accountUser || "",
+              pin,
+              latitude: latitude ?? 0,
+              longitude: longitude ?? 0,
+              receiptEmail: "yes",
+              receiptOutput: "both",
+              notes,
             };
+
+      console.log(`[${label}] REQUEST:`, JSON.stringify(body, null, 2));
 
       const res = await fetch(endpoint, {
         method: "POST",
@@ -623,6 +656,7 @@ export default function TicketDetailsModal({
       });
 
       const data = await res.json();
+      console.log(`[${label}] RESPONSE:`, JSON.stringify(data, null, 2));
 
       const status =
         data?.result?.status ||
@@ -1765,8 +1799,7 @@ export default function TicketDetailsModal({
                       )}
 
                       {/* Void / Refund Actions */}
-                      {trx.payment_method === "ECR" &&
-                        detail?.paymentTransactionId && (
+                      {trx.payment_method === "ECR" && (
                           <div className="border-t border-slate-100 px-5 py-4">
                             <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
                               Actions

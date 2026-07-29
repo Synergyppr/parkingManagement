@@ -4,7 +4,7 @@ import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
 import { useProperty } from "../context/PropertyContext";
 import { FaRegMoneyBill1, FaRegCreditCard } from "react-icons/fa6";
-import { MdOutlinePercent } from "react-icons/md";
+import { MdOutlinePercent, MdEdit } from "react-icons/md";
 import { IoReceiptOutline } from "react-icons/io5";
 import FormInput from "../components/elements/FormInput";
 import { RateEntry } from "../types";
@@ -78,6 +78,15 @@ function EntryManager({
     setFormStateTaxRate(PR_DEFAULT_STATE_TAX.toString());
     setFormCityTaxRate(PR_DEFAULT_CITY_TAX.toString());
     setEditingId(null);
+  };
+
+  const startEdit = (entry: RateEntry) => {
+    setEditingId(entry.id);
+    setFormName(entry.name);
+    setFormValue(String(entry.value));
+    setFormTaxable(entry.taxable ?? false);
+    setFormStateTaxRate(String(entry.stateTaxRate ?? PR_DEFAULT_STATE_TAX));
+    setFormCityTaxRate(String(entry.cityTaxRate ?? PR_DEFAULT_CITY_TAX));
   };
 
   const applyDefaultTax = () => {
@@ -295,7 +304,7 @@ function EntryManager({
           </div>
 
           <form className="space-y-4">
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_1fr_auto]">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <FormInput
                 name="formName"
                 placeholder={`Enter ${title}`}
@@ -313,14 +322,25 @@ function EntryManager({
                 onChange={(e) => setFormValue(e.target.value)}
                 onClear={() => setFormValue("")}
               />
+            </div>
 
+            <div className="flex gap-2">
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="flex h-12 flex-1 cursor-pointer items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-black text-slate-600 transition hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+              )}
               <button
                 type="button"
                 disabled={
                   buttonLoading || !formName.trim() || !formValue.trim()
                 }
                 onClick={handleSubmit}
-                className={`flex h-12 items-center justify-center rounded-2xl px-7 text-sm font-black text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition ${
+                className={`flex h-12 flex-1 items-center justify-center rounded-2xl text-sm font-black text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition ${
                   buttonLoading || !formName.trim() || !formValue.trim()
                     ? "cursor-not-allowed bg-[color-mix(in_srgb,var(--primary)_60%,transparent)] opacity-70"
                     : "cursor-pointer bg-primary hover:bg-secondary"
@@ -468,53 +488,50 @@ function EntryManager({
                       key={entry.id}
                       className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition hover:border-(--primary-light) hover:bg-[color-mix(in_srgb,var(--primary-soft)_40%,transparent)]"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h3 className="text-sm font-extrabold text-slate-950">
-                            {entry.name}
-                          </h3>
+                      <div>
+                        <h3 className="text-sm font-extrabold text-slate-950">
+                          {entry.name}
+                        </h3>
 
-                          <p className="mt-1 font-serif text-3xl font-bold text-primary">
-                            ${base.toFixed(2)}
-                          </p>
+                        <p className="mt-1 font-serif text-3xl font-bold text-primary">
+                          ${base.toFixed(2)}
+                        </p>
+                      </div>
+
+                      <div className="mt-4 rounded-2xl border border-(--primary-light) bg-white p-3 text-xs">
+                        <div className="mb-2 inline-flex rounded-full bg-(--primary-soft) px-2.5 py-1 font-bold text-primary">
+                          {entry.taxable ? "+ tax" : "flat rate"}
                         </div>
 
+                        <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 font-black text-slate-950">
+                          <span>Total</span>
+                          <span>
+                            ${entry.taxable
+                              ? roundToTwo(base + roundToTwo(base * 0.105) + roundToTwo(base * 0.01)).toFixed(2)
+                              : base.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex gap-2 border-t border-slate-200 pt-3">
+                        <button
+                          type="button"
+                          disabled={buttonLoading}
+                          onClick={() => startEdit(entry)}
+                          className="flex h-9 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-(--primary-light) bg-(--primary-soft) text-xs font-bold text-primary transition hover:bg-primary hover:text-white disabled:opacity-50"
+                        >
+                          <MdEdit className="h-3.5 w-3.5" />
+                          Edit
+                        </button>
                         <button
                           type="button"
                           disabled={buttonLoading}
                           onClick={() => deleteEntry(entry.id)}
-                          className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white text-slate-400 shadow-sm transition hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+                          className="flex h-9 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 text-xs font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
                         >
-                          ×
+                          Delete
                         </button>
                       </div>
-
-                      {entry.taxable && (
-                        <div className="mt-4 rounded-2xl border border-(--primary-light) bg-white p-3 text-xs">
-                          <div className="mb-2 inline-flex rounded-full bg-(--primary-soft) px-2.5 py-1 font-bold text-primary">
-                            {sRate > 0 ? " + tax" : "flat rate"}
-                          </div>
-
-                          {sRate > 0 && (
-                            <PreviewRow
-                              label={`Est. (${sRate}%)`}
-                              value={`$${sTax.toFixed(2)}`}
-                            />
-                          )}
-
-                          {cRate > 0 && (
-                            <PreviewRow
-                              label={`Mun. (${cRate}%)`}
-                              value={`$${cTax.toFixed(2)}`}
-                            />
-                          )}
-
-                          <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 font-black text-slate-950">
-                            <span>Total</span>
-                            <span>${total.toFixed(2)}</span>
-                          </div>
-                        </div>
-                      )}
                     </article>
                   );
                 })}

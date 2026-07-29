@@ -196,21 +196,22 @@ const applyThemeColors = ({
   applyCustomTheme(resolvedPrimary, resolvedSecondary);
 };
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
+const DEFAULT_PAGE_SIZE = 10;
 
 const Report = () => {
   const saveClickedRef = React.useRef(false);
   const { propertyId, propertyName, primaryColor, secondaryColor } =
     useProperty();
 
-  const [report, setReport] = useState<ReportEntry[]>([]);
+  const [allTickets, setAllTickets] = useState<ReportEntry[]>([]);
   const [ticketDetails, setTicketDetails] = useState<TicketDetails>(
     {} as TicketDetails
   );
   const [showTicketDetailsModal, setShowTicketDetailsModal] = useState(false);
   const [search, setSearch] = useState("");
   const [pageNumber, setPageNumber] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [detailsActiveTab, setDetailsActiveTab] = useState("Details");
   const [transitionState, setTransitionState] = useState("fade-in");
   const [noIncident, setNoIncident] = useState(false);
@@ -233,11 +234,17 @@ const Report = () => {
     });
   }, [primaryColor, secondaryColor]);
 
+  // Derived pagination values from allTickets
+  const totalRecords = allTickets.length;
+  const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+  const startIndex = (pageNumber - 1) * pageSize;
+  const report = allTickets.slice(startIndex, startIndex + pageSize);
+
   const getReportData = async () => {
     const sendForm = {
       propertyId,
-      pageNumber,
-      pageSize: PAGE_SIZE,
+      pageNumber: 1,
+      pageSize: 10000,
       filters: {
         search: search?.trim() as string,
       },
@@ -251,10 +258,8 @@ const Report = () => {
 
     const data = await res.json();
     const result = data?.result?.data || [];
-    const total = data?.result?.total || result?.length;
 
-    setReport(result);
-    setTotalPages(Math.max(1, Math.ceil(total / PAGE_SIZE)));
+    setAllTickets(result);
   };
 
   useEffect(() => {
@@ -266,7 +271,7 @@ const Report = () => {
       return () => clearTimeout(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, pageNumber, propertyId]);
+  }, [search, propertyId]);
 
   const handleSearchChange = (e: {
     target: { value: React.SetStateAction<string> };
@@ -275,12 +280,18 @@ const Report = () => {
     setPageNumber(1);
   };
 
+  const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setPageSize(Number(e.target.value));
+    setPageNumber(1);
+  };
+
   const handlePrevPage = () => {
     if (pageNumber > 1) setPageNumber(pageNumber - 1);
   };
 
   const handleNextPage = () => {
-    if (pageNumber < totalPages) setPageNumber(pageNumber + 1);
+    const maxPage = Math.max(1, Math.ceil(allTickets.length / pageSize));
+    if (pageNumber < maxPage) setPageNumber(pageNumber + 1);
   };
 
   const openDetails = (id: string) => {
@@ -332,7 +343,7 @@ const Report = () => {
         </section>
 
         {/* Search + Stats */}
-        <section className="grid gap-4 md:grid-cols-[1fr_auto]">
+        <section className="grid gap-4 md:grid-cols-[1fr_auto_auto]">
           <div className="relative">
             <input
               autoFocus={false}
@@ -340,22 +351,31 @@ const Report = () => {
               placeholder="Search by ticket #, name, destination..."
               value={search}
               onChange={handleSearchChange}
-              className="h-14 w-full rounded-2xl border border-slate-200 bg-white px-5 pr-4 text-sm font-medium text-slate-900 shadow-sm outline-none 
+              className="h-14 w-full rounded-2xl border border-slate-200 bg-white px-5 pr-4 text-sm font-medium text-slate-900 shadow-sm outline-none
               transition placeholder:text-slate-400 focus:border-primary focus:ring-4 focus:ring-(--primary-soft) my-auto"
             />
           </div>
 
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm md:min-w-55">
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm md:min-w-40">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-                Results
+                Total Tickets
               </p>
               <p className="text-2xl font-black text-slate-950">
+                {totalRecords}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-(--primary-light) bg-(--primary-soft) px-5 py-3 shadow-sm md:min-w-40">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                On This Page
+              </p>
+              <p className="text-2xl font-black text-primary">
                 {report.length}
               </p>
             </div>
-
-            {/* <div className="h-11 w-11 rounded-2xl bg-[var(--primary-soft)] ring-1 ring-[var(--primary-light)]" /> */}
           </div>
         </section>
 
@@ -489,16 +509,39 @@ const Report = () => {
 
         {/* Pagination */}
         <section className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-          <span className="font-bold">
-            Showing <span className="text-slate-950">{report.length}</span>{" "}
-            tickets
-          </span>
+          <div className="flex items-center gap-4">
+            <span className="font-bold">
+              Showing <span className="text-slate-950">{report.length}</span>{" "}
+              of <span className="text-slate-950">{totalRecords}</span> tickets
+            </span>
+
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="pageSize"
+                className="text-xs font-black uppercase tracking-[0.14em] text-slate-400"
+              >
+                Per page
+              </label>
+              <select
+                id="pageSize"
+                value={pageSize}
+                onChange={handlePageSizeChange}
+                className="h-9 rounded-xl border border-slate-200 bg-white px-2 text-sm font-bold text-slate-700 outline-none transition focus:border-primary focus:ring-2 focus:ring-(--primary-soft)"
+              >
+                {PAGE_SIZE_OPTIONS.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
           <div className="flex items-center justify-between gap-3 sm:justify-end">
             <button
               onClick={handlePrevPage}
-              disabled={pageNumber === 1}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition 
+              disabled={pageNumber <= 1}
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition
               hover:bg-(--primary-soft) hover:text-primary disabled:opacity-40"
             >
               &lsaquo;
@@ -510,8 +553,8 @@ const Report = () => {
 
             <button
               onClick={handleNextPage}
-              disabled={pageNumber === totalPages}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition 
+              disabled={pageNumber >= totalPages}
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition
               hover:bg-(--primary-soft) hover:text-primary disabled:opacity-40"
             >
               &rsaquo;

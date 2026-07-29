@@ -5,7 +5,7 @@
  * Supports Puerto Rico state, municipal, and reduced state taxes
  */
 
-import { PaymentTax, PaymentAmount } from '@/app/types/payment';
+import { PaymentTax, PaymentAmount, PaymentAmountDetail } from '@/app/types/payment';
 
 /**
  * Tax rate configuration for Puerto Rico
@@ -112,16 +112,25 @@ export function calculateTotalWithTaxes(
 export function generatePaymentAmount(
   baseAmount: number,
   currency: string = 'USD',
-  taxRates: TaxRateConfig = DEFAULT_PR_TAX_RATES
+  taxRates: TaxRateConfig = DEFAULT_PR_TAX_RATES,
+  tip: number = 0
 ): PaymentAmount {
   const roundedBase = roundToDecimals(baseAmount);
+  const roundedTip = roundToDecimals(tip);
   const taxes = calculateTaxes(roundedBase, taxRates);
-  const total = calculateTotalWithTaxes(roundedBase, taxRates);
+  const totalBeforeTip = calculateTotalWithTaxes(roundedBase, taxRates);
+  const total = roundToDecimals(totalBeforeTip + roundedTip);
+
+  const details: PaymentAmountDetail[] = [];
+  if (roundedTip > 0) {
+    details.push({ kind: 'tip', amount: roundedTip });
+  }
 
   return {
     currency,
     total,
     taxes,
+    ...(details.length > 0 && { details }),
   };
 }
 

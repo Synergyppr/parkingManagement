@@ -12,7 +12,7 @@ import {
 } from "react-icons/md";
 import { RiSecurePaymentFill } from "react-icons/ri";
 
-import { TaxBreakdown, PaymentTerminal } from "../types";
+import { PaymentTerminal } from "../types";
 import { useProperty } from "../context/PropertyContext";
 
 import FormInput from "./elements/FormInput";
@@ -74,24 +74,11 @@ function roundToTwo(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
-function buildTaxBreakdown(type: TransactionType): TaxBreakdown | null {
-  if (!type.taxable) return null;
-
-  const base = Number(type.value) || 0;
-  const sRate = type.stateTaxRate ?? 0;
-  const cRate = type.cityTaxRate ?? 0;
-  const stateTax = roundToTwo(base * (sRate / 100));
-  const cityTax = roundToTwo(base * (cRate / 100));
-  const total = roundToTwo(base + stateTax + cityTax);
-
-  return {
-    base,
-    stateTax,
-    stateTaxRate: sRate,
-    cityTax,
-    cityTaxRate: cRate,
-    total,
-  };
+function calcDisplayTotal(base: number, taxable?: boolean): number {
+  if (!taxable) return base;
+  const stateTax = roundToTwo(base * 0.105);
+  const cityTax = roundToTwo(base * 0.01);
+  return roundToTwo(base + stateTax + cityTax);
 }
 
 const getPrimaryThemeColor = () => {
@@ -129,10 +116,10 @@ export default function TransactionForm({
   const [showPin, setShowPin] = useState(false);
   const [courtesyLoading, setCourtesyLoading] = useState(false);
   const [transactionTypes, setTransactionTypes] = useState<TransactionType[]>(
-    []
+    [],
   );
   const [terminals, setTerminals] = useState<PaymentTerminal[]>([]);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("ecr");
   const [selectedTerminalId, setSelectedTerminalId] = useState("");
   const [receiptOutput, setReceiptOutput] = useState("both");
   const [receiptEmail, setReceiptEmail] = useState("no");
@@ -189,15 +176,16 @@ export default function TransactionForm({
   };
 
   const selectedTransactionType = transactionTypes?.find(
-    (t) => t?.name === form?.paymentMethod
+    (t) => t?.name === form?.paymentMethod,
   );
 
   const price = selectedTransactionType?.value;
-  const taxBreakdown: TaxBreakdown | null = selectedTransactionType
-    ? buildTaxBreakdown(selectedTransactionType)
-    : null;
-
-  const totalAmount = taxBreakdown ? taxBreakdown.total : Number(price) || 0;
+  const basePrice = Number(price) || 0;
+  const totalAmount = basePrice;
+  const displayTotal = calcDisplayTotal(
+    basePrice,
+    selectedTransactionType?.taxable,
+  );
 
   const resetForm = () => {
     setForm({
@@ -238,9 +226,65 @@ export default function TransactionForm({
             latitude: ctxLatitude ?? 0,
             longitude: ctxLongitude ?? 0,
           });
-        }
+        },
       );
     });
+  };
+
+  const executePayment = async (
+    payload: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> => {
+    Swal.fire({
+      title: "Processing Payment",
+      html: `<p>Sending payment request...</p><p class="text-sm mt-2 font-semibold"</p>`,
+      allowOutsideClick: false,
+      showConfirmButton: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
+    const res = await fetch("/api/valetTransaction/pay", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await res.json();
+    Swal.close();
+    return result;
+  };
+
+  const handlePaymentResult = (result: Record<string, unknown>) => {
+    const r = result?.result as Record<string, unknown> | undefined;
+
+    if (r?.status == "200") {
+      setOpen(false);
+      setReloadPageData(true);
+
+      Swal.fire({
+        icon: "success",
+        title: "Payment Successful",
+        text: (r?.message as string) || "Transaction completed successfully!",
+        showConfirmButton: false,
+        timer: 2500,
+      });
+
+      resetForm();
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Payment Failed",
+        text:
+          (r?.message as string) ||
+          "The payment was not approved. Please try again.",
+        confirmButtonColor: getPrimaryThemeColor(),
+      });
+    }
+  };
+
+  const isDuplicateTransaction = (result: Record<string, unknown>): boolean => {
+    const r = result?.result as Record<string, unknown> | undefined;
+    const message = ((r?.message as string) || "").toUpperCase();
+    return message.includes("DUPLICAT");
   };
 
   const handleSubmit = async () => {
@@ -303,9 +347,10 @@ export default function TransactionForm({
       const location = await resolveLocation();
 
       const isEcr = selectedPaymentMethod === "ecr";
+      const isAthm = selectedPaymentMethod === "athm";
       const effectiveTip = isEcr ? 0 : tip;
 
-      const payload = {
+      const payload: Record<string, unknown> = {
         ticketId,
         propertyId,
         pin: form.pin,
@@ -315,21 +360,11 @@ export default function TransactionForm({
         transactionTypeId: Number(selectedTransactionType.id),
         amount: totalAmount + effectiveTip,
         terminalId: needsTerminal ? selectedTerminalId : undefined,
-        ...(isEcr ? {} : { tip }),
+        ...(isEcr ? {} : { tip: isAthm ? "0.00" : tip }),
         receiptOutput,
         receiptEmail,
         notes: form.notes || "",
       };
-
-      Swal.fire({
-        title: "Processing Payment",
-        html: `<p>Sending payment request...</p><p class="text-sm mt-2 font-semibold">Amount: $${(
-          totalAmount + effectiveTip
-        ).toFixed(2)}</p>`,
-        allowOutsideClick: false,
-        showConfirmButton: false,
-        didOpen: () => Swal.showLoading(),
-      });
 
       console.log("[TransactionForm] ECR DEBUG:", {
         isEcr,
@@ -339,39 +374,43 @@ export default function TransactionForm({
         payload,
       });
 
-      const res = await fetch("/api/valetTransaction/pay", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const result = await executePayment(payload);
 
-      const result = await res.json();
-      Swal.close();
-
-      if (result?.result?.status == "200") {
-        setOpen(false);
-        setReloadPageData(true);
-
-        Swal.fire({
-          icon: "success",
-          title: "Payment Successful",
-          text:
-            result?.result?.message || "Transaction completed successfully!",
-          showConfirmButton: false,
-          timer: 2500,
-        });
-
-        resetForm();
-      } else {
-        Swal.fire({
-          icon: "error",
-          title: "Payment Failed",
-          text:
-            result?.result?.message ||
-            "The payment was not approved. Please try again.",
+      if (isDuplicateTransaction(result)) {
+        const { isConfirmed } = await Swal.fire({
+          icon: "warning",
+          title: "Duplicated Transaction",
+          html: `
+            <p class="text-sm text-gray-600">The terminal detected a duplicated transaction.</p>
+            <p class="text-sm text-gray-600 mt-2">Do you want to <strong>force</strong> the transaction through? The tip selected on the terminal will be preserved.</p>
+          `,
+          showCancelButton: true,
+          confirmButtonText: "Yes, Force Transaction",
+          cancelButtonText: "No, Decline",
           confirmButtonColor: getPrimaryThemeColor(),
+          cancelButtonColor: "#64748b",
+          reverseButtons: true,
         });
+
+        if (isConfirmed) {
+          const forceResult = await executePayment({
+            ...payload,
+            forceDuplicate: "yes",
+          });
+          handlePaymentResult(forceResult);
+        } else {
+          Swal.fire({
+            icon: "info",
+            title: "Force Duplicate Declined",
+            text: "The transaction was not forced. You can try another payment method.",
+            confirmButtonColor: getPrimaryThemeColor(),
+          });
+        }
+
+        return;
       }
+
+      handlePaymentResult(result);
     } catch (error) {
       console.error("Error submitting transaction:", error);
       Swal.close();
@@ -411,13 +450,13 @@ export default function TransactionForm({
       cancelButtonText: "Cancel",
       preConfirm: () => {
         const el = document.getElementById(
-          "courtesy-reason"
+          "courtesy-reason",
         ) as HTMLTextAreaElement;
         const val = el?.value?.trim();
 
         if (!val) {
           Swal.showValidationMessage(
-            "A reason is required to apply a courtesy."
+            "A reason is required to apply a courtesy.",
           );
           return false;
         }
@@ -541,10 +580,10 @@ export default function TransactionForm({
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {transactionTypes.map((option) => {
                 const active = form.paymentMethod === option.name;
-                const optionTax = buildTaxBreakdown(option);
-                const optionTotal = optionTax
-                  ? optionTax.total
-                  : Number(option.value) || 0;
+                const optionTotal = calcDisplayTotal(
+                  Number(option.value) || 0,
+                  option.taxable,
+                );
 
                 return (
                   <button
@@ -584,14 +623,14 @@ export default function TransactionForm({
                           active ? "text-primary" : "text-slate-900"
                         }`}
                       >
-                        ${optionTotal.toFixed(2)}
+                        ${option.value.toFixed(2)}
                       </p>
 
-                      {option.taxable && (
-                        <p className="text-[11px] font-bold text-slate-400">
-                          incl. tax
+                      {option.taxable ? (
+                        <p className="text-xs font-bold text-slate-400">
+                          Total ${optionTotal.toFixed(2)}
                         </p>
-                      )}
+                      ) : null}
                     </div>
                   </button>
                 );
@@ -599,44 +638,6 @@ export default function TransactionForm({
             </div>
           )}
         </section>
-
-        {/* TAX BREAKDOWN */}
-        {taxBreakdown && (
-          <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between text-slate-600">
-                <span>Base amount</span>
-                <span>${taxBreakdown.base.toFixed(2)}</span>
-              </div>
-
-              {taxBreakdown.stateTaxRate > 0 && (
-                <div className="flex justify-between text-slate-600">
-                  <span>IVU Estatal ({taxBreakdown.stateTaxRate}%)</span>
-                  <span>+${taxBreakdown.stateTax.toFixed(2)}</span>
-                </div>
-              )}
-
-              {taxBreakdown.cityTaxRate > 0 && (
-                <div className="flex justify-between text-slate-600">
-                  <span>IVU Municipal ({taxBreakdown.cityTaxRate}%)</span>
-                  <span>+${taxBreakdown.cityTax.toFixed(2)}</span>
-                </div>
-              )}
-
-              {tip > 0 && (
-                <div className="flex justify-between text-slate-600">
-                  <span>Tip</span>
-                  <span>+${tip.toFixed(2)}</span>
-                </div>
-              )}
-
-              <div className="flex justify-between border-t border-slate-200 pt-2 font-extrabold text-slate-950">
-                <span>Total</span>
-                <span>${(taxBreakdown.total + tip).toFixed(2)}</span>
-              </div>
-            </div>
-          </section>
-        )}
 
         {/* PAYMENT METHOD */}
         <section>
@@ -853,7 +854,7 @@ export default function TransactionForm({
 
           <FormInput
             name="pin"
-            type="text"
+            type="password"
             inputMode="numeric"
             placeholder="4-digit PIN"
             icon={<MdPassword className="h-4 w-4" />}
@@ -887,10 +888,10 @@ export default function TransactionForm({
             </p>
 
             <p className="font-serif text-4xl font-bold text-slate-950">
-              ${(totalAmount + tip).toFixed(2)}
+              ${(displayTotal + tip).toFixed(2)}
             </p>
             <span className="ml-2 text-xs font-medium text-slate-500 font-serif float-right">
-              {taxBreakdown ? "incl. tax" : "flat rate"}
+              {selectedTransactionType?.taxable ? "incl. tax" : "flat rate"}
               {tip > 0 ? " + tip" : ""}
             </span>
           </div>

@@ -120,7 +120,10 @@ export async function POST(request: NextRequest) {
 
     // Calculate taxes and generate payment amount
     // Tax kinds per PlaceToPay spec: stateTax, municipalTax, reducedStateTax, etc.
-    const paymentAmount = generatePaymentAmount(body.amount);
+    // If rate is not taxable, pass zero tax rates to skip tax calculation
+    const noTaxRates = { stateTax: 0, municipalTax: 0, reducedStateTax: 0 };
+    const taxRates = body.taxable === false ? noTaxRates : undefined;
+    const paymentAmount = generatePaymentAmount(body.amount, 'USD', taxRates, body.tip || 0);
 
     console.log('Payment amount with taxes:', paymentAmount);
 
@@ -183,8 +186,8 @@ export async function POST(request: NextRequest) {
         allowPartial: false,
         subscribe: false,
       },
-      returnUrl: `${baseUrl}/payment/return`,
-      cancelUrl: `${baseUrl}/payment/cancel`,
+      returnUrl: body.returnUrl || `${baseUrl}/payment/return`,
+      cancelUrl: body.returnUrl || `${baseUrl}/payment/cancel`,
       ipAddress, // Client IP address
       userAgent, // Client user agent string
     };
