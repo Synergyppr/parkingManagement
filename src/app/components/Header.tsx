@@ -10,7 +10,7 @@ import {
   KeySquare,
   LogOut,
   Menu,
-  ShieldCheck,
+  // ShieldCheck,
   User,
 } from "lucide-react";
 import { GoDotFill } from "react-icons/go";
@@ -806,7 +806,7 @@ export default function Header() {
                   </div>
 
                   <div className="p-3">
-                    <div className="mb-2 flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
+                    {/* <div className="mb-2 flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-(--primary-soft) text-primary">
                         <ShieldCheck className="h-4 w-4" />
                       </div>
@@ -819,7 +819,7 @@ export default function Header() {
                           {accountIdentity.role}
                         </p>
                       </div>
-                    </div>
+                    </div> */}
 
                     <button
                       type="button"

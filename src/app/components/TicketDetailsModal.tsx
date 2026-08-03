@@ -67,7 +67,7 @@ export default function TicketDetailsModal({
   const [actionLoading, setActionLoading] = useState(false);
   const [actionLabel, setActionLabel] = useState<"Void" | "Refund">("Void");
 
-  const photos = ticketDetails?.vehicle?.photos || [];
+  const photos = ticketDetails?.photos || ticketDetails?.vehicle?.photos || [];
   const transactions = ticketDetails?.transactions || [];
   const hasTransactions = transactions.length > 0;
 
@@ -1486,44 +1486,50 @@ export default function TicketDetailsModal({
                     )}
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                    <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                      Destination
-                    </p>
-                    <p className="text-sm font-extrabold text-slate-900">
-                      {ticketDetails?.destination || "—"}
-                    </p>
-                  </div>
+                  {ticketDetails?.destination && (
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                      <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                        Destination
+                      </p>
+                      <p className="text-sm font-extrabold text-slate-900">
+                        {ticketDetails.destination}
+                      </p>
+                    </div>
+                  )}
 
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                    <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                      Vehicle
-                    </p>
-                    <p className="text-sm font-extrabold text-slate-900">
-                      {ticketDetails?.vehicle?.color}{" "}
-                      {ticketDetails?.vehicle?.brand}{" "}
-                      {ticketDetails?.vehicle?.model}
-                    </p>
-                    <p className="mt-1 text-xs font-medium text-slate-500">
-                      {ticketDetails?.vehicle?.type}
-                    </p>
-                  </div>
+                  {(ticketDetails?.vehicle?.color || ticketDetails?.vehicle?.brand || ticketDetails?.vehicle?.model) && (
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                      <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                        Vehicle
+                      </p>
+                      <p className="text-sm font-extrabold text-slate-900">
+                        {[ticketDetails?.vehicle?.color, ticketDetails?.vehicle?.brand, ticketDetails?.vehicle?.model].filter(Boolean).join(" ")}
+                      </p>
+                      {ticketDetails?.vehicle?.type && (
+                        <p className="mt-1 text-xs font-medium text-slate-500">
+                          {ticketDetails.vehicle.type}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
-                  <div className="rounded-2xl border border-(--primary-light) bg-(--primary-soft) p-4">
-                    <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
-                      License Plate
-                    </p>
-                    <p className="font-mono text-sm font-extrabold tracking-widest text-slate-950">
-                      {ticketDetails?.vehicle?.licensePlate || "Not provided"}
-                    </p>
-                  </div>
+                  {ticketDetails?.vehicle?.licensePlate && (
+                    <div className="rounded-2xl border border-(--primary-light) bg-(--primary-soft) p-4">
+                      <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+                        License Plate
+                      </p>
+                      <p className="font-mono text-sm font-extrabold tracking-widest text-slate-950">
+                        {ticketDetails.vehicle.licensePlate}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <p className="text-center text-xs font-medium text-slate-400">
                   Created {formatDate(ticketDetails?.createdDateTime || "")}
                 </p>
 
-                {Number(ticketDetails?.photos?.length) > 0 && (
+                {photos.length > 0 && (
                   <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="mb-3 flex items-center gap-2">
                       <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-(--primary-soft) text-primary">
@@ -1531,12 +1537,12 @@ export default function TicketDetailsModal({
                       </div>
 
                       <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500">
-                        Photos ({ticketDetails?.photos?.length})
+                        Photos ({photos.length})
                       </p>
                     </div>
 
                     <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                      {ticketDetails?.photos?.map((photo, index) => (
+                      {photos.map((photo, index) => (
                         <button
                           key={index}
                           type="button"

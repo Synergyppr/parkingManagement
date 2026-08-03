@@ -369,13 +369,15 @@ export default function ValetTicketList({
       })
       .slice()
       .sort((firstVehicle, secondVehicle) => {
-        if (activeTab !== "requested") return 0;
-
-        if (firstVehicle.isRead === secondVehicle.isRead) {
-          return 0;
+        if (activeTab === "requested") {
+          if (firstVehicle.isRead !== secondVehicle.isRead) {
+            return firstVehicle.isRead ? 1 : -1;
+          }
         }
 
-        return firstVehicle.isRead ? 1 : -1;
+        const dateA = new Date(firstVehicle.lastUpdated || firstVehicle.createdDateTime).getTime();
+        const dateB = new Date(secondVehicle.lastUpdated || secondVehicle.createdDateTime).getTime();
+        return dateB - dateA;
       });
   }, [activeTab, search, vehicles]);
 
@@ -559,9 +561,13 @@ export default function ValetTicketList({
                 (globalIndex === 0 ||
                   !filteredVehicles[globalIndex - 1]?.isRead);
 
-              const createdDate = vehicle?.createdDateTime
-                ? new Date(vehicle.createdDateTime)
-                : null;
+              const rawDate = vehicle?.lastUpdated ?? vehicle?.createdDateTime;
+              const displayDate = rawDate ? new Date(rawDate) : null;
+              console.log(`[TICKET-DEBUG] ${vehicle?.ticketNumber}:`, {
+                lastUpdated: vehicle?.lastUpdated,
+                createdDateTime: vehicle?.createdDateTime,
+                using: rawDate,
+              });
 
               return (
                 <React.Fragment key={vehicle?.id || vehicle?.ticketNumber}>
@@ -615,8 +621,8 @@ export default function ValetTicketList({
                       <div className="shrink-0 text-right">
                         <div className="flex cursor-default items-center justify-end gap-1 text-sm font-extrabold text-slate-700">
                           <FiClock className="h-3.5 w-3.5 text-slate-400" />
-                          {createdDate
-                            ? createdDate.toLocaleTimeString([], {
+                          {displayDate
+                            ? displayDate.toLocaleTimeString([], {
                                 hour: "2-digit",
                                 minute: "2-digit",
                               })
@@ -624,8 +630,8 @@ export default function ValetTicketList({
                         </div>
 
                         <p className="mt-0.5 text-xs font-semibold text-slate-400">
-                          {createdDate
-                            ? createdDate.toLocaleDateString([], {
+                          {displayDate
+                            ? displayDate.toLocaleDateString([], {
                                 month: "2-digit",
                                 day: "2-digit",
                               })

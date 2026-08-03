@@ -36,6 +36,7 @@ export interface Ticket {
     damagedParts?: CarPart[];
   };
   createdDateTime: string;
+  lastUpdated?: string;
   notificationId: string;
   ticketNumber: string;
   pin: string;
