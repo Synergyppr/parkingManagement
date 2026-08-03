@@ -120,8 +120,11 @@ const Location = () => {
     },
   };
 
+  const googleMapsKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+  // console.log("[GEO-DEBUG] Google Maps API Key:", googleMapsKey ? `Present (${googleMapsKey.substring(0, 8)}...)` : "MISSING!");
+
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    googleMapsApiKey: googleMapsKey,
   });
 
   usePropertyListener();
@@ -147,7 +150,7 @@ const Location = () => {
   };
 
   useEffect(() => {
-    // console.log("Predefined", predefinedProperties)
+    console.log("[GEO-DEBUG] predefinedProperties received:", predefinedProperties);
     const uniqueProperties = Array.isArray(predefinedProperties)
       ? predefinedProperties.reduce((acc, prop) => {
           const key = keyMap[prop.name as keyof typeof keyMap];
@@ -172,6 +175,9 @@ const Location = () => {
   useEffect(() => {
     if (latitude == null || longitude == null) return;
 
+    console.log("[GEO-DEBUG] Location.tsx detection - User coords:", { latitude, longitude });
+    console.log("[GEO-DEBUG] Location.tsx detection - Properties count:", Object.values(properties).length);
+
     let foundProperty = null;
 
     for (const prop of Object.values(properties)) {
@@ -186,11 +192,21 @@ const Location = () => {
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       const distance = R * c;
 
+      console.log(`[GEO-DEBUG] Location.tsx - "${prop.name}":`, {
+        propLat: prop.lat,
+        propLng: prop.lng,
+        radius: prop.radius,
+        distanceMeters: distance.toFixed(2),
+        isWithin: distance <= prop.radius,
+      });
+
       if (distance <= prop.radius) {
         foundProperty = prop;
         break;
       }
     }
+
+    console.log("[GEO-DEBUG] Location.tsx - Result:", foundProperty ? `INSIDE ${foundProperty.name}` : "OUTSIDE all properties");
 
     if (foundProperty) {
       setPropertyId(foundProperty.id);
@@ -263,7 +279,10 @@ const Location = () => {
   //   return { label, bg, mph };
   // };
 
-  if (loadError) return <div>Error loading map</div>;
+  if (loadError) {
+    console.error("[GEO-DEBUG] Google Maps loadError:", loadError.message);
+    return <div>Error loading map: {loadError.message}</div>;
+  }
   if (!isLoaded) return <div>Loading map...</div>;
 
   const currentLat = latitude ?? centerDefault.lat;

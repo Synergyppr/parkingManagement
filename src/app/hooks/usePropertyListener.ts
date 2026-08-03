@@ -54,6 +54,34 @@ export default function usePropertyListener() {
 
     if (hasEvaluatedRef.current) return;
 
+    // console.log("[GEO-DEBUG] usePropertyListener evaluating location:", {
+    //   userLat: latitude,
+    //   userLng: longitude,
+    //   propertiesCount: properties.length,
+    // });
+
+    properties.forEach((property) => {
+      const R = 6371e3;
+      // const dLat = ((longitude - property.lng) * Math.PI) / 180; // intentionally checking
+      const dLat2 = ((latitude - property.lat) * Math.PI) / 180;
+      const dLon = ((longitude - property.lng) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat2 / 2) * Math.sin(dLat2 / 2) +
+        Math.cos((property.lat * Math.PI) / 180) *
+          Math.cos((latitude * Math.PI) / 180) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c;
+
+      console.log(`[GEO-DEBUG] Property "${property.name}":`, {
+        propertyLat: property.lat,
+        propertyLng: property.lng,
+        radius: property.radius,
+        distanceMeters: distance.toFixed(2),
+        isWithin: distance <= (property.radius ?? 100),
+      });
+    });
+
     const matched = properties.find((property) =>
       isWithinRadius(
         property.lat,
@@ -63,6 +91,8 @@ export default function usePropertyListener() {
         property.radius ?? 100
       )
     );
+
+    // console.log("[GEO-DEBUG] Matched property:", matched ? matched.name : "NONE (out of area)");
 
     if (matched) {
       if (propertyId !== matched.id) {

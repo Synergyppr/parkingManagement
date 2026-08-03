@@ -147,16 +147,24 @@ export const PropertyProvider = ({
   }, []);
 
   const requestLocation = () => {
+    // console.log("[GEO-DEBUG] requestLocation called");
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          // console.log("[GEO-DEBUG] Browser position received:", {
+          //   latitude: position.coords.latitude,
+          //   longitude: position.coords.longitude,
+          //   accuracy: position.coords.accuracy,
+          // });
           setLatitude(position.coords.latitude);
           setLongitude(position.coords.longitude);
         },
         (error) => {
-          console.error("Geolocation error:", error.message);
+          console.error("[GEO-DEBUG] Geolocation error:", error.code, error.message);
         }
       );
+    } else {
+      console.error("[GEO-DEBUG] navigator.geolocation NOT available");
     }
   };
 
