@@ -1036,25 +1036,28 @@ function ReportTable({
   const referenceValue = providerResponse?.reference_value as Record<string, HostBatch> | undefined;
 
   // ── Settlement-specific rendering ──
-  if (type === "settlement" && providerResponse) {
+  if (type === "settlement") {
     const finalStatus = data?.final_status as string || "—";
     const isSuccess = data?.success === true;
     const operationSucceeded = data?.operation_succeeded === true;
     const logoffMsg = data?.logoff_error_message as string | null;
 
+    // Extract settlement_data from final_status_result
+    const finalStatusResult = data?.final_status_result as Record<string, unknown> | undefined;
+    const finalProvider = finalStatusResult?.provider_response as Record<string, unknown> | undefined;
+    const settlementData = finalProvider?.settlement_data as Record<string, Record<string, Record<string, string>>> | undefined;
+
+    // Extract receipt HTML
+    const settlementReceipt = data?.settlement_receipt as Record<string, unknown> | undefined;
+    const receiptHtml = settlementReceipt?.receipt_html as string | undefined;
+
     const summaryFields = [
       { label: "Status", value: finalStatus, highlight: true },
       { label: "Result", value: operationSucceeded ? "Approved" : "Failed" },
-      { label: "Approval Code", value: providerResponse?.approval_code as string || "—" },
-      { label: "Response", value: providerResponse?.response_message as string || "—" },
-      { label: "Transaction ID", value: (data?.trx_id as string) || (providerResponse?.trx_id as string) || "—" },
+      { label: "Transaction ID", value: (data?.trx_id as string) || "—" },
       { label: "Session", value: (data?.session_id as string) || "—" },
-      { label: "Terminal", value: providerResponse?.terminal_id as string || "—" },
-      { label: "Merchant", value: providerResponse?.merchant_id as string || "—" },
-      { label: "Station", value: providerResponse?.station_number as string || "—" },
-      { label: "Cashier", value: providerResponse?.cashier_id as string || "—" },
-      { label: "Reference", value: providerResponse?.reference as string || "—" },
-      { label: "Receipt Output", value: providerResponse?.receipt_output as string || "—" },
+      { label: "Terminal", value: (finalProvider?.terminal_id as string) || (providerResponse?.terminal_id as string) || "—" },
+      { label: "Merchant", value: (finalProvider?.merchant_id as string) || (providerResponse?.merchant_id as string) || "—" },
     ];
 
     return (
@@ -1100,6 +1103,74 @@ function ReportTable({
           </div>
         </div>
 
+        {/* Settlement Totals by Type */}
+        {settlementData && (
+          <div className="p-4">
+            <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+              Batch Totals
+            </p>
+            <div className="space-y-3">
+              {Object.entries(settlementData).map(([hostName, hostData]) => {
+                const credit = hostData?.Credit;
+                const debit = hostData?.Debit;
+                const cash = hostData?.Cash;
+                const batchMsg = (hostData?.response_message as unknown as string || "").replace(/"/g, "").trim();
+
+                const categories = [
+                  ...(credit ? [{ label: "Credit", sales: credit.credSalesAmt, salesCount: credit.credSalesCount, refunds: credit.credRefundsAmt, refundsCount: credit.credRefundsCount }] : []),
+                  ...(debit ? [{ label: "Debit", sales: debit.debSalesAmt, salesCount: debit.debSalesCount, refunds: debit.debRefundsAmt, refundsCount: debit.debRefundsCount }] : []),
+                  ...(cash ? [{ label: "Cash", sales: cash.cashSalesAmt, salesCount: cash.cashSalesCount, refunds: cash.cashRefundsAmt, refundsCount: cash.cashRefundsCount }] : []),
+                ];
+
+                return (
+                  <div key={hostName} className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+                    <div className="flex items-center justify-between bg-slate-50 px-4 py-2.5">
+                      <p className="text-xs font-extrabold text-slate-700">Host: {hostName}</p>
+                      {batchMsg && (
+                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold text-emerald-700">
+                          {batchMsg}
+                        </span>
+                      )}
+                    </div>
+                    <div className="divide-y divide-slate-100">
+                      {categories.map((cat) => (
+                        <div key={cat.label} className="grid grid-cols-3 gap-2 px-4 py-3">
+                          <div>
+                            <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-400">{cat.label}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[9px] font-bold uppercase text-slate-400">Sales ({cat.salesCount})</p>
+                            <p className="text-sm font-extrabold text-slate-800">${cat.sales}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[9px] font-bold uppercase text-slate-400">Refunds ({cat.refundsCount})</p>
+                            <p className="text-sm font-extrabold text-slate-800">${cat.refunds}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Receipt HTML */}
+        {receiptHtml && (
+          <div className="p-4">
+            <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+              Settlement Receipt
+            </p>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 overflow-auto">
+              <div
+                className="receipt-container"
+                dangerouslySetInnerHTML={{ __html: receiptHtml }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Operation timeline */}
         <div className="p-4">
           <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
@@ -1109,6 +1180,7 @@ function ReportTable({
             {[
               { step: "Logon", success: data?.logon_succeeded as boolean, msg: (data?.logon_result as Record<string, unknown>)?.message as string },
               { step: "Settlement", success: data?.operation_succeeded as boolean, msg: (operationResult?.message as string) },
+              { step: "Status Polling", success: data?.status_polling_succeeded as boolean, msg: (finalStatusResult?.message as string) },
               { step: "Logoff", success: data?.logoff_succeeded as boolean, msg: logoffMsg || (data?.logoff_result as Record<string, unknown>)?.message as string },
             ].map((item) => (
               <div
