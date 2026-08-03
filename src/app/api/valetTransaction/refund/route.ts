@@ -35,7 +35,6 @@ export async function POST(req: Request) {
     ticketId: body.ticketId ?? "",
     paymentMethod: body.paymentMethod ?? "",
     amount: body.amount ?? 0,
-    tip: body.tip ?? 0,
     taxable: body.taxable ?? false,
     terminalId: body.terminalId ?? "",
     pin: body.pin ?? "",

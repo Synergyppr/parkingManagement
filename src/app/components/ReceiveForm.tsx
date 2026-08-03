@@ -725,7 +725,7 @@ export default function ReceiveForm({
                   <FormInput
                     name="pin"
                     type="password"
-                    // inputMode="numeric"
+                    inputMode="numeric"
                     placeholder="Expected Return / PIN"
                     icon={<MdPassword />}
                     value={form?.pin || ""}
