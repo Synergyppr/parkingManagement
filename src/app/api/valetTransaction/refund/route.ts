@@ -5,12 +5,12 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   const body = await req.json();
 
-  if (!body?.propertyId) {
+  if (!body?.propertyId || !body?.notes?.trim()) {
     return NextResponse.json(
       {
         result: {
           status: "400",
-          message: "Missing required field: propertyId.",
+          message: "Missing required fields: propertyId, notes.",
         },
       },
       { status: 400 }
@@ -32,16 +32,18 @@ export async function POST(req: Request) {
 
   const payload = {
     propertyId: body.propertyId,
+    ticketId: body.ticketId ?? "",
     paymentMethod: body.paymentMethod ?? "",
     amount: body.amount ?? 0,
     tip: body.tip ?? 0,
+    taxable: body.taxable ?? false,
     terminalId: body.terminalId ?? "",
     pin: body.pin ?? "",
     latitude: body.latitude ?? 0,
     longitude: body.longitude ?? 0,
     receiptEmail: body.receiptEmail ?? "yes",
     receiptOutput: body.receiptOutput ?? "both",
-    notes: body.notes ?? "",
+    notes: body.notes,
   };
 
   try {

@@ -42,7 +42,7 @@ export default function UserListModal({
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose}>
-        <div className="overflow-hidden rounded-4xl bg-white">
+        <div className="overflow-hidden bg-white">
           <div className="border-b border-slate-200 bg-linear-to-br from-white via-[color-mix(in_srgb,var(--primary-soft)_60%,transparent)] to-white px-5 py-6">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -126,7 +126,7 @@ export default function UserListModal({
                     : "scale-100 opacity-100"
                 }`}
               >
-                <ul className="grid max-h-[62vh] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2">
+                <ul className="grid grid-cols-1 gap-3 pr-1 sm:grid-cols-2">
                   {filteredUsers.map((user) => (
                     <li
                       key={user?.id}

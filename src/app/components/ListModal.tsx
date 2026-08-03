@@ -82,7 +82,7 @@ export default function ListModal<
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose}>
-        <div className="mt-2 flex max-h-[90dvh] flex-col overflow-hidden rounded-4xl bg-white">
+        <div className="flex flex-col overflow-hidden bg-white">
           <div className="shrink-0 border-b border-slate-200 bg-linear-to-br from-white via-[color-mix(in_srgb,var(--primary-soft)_60%,transparent)] to-white px-4 py-4 sm:px-5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -168,7 +168,7 @@ export default function ListModal<
                     : "scale-100 opacity-100"
                 }`}
               >
-                <ul className="grid max-h-[64vh] grid-cols-1 gap-2 overflow-y-auto pr-1 pb-28 sm:grid-cols-2">
+                <ul className="grid grid-cols-1 gap-2 pr-1 pb-28 sm:grid-cols-2">
                   {filteredEntities.map((item, index) => (
                     <li
                       key={index}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 interface ModalProps {
@@ -17,11 +17,11 @@ export default function Modal({
   isOpen,
   onClose,
   children,
-  placementY = "center",
-  placementX = "center",
   onRequestClose,
   size,
 }: ModalProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+
   const requestClose = () => {
     if (onRequestClose) {
       onRequestClose();
@@ -59,30 +59,16 @@ export default function Modal({
     };
   }, [isOpen]);
 
-  const placementYClass =
-    placementY === "start"
-      ? "items-start"
-      : placementY === "end"
-      ? "items-end"
-      : "items-center";
-
-  const placementXClass =
-    placementX === "start"
-      ? "justify-start"
-      : placementX === "end"
-      ? "justify-end"
-      : "justify-center";
-
   const sizeClass =
     size === "sm"
-      ? "max-w-sm"
+      ? "w-full max-w-sm"
       : size === "md"
-      ? "max-w-md"
+      ? "w-full max-w-md"
       : size === "lg"
-      ? "max-w-lg"
+      ? "w-full max-w-2xl"
       : size === "xl"
-      ? "max-w-4xl"
-      : "max-w-md md:max-w-lg";
+      ? "w-full max-w-4xl"
+      : "w-full max-w-md md:max-w-lg";
 
   return (
     <AnimatePresence>
@@ -90,35 +76,38 @@ export default function Modal({
         <motion.div
           role="dialog"
           aria-modal="true"
-          className={`fixed inset-0 z-80 flex overflow-y-auto bg-black/50 p-4 pt-18 backdrop-blur-sm ${placementYClass} ${placementXClass}`}
+          className="fixed inset-0 z-80 flex justify-end bg-black/50 backdrop-blur-sm"
           onMouseDown={requestClose}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
         >
           <motion.div
-            className={`relative w-full max-w-[95vw] rounded-2xl bg-white shadow-xl ${sizeClass}`}
+            ref={panelRef}
+            className={`relative flex h-full flex-col overflow-hidden border-l border-slate-200 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.28)] ${sizeClass}`}
             onMouseDown={(event) => {
               event.stopPropagation();
             }}
-            initial={{ opacity: 0, y: -20, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.98 }}
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
             transition={{
-              duration: 0.25,
-              ease: "easeOut",
+              type: "spring",
+              damping: 30,
+              stiffness: 300,
             }}
           >
             <button
               type="button"
-              aria-label="Close modal"
+              aria-label="Close panel"
               className="absolute right-3 top-3 z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
               onClick={requestClose}
             >
               <span className="text-lg leading-none">&times;</span>
             </button>
 
-            <div className="max-h-[calc(100vh-6rem)] overflow-y-auto">
+            <div className="flex-1 overflow-y-auto">
               {children}
             </div>
           </motion.div>

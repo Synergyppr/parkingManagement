@@ -521,7 +521,7 @@ export default function DashboardClient({
       )}
 
       <section
-        className="relative z-0 min-h-[calc(100vh-140px)] overflow-x-hidden overflow-y-auto bg-[radial-gradient(circle_at_center,#ffffff_10%,var(--primary-soft)_90%)]
+        className="relative min-h-[calc(100vh-140px)] overflow-x-hidden overflow-y-auto bg-[radial-gradient(circle_at_center,#ffffff_10%,var(--primary-soft)_90%)]
         transition-colors duration-300"
       >
         <TabNavigation
@@ -661,7 +661,10 @@ export default function DashboardClient({
 
         <PinConfirmationModal
           isOpen={showPinConfirmationModal}
-          onClose={() => setShowPinConfirmationModal(false)}
+          onClose={() => {
+            setShowPinConfirmationModal(false);
+            setPin("");
+          }}
           pin={pin}
           setPin={setPin}
           showPin={showPin}

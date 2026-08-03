@@ -253,7 +253,7 @@ export default function ModalPropertyForm({
   const secondaryColorIsValid = isValidHexColor(form.secondaryColor);
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col overflow-hidden rounded-4xl bg-white text-slate-800">
+    <div className="mx-auto flex w-full max-w-xl flex-col overflow-hidden bg-white text-slate-800">
       <div className="border-b border-slate-200 bg-linear-to-br from-white via-[color-mix(in_srgb,var(--primary-soft)_60%,transparent)] to-white px-5 py-6 md:px-7">
         <span className="inline-flex rounded-full border border-(--primary-light) bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-primary shadow-sm">
           Property Setup

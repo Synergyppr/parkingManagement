@@ -549,7 +549,7 @@ const TransactionTypeManager: React.FC<{
   fetchTransactionTypes: () => Promise<void>;
 }> = ({ transactionTypes, fetchTransactionTypes }) => {
   return (
-    <div className="overflow-hidden rounded-4xl bg-white">
+    <div className="overflow-hidden bg-white">
       <div className="border-b border-slate-200 bg-linear-to-br from-white via-[color-mix(in_srgb,var(--primary-soft)_60%,transparent)] to-white px-5 py-6 text-center">
         <span className="inline-flex rounded-full border border-(--primary-light) bg-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-primary shadow-sm">
           Rate Center

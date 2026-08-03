@@ -533,7 +533,7 @@ export default function TransactionForm({
   };
 
   return (
-    <div className="overflow-hidden rounded-4xl bg-white">
+    <div className="overflow-hidden bg-white">
       <form className="space-y-7 p-6" onSubmit={(e) => e.preventDefault()}>
         <div>
           <div className="flex items-start justify-between gap-4">

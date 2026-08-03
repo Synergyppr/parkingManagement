@@ -50,7 +50,8 @@ export default function PinConfirmationModal({
           <input
             autoFocus={false}
             type={showPin ? "text" : "password"}
-            name="pin"
+            name="pin-confirmation"
+            autoComplete="off"
             placeholder="••••"
             value={pin}
             onChange={(e) => {

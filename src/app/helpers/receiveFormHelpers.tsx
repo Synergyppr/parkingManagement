@@ -255,37 +255,20 @@ export const handleParkVehicle = async (
       const result = await res.json();
 
       if (result?.status === "200") {
-        setReloadPageData(true); // refresh the data from the API
-        // router.refresh();
-
-        // Successful login
         Swal.fire({
           title: "Form Sent",
-          // html: `<pre style="text-align: left; white-space: pre-wrap;">${JSON.stringify(
-          //   sendForm,
-          //   null,
-          //   2
-          // )}</pre>`,
-          // icon: "warning",
           icon: "success",
           text: "Vehicle checked in successfully!",
           confirmButtonText: "Continue",
         }).then(async (response) => {
           if (response.isConfirmed) {
-            // Swal.fire({
-            //   icon: "success",
-            //   title: "Success",
-            //   text: "Vehicle checked in successfully!",
-            //   showConfirmButton: false,
-            //   timer: 1500,
-            // });
             setSubmitted(true);
             setForm({});
             setIncidentParts([]);
             setDescriptions({});
             setInitialForm({});
             setVehiclePhotoUrls?.([]);
-            setSubmitted(true);
+            setReloadPageData(true);
           }
         });
       } else {

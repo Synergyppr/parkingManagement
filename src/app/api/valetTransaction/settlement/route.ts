@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-// Evertec.journal → POST /api/evertec/reports/journal
-// Retrieves ECR transaction details from the current batch (reference numbers, amounts, etc.)
+// Evertec.settlement → POST /api/evertec/settlement/start-settle
+// Triggers end-of-day settlement (batch clearing with the payment host).
 export async function POST(req: Request) {
   const body = await req.json();
 
@@ -17,13 +17,13 @@ export async function POST(req: Request) {
     );
   }
 
-  const endpoint = process.env.EVERTEC_JOURNAL_ENDPOINT;
+  const endpoint = process.env.EVERTEC_SETTLEMENT_ENDPOINT;
   if (!endpoint) {
     return NextResponse.json(
       {
         result: {
           status: "500",
-          message: "EVERTEC_JOURNAL_ENDPOINT is not configured.",
+          message: "EVERTEC_SETTLEMENT_ENDPOINT is not configured.",
         },
       },
       { status: 500 }
@@ -37,12 +37,12 @@ export async function POST(req: Request) {
     station_number: body.stationNumber || process.env.EVERTEC_ECR_STATION_NUMBER || "",
     cashier_id: body.cashierId ?? "",
     created_by: body.createdBy || body.cashierId || "",
-    target_reference: body.targetReference ?? "",
+    receipt_output: body.receiptOutput ?? "both",
   };
 
   try {
-    console.log("[Journal] Endpoint:", endpoint);
-    console.log("[Journal] REQUEST:", JSON.stringify(payload, null, 2));
+    console.log("[Settlement] Endpoint:", endpoint);
+    console.log("[Settlement] REQUEST:", JSON.stringify(payload, null, 2));
 
     const response = await fetch(endpoint, {
       method: "POST",
@@ -52,8 +52,8 @@ export async function POST(req: Request) {
     });
 
     const responseText = await response.text();
-    console.log("[Journal] HTTP Status:", response.status);
-    console.log("[Journal] RESPONSE:", responseText);
+    console.log("[Settlement] HTTP Status:", response.status);
+    console.log("[Settlement] RESPONSE:", responseText);
 
     let result;
     try {
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ result });
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : String(error);
-    console.error("[Journal] Fetch error:", errMsg);
+    console.error("[Settlement] Fetch error:", errMsg);
     return NextResponse.json({
       result: {
         status: "500",
