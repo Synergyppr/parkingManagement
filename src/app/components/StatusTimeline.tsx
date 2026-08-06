@@ -1,6 +1,58 @@
-const StatusTimeline = ({ currentStatus }: { currentStatus: string }) => {
+interface StatusTimelineProps {
+  currentStatus: string;
+  createdDateTime?: string;
+  lastUpdated?: string;
+}
+
+const formatStepDate = (dateStr?: string): string | null => {
+  if (!dateStr) return null;
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleString([], {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return null;
+  }
+};
+
+const StatusTimeline = ({
+  currentStatus,
+  createdDateTime,
+  lastUpdated,
+}: StatusTimelineProps) => {
   const statuses = ["received", "parked", "requested", "ready"];
-  const currentIdx = statuses.indexOf(currentStatus?.toLowerCase() || "");
+  const normalized = currentStatus?.toLowerCase()?.trim() || "";
+  // If status is unrecognized or empty, default to "parked" so the patron can request again
+  const currentIdx =
+    statuses.indexOf(normalized) !== -1
+      ? statuses.indexOf(normalized)
+      : normalized
+      ? 0
+      : 1;
+
+  // Determine which step gets which date:
+  // - "received" → createdDateTime (when the car arrived)
+  // - "parked" → no date
+  // - "requested" or "ready" → lastUpdated (when the status changed)
+  const getStepDate = (status: string, idx: number): string | null => {
+    if (idx > currentIdx) return null; // future steps — no date
+
+    if (status === "received") {
+      return formatStepDate(createdDateTime);
+    }
+
+    if ((status === "requested" || status === "ready") && idx === currentIdx) {
+      return formatStepDate(lastUpdated);
+    }
+
+    return null;
+  };
 
   return (
     <div className="mt-5 rounded-4xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -8,6 +60,7 @@ const StatusTimeline = ({ currentStatus }: { currentStatus: string }) => {
         {statuses.map((status, i) => {
           const done = i <= currentIdx;
           const active = i === currentIdx;
+          const stepDate = getStepDate(status, i);
 
           return (
             <div key={status} className="">
@@ -51,6 +104,13 @@ const StatusTimeline = ({ currentStatus }: { currentStatus: string }) => {
                 >
                   {status}
                 </p>
+
+                {stepDate && (
+                  <></>
+                  // <p className="mt-1 text-center text-[9px] font-semibold leading-tight text-slate-400">
+                  //   {stepDate}
+                  // </p>
+                )}
               </div>
 
               {i < statuses.length - 1 && (

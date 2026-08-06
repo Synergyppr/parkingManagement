@@ -687,35 +687,61 @@ export default function TicketDetailsModal({
         data?.result?.result?.status;
       const isSuccess = status === "200" || status === 200;
 
+      // Extract Evertec response_message from all possible locations
+      const r = data?.result as Record<string, unknown> | undefined;
+      const rData = r?.data as Record<string, unknown> | undefined;
+      const rNested = r?.result as Record<string, unknown> | undefined;
+
+      const responseMessage = (
+        (rData?.response_message as string) ||
+        (r?.response_message as string) ||
+        (rNested?.response_message as string) ||
+        (rData?.final_status as string) ||
+        (r?.final_status as string) ||
+        ""
+      ).replace(/"/g, "").trim();
+
+      const approvalCode =
+        (rData?.approval_code as string) ||
+        (r?.approval_code as string) ||
+        (rNested?.approval_code as string) ||
+        "";
+
       if (isSuccess) {
         await Swal.fire({
           title: `${label} Successful`,
-          text: `The transaction has been ${
-            action === "void" ? "voided" : "refunded"
-          } successfully.`,
+          html: `
+            <p class="text-sm text-gray-600">The transaction has been ${
+              action === "void" ? "voided" : "refunded"
+            } successfully.</p>
+            ${responseMessage ? `<p class="mt-2 text-xs font-semibold text-emerald-600">${responseMessage}</p>` : ""}
+          `,
           icon: "success",
           confirmButtonColor: getThemePrimaryColor(),
         });
         handleCloseTicketDetails();
       } else {
         const errorMsg =
-          data?.result?.message ||
-          data?.result?.data?.message ||
-          data?.result?.result?.message ||
-          data?.result?.data?.error ||
+          r?.message ||
+          rData?.message ||
+          rNested?.message ||
+          rData?.error ||
           `Failed to ${action} transaction.`;
 
         const responseStatus =
-          data?.result?.data?.response_code ||
-          data?.result?.response_code ||
+          rData?.response_code ||
+          r?.response_code ||
           status ||
           "Unknown";
+
+        const showResponseSeparately = responseMessage && responseMessage !== String(errorMsg);
 
         Swal.fire({
           title: `${label} Failed`,
           html: `
             <p>${errorMsg}</p>
-            <p class="mt-2 text-xs text-slate-400">Status: ${responseStatus}</p>
+            ${showResponseSeparately ? `<p class="mt-2 text-xs font-bold text-red-500">${responseMessage}</p>` : ""}
+            <p class="mt-2 text-xs text-slate-400">Status: ${responseStatus}${approvalCode && approvalCode !== "00" ? ` | Code: ${approvalCode}` : ""}</p>
             <details class="mt-2 text-left">
               <summary class="cursor-pointer text-xs text-slate-400">Full response</summary>
               <pre class="mt-1 max-h-40 overflow-auto rounded bg-slate-50 p-2 text-[10px] text-slate-600">${JSON.stringify(

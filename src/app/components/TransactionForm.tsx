@@ -253,29 +253,87 @@ export default function TransactionForm({
     return result;
   };
 
+  /**
+   * Extracts the Evertec response_message from all possible locations
+   * in the middleware response. The middleware may nest it differently
+   * depending on the operation (sale, void, refund, etc.).
+   */
+  const extractResponseMessage = (r: Record<string, unknown> | undefined): string => {
+    const data = r?.data as Record<string, unknown> | undefined;
+    const nested = r?.result as Record<string, unknown> | undefined;
+    return (
+      (data?.response_message as string) ||
+      (r?.response_message as string) ||
+      (nested?.response_message as string) ||
+      (data?.final_status as string) ||
+      (r?.final_status as string) ||
+      ""
+    ).replace(/"/g, "").trim();
+  };
+
+  const extractApprovalCode = (r: Record<string, unknown> | undefined): string => {
+    const data = r?.data as Record<string, unknown> | undefined;
+    const nested = r?.result as Record<string, unknown> | undefined;
+    return (
+      (data?.approval_code as string) ||
+      (r?.approval_code as string) ||
+      (nested?.approval_code as string) ||
+      ""
+    );
+  };
+
+  const extractMessage = (r: Record<string, unknown> | undefined): string => {
+    const data = r?.data as Record<string, unknown> | undefined;
+    const nested = r?.result as Record<string, unknown> | undefined;
+    return (
+      (r?.message as string) ||
+      (data?.message as string) ||
+      (nested?.message as string) ||
+      (data?.error as string) ||
+      ""
+    );
+  };
+
   const handlePaymentResult = (result: Record<string, unknown>) => {
     const r = result?.result as Record<string, unknown> | undefined;
 
-    if (r?.status == "200") {
+    const responseMessage = extractResponseMessage(r);
+    const approvalCode = extractApprovalCode(r);
+    const message = extractMessage(r);
+
+    const status =
+      r?.status ||
+      (r?.data as Record<string, unknown> | undefined)?.status ||
+      (r?.result as Record<string, unknown> | undefined)?.status;
+
+    if (status == "200" || status === 200) {
       setOpen(false);
       setReloadPageData(true);
 
       Swal.fire({
         icon: "success",
         title: "Payment Successful",
-        text: (r?.message as string) || "Transaction completed successfully!",
+        html: `
+          <p class="text-sm text-gray-600">${message || "Transaction completed successfully!"}</p>
+          ${responseMessage ? `<p class="mt-2 text-xs font-semibold text-emerald-600">${responseMessage}</p>` : ""}
+        `,
         showConfirmButton: false,
         timer: 2500,
       });
 
       resetForm();
     } else {
+      const errorText = message || responseMessage || "The payment was not approved. Please try again.";
+      const showResponseSeparately = responseMessage && responseMessage !== message;
+
       Swal.fire({
         icon: "error",
         title: "Payment Failed",
-        text:
-          (r?.message as string) ||
-          "The payment was not approved. Please try again.",
+        html: `
+          <p class="text-sm text-gray-600">${errorText}</p>
+          ${showResponseSeparately ? `<p class="mt-2 text-xs font-bold text-red-500">${responseMessage}</p>` : ""}
+          ${approvalCode && approvalCode !== "00" ? `<p class="mt-1 text-[10px] text-slate-400">Code: ${approvalCode}</p>` : ""}
+        `,
         confirmButtonColor: getPrimaryThemeColor(),
       });
     }
@@ -283,8 +341,9 @@ export default function TransactionForm({
 
   const isDuplicateTransaction = (result: Record<string, unknown>): boolean => {
     const r = result?.result as Record<string, unknown> | undefined;
-    const message = ((r?.message as string) || "").toUpperCase();
-    return message.includes("DUPLICAT");
+    const message = extractMessage(r).toUpperCase();
+    const responseMsg = extractResponseMessage(r).toUpperCase();
+    return message.includes("DUPLICAT") || responseMsg.includes("DUPLICAT");
   };
 
   const handleSubmit = async () => {

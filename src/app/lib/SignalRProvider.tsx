@@ -2,6 +2,7 @@
 "use client";
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -27,8 +28,6 @@ interface SignalRContextType {
 
 const SignalRContext = createContext<SignalRContextType | undefined>(undefined);
 
-// TODO: Re-add console.errors
-
 export const SignalRProvider = ({
   children,
 }: {
@@ -39,114 +38,188 @@ export const SignalRProvider = ({
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const notificationHandlerRef =
     useRef<(notification: NotificationHandler) => void | null>(null);
-  const previousPropertyIdRef = useRef<string | null>(null);
+  // Tracks which group we're currently joined to (for leave/rejoin logic)
+  const currentGroupRef = useRef<string | null>(null);
 
-  const notificationSound =
-    typeof Audio !== "undefined" ? new Audio("/notification.mp3") : null;
+  const notificationSoundRef = useRef<HTMLAudioElement | null>(
+    typeof Audio !== "undefined" ? new Audio("/notification.mp3") : null
+  );
 
-  const registerNotificationHandler = (
-    handler: (notification: NotificationHandler) => void
+  // Memoize so consumer effects don't re-run on every render
+  const registerNotificationHandler = useCallback(
+    (handler: (notification: NotificationHandler) => void) => {
+      notificationHandlerRef.current = handler;
+    },
+    []
+  );
+
+  // Helper: join a group safely and track it
+  const joinGroupSafe = async (
+    conn: signalR.HubConnection,
+    groupId: string
   ) => {
-    notificationHandlerRef.current = handler;
+    if (conn.state === signalR.HubConnectionState.Connected && groupId) {
+      await conn.invoke("JoinPropertyGroup", groupId);
+      currentGroupRef.current = groupId;
+      console.log("[SignalR] Joined group:", groupId);
+    }
   };
 
-  // Establish SignalR connection once
-  useEffect(() => {
-    const connectToSignalR = async () => {
-      const hubUrl = process.env.NEXT_PUBLIC_NOTIFICATION_HUB_ENDPOINT;
-
-      if (!hubUrl) {
-        console.error(
-          "NEXT_PUBLIC_NOTIFICATION_HUB_ENDPOINT is not defined in environment variables"
-        );
-        return;
+  // Helper: leave a group safely and clear tracking
+  const leaveGroupSafe = async (
+    conn: signalR.HubConnection,
+    groupId: string
+  ) => {
+    if (conn.state === signalR.HubConnectionState.Connected && groupId) {
+      await conn.invoke("LeavePropertyGroup", groupId);
+      if (currentGroupRef.current === groupId) {
+        currentGroupRef.current = null;
       }
+      console.log("[SignalR] Left group:", groupId);
+    }
+  };
 
+  // Establish SignalR connection once (no propertyId dependency)
+  useEffect(() => {
+    const hubUrl = process.env.NEXT_PUBLIC_NOTIFICATION_HUB_ENDPOINT;
+
+    if (!hubUrl) {
+      console.error(
+        "NEXT_PUBLIC_NOTIFICATION_HUB_ENDPOINT is not defined in environment variables"
+      );
+      return;
+    }
+
+    let isCancelled = false;
+
+    const connectToSignalR = async () => {
       const connection = new signalR.HubConnectionBuilder()
         .withUrl(hubUrl)
-        .withAutomaticReconnect()
+        .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
         .build();
 
-      globalConnection = connection;
+      // Register message handler
+      connection.on(
+        "UpdateNotification",
+        (notification: NotificationHandler) => {
+          console.log("[SignalR] Notification received:", notification?.ticketId, notification?.status);
 
-      connection.on("UpdateNotification", (notification: NotificationHandler) => {
-        if (notificationSound) {
-          console.log("Playing notification sound!");
-          setTimeout(() => {
-            notificationSound.play().catch((err) => {
-              console.warn("Unable to play sound:", err);
-            });
-          }, 1000);
+          if (notificationSoundRef.current) {
+            setTimeout(() => {
+              notificationSoundRef.current?.play().catch((err) => {
+                console.warn("Unable to play sound:", err);
+              });
+            }, 1000);
+          }
+
+          notificationHandlerRef.current?.(notification);
         }
+      );
 
-        notificationHandlerRef.current?.(notification);
+      // Re-join group after automatic reconnection (groups are lost on disconnect)
+      connection.onreconnected(async () => {
+        console.log("[SignalR] Reconnected — re-joining group");
+        const groupToRejoin = currentGroupRef.current;
+        if (groupToRejoin) {
+          try {
+            // currentGroupRef was cleared by disconnect, re-join it
+            await connection.invoke("JoinPropertyGroup", groupToRejoin);
+            console.log("[SignalR] Re-joined group:", groupToRejoin);
+          } catch (err) {
+            console.log("[SignalR] Failed to re-join group after reconnect:", err);
+          }
+        }
+      });
+
+      connection.onreconnecting(() => {
+        console.log("[SignalR] Connection lost, attempting to reconnect...");
+      });
+
+      connection.onclose(() => {
+        console.log("[SignalR] Connection closed");
       });
 
       try {
-        if (!propertyId) return;
-        
         await connection.start();
-        console.log("Connected to SignalR hub");
-
-        // Join initial group if propertyId exists
-        if (propertyId) {
-          await connection.invoke("JoinPropertyGroup", propertyId);
-          previousPropertyIdRef.current = propertyId;
-          console.log("Joined group:", propertyId);
+        if (isCancelled) {
+          connection.stop();
+          return;
         }
 
+        console.log("[SignalR] Connected to hub");
+
         connectionRef.current = connection;
+        globalConnection = connection;
+
+        // Join initial group if propertyId is already available at connection time
+        if (propertyId) {
+          await joinGroupSafe(connection, propertyId);
+        }
       } catch (err) {
-        console.log("SignalR connection error:", err);
-        // console.error("SignalR connection error:", err);
+        console.log("[SignalR] Connection error:", err);
       }
     };
 
     connectToSignalR();
 
     return () => {
+      isCancelled = true;
       const connection = connectionRef.current;
-      const prevId = previousPropertyIdRef.current;
 
-      if (connection && connection.state === "Connected" && prevId) {
-        connection.invoke("LeavePropertyGroup", prevId).catch((err) => {
-          console.log("Failed to leave group on unmount:", err);
-          // console.error("Failed to leave group on unmount:", err);
-        });
+      if (connection) {
+        const groupId = currentGroupRef.current;
+        if (groupId) {
+          leaveGroupSafe(connection, groupId).catch(() => {});
+        }
+        connection.stop();
+        connectionRef.current = null;
+        globalConnection = null;
       }
-
-      connection?.stop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [propertyId]);
+  }, []);
 
-  // Handle group change when propertyId changes
+  // Handle group changes when propertyId changes (connection may or may not be ready)
   useEffect(() => {
-    const updateGroup = async () => {
-      const connection = connectionRef.current;
-      const prevId = previousPropertyIdRef.current;
+    if (!propertyId) return;
 
-      if (!connection || connection.state !== "Connected") return;
+    let retryTimeout: ReturnType<typeof setTimeout> | null = null;
+    let isCancelled = false;
+
+    const updateGroup = async (attempt = 0) => {
+      const connection = connectionRef.current;
+
+      // If connection isn't ready yet, retry (up to ~10 seconds)
+      if (!connection || connection.state !== signalR.HubConnectionState.Connected) {
+        if (attempt < 10 && !isCancelled) {
+          retryTimeout = setTimeout(() => updateGroup(attempt + 1), 1000);
+        }
+        return;
+      }
+
+      const prevGroupId = currentGroupRef.current;
 
       try {
-        if (prevId && prevId !== propertyId) {
-          await connection.invoke("LeavePropertyGroup", prevId);
-          // console.log("Left previous group:", prevId);
+        // Leave previous group if different
+        if (prevGroupId && prevGroupId !== propertyId) {
+          await leaveGroupSafe(connection, prevGroupId);
         }
 
-        if (propertyId && propertyId !== prevId) {
-          await connection.invoke("JoinPropertyGroup", propertyId);
-          // console.log("Joined new group:", propertyId);
+        // Join new group
+        if (!isCancelled) {
+          await joinGroupSafe(connection, propertyId);
         }
-
-        previousPropertyIdRef.current = propertyId;
       } catch (err) {
-        console.log("Failed to update SignalR group:", err);
-        // console.error("Failed to update SignalR group:", err);
+        console.log("[SignalR] Failed to update group:", err);
       }
     };
 
     updateGroup();
+
+    return () => {
+      isCancelled = true;
+      if (retryTimeout) clearTimeout(retryTimeout);
+    };
   }, [propertyId]);
 
   return (
@@ -175,25 +248,21 @@ let globalConnection: signalR.HubConnection | null = null;
 
 export const joinGroup = async (groupId: string) => {
   try {
-    if (globalConnection && globalConnection.state === "Connected") {
+    if (globalConnection && globalConnection.state === signalR.HubConnectionState.Connected) {
       await globalConnection.invoke("JoinPropertyGroup", groupId);
-      // console.log("Manually joined SignalR group:", groupId);
     }
   } catch (error) {
-    console.log("Failed to join group:", error);
-    // console.error("Failed to join group:", error);
+    console.log("[SignalR] Failed to join group:", error);
   }
 };
 
 export const leaveGroup = async (groupId: string) => {
   if (!groupId) return;
   try {
-    if (globalConnection && globalConnection.state === "Connected") {
+    if (globalConnection && globalConnection.state === signalR.HubConnectionState.Connected) {
       await globalConnection.invoke("LeavePropertyGroup", groupId);
-      // console.log("Manually left SignalR group:", groupId);
     }
   } catch (error) {
-    console.log("Failed to leave group:", error);
-    // console.error("Failed to leave group:", error);
+    console.log("[SignalR] Failed to leave group:", error);
   }
 };

@@ -93,17 +93,21 @@ const RequestCar = () => {
   useEffect(() => {
     registerNotificationHandler((notification: NotificationHandler) => {
       if (notification?.ticketId === ticketId && notification?.status) {
+        const validStatuses = ["received", "parked", "requested", "ready"];
+        const incomingStatus = notification.status.toLowerCase().trim();
+        // If the status is unrecognized or empty, default to "parked"
+        const normalizedStatus = validStatuses.includes(incomingStatus)
+          ? incomingStatus
+          : "parked";
+
         setVehicleData((prev) => ({
           ...prev!,
-          status: notification?.status,
+          status: normalizedStatus,
         }));
 
-        if (
-          notification?.status === "requested" ||
-          notification?.status === "ready"
-        ) {
+        if (normalizedStatus === "requested" || normalizedStatus === "ready") {
           setRequested(true);
-        } else if (notification.status === "parked") {
+        } else {
           setRequested(false);
         }
       }
@@ -165,9 +169,16 @@ const RequestCar = () => {
       const data = await res.json();
 
       if (data?.result?.status === "200") {
-        setVehicleData(data?.result?.data);
+        const vehicleResult = data?.result?.data;
+        // Normalize status — if empty/unrecognized, default to "parked"
+        const validStatuses = ["received", "parked", "requested", "ready"];
+        const rawStatus = (vehicleResult?.status || "").toLowerCase().trim();
+        if (!validStatuses.includes(rawStatus)) {
+          vehicleResult.status = "parked";
+        }
+        setVehicleData(vehicleResult);
         setVehicleNotFound(false);
-        setPropertyId(data?.result?.data?.propertyId);
+        setPropertyId(vehicleResult?.propertyId);
       } else if (
         data?.result?.status === "200" &&
         data?.result?.data?.propertyId
@@ -713,7 +724,11 @@ const RequestCar = () => {
                 </span>
               </div>
 
-              <StatusTimeline currentStatus={vehicleData?.status as string} />
+              <StatusTimeline
+                currentStatus={vehicleData?.status as string}
+                createdDateTime={vehicleData?.createdDateTime}
+                lastUpdated={vehicleData?.lastUpdated}
+              />
             </section>
 
             {/* Payment Result — after returning from PlaceToPay */}

@@ -12,6 +12,7 @@ export type Ticket = {
   color?: string | null;
   status?: string | null;
   createdDateTime?: string | null;
+  lastUpdated?: string | null;
   transactions?: { amount?: number | string }[] | null;
 };
 export type DashboardData = {

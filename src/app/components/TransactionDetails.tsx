@@ -2,17 +2,84 @@ import React, { useState, useRef, useEffect } from "react";
 import { RxCaretRight } from "react-icons/rx";
 import { FaReceipt, FaUser } from "react-icons/fa";
 import { MdPayments, MdAccessTime } from "react-icons/md";
-import { VehicleData } from "../types";
+import { Receipts, TicketTransaction, VehicleData } from "../types";
 
 const TransactionDetails = ({ vehicleData }: { vehicleData: VehicleData }) => {
-  const transaction = vehicleData?.transactions?.[0];
-  const detail = transaction?.paymentdetail;
-  const customerReceipt = detail?.receipts?.find(
-    (r) => r.receiptType === "CUSTOMER"
-  );
+  const transactions = vehicleData?.transactions || [];
+
+  if (transactions.length === 0) return null;
 
   return (
-    <CollapsibleSection title="Transaction Details">
+    <CollapsibleSection
+      title={
+        transactions.length === 1
+          ? "Transaction Details"
+          : `Transaction Details (${transactions.length})`
+      }
+    >
+      <div className="space-y-6">
+        {transactions.map((transaction, index) => (
+          <TransactionCard
+            key={transaction.id || index}
+            transaction={transaction}
+            vehicleData={vehicleData}
+            index={index}
+            total={transactions.length}
+          />
+        ))}
+      </div>
+    </CollapsibleSection>
+  );
+};
+
+export default TransactionDetails;
+
+const TransactionCard = ({
+  transaction,
+  vehicleData,
+  index,
+  total,
+}: {
+  transaction: TicketTransaction;
+  vehicleData: VehicleData;
+  index: number;
+  total: number;
+}) => {
+  const detail = transaction?.paymentdetail;
+
+  // Reference: prefer transaction-level reference_number, fallback to paymentdetail trxId
+  const referenceNumber =
+    transaction.reference_number || detail?.trxId || "—";
+
+  // Collect all unique customer receipts from both levels
+  const allReceipts: Receipts[] = [];
+  const seen = new Set<string>();
+
+  const addReceipts = (receipts?: Receipts[]) => {
+    if (!receipts) return;
+    for (const r of receipts) {
+      if (!r.receiptHtml) continue;
+      const key = r.receiptHtml;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (r.receiptType === "CUSTOMER") {
+        allReceipts.push(r);
+      }
+    }
+  };
+
+  // Check both transaction.receipts and detail.receipts
+  addReceipts(transaction.receipts);
+  addReceipts(detail?.receipts as Receipts[] | undefined);
+
+  return (
+    <div>
+      {total > 1 && (
+        <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+          Transaction {index + 1} of {total}
+        </p>
+      )}
+
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <DetailCard
           label="Customer"
@@ -24,7 +91,7 @@ const TransactionDetails = ({ vehicleData }: { vehicleData: VehicleData }) => {
 
         <DetailCard
           label="Reference #"
-          value={detail?.trxId || "—"}
+          value={referenceNumber}
           icon={<FaReceipt />}
           mono
         />
@@ -47,24 +114,26 @@ const TransactionDetails = ({ vehicleData }: { vehicleData: VehicleData }) => {
         />
       </div>
 
-      {/* Customer Receipt HTML */}
-      {customerReceipt?.receiptHtml && (
-        <div className="mt-4">
+      {/* Customer Receipts */}
+      {allReceipts.map((receipt, rIdx) => (
+        <div key={rIdx} className="mt-4">
           <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-            Customer Receipt
+            Customer Receipt{allReceipts.length > 1 ? ` ${rIdx + 1}` : ""}
           </p>
 
           <div
             className="receipt-container overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4"
-            dangerouslySetInnerHTML={{ __html: customerReceipt.receiptHtml }}
+            dangerouslySetInnerHTML={{ __html: receipt.receiptHtml }}
           />
         </div>
+      ))}
+
+      {total > 1 && index < total - 1 && (
+        <hr className="mt-6 border-slate-200" />
       )}
-    </CollapsibleSection>
+    </div>
   );
 };
-
-export default TransactionDetails;
 
 const DetailCard = ({
   label,

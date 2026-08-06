@@ -149,25 +149,25 @@ export default function OffCanvas({
 
             <div className="space-y-1.5">
               <Link
-                href="/dashboard"
-                onClick={() => setIsMenuOpen(false)}
-                className={navItemClass(pathname.includes("dashboard"))}
-              >
-                <span className={iconClass(pathname.includes("dashboard"))}>
-                  <MdHomeFilled className="h-4 w-4" />
-                </span>
-                Dashboard
-              </Link>
-
-              <Link
                 href="/check-in"
                 onClick={() => setIsMenuOpen(false)}
                 className={navItemClass(pathname.includes("check-in"))}
               >
                 <span className={iconClass(pathname.includes("check-in"))}>
-                  <FaCar className="h-4 w-4" />
+                  <MdHomeFilled className="h-4 w-4" />
                 </span>
                 Check-In / Vehicles
+              </Link>
+
+              <Link
+                href="/dashboard"
+                onClick={() => setIsMenuOpen(false)}
+                className={navItemClass(pathname.includes("dashboard"))}
+              >
+                <span className={iconClass(pathname.includes("dashboard"))}>
+                  <FaCar className="h-4 w-4" />
+                </span>
+                Dashboard
               </Link>
 
               <Link

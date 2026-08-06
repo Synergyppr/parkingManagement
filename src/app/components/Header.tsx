@@ -614,31 +614,31 @@ export default function Header() {
         <div className="relative mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-2 px-3 sm:px-5">
           <nav className="hidden min-w-0 items-center gap-2 md:flex">
             <Link
-              href="/dashboard"
+              href="/check-in"
               className={`flex cursor-pointer items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold transition-all duration-300 focus:outline-none
               focus-visible:ring-2 focus-visible:ring-(--primary-light) ${
-                active === "dashboard"
+                active === "check-in"
                   ? `border border-(--primary-light) bg-(--primary-soft) text-primary shadow-sm`
                   : `text-slate-600 hover:bg-(--primary-soft) hover:text-primary`
               }
               `}
             >
-              <Grid2X2 className="h-4 w-4" />
-              Dashboard
+              <Clock className="h-4 w-4" />
+              Check-in
             </Link>
 
             <Link
-              href="/check-in"
+              href="/dashboard"
               className={`flex cursor-pointer items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold transition-all duration-300 focus:outline-none
               focus-visible:ring-2 focus-visible:ring-(--primary-light)
                 ${
-                  active === "check-in"
+                  active === "dashboard"
                     ? `border border-(--primary-light) bg-(--primary-soft) text-primary shadow-sm`
                     : `text-slate-600 hover:bg-(--primary-soft) hover:text-primary`
                 }`}
             >
-              <Clock className="h-4 w-4" />
-              Check-in
+              <Grid2X2 className="h-4 w-4" />
+              Dashboard
             </Link>
           </nav>
 
@@ -657,8 +657,8 @@ export default function Header() {
           </div>
 
           <Link
-            href="/dashboard"
-            aria-label="Go to dashboard"
+            href="/check-in"
+            aria-label="Go to check-in"
             className="absolute left-1/2 flex max-w-37.5 -translate-x-1/2 items-center justify-center gap-2 sm:max-w-none sm:gap-3"
           >
             <div

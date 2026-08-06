@@ -660,7 +660,9 @@ export default function ValetTicketList({
                             event.stopPropagation();
                             handleStatusChange(
                               vehicle?.id,
-                              activeTab === "parked"
+                              activeTab === "received"
+                                ? "parked"
+                                : activeTab === "parked"
                                 ? "requested"
                                 : activeTab === "requested"
                                 ? "ready"
@@ -669,7 +671,9 @@ export default function ValetTicketList({
                           }}
                         >
                           <FaCheck className="h-3 w-3" />
-                          {activeTab === "parked"
+                          {activeTab === "received"
+                            ? "Mark Parked"
+                            : activeTab === "parked"
                             ? "Mark Requested"
                             : "Mark Ready"}
                         </button>

@@ -160,10 +160,12 @@ export default function DashboardClient({
   } = useProperty();
 
   const searchParams = useSearchParams();
-  const statusFromUrl = searchParams.get("status");
-  const ticketIdFromUrl = searchParams.get("ticketId");
-
   const validStatuses = ["received", "parked", "requested", "ready"];
+  const statusFromUrl =
+    searchParams.get("status") ||
+    validStatuses.find((s) => searchParams.has(s)) ||
+    null;
+  const ticketIdFromUrl = searchParams.get("ticketId");
 
   const saveClickedRef = useRef(false);
   const shouldBypassUnloadPromptRef = useRef(false);

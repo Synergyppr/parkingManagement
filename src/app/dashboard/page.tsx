@@ -306,13 +306,6 @@ export default function DashboardPage() {
     (ticket) => ticket.status === "requested"
   ).length;
 
-  const receivedCount = tickets.filter(
-    (ticket) =>
-      !ticket.status ||
-      ticket.status === "received" ||
-      ticket.status === "parked"
-  ).length;
-
   const readyCount =
     readyTickets.length ||
     tickets.filter((ticket) => ticket.status === "ready").length;
@@ -335,10 +328,17 @@ export default function DashboardPage() {
         .trim()
         .toLowerCase();
 
-    const allReadyTickets = [
-      ...tickets.filter((ticket) => getStatus(ticket.status) === "ready"),
-      ...readyTickets,
-    ];
+    // Dedup ready tickets by ID to avoid double-counting
+    const readyMap = new Map<string, Ticket>();
+    for (const ticket of readyTickets) {
+      readyMap.set(ticket.id, ticket);
+    }
+    for (const ticket of tickets) {
+      if (getStatus(ticket.status) === "ready" && !readyMap.has(ticket.id)) {
+        readyMap.set(ticket.id, ticket);
+      }
+    }
+    const allReadyTickets = Array.from(readyMap.values());
 
     const isSameDay = (dateA: Date, dateB: Date) =>
       dateA.getFullYear() === dateB.getFullYear() &&
@@ -349,6 +349,16 @@ export default function DashboardPage() {
       if (!ticket.createdDateTime) return null;
 
       const date = new Date(ticket.createdDateTime);
+
+      return Number.isNaN(date.getTime()) ? null : date;
+    };
+
+    // For ready tickets, use lastUpdated (when it became ready) instead of createdDateTime
+    const getReadyDate = (ticket: Ticket) => {
+      const dateStr = ticket.lastUpdated || ticket.createdDateTime;
+      if (!dateStr) return null;
+
+      const date = new Date(dateStr);
 
       return Number.isNaN(date.getTime()) ? null : date;
     };
@@ -371,7 +381,7 @@ export default function DashboardPage() {
         }).length;
 
         const readyForDay = allReadyTickets.filter((ticket) => {
-          const ticketDate = getTicketDate(ticket);
+          const ticketDate = getReadyDate(ticket);
 
           return ticketDate ? isSameDay(ticketDate, dayStart) : false;
         }).length;
@@ -395,22 +405,17 @@ export default function DashboardPage() {
       const end = new Date(now);
       end.setHours(hour + 2, 0, 0, 0);
 
-      const isInBucket = (ticket: Ticket) => {
-        const ticketDate = getTicketDate(ticket);
+      const isInBucket = (date: Date | null) => {
+        if (!date) return false;
 
-        if (!ticketDate) return false;
-
-        return (
-          isSameDay(ticketDate, now) &&
-          ticketDate >= start &&
-          ticketDate < end
-        );
+        return isSameDay(date, now) && date >= start && date < end;
       };
 
       return {
         label: `${String(hour).padStart(2, "0")}:00`,
-        received: tickets.filter(isInBucket).length,
-        ready: allReadyTickets.filter(isInBucket).length,
+        received: tickets.filter((t) => isInBucket(getTicketDate(t))).length,
+        ready: allReadyTickets.filter((t) => isInBucket(getReadyDate(t)))
+          .length,
       };
     });
   }, [tickets, readyTickets, trafficPeriod]);
@@ -425,7 +430,7 @@ export default function DashboardPage() {
     {
       label: "Vehicles Parked",
       value: parkedCount,
-      change: `${receivedCount} received`,
+      change: `${parkedCount} parked`,
       icon: <MapPin className="h-5 w-5" />,
     },
     {

@@ -96,9 +96,26 @@ export const PropertyProvider = ({
   const [predefinedProperties, setPredefinedProperties] = useState<
     Record<string, Property>
   >({});
-  const [primaryColor, setPrimaryColor] = useState("");
-  const [secondaryColor, setSecondaryColor] = useState("");
+  const [primaryColor, setPrimaryColor] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem("themeColors_primary") || "";
+  });
+  const [secondaryColor, setSecondaryColor] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem("themeColors_secondary") || "";
+  });
   const [isOutOfArea, setIsOutOfArea] = useState<boolean>(false);
+
+  // Persist colors to localStorage so the inline script in layout.tsx
+  // can restore them before React hydrates (prevents color flash)
+  useEffect(() => {
+    if (primaryColor) {
+      localStorage.setItem("themeColors_primary", primaryColor);
+    }
+    if (secondaryColor) {
+      localStorage.setItem("themeColors_secondary", secondaryColor);
+    }
+  }, [primaryColor, secondaryColor]);
   const [accountUser, setAccountUser] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
 

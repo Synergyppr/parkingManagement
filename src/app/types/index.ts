@@ -92,6 +92,7 @@ export interface VehicleData {
   model?: string;
   type?: string;
   createdDateTime?: string;
+  lastUpdated?: string;
   placeToVisit?: string;
   status?: string;
   patronId?: string;
