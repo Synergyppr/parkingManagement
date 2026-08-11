@@ -294,11 +294,11 @@ const Dashboard = ({
 
                   <div className="shrink-0 text-right text-xs text-slate-500">
                     <p className="font-semibold text-slate-700">
-                      {formatTime(ticket.createdDateTime)}
+                      {formatTime(ticket.lastUpdated || ticket.createdDateTime)}
                     </p>
 
                     <p className="text-slate-400">
-                      {formatDate(ticket.createdDateTime)}
+                      {formatDate(ticket.lastUpdated || ticket.createdDateTime)}
                     </p>
 
                     <p className="max-w-24 truncate font-bold capitalize text-slate-700">

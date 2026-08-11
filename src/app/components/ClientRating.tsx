@@ -1,4 +1,4 @@
-import { BsStar, BsStarFill, BsStarHalf } from "react-icons/bs";
+import { BsStar, BsStarFill } from "react-icons/bs";
 import { IoCheckmarkOutline } from "react-icons/io5";
 import { VehicleData } from "../types";
 
@@ -14,8 +14,8 @@ const ClientRating = ({
   vehicleData,
 }: {
   hoveredStars: number;
-  handleMouseEnter: (starIndex: number, isHalf: boolean) => void;
-  handleStarClick: (starIndex: number, isHalf: boolean) => void;
+  handleMouseEnter: (starIndex: number) => void;
+  handleStarClick: (starIndex: number) => void;
   handleSubmitRating: (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => void;
@@ -66,27 +66,17 @@ const ClientRating = ({
             <div className="flex justify-center gap-2">
               {[...Array(5)]?.map((_, starIndex) => {
                 const fullValue = starIndex + 1;
-                const halfValue = starIndex + 0.5;
 
                 return (
-                  <div key={starIndex} className="relative h-10 w-10">
-                    <div
-                      className="absolute left-0 top-0 z-10 h-full w-1/2 cursor-pointer"
-                      onMouseEnter={() => handleMouseEnter(starIndex, true)}
-                      onClick={() => handleStarClick(starIndex, true)}
-                    />
-
-                    <div
-                      className="absolute right-0 top-0 z-10 h-full w-1/2 cursor-pointer"
-                      onMouseEnter={() => handleMouseEnter(starIndex, false)}
-                      onClick={() => handleStarClick(starIndex, false)}
-                    />
-
+                  <div
+                    key={starIndex}
+                    className="h-10 w-10 cursor-pointer"
+                    onMouseEnter={() => handleMouseEnter(starIndex)}
+                    onClick={() => handleStarClick(starIndex)}
+                  >
                     <div className="flex h-full w-full items-center justify-center rounded-2xl bg-(--primary-soft) ring-1 ring-(--primary-light) transition">
                       {hoveredStars >= fullValue ? (
                         <BsStarFill className="h-7 w-7 text-primary drop-shadow-sm" />
-                      ) : hoveredStars >= halfValue ? (
-                        <BsStarHalf className="h-7 w-7 text-primary drop-shadow-sm" />
                       ) : (
                         <BsStar className="h-7 w-7 text-slate-300" />
                       )}

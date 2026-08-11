@@ -311,14 +311,19 @@ export default function DashboardPage() {
     tickets.filter((ticket) => ticket.status === "ready").length;
 
   const recentTickets = useMemo(() => {
-    return [...tickets]
+    // Merge tickets + readyTickets, dedup by id
+    const map = new Map<string, Ticket>();
+    for (const t of tickets) map.set(t.id, t);
+    for (const t of readyTickets) if (!map.has(t.id)) map.set(t.id, t);
+
+    return Array.from(map.values())
       .sort(
-        (ticketA, ticketB) =>
-          new Date(ticketB.createdDateTime || 0).getTime() -
-          new Date(ticketA.createdDateTime || 0).getTime()
+        (a, b) =>
+          new Date(b.lastUpdated || b.createdDateTime || 0).getTime() -
+          new Date(a.lastUpdated || a.createdDateTime || 0).getTime()
       )
       .slice(0, 5);
-  }, [tickets]);
+  }, [tickets, readyTickets]);
 
   const trafficData = useMemo<TrafficPoint[]>(() => {
     const now = new Date();
@@ -422,7 +427,7 @@ export default function DashboardPage() {
 
   const kpis = [
     {
-      label: "Active Valet Sessions",
+      label: "Total Vehicles",
       value: tickets.length + readyTickets.length,
       change: "Live",
       icon: <Car className="h-5 w-5" />,
@@ -440,7 +445,7 @@ export default function DashboardPage() {
       icon: <KeySquare className="h-5 w-5" />,
     },
     {
-      label: "Ready for Pickup",
+      label: "Today Vehicle Delivered",
       value: readyCount,
       change: `${readyCount} ready`,
       icon: <Clock className="h-5 w-5" />,

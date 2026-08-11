@@ -1574,6 +1574,15 @@ const CarVector: React.FC<CarVectorProps> = ({
         isOpen={showFrontModal}
         onClose={() => setShowFrontModal(false)}
         onRequestClose={() => handleModalCloseWithConfirm("front")}
+        footer={
+          <button
+            type="button"
+            onClick={(e) => handleSaveIncidentParts(e)}
+            className="ml-auto flex cursor-pointer rounded-xl bg-primary px-8 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-secondary"
+          >
+            Save
+          </button>
+        }
       >
         <LabelSelector
           labelsMap={frontViewLabelsMap}
@@ -1583,21 +1592,21 @@ const CarVector: React.FC<CarVectorProps> = ({
           setDescriptions={setDescriptions}
           descriptions={descriptions}
         />
-        <div className="mt-4 flex">
-          <button
-            type="button"
-            onClick={(e) => handleSaveIncidentParts(e)}
-            className="ml-auto cursor-pointer bg-linear-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
-          >
-            Save
-          </button>
-        </div>
       </Modal>
 
       <Modal
         isOpen={showRearModal}
         onClose={() => setShowRearModal(false)}
         onRequestClose={() => handleModalCloseWithConfirm("rear")}
+        footer={
+          <button
+            type="button"
+            onClick={(e) => handleSaveIncidentParts(e)}
+            className="ml-auto flex cursor-pointer rounded-xl bg-primary px-8 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-secondary"
+          >
+            Save
+          </button>
+        }
       >
         <LabelSelector
           labelsMap={rearViewLabelsMap}
@@ -1607,21 +1616,21 @@ const CarVector: React.FC<CarVectorProps> = ({
           setDescriptions={setDescriptions}
           descriptions={descriptions}
         />
-        <div className="mt-4 flex">
-          <button
-            type="button"
-            onClick={(e) => handleSaveIncidentParts(e)}
-            className="ml-auto cursor-pointer bg-linear-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
-          >
-            Save
-          </button>
-        </div>
       </Modal>
 
       <Modal
         isOpen={showPassengerModal}
         onClose={() => setShowPassengerModal(false)}
         onRequestClose={() => handleModalCloseWithConfirm("passenger")}
+        footer={
+          <button
+            type="button"
+            onClick={(e) => handleSaveIncidentParts(e)}
+            className="ml-auto flex cursor-pointer rounded-xl bg-primary px-8 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-secondary"
+          >
+            Save
+          </button>
+        }
       >
         <LabelSelector
           labelsMap={passengerViewLabelsMap}
@@ -1631,21 +1640,21 @@ const CarVector: React.FC<CarVectorProps> = ({
           setDescriptions={setDescriptions}
           descriptions={descriptions}
         />
-        <div className="mt-4 flex">
-          <button
-            type="button"
-            onClick={(e) => handleSaveIncidentParts(e)}
-            className="ml-auto cursor-pointer bg-linear-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
-          >
-            Save
-          </button>
-        </div>
       </Modal>
 
       <Modal
         isOpen={showDriverModal}
         onClose={() => setShowDriverModal(false)}
         onRequestClose={() => handleModalCloseWithConfirm("driver")}
+        footer={
+          <button
+            type="button"
+            onClick={(e) => handleSaveIncidentParts(e)}
+            className="ml-auto flex cursor-pointer rounded-xl bg-primary px-8 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-secondary"
+          >
+            Save
+          </button>
+        }
       >
         <LabelSelector
           labelsMap={driverViewLabelsMap}
@@ -1655,15 +1664,6 @@ const CarVector: React.FC<CarVectorProps> = ({
           setDescriptions={setDescriptions}
           descriptions={descriptions}
         />
-        <div className="mt-4 flex">
-          <button
-            type="button"
-            onClick={(e) => handleSaveIncidentParts(e)}
-            className="ml-auto cursor-pointer bg-linear-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 transition-colors text-white py-2 px-8 font-semibold shadow-md tracking-tight rounded"
-          >
-            Save
-          </button>
-        </div>
       </Modal>
 
       <ViewReportModal

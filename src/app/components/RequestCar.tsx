@@ -471,17 +471,15 @@ const RequestCar = () => {
     }
   };
 
-  const handleMouseEnter = (starIndex: number, isHalf: boolean) => {
+  const handleMouseEnter = (starIndex: number) => {
     if (submitted) return;
-    const hoverValue = isHalf ? starIndex + 0.5 : starIndex + 1;
-    setHoveredStars(hoverValue);
+    setHoveredStars(starIndex + 1);
   };
 
-  const handleStarClick = (starIndex: number, isHalf: boolean) => {
+  const handleStarClick = (starIndex: number) => {
     if (submitted) return;
-    const ratingValue = isHalf ? starIndex + 0.5 : starIndex + 1;
-    setRatedStars(ratingValue);
-    setHoveredStars(ratingValue);
+    setRatedStars(starIndex + 1);
+    setHoveredStars(starIndex + 1);
   };
 
   const handleSubmitRating = async (e: React.FormEvent) => {

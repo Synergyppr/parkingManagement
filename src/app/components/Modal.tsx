@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
 interface ModalProps {
@@ -8,6 +9,7 @@ interface ModalProps {
   onClose: (form?: string) => void;
   onRequestClose?: () => void;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   placementX?: "center" | "start" | "end";
   placementY?: "center" | "start" | "end";
   size?: "sm" | "md" | "lg" | "xl";
@@ -17,10 +19,16 @@ export default function Modal({
   isOpen,
   onClose,
   children,
+  footer,
   onRequestClose,
   size,
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const requestClose = () => {
     if (onRequestClose) {
@@ -70,13 +78,15 @@ export default function Modal({
       ? "w-full max-w-4xl"
       : "w-full max-w-md md:max-w-lg";
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-80 flex justify-end bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-9998 flex justify-end bg-black/50 backdrop-blur-sm"
           onMouseDown={requestClose}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -110,9 +120,16 @@ export default function Modal({
             <div className="flex-1 overflow-y-auto">
               {children}
             </div>
+
+            {footer && (
+              <div className="shrink-0 border-t border-slate-200 bg-white px-5 py-4">
+                {footer}
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

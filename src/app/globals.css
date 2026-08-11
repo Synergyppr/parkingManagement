@@ -64,6 +64,11 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* SweetAlert2 must render above Modal (z-9998) and OffCanvas (z-9999) */
+.swal2-container {
+  z-index: 99999 !important;
+}
+
 /* Prevent iOS Safari auto-zoom on input focus */
 @media screen and (max-width: 768px) {
   input,
