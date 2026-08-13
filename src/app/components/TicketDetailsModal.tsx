@@ -508,14 +508,224 @@ export default function TicketDetailsModal({
     receiptWindow.focus();
   };
 
+  /**
+   * Returns sale transactions only if the ticket has NO void/refund transactions at all.
+   * Action items should only be available on tickets with only sales.
+   */
+  const getActionableSaleTransactions = (): TicketTransaction[] => {
+    const hasVoidOrRefund = transactions.some((t) => {
+      const type = (t.transaction_type || "").toLowerCase();
+      return type.includes("void") || type.includes("refund");
+    });
+    if (hasVoidOrRefund) return [];
+
+    return transactions.filter((t) => {
+      const type = (t.transaction_type || "").toLowerCase();
+      return !type.includes("void") && !type.includes("refund");
+    });
+  };
+
+  /**
+   * Executes a single void/refund API call for one transaction.
+   * Returns { success, data } so the caller can aggregate results.
+   */
+  const executeActionCall = async (
+    action: "void" | "refund",
+    targetTrx: TicketTransaction,
+    terminalId: string,
+    pin: string,
+    notes: string,
+    refundOverrides?: { amount: number; tip: number; taxable: boolean },
+    method?: string,
+  ): Promise<{ success: boolean; data: Record<string, unknown> }> => {
+    const isATHM = (method || targetTrx.payment_method || "").toUpperCase() === "ATHM";
+    const detail = targetTrx.paymentdetail;
+    const transactionId =
+      targetTrx.id || detail?.paymentTransactionId || detail?.trxId || targetTrx.reference_number || "";
+
+    const endpoint =
+      action === "void"
+        ? "/api/valetTransaction/void"
+        : "/api/valetTransaction/refund";
+
+    const body =
+      action === "void"
+        ? {
+            propertyId,
+            transactionId,
+            terminalId,
+            pin,
+            latitude: latitude ?? 0,
+            longitude: longitude ?? 0,
+            receiptEmail: "yes",
+            receiptOutput: "both",
+            notes,
+          }
+        : {
+            propertyId,
+            ticketId: ticketDetails?.ticketId ?? "",
+            paymentMethod: isATHM ? "ATHM" : "ECR",
+            amount: refundOverrides?.amount ?? targetTrx.amount ?? 0,
+            tip: refundOverrides?.tip ?? detail?.tipAmount ?? 0,
+            taxable: refundOverrides?.taxable ?? true,
+            terminalId,
+            pin,
+            latitude: latitude ?? 0,
+            longitude: longitude ?? 0,
+            receiptEmail: "yes",
+            receiptOutput: "both",
+            notes,
+          };
+
+    console.log(`[${action}] REQUEST:`, JSON.stringify(body, null, 2));
+
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    const data = await res.json();
+    console.log(`[${action}] RESPONSE:`, JSON.stringify(data, null, 2));
+
+    const status =
+      data?.result?.status ||
+      data?.result?.data?.status ||
+      data?.result?.result?.status;
+
+    return { success: status === "200" || status === 200, data };
+  };
+
+  /** Shows success/error Swal for a single action result. */
+  const showActionResult = (
+    action: "void" | "refund",
+    data: Record<string, unknown>,
+    success: boolean,
+    index?: number,
+    total?: number,
+  ) => {
+    const label = action === "void" ? "Void" : "Refund";
+    const r = data?.result as Record<string, unknown> | undefined;
+    const rData = r?.data as Record<string, unknown> | undefined;
+    const rNested = r?.result as Record<string, unknown> | undefined;
+
+    const responseMessage = (
+      (rData?.response_message as string) ||
+      (r?.response_message as string) ||
+      (rNested?.response_message as string) ||
+      (rData?.final_status as string) ||
+      (r?.final_status as string) ||
+      ""
+    ).replace(/"/g, "").trim();
+
+    const approvalCode =
+      (rData?.approval_code as string) ||
+      (r?.approval_code as string) ||
+      (rNested?.approval_code as string) ||
+      "";
+
+    const trxLabel = total && total > 1 && index !== undefined ? ` (Payment ${index + 1})` : "";
+
+    if (success) {
+      return `
+        <div class="text-left rounded-xl ${success ? "bg-emerald-50 border border-emerald-200" : "bg-red-50 border border-red-200"} p-3 mb-2">
+          <p class="text-sm font-bold text-emerald-700">${label} Successful${trxLabel}</p>
+          ${responseMessage ? `<p class="text-xs text-emerald-600 mt-1">${responseMessage}</p>` : ""}
+        </div>
+      `;
+    }
+
+    const errorMsg =
+      r?.message || rData?.message || rNested?.message || rData?.error || `Failed to ${action} transaction.`;
+
+    return `
+      <div class="text-left rounded-xl bg-red-50 border border-red-200 p-3 mb-2">
+        <p class="text-sm font-bold text-red-700">${label} Failed${trxLabel}</p>
+        <p class="text-xs text-red-600 mt-1">${errorMsg}</p>
+        ${responseMessage && responseMessage !== String(errorMsg) ? `<p class="text-xs font-bold text-red-500 mt-1">${responseMessage}</p>` : ""}
+        ${approvalCode && approvalCode !== "00" ? `<p class="text-[10px] text-slate-400 mt-1">Code: ${approvalCode}</p>` : ""}
+      </div>
+    `;
+  };
+
   const confirmAction = async (
     action: "void" | "refund",
     trx: TicketTransaction,
     method?: string
   ) => {
-    const isATHM = (method || trx.payment_method || "").toUpperCase() === "ATHM";
-    const detail = trx.paymentdetail;
+    const actionableSales = getActionableSaleTransactions();
+    const isSplitPayment = actionableSales.length > 1;
+
+    // ── Split payment: ask which transaction(s) to target ──
+    let selectedTransactions: TicketTransaction[] = [trx];
+
+    if (isSplitPayment) {
+      const optionsHtml = actionableSales
+        .map((t, i) => {
+          const amount = t.amount?.toFixed(2) ?? "0.00";
+          return `
+            <label class="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 cursor-pointer hover:bg-slate-50 transition mb-2">
+              <input type="radio" name="split-target" value="${i}" class="accent-blue-500 h-4 w-4" />
+              <div class="text-left">
+                <p class="text-sm font-bold text-slate-800">Payment ${i + 1} — $${amount}</p>
+                <p class="text-xs text-slate-500">${t.payment_method || "—"} · ${t.transaction_type || "—"}</p>
+              </div>
+            </label>
+          `;
+        })
+        .join("");
+
+      const totalAmount = actionableSales.reduce((sum, t) => sum + (t.amount || 0), 0);
+
+      const selectionResult = await Swal.fire({
+        title: `${action === "void" ? "Void" : "Refund"} — Split Payment`,
+        html: `
+          <p class="text-sm text-slate-600 mb-4">This ticket has ${actionableSales.length} payments. Which would you like to ${action}?</p>
+          <div class="text-left">
+            ${optionsHtml}
+            <label class="flex items-center gap-3 rounded-xl border border-primary/40 bg-amber-50 px-4 py-3 cursor-pointer hover:bg-amber-100 transition">
+              <input type="radio" name="split-target" value="all" class="accent-blue-500 h-4 w-4" />
+              <div class="text-left">
+                <p class="text-sm font-bold text-slate-800">${action === "void" ? "Void" : "Refund"} Both — $${totalAmount.toFixed(2)}</p>
+                <p class="text-xs text-slate-500">Process ${action} for all payments</p>
+              </div>
+            </label>
+          </div>
+        `,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Continue",
+        confirmButtonColor: action === "void" ? "#ef4444" : getThemePrimaryColor(),
+        cancelButtonColor: "#64748b",
+        cancelButtonText: "Cancel",
+        backdrop: "rgba(15,23,42,0.55)",
+        preConfirm: () => {
+          const selected = (document.querySelector('input[name="split-target"]:checked') as HTMLInputElement)?.value;
+          if (!selected) {
+            Swal.showValidationMessage("Please select a payment to proceed.");
+            return false;
+          }
+          return selected;
+        },
+      });
+
+      if (!selectionResult.isConfirmed || !selectionResult.value) return;
+
+      if (selectionResult.value === "all") {
+        selectedTransactions = [...actionableSales];
+      } else {
+        const idx = parseInt(selectionResult.value as string, 10);
+        selectedTransactions = [actionableSales[idx]];
+      }
+    }
+
+    // ── Confirmation modal (PIN, notes, refund fields) ──
+    const primaryTrx = selectedTransactions[0];
+    const isATHM = (method || primaryTrx.payment_method || "").toUpperCase() === "ATHM";
+    const detail = primaryTrx.paymentdetail;
     const label = action === "void" ? "Void" : "Refund";
+    const isRefund = action === "refund";
+
     const description =
       action === "void"
         ? "This will cancel the transaction. Only works if the batch has not been settled."
@@ -523,24 +733,29 @@ export default function TicketDetailsModal({
           ? "This will refund the full amount back to the customer's ATH Móvil account."
           : "This will refund the full amount back to the customer's card.";
 
-    const defaultAmount = trx.amount?.toFixed(2) ?? "0.00";
+    const summaryHtml = selectedTransactions
+      .map((t, i) => {
+        const amt = t.amount?.toFixed(2) ?? "0.00";
+        return `<p><strong>Payment ${selectedTransactions.length > 1 ? `${i + 1}` : ""}:</strong> $${amt} (${t.payment_method || "—"})</p>`;
+      })
+      .join("");
+
+    const defaultAmount = primaryTrx.amount?.toFixed(2) ?? "0.00";
     const defaultTip = detail?.tipAmount?.toFixed(2) ?? "0.00";
-    const isRefund = action === "refund";
 
     const inputStyle =
       "w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
     const labelStyle = "block text-xs font-bold text-slate-500 mb-1";
 
     const confirm = await Swal.fire({
-      title: `${label} Transaction`,
+      title: `${label} ${selectedTransactions.length > 1 ? `${selectedTransactions.length} Transactions` : "Transaction"}`,
       html: `
         <p class="text-sm text-slate-600">${description}</p>
         <div class="mt-3 rounded-xl bg-slate-50 p-3 text-left text-sm">
-          <p><strong>Method:</strong> ${trx.payment_method || "—"}</p>
-          <p><strong>Type:</strong> ${trx.transaction_type || "—"}</p>
+          ${summaryHtml}
         </div>
 
-        ${isRefund ? `
+        ${isRefund && selectedTransactions.length === 1 ? `
           <div class="mt-4 text-left">
             <label class="${labelStyle}">Amount</label>
             <input id="swal-amount" type="number" step="0.01" min="0" value="${defaultAmount}" placeholder="0.00"
@@ -577,7 +792,7 @@ export default function TicketDetailsModal({
       confirmButtonColor:
         action === "void" ? "#ef4444" : getThemePrimaryColor(),
       cancelButtonColor: "#64748b",
-      confirmButtonText: `Yes, ${label}`,
+      confirmButtonText: `Yes, ${label}${selectedTransactions.length > 1 ? " Both" : ""}`,
       cancelButtonText: "Cancel",
       backdrop: "rgba(15,23,42,0.55)",
       preConfirm: () => {
@@ -594,7 +809,7 @@ export default function TicketDetailsModal({
           return false;
         }
 
-        if (isRefund) {
+        if (isRefund && selectedTransactions.length === 1) {
           const amount = parseFloat((document.getElementById("swal-amount") as HTMLInputElement)?.value) || 0;
           const tip = parseFloat((document.getElementById("swal-tip") as HTMLInputElement)?.value) || 0;
           const taxable = (document.getElementById("swal-taxable") as HTMLInputElement)?.checked ?? false;
@@ -631,126 +846,76 @@ export default function TicketDetailsModal({
         return;
       }
 
-      console.log(`[${label}] trx object:`, JSON.stringify(trx, null, 2));
+      // ── Process each selected transaction sequentially ──
+      const results: { trx: TicketTransaction; success: boolean; data: Record<string, unknown> }[] = [];
 
-      const transactionId =
-        trx.id || detail?.paymentTransactionId || detail?.trxId || trx.reference_number || "";
+      for (let i = 0; i < selectedTransactions.length; i++) {
+        const targetTrx = selectedTransactions[i];
 
-      const endpoint =
-        action === "void"
-          ? "/api/valetTransaction/void"
-          : "/api/valetTransaction/refund";
+        if (selectedTransactions.length > 1) {
+          Swal.fire({
+            title: `Processing ${label} ${i + 1} of ${selectedTransactions.length}`,
+            html: `<p class="text-sm text-slate-600">$${targetTrx.amount?.toFixed(2) ?? "0.00"} — ${targetTrx.payment_method || "—"}</p>`,
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => Swal.showLoading(),
+          });
+        }
 
-      const body =
-        action === "void"
-          ? {
-              propertyId,
-              transactionId,
-              terminalId,
-              pin,
-              latitude: latitude ?? 0,
-              longitude: longitude ?? 0,
-              receiptEmail: "yes",
-              receiptOutput: "both",
-              notes,
-            }
-          : {
-              propertyId,
-              ticketId: ticketDetails?.ticketId ?? "",
-              paymentMethod: isATHM ? "ATHM" : "ECR",
-              amount: (confirm.value as { amount: number }).amount,
-              tip: (confirm.value as { tip: number }).tip ?? 0,
-              taxable: (confirm.value as { taxable: boolean }).taxable ?? false,
-              terminalId,
-              pin,
-              latitude: latitude ?? 0,
-              longitude: longitude ?? 0,
-              receiptEmail: "yes",
-              receiptOutput: "both",
-              notes,
-            };
+        const refundOverrides =
+          isRefund && selectedTransactions.length === 1
+            ? {
+                amount: (confirm.value as { amount: number }).amount,
+                tip: (confirm.value as { tip: number }).tip ?? 0,
+                taxable: (confirm.value as { taxable: boolean }).taxable ?? false,
+              }
+            : undefined;
 
-      console.log(`[${label}] REQUEST:`, JSON.stringify(body, null, 2));
+        const result = await executeActionCall(
+          action,
+          targetTrx,
+          terminalId,
+          pin,
+          notes,
+          refundOverrides,
+          method,
+        );
 
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+        results.push({ trx: targetTrx, ...result });
 
-      const data = await res.json();
-      console.log(`[${label}] RESPONSE:`, JSON.stringify(data, null, 2));
+        // If processing both and the first one fails, still attempt the second
+      }
 
-      const status =
-        data?.result?.status ||
-        data?.result?.data?.status ||
-        data?.result?.result?.status;
-      const isSuccess = status === "200" || status === 200;
+      if (selectedTransactions.length > 1) {
+        Swal.close();
+      }
 
-      // Extract Evertec response_message from all possible locations
-      const r = data?.result as Record<string, unknown> | undefined;
-      const rData = r?.data as Record<string, unknown> | undefined;
-      const rNested = r?.result as Record<string, unknown> | undefined;
+      // ── Show aggregated results ──
+      const allSuccess = results.every((r) => r.success);
+      const resultHtml = results
+        .map((r, i) => showActionResult(action, r.data, r.success, i, results.length))
+        .join("");
 
-      const responseMessage = (
-        (rData?.response_message as string) ||
-        (r?.response_message as string) ||
-        (rNested?.response_message as string) ||
-        (rData?.final_status as string) ||
-        (r?.final_status as string) ||
-        ""
-      ).replace(/"/g, "").trim();
-
-      const approvalCode =
-        (rData?.approval_code as string) ||
-        (r?.approval_code as string) ||
-        (rNested?.approval_code as string) ||
-        "";
-
-      if (isSuccess) {
+      if (allSuccess) {
         await Swal.fire({
           title: `${label} Successful`,
-          html: `
-            <p class="text-sm text-gray-600">The transaction has been ${
-              action === "void" ? "voided" : "refunded"
-            } successfully.</p>
-            ${responseMessage ? `<p class="mt-2 text-xs font-semibold text-emerald-600">${responseMessage}</p>` : ""}
-          `,
+          html: resultHtml,
           icon: "success",
           confirmButtonColor: getThemePrimaryColor(),
         });
         handleCloseTicketDetails();
+      } else if (results.some((r) => r.success)) {
+        await Swal.fire({
+          title: `${label} Partially Completed`,
+          html: `<p class="text-sm text-slate-600 mb-3">Some transactions could not be processed.</p>${resultHtml}`,
+          icon: "warning",
+          confirmButtonColor: getThemePrimaryColor(),
+        });
+        handleCloseTicketDetails();
       } else {
-        const errorMsg =
-          r?.message ||
-          rData?.message ||
-          rNested?.message ||
-          rData?.error ||
-          `Failed to ${action} transaction.`;
-
-        const responseStatus =
-          rData?.response_code ||
-          r?.response_code ||
-          status ||
-          "Unknown";
-
-        const showResponseSeparately = responseMessage && responseMessage !== String(errorMsg);
-
         Swal.fire({
           title: `${label} Failed`,
-          html: `
-            <p>${errorMsg}</p>
-            ${showResponseSeparately ? `<p class="mt-2 text-xs font-bold text-red-500">${responseMessage}</p>` : ""}
-            <p class="mt-2 text-xs text-slate-400">Status: ${responseStatus}${approvalCode && approvalCode !== "00" ? ` | Code: ${approvalCode}` : ""}</p>
-            <details class="mt-2 text-left">
-              <summary class="cursor-pointer text-xs text-slate-400">Full response</summary>
-              <pre class="mt-1 max-h-40 overflow-auto rounded bg-slate-50 p-2 text-[10px] text-slate-600">${JSON.stringify(
-                data,
-                null,
-                2
-              )}</pre>
-            </details>
-          `,
+          html: resultHtml,
           icon: "error",
           confirmButtonColor: getThemePrimaryColor(),
         });
@@ -1881,65 +2046,51 @@ export default function TicketDetailsModal({
                         </div>
                       )}
 
-                      {/* Void / Refund Actions — hide if any transaction is a void or refund */}
-                      {trx.payment_method === "ECR" &&
-                        !transactions.some((t) => {
-                          const type = (t.transaction_type || "").toLowerCase();
-                          return type.includes("void") || type.includes("refund");
-                        }) && (
-                          <div className="border-t border-slate-100 px-5 py-4">
-                            <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-                              Actions
-                            </p>
-                            <div className="flex gap-3">
-                              <button
-                                type="button"
-                                disabled={actionLoading}
-                                onClick={() => confirmAction("void", trx)}
-                                className="flex-1 cursor-pointer rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-600 
-                                transition hover:bg-red-100 disabled:opacity-50"
-                              >
-                                Void
-                              </button>
-                              <button
-                                type="button"
-                                disabled={actionLoading}
-                                onClick={() => confirmAction("refund", trx)}
-                                className="flex-1 cursor-pointer rounded-2xl border border-(--primary-light) bg-(--primary-soft) px-4 py-3 text-sm font-bold 
-                                text-secondary transition hover:bg-(--primary-soft) disabled:opacity-50"
-                              >
-                                Refund
-                              </button>
-                            </div>
-                          </div>
-                        )}
-
-                      {/* ATHM Refund Action — only for ATHM transactions without existing void/refund */}
-                      {(trx.payment_method || "").toUpperCase() === "ATHM" &&
-                        !transactions.some((t) => {
-                          const type = (t.transaction_type || "").toLowerCase();
-                          return type.includes("void") || type.includes("refund");
-                        }) && (
-                          <div className="border-t border-slate-100 px-5 py-4">
-                            <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-                              Actions
-                            </p>
-                            <div className="flex gap-3">
-                              <button
-                                type="button"
-                                disabled={actionLoading}
-                                onClick={() => confirmAction("refund", trx, "ATHM")}
-                                className="flex-1 cursor-pointer rounded-2xl border border-(--primary-light) bg-(--primary-soft) px-4 py-3 text-sm font-bold
-                                text-secondary transition hover:bg-(--primary-soft) disabled:opacity-50"
-                              >
-                                Refund
-                              </button>
-                            </div>
-                          </div>
-                        )}
+                      {/* Void / Refund actions moved to consolidated section below */}
                     </div>
                   );
                 })}
+
+                {/* Consolidated Void / Refund Actions — only for actionable sale transactions */}
+                {(() => {
+                  const actionableSales = getActionableSaleTransactions();
+                  if (actionableSales.length === 0) return null;
+
+                  // Determine available methods from actionable sales
+                  const hasECR = actionableSales.some((t) => t.payment_method === "ECR");
+                  const hasATHM = actionableSales.some((t) => (t.payment_method || "").toUpperCase() === "ATHM");
+                  const primaryMethod = hasATHM ? "ATHM" : undefined;
+
+                  return (
+                    <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                      <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                        Actions
+                      </p>
+                      <div className="flex gap-3">
+                        {hasECR && (
+                          <button
+                            type="button"
+                            disabled={actionLoading}
+                            onClick={() => confirmAction("void", actionableSales[0])}
+                            className="flex-1 cursor-pointer rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-600
+                            transition hover:bg-red-100 disabled:opacity-50"
+                          >
+                            Void
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          disabled={actionLoading}
+                          onClick={() => confirmAction("refund", actionableSales[0], primaryMethod)}
+                          className="flex-1 cursor-pointer rounded-2xl border border-(--primary-light) bg-(--primary-soft) px-4 py-3 text-sm font-bold
+                          text-secondary transition hover:bg-(--primary-soft) disabled:opacity-50"
+                        >
+                          Refund
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 

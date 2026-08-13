@@ -5,6 +5,7 @@ import Swal from "sweetalert2";
 
 import { FaCreditCard } from "react-icons/fa";
 import {
+  MdCallSplit,
   MdCardGiftcard,
   MdOutlineReceiptLong,
   MdPassword,
@@ -81,6 +82,23 @@ function calcDisplayTotal(base: number, taxable?: boolean): number {
   return roundToTwo(base + stateTax + cityTax);
 }
 
+/**
+ * Reverse tax calculation: given a desired total (tax included),
+ * returns the base amount that, when the backend auto-adds PR taxes
+ * (10.5% state + 1% municipal), produces exactly the desired total.
+ */
+function calcBaseFromTotal(desiredTotal: number, taxable?: boolean): number {
+  if (!taxable) return desiredTotal;
+  const combinedRate = 1 + 0.105 + 0.01; // 1.115
+  const base = roundToTwo(desiredTotal / combinedRate);
+  // Verify forward calculation matches; adjust +1¢ if rounding fell short
+  if (calcDisplayTotal(base, true) < desiredTotal) {
+    const baseUp = roundToTwo(base + 0.01);
+    if (calcDisplayTotal(baseUp, true) <= desiredTotal) return baseUp;
+  }
+  return base;
+}
+
 const getPrimaryThemeColor = () => {
   if (typeof window === "undefined") return "#d6a800";
 
@@ -124,6 +142,12 @@ export default function TransactionForm({
   const [receiptOutput, setReceiptOutput] = useState("both");
   const [receiptEmail, setReceiptEmail] = useState("no");
   const [tip, setTip] = useState(0);
+
+  // Split Payment state
+  const [splitEnabled, setSplitEnabled] = useState(false);
+  const [splitFirstAmount, setSplitFirstAmount] = useState("");
+  const [splitPhase, setSplitPhase] = useState<"first" | "second" | "done">("first");
+  const [splitFirstPaid, setSplitFirstPaid] = useState(0);
 
   useEffect(() => {
     fetchTransactionTypes();
@@ -187,6 +211,10 @@ export default function TransactionForm({
     selectedTransactionType?.taxable,
   );
 
+  const splitSecondAmount = splitEnabled
+    ? roundToTwo(displayTotal - splitFirstPaid)
+    : 0;
+
   const resetForm = () => {
     setForm({
       amount: 0,
@@ -200,6 +228,10 @@ export default function TransactionForm({
     setTip(0);
     setReceiptOutput("both");
     setReceiptEmail("no");
+    setSplitEnabled(false);
+    setSplitFirstAmount("");
+    setSplitPhase("first");
+    setSplitFirstPaid(0);
   };
 
   const resolveLocation = async (): Promise<{
@@ -242,6 +274,8 @@ export default function TransactionForm({
       didOpen: () => Swal.showLoading(),
     });
 
+    console.log("[TransactionForm] PAY REQUEST:", payload);
+
     const res = await fetch("/api/valetTransaction/pay", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -249,6 +283,7 @@ export default function TransactionForm({
     });
 
     const result = await res.json();
+    console.log("[TransactionForm] PAY RESPONSE:", result);
     Swal.close();
     return result;
   };
@@ -346,6 +381,78 @@ export default function TransactionForm({
     return message.includes("DUPLICAT") || responseMsg.includes("DUPLICAT");
   };
 
+  const buildPayload = (
+    location: { latitude: number; longitude: number },
+    overrideAmount?: number,
+  ): Record<string, unknown> => {
+    const isEcr = selectedPaymentMethod === "ecr";
+    const isAthm = selectedPaymentMethod === "athm";
+    const effectiveTip = isEcr ? 0 : tip;
+    const needsTerminal = isEcr || isAthm;
+
+    return {
+      ticketId,
+      propertyId,
+      pin: form.pin,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      paymentMethod: selectedPaymentMethod,
+      transactionTypeId: Number(selectedTransactionType!.id),
+      amount: overrideAmount ?? totalAmount + effectiveTip,
+      terminalId: needsTerminal ? selectedTerminalId : undefined,
+      ...(isEcr ? {} : { tip: isAthm ? "0.00" : tip }),
+      receiptOutput,
+      receiptEmail,
+      notes: form.notes || "",
+    };
+  };
+
+  const processPayment = async (
+    payload: Record<string, unknown>,
+  ): Promise<Record<string, unknown> | null> => {
+    const result = await executePayment(payload);
+
+    if (isDuplicateTransaction(result)) {
+      const { isConfirmed } = await Swal.fire({
+        icon: "warning",
+        title: "Duplicated Transaction",
+        html: `
+          <p class="text-sm text-gray-600">The terminal detected a duplicated transaction.</p>
+          <p class="text-sm text-gray-600 mt-2">Do you want to <strong>force</strong> the transaction through? The tip selected on the terminal will be preserved.</p>
+        `,
+        showCancelButton: true,
+        confirmButtonText: "Yes, Force Transaction",
+        cancelButtonText: "No, Decline",
+        confirmButtonColor: getPrimaryThemeColor(),
+        cancelButtonColor: "#64748b",
+        reverseButtons: true,
+      });
+
+      if (isConfirmed) {
+        return await executePayment({ ...payload, forceDuplicate: "yes" });
+      }
+
+      Swal.fire({
+        icon: "info",
+        title: "Force Duplicate Declined",
+        text: "The transaction was not forced. You can try another payment method.",
+        confirmButtonColor: getPrimaryThemeColor(),
+      });
+      return null;
+    }
+
+    return result;
+  };
+
+  const isPaymentSuccessful = (result: Record<string, unknown>): boolean => {
+    const r = result?.result as Record<string, unknown> | undefined;
+    const status =
+      r?.status ||
+      (r?.data as Record<string, unknown> | undefined)?.status ||
+      (r?.result as Record<string, unknown> | undefined)?.status;
+    return status == "200" || status === 200;
+  };
+
   const handleSubmit = async () => {
     if (!selectedTransactionType) {
       Swal.fire({
@@ -400,76 +507,101 @@ export default function TransactionForm({
       return;
     }
 
+    // Split payment validations
+    if (splitEnabled && splitPhase === "first") {
+      const firstAmount = parseFloat(splitFirstAmount);
+      if (!firstAmount || firstAmount <= 0) {
+        Swal.fire({
+          icon: "warning",
+          title: "Invalid Amount",
+          text: "Please enter a valid amount for the first payment.",
+          confirmButtonColor: getPrimaryThemeColor(),
+        });
+        return;
+      }
+      if (firstAmount >= displayTotal) {
+        Swal.fire({
+          icon: "warning",
+          title: "Invalid Amount",
+          text: "The first payment must be less than the total. Disable split payment to pay the full amount.",
+          confirmButtonColor: getPrimaryThemeColor(),
+        });
+        return;
+      }
+    }
+
     setLoader(true);
 
     try {
       const location = await resolveLocation();
 
-      const isEcr = selectedPaymentMethod === "ecr";
-      const isAthm = selectedPaymentMethod === "athm";
-      const effectiveTip = isEcr ? 0 : tip;
+      if (splitEnabled && splitPhase === "first") {
+        // ── SPLIT: First payment ──
+        const firstAmount = parseFloat(splitFirstAmount);
+        // Reverse-calc base so backend tax auto-add yields the exact desired total
+        const firstBase = calcBaseFromTotal(firstAmount, selectedTransactionType?.taxable);
+        const payload = buildPayload(location, firstBase);
 
-      const payload: Record<string, unknown> = {
-        ticketId,
-        propertyId,
-        pin: form.pin,
-        latitude: location.latitude,
-        longitude: location.longitude,
-        paymentMethod: selectedPaymentMethod,
-        transactionTypeId: Number(selectedTransactionType.id),
-        amount: totalAmount + effectiveTip,
-        terminalId: needsTerminal ? selectedTerminalId : undefined,
-        ...(isEcr ? {} : { tip: isAthm ? "0.00" : tip }),
-        receiptOutput,
-        receiptEmail,
-        notes: form.notes || "",
-      };
+        const result = await processPayment(payload);
+        if (!result) { setLoader(false); return; }
 
-      console.log("[TransactionForm] ECR DEBUG:", {
-        isEcr,
-        tipState: tip,
-        effectiveTip,
-        hasTipInPayload: "tip" in payload,
-        payload,
-      });
+        if (isPaymentSuccessful(result)) {
+          setSplitFirstPaid(firstAmount);
+          setSplitPhase("second");
 
-      const result = await executePayment(payload);
-
-      if (isDuplicateTransaction(result)) {
-        const { isConfirmed } = await Swal.fire({
-          icon: "warning",
-          title: "Duplicated Transaction",
-          html: `
-            <p class="text-sm text-gray-600">The terminal detected a duplicated transaction.</p>
-            <p class="text-sm text-gray-600 mt-2">Do you want to <strong>force</strong> the transaction through? The tip selected on the terminal will be preserved.</p>
-          `,
-          showCancelButton: true,
-          confirmButtonText: "Yes, Force Transaction",
-          cancelButtonText: "No, Decline",
-          confirmButtonColor: getPrimaryThemeColor(),
-          cancelButtonColor: "#64748b",
-          reverseButtons: true,
-        });
-
-        if (isConfirmed) {
-          const forceResult = await executePayment({
-            ...payload,
-            forceDuplicate: "yes",
-          });
-          handlePaymentResult(forceResult);
-        } else {
           Swal.fire({
-            icon: "info",
-            title: "Force Duplicate Declined",
-            text: "The transaction was not forced. You can try another payment method.",
+            icon: "success",
+            title: "First Payment Successful",
+            html: `
+              <p class="text-sm text-gray-600">$${firstAmount.toFixed(2)} processed successfully.</p>
+              <p class="text-sm text-gray-600 mt-2">Remaining: <strong>$${roundToTwo(displayTotal - firstAmount).toFixed(2)}</strong></p>
+              <p class="text-sm text-gray-600 mt-1">Please proceed with the second payment.</p>
+            `,
             confirmButtonColor: getPrimaryThemeColor(),
           });
+        } else {
+          handlePaymentResult(result);
         }
+      } else if (splitEnabled && splitPhase === "second") {
+        // ── SPLIT: Second payment ──
+        const remaining = roundToTwo(displayTotal - splitFirstPaid);
+        // Reverse-calc base so backend tax auto-add yields the exact remaining total
+        const remainingBase = calcBaseFromTotal(remaining, selectedTransactionType?.taxable);
+        const payload = buildPayload(location, remainingBase);
 
-        return;
+        const result = await processPayment(payload);
+        if (!result) { setLoader(false); return; }
+
+        if (isPaymentSuccessful(result)) {
+          setOpen(false);
+          setReloadPageData(true);
+
+          Swal.fire({
+            icon: "success",
+            title: "Payment Complete",
+            html: `
+              <p class="text-sm text-gray-600">Both payments processed successfully!</p>
+              <p class="text-xs text-gray-500 mt-2">1st: $${splitFirstPaid.toFixed(2)} — 2nd: $${remaining.toFixed(2)}</p>
+            `,
+            showConfirmButton: false,
+            timer: 2500,
+          });
+
+          resetForm();
+        } else {
+          handlePaymentResult(result);
+        }
+      } else {
+        // ── Normal (non-split) payment ──
+        const isEcr = selectedPaymentMethod === "ecr";
+        const effectiveTip = isEcr ? 0 : tip;
+        const payload = buildPayload(location, totalAmount + effectiveTip);
+
+        const result = await processPayment(payload);
+        if (!result) { setLoader(false); return; }
+
+        handlePaymentResult(result);
       }
-
-      handlePaymentResult(result);
     } catch (error) {
       console.error("Error submitting transaction:", error);
       Swal.close();
@@ -616,8 +748,8 @@ export default function TransactionForm({
           </div>
         </div>
 
-        {/* TRANSACTION TYPE / RATE SELECTION */}
-        <section>
+        {/* TRANSACTION TYPE / RATE SELECTION — hidden once the first split payment is done */}
+        {!(splitEnabled && splitPhase === "second") && <section>
           <div className="mb-3 flex items-center justify-between gap-3">
             <h3 className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-700">
               <MdOutlineReceiptLong className="text-primary transition-colors duration-300" />
@@ -696,7 +828,7 @@ export default function TransactionForm({
               })}
             </div>
           )}
-        </section>
+        </section>}
 
         {/* PAYMENT METHOD */}
         <section>
@@ -728,6 +860,88 @@ export default function TransactionForm({
               );
             })}
           </div>
+
+          {/* SPLIT PAYMENT TOGGLE */}
+          {selectedTransactionType && (
+            <div className="mt-3">
+              <button
+                type="button"
+                disabled={splitPhase === "second"}
+                onClick={() => {
+                  const next = !splitEnabled;
+                  setSplitEnabled(next);
+                  if (!next) {
+                    setSplitFirstAmount("");
+                    setSplitPhase("first");
+                    setSplitFirstPaid(0);
+                  }
+                }}
+                className={`flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border text-xs font-extrabold transition-all duration-300 ${
+                  splitEnabled
+                    ? "border-primary bg-primary text-white shadow-[0_8px_20px_color-mix(in_srgb,var(--primary)_24%,transparent)]"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-(--primary-light) hover:bg-(--primary-soft) hover:text-primary"
+                } disabled:cursor-not-allowed disabled:opacity-50`}
+              >
+                <MdCallSplit className="h-4 w-4" />
+                Split Payment
+              </button>
+            </div>
+          )}
+
+          {/* SPLIT PAYMENT INPUTS */}
+          {splitEnabled && selectedTransactionType && (
+            <div className="mt-3 space-y-3 rounded-2xl border border-(--primary-light) bg-(--primary-soft) p-4 transition-colors duration-300">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">
+                Split Payment — Total: ${displayTotal.toFixed(2)}
+              </p>
+
+              <div>
+                <label className="mb-1 block text-xs font-bold text-slate-600">
+                  1st Payment Amount
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  max={roundToTwo(displayTotal - 0.01)}
+                  placeholder="0.00"
+                  value={splitPhase === "second" ? splitFirstPaid.toFixed(2) : splitFirstAmount}
+                  disabled={splitPhase === "second"}
+                  onChange={(e) => setSplitFirstAmount(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-(--primary-soft) disabled:bg-slate-100 disabled:text-slate-400"
+                />
+                {splitPhase === "second" && (
+                  <p className="mt-1 flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    Paid
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-bold text-slate-600">
+                  2nd Payment Amount (Remaining)
+                </label>
+                <input
+                  type="text"
+                  disabled
+                  value={
+                    splitPhase === "second"
+                      ? `$${splitSecondAmount.toFixed(2)}`
+                      : splitFirstAmount && parseFloat(splitFirstAmount) > 0 && parseFloat(splitFirstAmount) < displayTotal
+                        ? `$${roundToTwo(displayTotal - parseFloat(splitFirstAmount)).toFixed(2)}`
+                        : "$0.00"
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-bold text-slate-500 outline-none"
+                />
+                {splitPhase === "second" && (
+                  <p className="mt-1 text-[10px] font-bold text-amber-600">
+                    Pending — Submit to complete
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </section>
 
         {/* TERMINAL SELECTION — only for card/athm */}
@@ -943,15 +1157,24 @@ export default function TransactionForm({
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">
-              Total Balance
+              {splitEnabled && splitPhase === "second"
+                ? "Remaining Balance"
+                : splitEnabled && splitPhase === "first"
+                  ? "1st Payment"
+                  : "Total Balance"}
             </p>
 
             <p className="font-serif text-4xl font-bold text-slate-950">
-              ${(displayTotal + tip).toFixed(2)}
+              {splitEnabled && splitPhase === "second"
+                ? `$${splitSecondAmount.toFixed(2)}`
+                : splitEnabled && splitPhase === "first" && splitFirstAmount && parseFloat(splitFirstAmount) > 0
+                  ? `$${parseFloat(splitFirstAmount).toFixed(2)}`
+                  : `$${(displayTotal + tip).toFixed(2)}`}
             </p>
             <span className="ml-2 text-xs font-medium text-slate-500 font-serif float-right">
-              {selectedTransactionType?.taxable ? "incl. tax" : "flat rate"}
-              {tip > 0 ? " + tip" : ""}
+              {splitEnabled
+                ? `of $${displayTotal.toFixed(2)} total`
+                : `${selectedTransactionType?.taxable ? "incl. tax" : "flat rate"}${tip > 0 ? " + tip" : ""}`}
             </span>
           </div>
 
@@ -977,7 +1200,13 @@ export default function TransactionForm({
               }
               className="h-14 cursor-pointer rounded-2xl bg-primary px-10 text-sm font-extrabold text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition-all duration-300 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loader ? "Processing..." : "Submit Payment"}
+              {loader
+                ? "Processing..."
+                : splitEnabled && splitPhase === "second"
+                  ? "Submit 2nd Payment"
+                  : splitEnabled && splitPhase === "first"
+                    ? "Submit 1st Payment"
+                    : "Submit Payment"}
             </button>
           </div>
         </div>
