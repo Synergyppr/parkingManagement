@@ -317,6 +317,25 @@ export interface ReportEntry {
   date: string;
 }
 
+export interface ReportKPIs {
+  ticketCount: number;
+  salesAmount: number;
+  refundAmount: number;
+  voidAmount: number;
+}
+
+export interface JournalEntry {
+  id: string;
+  operationType: string;
+  paymentStatus: string;
+  amount: number;
+  terminalId: string;
+  reference: string;
+  externalTransactionId: string | null;
+  trxId: string | null;
+  createdDateTime: string;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 
 export interface PrTaxRate {
