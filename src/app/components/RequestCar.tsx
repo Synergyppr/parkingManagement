@@ -10,6 +10,7 @@ import { MdPayment } from "react-icons/md";
 
 import { useSignalR, joinGroup, leaveGroup } from "../lib/SignalRProvider";
 import { useProperty } from "../context/PropertyContext";
+import { parseLocationName } from "../lib/clientUtils";
 import { NotificationHandler, VehicleData } from "../types";
 
 import StatusTimeline from "./StatusTimeline";
@@ -846,7 +847,7 @@ const RequestCar = () => {
                     <span>
                       at{" "}
                       <strong className="capitalize text-slate-950">
-                        {vehicleData?.placeToVisit}
+                        {parseLocationName(vehicleData?.placeToVisit)}
                       </strong>
                     </span>
                   )}{" "}
@@ -877,7 +878,7 @@ const RequestCar = () => {
                     <>
                       {" to "}
                       <strong className="capitalize text-slate-950">
-                        {vehicleData?.placeToVisit}
+                        {parseLocationName(vehicleData?.placeToVisit)}
                       </strong>
                     </>
                   )}

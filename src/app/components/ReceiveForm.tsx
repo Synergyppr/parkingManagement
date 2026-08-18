@@ -17,6 +17,7 @@ import {
   CarPart,
   Vehicle,
   VehiclePhoto,
+  RateEntry,
 } from "../types";
 import { ReceiveFormProps } from "../types/pagesProps";
 import { useProperty } from "../context/PropertyContext";
@@ -79,6 +80,8 @@ export default function ReceiveForm({
   const [selectedVehiclePhotos, setSelectedVehiclePhotos] = useState<
     VehiclePhoto[]
   >([]);
+  const [transactionTypes, setTransactionTypes] = useState<RateEntry[]>([]);
+  const [locationSelection, setLocationSelection] = useState("");
   // const [manageModeOn, setManageModeOn] = useState<boolean>(false); // To manage and delete vehicles from the existing vehicles list
   const [, setManageVehicleSettings] = useState({
     patronId: form?.patronId || "",
@@ -99,6 +102,42 @@ export default function ReceiveForm({
     generateTicketNumber({ setForm });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!propertyId) return;
+    const fetchTransactionTypes = async () => {
+      try {
+        const res = await fetch("/api/valetTransaction/types/get", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: propertyId }),
+        });
+        const data = await res.json();
+        if (data?.result?.status === "200") {
+          setTransactionTypes(data?.result?.data || []);
+        }
+      } catch (error) {
+        console.error("Error fetching transaction types:", error);
+      }
+    };
+    fetchTransactionTypes();
+  }, [propertyId]);
+
+  const handleLocationChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const selected = e.target.value;
+    setLocationSelection(selected);
+
+    if (selected === "Other") {
+      setForm((prev: Partial<Ticket>) => ({ ...prev, placeToVisit: "" }));
+    } else {
+      setForm((prev: Partial<Ticket>) => ({
+        ...prev,
+        placeToVisit: selected,
+      }));
+    }
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -526,14 +565,41 @@ export default function ReceiveForm({
                       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                         <FormInput
                           name="placeToVisit"
-                          placeholder="Destination / Venue"
                           icon={<MdLocationPin />}
-                          onChange={handleChange}
-                          value={form?.placeToVisit || ""}
-                          onClear={() =>
-                            setForm((prev) => ({ ...prev, placeToVisit: "" }))
-                          }
+                          type="select"
+                          value={locationSelection}
+                          onChange={handleLocationChange}
+                          options={[
+                            ...transactionTypes
+                              .filter((t) => t.isActive)
+                              .map((t) => ({
+                                id: `${t.name}-${t.value}`,
+                                name: t.name,
+                              })),
+                            { id: "Other", name: "Other" },
+                          ]}
                         />
+
+                        {locationSelection === "Other" && (
+                          <FormInput
+                            name="otherLocation"
+                            placeholder="Place to visit (optional)"
+                            icon={<MdLocationPin />}
+                            value={form?.placeToVisit || ""}
+                            onChange={(e) =>
+                              setForm((prev: Partial<Ticket>) => ({
+                                ...prev,
+                                placeToVisit: e.target.value,
+                              }))
+                            }
+                            onClear={() =>
+                              setForm((prev) => ({
+                                ...prev,
+                                placeToVisit: "",
+                              }))
+                            }
+                          />
+                        )}
 
                         {/* <FormInput
                           name="pin"

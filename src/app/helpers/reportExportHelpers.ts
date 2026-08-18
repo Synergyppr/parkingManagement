@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import { ReportEntry, JournalEntry, ReportKPIs } from "../types";
+import { parseLocationName } from "../lib/clientUtils";
 
 const PR_TIMEZONE = "America/Puerto_Rico";
 const MARGIN = 15;
@@ -235,7 +236,7 @@ export const exportTicketsPdf = (
     doc.text((t.patronName || "—").substring(0, 25), x, y + 5.5);
     x += columns[1].width;
 
-    doc.text((t.placeToVisit || "—").substring(0, 22), x, y + 5.5);
+    doc.text((parseLocationName(t.placeToVisit) || "—").substring(0, 22), x, y + 5.5);
     x += columns[2].width;
 
     doc.text((t.employeeName || "—").substring(0, 20), x, y + 5.5);

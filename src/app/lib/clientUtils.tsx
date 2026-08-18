@@ -144,6 +144,26 @@ export function isWithinRadius(
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Parses "1A-3" → "1A" (strips the rate value suffix for display)
+export const parseLocationName = (
+  placeToVisit: string | null | undefined
+): string => {
+  if (!placeToVisit) return "";
+  const match = placeToVisit.match(/^(.+)-(\d+(?:\.\d+)?)$/);
+  return match ? match[1] : placeToVisit;
+};
+
+// Parses "1A-3" → 3 (extracts the rate value for checkout pre-selection)
+export const parseLocationValue = (
+  placeToVisit: string | null | undefined
+): number | null => {
+  if (!placeToVisit) return null;
+  const match = placeToVisit.match(/^(.+)-(\d+(?:\.\d+)?)$/);
+  return match ? Number(match[2]) : null;
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
 export const interpolate = (start: number, end: number, factor: number) => {
   return start + (end - start) * factor;
 };

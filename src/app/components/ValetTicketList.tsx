@@ -862,6 +862,7 @@ export default function ValetTicketList({
               locationMode={locationMode}
               propertyId={propertyId}
               setReloadPageData={setReloadPageData}
+              placeToVisit={vehicles.find((v) => v.id === selectedTicketId)?.placeToVisit}
             />
           </div>
         </Modal>

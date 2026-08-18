@@ -7,6 +7,7 @@ import {
 } from "../lib/carPartsLegend";
 import { useProperty } from "../context/PropertyContext";
 import { CarPart, JournalEntry, ReportEntry, ReportKPIs, TicketDetails } from "../types";
+import { parseLocationName } from "../lib/clientUtils";
 import { handleFetchTicketDetails } from "../helpers/dashboardHelpers";
 import {
   getPuertoRicoToday,
@@ -652,7 +653,7 @@ const Report = () => {
                 </span>
 
                 <span className="truncate font-medium text-slate-500">
-                  {entry?.placeToVisit || "—"}
+                  {parseLocationName(entry?.placeToVisit) || "—"}
                 </span>
 
                 <span className="truncate font-medium text-slate-500">
@@ -712,7 +713,7 @@ const Report = () => {
                       Place
                     </p>
                     <p className="mt-1 font-semibold text-slate-700">
-                      {entry?.placeToVisit || "—"}
+                      {parseLocationName(entry?.placeToVisit) || "—"}
                     </p>
                   </div>
 

@@ -7,11 +7,13 @@ import { FaCreditCard } from "react-icons/fa";
 import {
   MdCallSplit,
   MdCardGiftcard,
+  MdExpandMore,
   MdOutlineReceiptLong,
   MdPassword,
   MdPayment,
 } from "react-icons/md";
 import { RiSecurePaymentFill } from "react-icons/ri";
+import { parseLocationName, parseLocationValue } from "../lib/clientUtils";
 
 import { PaymentTerminal } from "../types";
 import { useProperty } from "../context/PropertyContext";
@@ -38,6 +40,7 @@ interface TransactionFormProps {
   longitude?: number;
   locationMode?: "live" | "manual";
   propertyId?: string | null;
+  placeToVisit?: string;
 }
 
 interface TransactionType {
@@ -120,6 +123,7 @@ export default function TransactionForm({
   locationMode,
   propertyId,
   setReloadPageData,
+  placeToVisit,
 }: TransactionFormProps) {
   const {
     accountUser,
@@ -149,11 +153,40 @@ export default function TransactionForm({
   const [splitPhase, setSplitPhase] = useState<"first" | "second" | "done">("first");
   const [splitFirstPaid, setSplitFirstPaid] = useState(0);
 
+  // Custom rate state
+  const isOtherCheckout = placeToVisit != null && parseLocationValue(placeToVisit) === null;
+  const [useCustomRate, setUseCustomRate] = useState(isOtherCheckout);
+  const [otherName, setOtherName] = useState(() =>
+    parseLocationName(placeToVisit) || ""
+  );
+  const [otherPrice, setOtherPrice] = useState("");
+  const [otherTaxable, setOtherTaxable] = useState(false);
+  const [showExistingRates, setShowExistingRates] = useState(!isOtherCheckout);
+
+  // True when the user is using the custom rate card (either from "Other" or manually switched)
+  const effectiveOther = useCustomRate;
+
   useEffect(() => {
     fetchTransactionTypes();
     fetchTerminals();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-select rate based on placeToVisit when transaction types are loaded
+  useEffect(() => {
+    if (!placeToVisit || transactionTypes.length === 0) return;
+    const locationName = parseLocationName(placeToVisit);
+    const match = transactionTypes.find((t) => t.name === locationName);
+    if (match && !form.paymentMethod) {
+      setForm((prev) => ({
+        ...prev,
+        paymentMethod: match.name,
+        transactionTypeId: Number(match.id),
+        value: match.value,
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactionTypes, placeToVisit]);
 
   const fetchTransactionTypes = async () => {
     try {
@@ -199,17 +232,19 @@ export default function TransactionForm({
     }
   };
 
-  const selectedTransactionType = transactionTypes?.find(
-    (t) => t?.name === form?.paymentMethod,
-  );
+  const selectedTransactionType = effectiveOther
+    ? undefined
+    : transactionTypes?.find((t) => t?.name === form?.paymentMethod);
 
-  const price = selectedTransactionType?.value;
+  const otherPriceNum = Number(otherPrice) || 0;
+  const price = effectiveOther
+    ? (otherTaxable ? calcBaseFromTotal(otherPriceNum, true) : otherPriceNum)
+    : selectedTransactionType?.value;
   const basePrice = Number(price) || 0;
   const totalAmount = basePrice;
-  const displayTotal = calcDisplayTotal(
-    basePrice,
-    selectedTransactionType?.taxable,
-  );
+  const displayTotal = effectiveOther
+    ? otherPriceNum
+    : calcDisplayTotal(basePrice, selectedTransactionType?.taxable);
 
   const splitSecondAmount = splitEnabled
     ? roundToTwo(displayTotal - splitFirstPaid)
@@ -397,13 +432,15 @@ export default function TransactionForm({
       latitude: location.latitude,
       longitude: location.longitude,
       paymentMethod: selectedPaymentMethod,
-      transactionTypeId: Number(selectedTransactionType!.id),
+      transactionTypeId: effectiveOther ? 0 : Number(selectedTransactionType!.id),
       amount: overrideAmount ?? totalAmount + effectiveTip,
       terminalId: needsTerminal ? selectedTerminalId : undefined,
       ...(isEcr ? {} : { tip: isAthm ? "0.00" : tip }),
       receiptOutput,
       receiptEmail,
-      notes: form.notes || "",
+      notes: effectiveOther
+        ? `Other: ${otherName || parseLocationName(placeToVisit) || "Other"}${form.notes ? ` | ${form.notes}` : ""}`
+        : form.notes || "",
     };
   };
 
@@ -454,7 +491,27 @@ export default function TransactionForm({
   };
 
   const handleSubmit = async () => {
-    if (!selectedTransactionType) {
+    if (effectiveOther) {
+      const parsed = Number(otherPrice);
+      if (otherPrice === "" || isNaN(parsed) || parsed < 0) {
+        Swal.fire({
+          icon: "warning",
+          title: "Missing Price",
+          text: "Please enter a valid price for this custom rate.",
+          confirmButtonColor: getPrimaryThemeColor(),
+        });
+        return;
+      }
+      if (parsed === 0 && (!form.notes || !form.notes.trim())) {
+        Swal.fire({
+          icon: "warning",
+          title: "Notes Required",
+          text: "Internal notes are required when the rate is $0.00. Please document the reason.",
+          confirmButtonColor: getPrimaryThemeColor(),
+        });
+        return;
+      }
+    } else if (!selectedTransactionType) {
       Swal.fire({
         icon: "warning",
         title: "Missing Information",
@@ -756,76 +813,176 @@ export default function TransactionForm({
               Select Rate
             </h3>
 
-            {selectedTransactionType && (
+            {!effectiveOther && selectedTransactionType && (
               <span className="rounded-full bg-(--primary-soft) px-3 py-1 text-xs font-extrabold text-primary transition-colors duration-300">
                 {selectedTransactionType.name}
               </span>
             )}
+
+            {effectiveOther && (
+              <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-extrabold text-amber-700">
+                Other
+              </span>
+            )}
           </div>
 
-          {transactionTypes.length === 0 ? (
+          {!showExistingRates && transactionTypes.length === 0 && !isOtherCheckout ? (
             <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center text-sm font-semibold text-slate-400">
               No transaction types found.
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {transactionTypes.map((option) => {
-                const active = form.paymentMethod === option.name;
-                const optionTotal = calcDisplayTotal(
-                  Number(option.value) || 0,
-                  option.taxable,
-                );
+            <div className="space-y-3">
+              {!showExistingRates ? (
+                <>
+                  {/* Custom Rate Card */}
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4">
+                    <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-amber-700">
+                      Custom Rate
+                    </p>
 
-                return (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                          Name
+                        </label>
+                        <input
+                          type="text"
+                          value={otherName}
+                          onChange={(e) => setOtherName(e.target.value)}
+                          placeholder="Other"
+                          className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-900 outline-none transition
+                          focus:border-primary focus:ring-2 focus:ring-(--primary-soft)"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                          Price
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">$</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={otherPrice}
+                            onChange={(e) => setOtherPrice(e.target.value)}
+                            placeholder="0.00"
+                            className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-7 pr-3.5 text-sm font-bold text-slate-900 outline-none transition
+                            focus:border-primary focus:ring-2 focus:ring-(--primary-soft)"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Taxable Toggle */}
+                    <div className="mt-3 flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                        Taxable
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setOtherTaxable(!otherTaxable)}
+                        className={`relative h-6 w-11 cursor-pointer rounded-full transition-colors duration-200 ${
+                          otherTaxable ? "bg-primary" : "bg-slate-300"
+                        }`}
+                      >
+                        <span
+                          className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${
+                            otherTaxable ? "translate-x-5" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {otherTaxable && otherPriceNum > 0 && (
+                      <p className="mt-2 text-xs font-medium text-slate-400">
+                        Base sent: ${totalAmount.toFixed(2)} + tax = ${otherPriceNum.toFixed(2)}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Switch to existing rates */}
+                  {transactionTypes.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowExistingRates(true);
+                        setUseCustomRate(false);
+                        setForm((prev) => ({ ...prev, paymentMethod: "", transactionTypeId: 0, value: 0 }));
+                      }}
+                      className="flex w-full cursor-pointer items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-500 transition hover:border-(--primary-light) hover:text-primary"
+                    >
+                      Or select an existing rate
+                      <MdExpandMore className="h-4 w-4" />
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Existing Rates */}
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    {transactionTypes.map((option) => {
+                      const active = !useCustomRate && form.paymentMethod === option.name;
+                      const optionTotal = calcDisplayTotal(Number(option.value) || 0, option.taxable);
+
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => {
+                            setUseCustomRate(false);
+                            setForm((prev) => ({
+                              ...prev,
+                              paymentMethod: option.name,
+                              transactionTypeId: Number(option.id),
+                              value: option.value,
+                            }));
+                          }}
+                          className={`group flex cursor-pointer items-center justify-between rounded-2xl border p-4 text-left transition-all duration-300 ${
+                            active
+                              ? "border-(--primary-light) bg-(--primary-soft) shadow-[0_12px_30px_color-mix(in_srgb,var(--primary)_18%,transparent)]"
+                              : "border-slate-200 bg-white hover:border-(--primary-light) hover:bg-(--primary-soft)"
+                          }`}
+                        >
+                          <div>
+                            <p className={`text-sm font-extrabold transition-colors duration-300 ${active ? "text-primary" : "text-slate-900"}`}>
+                              {option.name}
+                            </p>
+                            <p className="mt-1 text-xs font-medium text-slate-400">
+                              {option.taxable ? "Taxable rate" : "Flat rate"}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className={`text-lg font-black transition-colors duration-300 ${active ? "text-primary" : "text-slate-900"}`}>
+                              ${option.value.toFixed(2)}
+                            </p>
+                            {option.taxable && (
+                              <p className="text-xs font-bold text-slate-400">
+                                Total ${optionTotal.toFixed(2)}
+                              </p>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Switch to custom rate */}
                   <button
-                    key={option.id}
                     type="button"
                     onClick={() => {
-                      setForm((prev) => ({
-                        ...prev,
-                        paymentMethod: option.name,
-                        transactionTypeId: Number(option.id),
-                        value: option.value,
-                      }));
+                      setShowExistingRates(false);
+                      setUseCustomRate(true);
+                      setForm((prev) => ({ ...prev, paymentMethod: "", transactionTypeId: 0, value: 0 }));
                     }}
-                    className={`group flex cursor-pointer items-center justify-between rounded-2xl border p-4 text-left transition-all duration-300 ${
-                      active
-                        ? "border-(--primary-light) bg-(--primary-soft) shadow-[0_12px_30px_color-mix(in_srgb,var(--primary)_18%,transparent)]"
-                        : "border-slate-200 bg-white hover:border-(--primary-light) hover:bg-(--primary-soft)"
-                    }`}
+                    className="flex w-full cursor-pointer items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-500 transition hover:border-amber-300 hover:text-amber-700"
                   >
-                    <div>
-                      <p
-                        className={`text-sm font-extrabold transition-colors duration-300 ${
-                          active ? "text-primary" : "text-slate-900"
-                        }`}
-                      >
-                        {option.name}
-                      </p>
-
-                      <p className="mt-1 text-xs font-medium text-slate-400">
-                        {option.taxable ? "Taxable rate" : "Flat rate"}
-                      </p>
-                    </div>
-
-                    <div className="text-right">
-                      <p
-                        className={`text-lg font-black transition-colors duration-300 ${
-                          active ? "text-primary" : "text-slate-900"
-                        }`}
-                      >
-                        ${option.value.toFixed(2)}
-                      </p>
-
-                      {option.taxable ? (
-                        <p className="text-xs font-bold text-slate-400">
-                          Total ${optionTotal.toFixed(2)}
-                        </p>
-                      ) : null}
-                    </div>
+                    Use custom rate
+                    <MdExpandMore className="h-4 w-4 rotate-180" />
                   </button>
-                );
-              })}
+                </>
+              )}
             </div>
           )}
         </section>}
@@ -1084,8 +1241,13 @@ export default function TransactionForm({
 
         {/* INTERNAL NOTES */}
         <section>
-          <h3 className="mb-3 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-700">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-700">
             Internal Notes
+            {effectiveOther && otherPriceNum === 0 && (
+              <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-red-600 ring-1 ring-red-200">
+                Required
+              </span>
+            )}
           </h3>
 
           <textarea
@@ -1094,8 +1256,16 @@ export default function TransactionForm({
             onChange={(e) =>
               setForm((prev) => ({ ...prev, notes: e.target.value }))
             }
-            placeholder="Add any special handling instructions or transaction notes..."
-            className="h-24 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-(--primary-soft)"
+            placeholder={
+              effectiveOther && otherPriceNum === 0
+                ? "Required — document why this ticket has no cost..."
+                : "Add any special handling instructions or transaction notes..."
+            }
+            className={`h-24 w-full resize-none rounded-2xl border bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-(--primary-soft) ${
+              effectiveOther && otherPriceNum === 0 && (!form.notes || !form.notes.trim())
+                ? "border-red-300"
+                : "border-slate-200"
+            }`}
           />
         </section>
 
@@ -1174,7 +1344,7 @@ export default function TransactionForm({
             <span className="ml-2 text-xs font-medium text-slate-500 font-serif float-right">
               {splitEnabled
                 ? `of $${displayTotal.toFixed(2)} total`
-                : `${selectedTransactionType?.taxable ? "incl. tax" : "flat rate"}${tip > 0 ? " + tip" : ""}`}
+                : `${(effectiveOther ? otherTaxable : selectedTransactionType?.taxable) ? "incl. tax" : "flat rate"}${tip > 0 ? " + tip" : ""}`}
             </span>
           </div>
 
@@ -1193,7 +1363,7 @@ export default function TransactionForm({
               disabled={
                 loader ||
                 !propertyId ||
-                !form?.paymentMethod ||
+                (!effectiveOther && !form?.paymentMethod) ||
                 !selectedPaymentMethod ||
                 !form?.pin ||
                 form.pin.length !== 4

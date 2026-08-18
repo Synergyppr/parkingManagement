@@ -6,7 +6,7 @@ import Modal from "./Modal";
 import Tabs from "./elements/Tabs";
 import CarVector from "./CarVector";
 import Log from "./Log";
-import { formatDate, formatPhoneNumber } from "@/app/lib/clientUtils";
+import { formatDate, formatPhoneNumber, parseLocationName } from "@/app/lib/clientUtils";
 import { useProperty } from "../context/PropertyContext";
 import { TicketDetailsModalProps } from "../types/pagesProps";
 import { TicketDetails, TicketTransaction } from "../types";
@@ -1683,7 +1683,7 @@ export default function TicketDetailsModal({
                         Destination
                       </p>
                       <p className="text-sm font-extrabold text-slate-900">
-                        {ticketDetails.destination}
+                        {parseLocationName(ticketDetails.destination)}
                       </p>
                     </div>
                   )}
