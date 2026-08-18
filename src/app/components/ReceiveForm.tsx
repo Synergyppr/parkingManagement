@@ -124,7 +124,7 @@ export default function ReceiveForm({
   }, [propertyId]);
 
   const handleLocationChange = (
-    e: React.ChangeEvent<HTMLSelectElement>
+    e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>
   ) => {
     const selected = e.target.value;
     setLocationSelection(selected);
