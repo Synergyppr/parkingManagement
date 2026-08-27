@@ -59,11 +59,11 @@ const PAYMENT_METHODS = [
     icon: <FaCreditCard className="h-4 w-4" />,
   },
   { key: "athm", label: "ATH Movil", icon: <MdPayment className="h-4 w-4" /> },
-  {
-    key: "p2p",
-    label: "Online Payment",
-    icon: <MdPayment className="h-4 w-4" />,
-  },
+  // {
+  //   key: "p2p",
+  //   label: "Online Payment",
+  //   icon: <MdPayment className="h-4 w-4" />,
+  // },
   // { key: "cash", label: "Cash", icon: <MdPayment className="h-4 w-4" /> },
 ];
 
@@ -990,7 +990,7 @@ export default function TransactionForm({
             Payment Method
           </h3>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="flex gap-3">
             {PAYMENT_METHODS.map((method) => {
               const active = selectedPaymentMethod === method.key;
 
@@ -1002,7 +1002,7 @@ export default function TransactionForm({
                     setSelectedPaymentMethod(method.key);
                     if (method.key === "ecr") setTip(0);
                   }}
-                  className={`flex h-14 px-2 py-1 cursor-pointer items-center justify-center gap-2 rounded-2xl border text-sm font-extrabold transition-all duration-300 ${
+                  className={`flex h-14 flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl border text-sm font-extrabold transition-all duration-300 ${
                     active
                       ? "border-primary bg-primary text-white shadow-[0_10px_24px_color-mix(in_srgb,var(--primary)_26%,transparent)]"
                       : "border-slate-200 bg-white text-slate-700 hover:border-(--primary-light) hover:bg-(--primary-soft) hover:text-primary"

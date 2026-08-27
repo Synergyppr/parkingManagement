@@ -12,6 +12,10 @@ import { THEME_PALETTES, ThemePalette } from "../lib/propertyTheme";
 
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
 import { FaCommentDots } from "react-icons/fa6";
+import {
+  getPuertoRicoToday,
+  getDateOffset,
+} from "../helpers/reportExportHelpers";
 
 import TicketDetailsModal from "./TicketDetailsModal";
 import PageLoader from "./elements/PageLoader";
@@ -201,12 +205,42 @@ const applyThemeColors = ({
 };
 
 interface Survey {
-  id: string;
-  fullName: string;
-  comments?: string;
+  id: number;
   ticketId: string;
+  ticketNumber: string;
+  fullName: string;
   rating: number;
+  comments?: string;
+  date: string;
 }
+
+interface SurveyKPIs {
+  totalResponses: number;
+  averageRating: number;
+  positiveResponses: number;
+  positivePercentage: number;
+}
+
+interface RatingDistribution {
+  rating: number;
+  count: number;
+  percentage: number;
+}
+
+const DEFAULT_KPIS: SurveyKPIs = {
+  totalResponses: 0,
+  averageRating: 0,
+  positiveResponses: 0,
+  positivePercentage: 0,
+};
+
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
+const DEFAULT_PAGE_SIZE = 10;
+
+const formatDisplayDate = (dateStr: string) => {
+  const [year, month, day] = dateStr.split("-");
+  return `${month}/${day}/${year}`;
+};
 
 const renderStars = (rating: number, size: "sm" | "md" = "md") => {
   const stars = [];
@@ -232,9 +266,13 @@ const renderStars = (rating: number, size: "sm" | "md" = "md") => {
 const Surveys = () => {
   const { propertyId, primaryColor, secondaryColor } = useProperty();
   const saveClickedRef = useRef(false);
+  const startDateRef = useRef<HTMLInputElement>(null);
+  const endDateRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState<Survey[]>([]);
+  const [kpis, setKpis] = useState<SurveyKPIs>(DEFAULT_KPIS);
+  const [ratingDistribution, setRatingDistribution] = useState<RatingDistribution[]>([]);
   const [ticketDetails, setTicketDetails] = useState<TicketDetails>(
     {} as TicketDetails
   );
@@ -249,6 +287,16 @@ const Surveys = () => {
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
   const [damagedParts, setDamagedParts] = useState<CarPart[]>([]);
 
+  const [startDate, setStartDate] = useState(() => {
+    const today = getPuertoRicoToday();
+    return getDateOffset(today, -30);
+  });
+  const [endDate, setEndDate] = useState(getPuertoRicoToday);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
+  const [totalEntries, setTotalEntries] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
   const frontViewLabelsMap = generateLabelsMap(carParts.frontViewCar);
   const rearViewLabelsMap = generateLabelsMap(carParts.rearViewCar);
   const passengerViewLabelsMap = generateLabelsMap(carParts.passengerViewCar);
@@ -261,53 +309,58 @@ const Surveys = () => {
     });
   }, [primaryColor, secondaryColor]);
 
-  useEffect(() => {
-    const fetchSurveys = async () => {
-      if (!propertyId) return;
+  const fetchSurveys = async () => {
+    if (!propertyId) return;
 
-      setLoading(true);
+    setLoading(true);
 
-      try {
-        const res = await fetch("/api/patronRating/getAll", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: propertyId }),
-        });
+    try {
+      const res = await fetch("/api/patronRating/getAll", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          propertyId,
+          startDate,
+          endDate,
+          pageNumber,
+          pageSize,
+          filters: {},
+        }),
+      });
 
-        const data = await res.json();
+      const data = await res.json();
+      console.log("=== SURVEY REPORT API RESPONSE ===", JSON.stringify(data, null, 2));
 
-        if (data?.status === "200") {
-          const surveys = data?.data?.patronRatings;
-          setReport(surveys);
-        } else {
-          setReport([]);
-          console.log("Failed to fetch surveys", data?.message);
-        }
-      } catch (error) {
-        console.error("Failed to fetch surveys", error);
-      } finally {
-        setLoading(false);
+      if (data?.status === "200") {
+        setReport(data?.data?.surveys || []);
+        setKpis(data?.data?.kpis || DEFAULT_KPIS);
+        setRatingDistribution(data?.data?.ratingDistribution || []);
+        setTotalEntries(data?.data?.pagination?.totalEntries ?? 0);
+        setTotalPages(data?.data?.pagination?.totalPages ?? 1);
+      } else {
+        setReport([]);
+        setKpis(DEFAULT_KPIS);
+        setRatingDistribution([]);
+        setTotalEntries(0);
+        setTotalPages(1);
+        console.log("Failed to fetch surveys", data?.message);
       }
-    };
-
-    fetchSurveys();
-  }, [propertyId]);
-
-  const safeReport = Array.isArray(report) ? report : [];
-
-  const calculateAverageRating = () => {
-    if (safeReport.length === 0) return 0;
-
-    const total = safeReport.reduce(
-      (sum, survey) => sum + Number(survey?.rating || 0),
-      0
-    );
-
-    return total / safeReport.length;
+    } catch (error) {
+      console.error("Failed to fetch surveys", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const averageRating = calculateAverageRating();
-  const latestSurveys = [...safeReport].sort((a, b) => (a.id < b.id ? 1 : -1));
+  useEffect(() => {
+    if (propertyId) {
+      fetchSurveys();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propertyId, startDate, endDate, pageNumber, pageSize]);
+
+  const safeReport = Array.isArray(report) ? report : [];
+  const averageRating = kpis.averageRating;
 
   return (
     <>
@@ -362,24 +415,108 @@ const Surveys = () => {
             </div>
           </section>
 
-          <section className="grid grid-cols-1 gap-5 md:grid-cols-3">
+          <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <SummaryCard
-              label="Total Feedback"
-              value={String(safeReport.length)}
+              label="Total Responses"
+              value={String(kpis.totalResponses)}
               icon={<FaCommentDots />}
             />
 
             <SummaryCard
-              label="Average Score"
+              label="Average Rating"
               value={averageRating.toFixed(1)}
               icon={<FaStar />}
             />
 
             <SummaryCard
-              label="Latest Reviews"
-              value={String(latestSurveys.length)}
+              label="Positive"
+              value={String(kpis.positiveResponses)}
+              icon={<FaStar />}
+            />
+
+            <SummaryCard
+              label="Positive %"
+              value={`${kpis.positivePercentage}%`}
               icon={<FaRegStar />}
             />
+          </section>
+
+          {/* Rating Distribution */}
+          {ratingDistribution.length > 0 && (
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="mb-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                Rating Distribution
+              </p>
+              <div className="space-y-2.5">
+                {[...ratingDistribution].reverse().map((item) => (
+                  <div key={item.rating} className="flex items-center gap-3">
+                    <span className="w-8 text-right text-sm font-bold text-slate-700">
+                      {item.rating}<FaStar className="ml-0.5 inline h-3 w-3 text-primary" />
+                    </span>
+                    <div className="h-3 flex-1 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="h-full rounded-full bg-primary transition-all duration-500"
+                        style={{ width: `${item.percentage}%` }}
+                      />
+                    </div>
+                    <span className="w-16 text-right text-xs font-bold text-slate-500">
+                      {item.count} ({item.percentage}%)
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Date Range Filters */}
+          <section className="grid gap-4 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => startDateRef.current?.showPicker()}
+              className="relative cursor-pointer rounded-2xl border border-slate-200 bg-white px-5 py-3 text-left shadow-sm transition hover:border-(--primary-light)"
+            >
+              <span className="block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                Start Date
+              </span>
+              <span className="mt-1 block text-sm font-bold text-slate-900">
+                {formatDisplayDate(startDate)}
+              </span>
+              <input
+                ref={startDateRef}
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setPageNumber(1);
+                }}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                tabIndex={-1}
+              />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => endDateRef.current?.showPicker()}
+              className="relative cursor-pointer rounded-2xl border border-slate-200 bg-white px-5 py-3 text-left shadow-sm transition hover:border-(--primary-light)"
+            >
+              <span className="block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                End Date
+              </span>
+              <span className="mt-1 block text-sm font-bold text-slate-900">
+                {formatDisplayDate(endDate)}
+              </span>
+              <input
+                ref={endDateRef}
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setPageNumber(1);
+                }}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                tabIndex={-1}
+              />
+            </button>
           </section>
 
           {safeReport.length === 0 && !loading ? (
@@ -399,7 +536,7 @@ const Surveys = () => {
             </section>
           ) : (
             <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {latestSurveys.map((survey) => (
+              {safeReport.map((survey) => (
                 <button
                   key={survey?.id}
                   type="button"
@@ -413,7 +550,7 @@ const Surveys = () => {
                       setShowTicketDetailsModal,
                     })
                   }
-                  className="group rounded-4xl border border-slate-200 bg-white p-5 text-left shadow-[0_18px_45px_rgba(15,23,42,0.06)] transition 
+                  className="group rounded-4xl border border-slate-200 bg-white p-5 text-left shadow-[0_18px_45px_rgba(15,23,42,0.06)] transition
                   hover:-translate-y-0.5 hover:border-(--primary-light) hover:bg-(--primary-soft)/40 hover:shadow-[0_24px_60px_rgba(15,23,42,0.10)]"
                 >
                   <div className="mb-4 flex items-start gap-3">
@@ -455,14 +592,80 @@ const Surveys = () => {
                       View Ticket
                     </span>
 
-                    <span className="text-xs font-bold text-slate-400">
-                      #{survey?.ticketId?.slice(0, 8)}
-                    </span>
+                    <div className="text-right">
+                      <span className="block font-mono text-xs font-black text-primary">
+                        #{survey?.ticketNumber}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-400">
+                        {new Date(survey?.date).toLocaleDateString("en-US")}
+                      </span>
+                    </div>
                   </div>
                 </button>
               ))}
             </section>
           )}
+
+          {/* Pagination */}
+          <section className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <span className="font-bold">
+                Showing{" "}
+                <span className="text-slate-950">{safeReport.length}</span> of{" "}
+                <span className="text-slate-950">{totalEntries}</span> reviews
+              </span>
+
+              <div className="flex items-center gap-2">
+                <label
+                  htmlFor="surveyPageSize"
+                  className="text-xs font-black uppercase tracking-[0.14em] text-slate-400"
+                >
+                  Per page
+                </label>
+                <select
+                  id="surveyPageSize"
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setPageNumber(1);
+                  }}
+                  className="h-9 rounded-xl border border-slate-200 bg-white px-2 text-sm font-bold text-slate-700 outline-none transition focus:border-primary focus:ring-2 focus:ring-(--primary-soft)"
+                >
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
+                disabled={pageNumber <= 1}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition
+                hover:bg-(--primary-soft) hover:text-primary disabled:opacity-40"
+              >
+                &lsaquo;
+              </button>
+
+              <span className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
+                Page {pageNumber} of {totalPages}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setPageNumber((p) => Math.min(totalPages, p + 1))}
+                disabled={pageNumber >= totalPages}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition
+                hover:bg-(--primary-soft) hover:text-primary disabled:opacity-40"
+              >
+                &rsaquo;
+              </button>
+            </div>
+          </section>
         </div>
 
         <TicketDetailsModal
