@@ -727,7 +727,6 @@ export default function TicketDetailsModal({
     // ── Confirmation modal (PIN, notes, refund fields) ──
     const primaryTrx = selectedTransactions[0];
     const isATHM = (method || primaryTrx.payment_method || "").toUpperCase() === "ATHM";
-    const detail = primaryTrx.paymentdetail;
     const label = action === "void" ? "Void" : "Refund";
     const isRefund = action === "refund";
 
