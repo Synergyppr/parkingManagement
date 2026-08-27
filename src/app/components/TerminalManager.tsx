@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { useProperty } from "../context/PropertyContext";
 import { PaymentTerminal } from "../types";
-import { FaCreditCard } from "react-icons/fa";
+import { FaCreditCard, FaKey } from "react-icons/fa";
 import { MdTerminal } from "react-icons/md";
 import FormInput from "./elements/FormInput";
 import ButtonLoader from "./elements/ButtonLoader";
@@ -29,6 +29,7 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
   const [formName, setFormName] = useState("");
   const [formTerminalUrl, setFormTerminalUrl] = useState("");
   const [formTerminalId, setFormTerminalId] = useState("");
+  const [formApiKey, setFormApiKey] = useState("");
   const [formIsDefault, setFormIsDefault] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [buttonLoading, setButtonLoading] = useState(false);
@@ -41,6 +42,7 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
     setFormName("");
     setFormTerminalUrl("");
     setFormTerminalId("");
+    setFormApiKey("");
     setFormIsDefault(false);
     setEditingId(null);
   };
@@ -49,6 +51,7 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
     setFormName(terminal.name);
     setFormTerminalUrl(terminal.terminal_url);
     setFormTerminalId(terminal.terminal_id);
+    setFormApiKey(terminal.api_key || "");
     setFormIsDefault(terminal.is_default);
     setEditingId(terminal.id);
   };
@@ -59,7 +62,8 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
     if (
       !formName?.trim() ||
       !formTerminalUrl?.trim() ||
-      !formTerminalId?.trim()
+      !formTerminalId?.trim() ||
+      !formApiKey?.trim()
     ) {
       return;
     }
@@ -72,6 +76,7 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
         name: formName.trim(),
         terminal_url: formTerminalUrl.trim(),
         terminal_id: formTerminalId.trim(),
+        api_key: formApiKey.trim(),
         is_default: formIsDefault,
       };
 
@@ -235,6 +240,15 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
               onClear={() => setFormTerminalId("")}
             />
 
+            <FormInput
+              name="apiKey"
+              placeholder="API Key (required)"
+              icon={<FaKey />}
+              value={formApiKey}
+              onChange={(e) => setFormApiKey(e.target.value)}
+              onClear={() => setFormApiKey("")}
+            />
+
             <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 transition hover:bg-slate-50">
               <input
                 autoFocus={false}
@@ -256,13 +270,15 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
                 buttonLoading ||
                 !formName.trim() ||
                 !formTerminalUrl.trim() ||
-                !formTerminalId.trim()
+                !formTerminalId.trim() ||
+                !formApiKey.trim()
               }
               className={`flex h-12 items-center justify-center rounded-2xl px-7 text-sm font-black text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition ${
                 buttonLoading ||
                 !formName.trim() ||
                 !formTerminalUrl.trim() ||
-                !formTerminalId.trim()
+                !formTerminalId.trim() ||
+                !formApiKey.trim()
                   ? "cursor-not-allowed bg-[color-mix(in_srgb,var(--primary)_60%,transparent)] opacity-70"
                   : "cursor-pointer bg-primary hover:bg-secondary"
               }`}
@@ -334,6 +350,10 @@ function TerminalManager({ data, fetchTerminals }: TerminalManagerProps) {
 
                         <p className="text-xs text-slate-400">
                           {terminal.terminal_url}
+                        </p>
+
+                        <p className="text-xs text-slate-400">
+                          API Key: {terminal.api_key ? "••••••••" + terminal.api_key.slice(-4) : "—"}
                         </p>
                       </div>
 

@@ -159,7 +159,7 @@ export default function TransactionForm({
   const [otherName, setOtherName] = useState(() =>
     parseLocationName(placeToVisit) || ""
   );
-  const [otherPrice, setOtherPrice] = useState("");
+  const [otherPrice, setOtherPrice] = useState("0.00");
   const [otherTaxable, setOtherTaxable] = useState(false);
   const [showExistingRates, setShowExistingRates] = useState(!isOtherCheckout);
 
@@ -309,8 +309,6 @@ export default function TransactionForm({
       didOpen: () => Swal.showLoading(),
     });
 
-    console.log("[TransactionForm] PAY REQUEST:", payload);
-
     const res = await fetch("/api/valetTransaction/pay", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -318,7 +316,6 @@ export default function TransactionForm({
     });
 
     const result = await res.json();
-    console.log("[TransactionForm] PAY RESPONSE:", result);
     Swal.close();
     return result;
   };

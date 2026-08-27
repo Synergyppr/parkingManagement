@@ -19,6 +19,7 @@ export async function POST(req: Request) {
       name: body.name,
       terminal_url: body.terminal_url,
       terminal_id: body.terminal_id,
+      api_key: body.api_key,
       is_default: body.is_default ?? false,
       is_active: body.is_active ?? true,
       updated_by: body.updated_by || "system",
@@ -32,6 +33,7 @@ export async function POST(req: Request) {
       name: body.name,
       terminal_url: body.terminal_url,
       terminal_id: body.terminal_id,
+      api_key: body.api_key,
       is_default: body.is_default ?? false,
       created_by: body.created_by || "system",
     };

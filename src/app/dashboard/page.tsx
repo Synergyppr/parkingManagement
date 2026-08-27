@@ -18,7 +18,6 @@ import Dashboard from "../components/Dashboard";
 import {
   DashboardData,
   Ticket,
-  TrafficPeriod,
   TrafficPoint,
 } from "../components/elements/DashboardHelpers";
 import Footer from "../components/Footer";
@@ -151,8 +150,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [themeReady, setThemeReady] = useState(false);
   const [reloadPageData, setReloadPageData] = useState(false);
-  const [trafficPeriod, setTrafficPeriod] =
-    useState<TrafficPeriod>("today");
 
   /*
    * Keep the document CSS variables synchronized after the selected
@@ -350,15 +347,6 @@ export default function DashboardPage() {
       dateA.getMonth() === dateB.getMonth() &&
       dateA.getDate() === dateB.getDate();
 
-    const getTicketDate = (ticket: Ticket) => {
-      if (!ticket.createdDateTime) return null;
-
-      const date = new Date(ticket.createdDateTime);
-
-      return Number.isNaN(date.getTime()) ? null : date;
-    };
-
-    // For ready tickets, use lastUpdated (when it became ready) instead of createdDateTime
     const getReadyDate = (ticket: Ticket) => {
       const dateStr = ticket.lastUpdated || ticket.createdDateTime;
       if (!dateStr) return null;
@@ -368,40 +356,7 @@ export default function DashboardPage() {
       return Number.isNaN(date.getTime()) ? null : date;
     };
 
-    if (trafficPeriod === "week") {
-      const today = new Date(now);
-      today.setHours(0, 0, 0, 0);
-
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - today.getDay());
-
-      return Array.from({ length: 7 }).map((_, index) => {
-        const dayStart = new Date(weekStart);
-        dayStart.setDate(weekStart.getDate() + index);
-
-        const receivedForDay = tickets.filter((ticket) => {
-          const ticketDate = getTicketDate(ticket);
-
-          return ticketDate ? isSameDay(ticketDate, dayStart) : false;
-        }).length;
-
-        const readyForDay = allReadyTickets.filter((ticket) => {
-          const ticketDate = getReadyDate(ticket);
-
-          return ticketDate ? isSameDay(ticketDate, dayStart) : false;
-        }).length;
-
-        return {
-          label: dayStart.toLocaleDateString("en-US", {
-            weekday: "short",
-          }),
-          received: receivedForDay,
-          ready: readyForDay,
-        };
-      });
-    }
-
-    const hours = [8, 10, 12, 14, 16, 18, 20];
+    const hours = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
 
     return hours.map((hour) => {
       const start = new Date(now);
@@ -418,12 +373,11 @@ export default function DashboardPage() {
 
       return {
         label: `${String(hour).padStart(2, "0")}:00`,
-        received: tickets.filter((t) => isInBucket(getTicketDate(t))).length,
         ready: allReadyTickets.filter((t) => isInBucket(getReadyDate(t)))
           .length,
       };
     });
-  }, [tickets, readyTickets, trafficPeriod]);
+  }, [tickets, readyTickets]);
 
   const kpis = [
     {
@@ -482,8 +436,6 @@ export default function DashboardPage() {
         <Dashboard
           propertyName={propertyName}
           kpis={kpis}
-          trafficPeriod={trafficPeriod}
-          setTrafficPeriod={setTrafficPeriod}
           trafficData={trafficData}
           recentTickets={recentTickets}
           setReloadPageData={setReloadPageData}

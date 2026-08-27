@@ -18,9 +18,13 @@ function isTenantArray(data: unknown): data is Tenant[] {
 }
 
 export default async function Page() {
+  const allowedTenantId = process.env.TENANT_ID || "";
+
   let tenants: Tenant[] | null = null;
 
   const response = await GetContentData("Get Tenants");
+
+  console.log("=== TENANTS API RESPONSE ===", JSON.stringify(response, null, 2));
 
   const result =
     typeof response === "object" && response !== null && "data" in response
@@ -28,7 +32,10 @@ export default async function Page() {
       : null;
 
   if (isTenantArray(result)) {
-    tenants = result;
+    tenants = allowedTenantId
+      ? result.filter((t) => t.id === allowedTenantId)
+      : result;
+    console.log("=== TENANTS PARSED DATA ===", JSON.stringify(tenants, null, 2));
   } else {
     console.warn("Invalid data received from backend", response);
   }

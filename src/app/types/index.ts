@@ -184,6 +184,8 @@ export interface TicketTransaction {
   payment_method?: string;
   transaction_date_time?: string;
   application_id?: string;
+  is_voidable?: boolean | null;
+  notes?: string;
   paymentdetail?: TicketTransactionPaymentDetail;
   receipts: Receipts[];
   reference_number: string;
@@ -404,6 +406,7 @@ export interface PaymentTerminal {
   name: string;
   terminal_url: string;
   terminal_id: string;
+  api_key: string;
   is_default: boolean;
   is_active: boolean;
 }

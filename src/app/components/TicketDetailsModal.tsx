@@ -509,21 +509,26 @@ export default function TicketDetailsModal({
   };
 
   /**
-   * Returns sale transactions only if the ticket has NO void/refund transactions at all.
-   * Action items should only be available on tickets with only sales.
+   * Returns sale transactions if the ticket has NO void transactions.
+   * A refund does NOT block actions — void can still be performed on refunded tickets.
    */
   const getActionableSaleTransactions = (): TicketTransaction[] => {
-    const hasVoidOrRefund = transactions.some((t) => {
+    const hasVoid = transactions.some((t) => {
       const type = (t.transaction_type || "").toLowerCase();
-      return type.includes("void") || type.includes("refund");
+      return type.includes("void");
     });
-    if (hasVoidOrRefund) return [];
+    if (hasVoid) return [];
 
     return transactions.filter((t) => {
       const type = (t.transaction_type || "").toLowerCase();
-      return !type.includes("void") && !type.includes("refund");
+      return !type.includes("void") && !type.includes("refund") && (t.amount ?? 0) > 0;
     });
   };
+
+  const hasRefundTransaction = transactions.some((t) => {
+    const type = (t.transaction_type || "").toLowerCase();
+    return type.includes("refund");
+  });
 
   /**
    * Executes a single void/refund API call for one transaction.
@@ -741,7 +746,6 @@ export default function TicketDetailsModal({
       .join("");
 
     const defaultAmount = primaryTrx.amount?.toFixed(2) ?? "0.00";
-    const defaultTip = detail?.tipAmount?.toFixed(2) ?? "0.00";
 
     const inputStyle =
       "w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
@@ -759,11 +763,6 @@ export default function TicketDetailsModal({
           <div class="mt-4 text-left">
             <label class="${labelStyle}">Amount</label>
             <input id="swal-amount" type="number" step="0.01" min="0" value="${defaultAmount}" placeholder="0.00"
-              class="${inputStyle}" />
-          </div>
-          <div class="mt-3 text-left">
-            <label class="${labelStyle}">Tip</label>
-            <input id="swal-tip" type="number" step="0.01" min="0" value="${defaultTip}" placeholder="0.00"
               class="${inputStyle}" />
           </div>
           <div class="mt-3 flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3">
@@ -811,7 +810,6 @@ export default function TicketDetailsModal({
 
         if (isRefund && selectedTransactions.length === 1) {
           const amount = parseFloat((document.getElementById("swal-amount") as HTMLInputElement)?.value) || 0;
-          const tip = parseFloat((document.getElementById("swal-tip") as HTMLInputElement)?.value) || 0;
           const taxable = (document.getElementById("swal-taxable") as HTMLInputElement)?.checked ?? false;
 
           if (amount <= 0) {
@@ -819,7 +817,7 @@ export default function TicketDetailsModal({
             return false;
           }
 
-          return { pin, notes, amount, tip, taxable };
+          return { pin, notes, amount, taxable };
         }
 
         return { pin, notes };
@@ -828,7 +826,7 @@ export default function TicketDetailsModal({
 
     if (!confirm.isConfirmed || !confirm.value) return;
 
-    const { pin, notes } = confirm.value as { pin: string; notes: string; amount?: number; tip?: number; taxable?: boolean };
+    const { pin, notes } = confirm.value as { pin: string; notes: string; amount?: number; taxable?: boolean };
 
     setActionLabel(label as "Void" | "Refund");
     setActionLoading(true);
@@ -866,7 +864,7 @@ export default function TicketDetailsModal({
           isRefund && selectedTransactions.length === 1
             ? {
                 amount: (confirm.value as { amount: number }).amount,
-                tip: (confirm.value as { tip: number }).tip ?? 0,
+                tip: 0,
                 taxable: (confirm.value as { taxable: boolean }).taxable ?? false,
               }
             : undefined;
@@ -1919,6 +1917,18 @@ export default function TicketDetailsModal({
                         </div>
                       </div>
 
+                      {/* Transaction Notes */}
+                      {trx.notes && (
+                        <div className="border-t border-slate-100 px-5 py-3">
+                          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 mb-1">
+                            Notes
+                          </p>
+                          <p className="text-sm text-slate-700 whitespace-pre-wrap">
+                            {trx.notes}
+                          </p>
+                        </div>
+                      )}
+
                       {/* Customer Receipt HTML */}
                       {customerReceipts.length > 0 && (
                         <div className="border-t border-slate-100 px-5 py-4">
@@ -2057,7 +2067,7 @@ export default function TicketDetailsModal({
                   if (actionableSales.length === 0) return null;
 
                   // Determine available methods from actionable sales
-                  const hasECR = actionableSales.some((t) => t.payment_method === "ECR");
+                  const hasECR = actionableSales.some((t) => t.payment_method === "ECR" && t.is_voidable === true);
                   const hasATHM = actionableSales.some((t) => (t.payment_method || "").toUpperCase() === "ATHM");
                   const primaryMethod = hasATHM ? "ATHM" : undefined;
 
@@ -2078,15 +2088,17 @@ export default function TicketDetailsModal({
                             Void
                           </button>
                         )}
-                        <button
-                          type="button"
-                          disabled={actionLoading}
-                          onClick={() => confirmAction("refund", actionableSales[0], primaryMethod)}
-                          className="flex-1 cursor-pointer rounded-2xl border border-(--primary-light) bg-(--primary-soft) px-4 py-3 text-sm font-bold
-                          text-secondary transition hover:bg-(--primary-soft) disabled:opacity-50"
-                        >
-                          Refund
-                        </button>
+                        {!hasRefundTransaction && (
+                          <button
+                            type="button"
+                            disabled={actionLoading}
+                            onClick={() => confirmAction("refund", actionableSales[0], primaryMethod)}
+                            className="flex-1 cursor-pointer rounded-2xl border border-(--primary-light) bg-(--primary-soft) px-4 py-3 text-sm font-bold
+                            text-secondary transition hover:bg-(--primary-soft) disabled:opacity-50"
+                          >
+                            Refund
+                          </button>
+                        )}
                       </div>
                     </div>
                   );

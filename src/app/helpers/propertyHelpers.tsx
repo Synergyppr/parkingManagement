@@ -269,7 +269,8 @@ export const getPropertiesByTenant = async (
 
     const result = data?.result?.data;
 
-    console.log("Data", data);
+    console.log("=== PROPERTIES API RESPONSE ===", JSON.stringify(data, null, 2));
+    console.log("=== PROPERTIES PARSED DATA ===", JSON.stringify(result, null, 2));
 
     setInitialProperties(result || []);
     setProperties(result || []);
