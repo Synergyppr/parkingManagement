@@ -55,6 +55,11 @@ export default function VehiclePhotoCapture({
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          try {
+            await videoRef.current.play();
+          } catch {
+            // autoPlay fallback — ignored if already playing
+          }
         }
       } catch (err) {
         const msg =
@@ -73,9 +78,7 @@ export default function VehiclePhotoCapture({
     } else {
       stopStream();
     }
-    return () => {
-      if (!cameraOpen) stopStream();
-    };
+    return () => stopStream();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraOpen]);
 
