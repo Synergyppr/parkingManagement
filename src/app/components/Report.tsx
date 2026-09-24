@@ -269,6 +269,7 @@ const Report = () => {
   const [endDate, setEndDate] = useState(getPuertoRicoToday);
   const [kpis, setKpis] = useState<ReportKPIs>(DEFAULT_KPIS);
   const [allJournals, setAllJournals] = useState<JournalEntry[]>([]);
+  const [rateType, setRateType] = useState<"" | "customRate" | "noCharge">("");
   const [activeTab, setActiveTab] = useState<"tickets" | "journals">(
     "tickets"
   );
@@ -320,6 +321,7 @@ const Report = () => {
       pageSize,
       filters: {
         search: search?.trim() as string,
+        ...(rateType && { rateType }),
       },
     };
 
@@ -357,7 +359,7 @@ const Report = () => {
       return () => clearTimeout(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, propertyId, startDate, endDate, pageNumber, pageSize]);
+  }, [search, propertyId, startDate, endDate, pageNumber, pageSize, rateType]);
 
   const handleSearchChange = (e: {
     target: { value: React.SetStateAction<string> };
@@ -377,6 +379,11 @@ const Report = () => {
 
   const handleNextPage = () => {
     if (pageNumber < totalPages) setPageNumber(pageNumber + 1);
+  };
+
+  const handleRateTypeChange = (value: "" | "customRate" | "noCharge") => {
+    setRateType(value);
+    setPageNumber(1);
   };
 
   const handleTabChange = (tab: "tickets" | "journals") => {
@@ -452,8 +459,8 @@ const Report = () => {
           </div>
         </section>
 
-        {/* Date Range + Search */}
-        <section className="grid gap-4 sm:grid-cols-2 md:grid-cols-[auto_auto_1fr]">
+        {/* Date Range */}
+        <section className="flex flex-col gap-4 sm:flex-row">
           <div className="rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm">
             <label className="block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
               Start Date
@@ -483,56 +490,104 @@ const Report = () => {
               className="mt-1 h-9 w-full rounded-lg border-none bg-transparent text-sm font-bold text-slate-900 outline-none"
             />
           </div>
+        </section>
 
-          <div className="relative sm:col-span-2 md:col-span-1">
+        {/* Summary & Filters — Two panels */}
+        <section className="grid gap-5 md:grid-cols-2">
+          {/* Transaction Summary — date range only */}
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-4">
+              <h3 className="text-sm font-extrabold text-slate-950">Transaction Summary</h3>
+              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                Based on selected date range
+              </p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3.5">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-600/70">
+                  Sales
+                </p>
+                <p className="mt-1.5 text-xl font-black text-emerald-700 lg:text-2xl">
+                  ${kpis.salesAmount.toFixed(2)}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-3.5">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-600/70">
+                  Refunds
+                </p>
+                <p className="mt-1.5 text-xl font-black text-amber-700 lg:text-2xl">
+                  ${kpis.refundAmount.toFixed(2)}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-red-200 bg-red-50/50 p-3.5">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-red-600/70">
+                  Voids
+                </p>
+                <p className="mt-1.5 text-xl font-black text-red-700 lg:text-2xl">
+                  ${kpis.voidAmount.toFixed(2)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Ticket Filters — date + search + rate type */}
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-950">Ticket Search</h3>
+                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                  Date range + search + rate type
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-(--primary-light) bg-(--primary-soft) px-4 py-2 text-center shrink-0">
+                <p className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-400">
+                  Results
+                </p>
+                <p className="text-xl font-black text-primary lg:text-2xl">
+                  {kpis.ticketCount}
+                </p>
+              </div>
+            </div>
+
             <input
               autoFocus={false}
               type="text"
               placeholder="Search by ticket #, name, destination..."
               value={search}
               onChange={handleSearchChange}
-              className="h-full w-full rounded-2xl border border-slate-200 bg-white px-5 pr-4 text-sm font-medium text-slate-900 shadow-sm outline-none
-              transition placeholder:text-slate-400 focus:border-primary focus:ring-4 focus:ring-(--primary-soft) min-h-14"
+              className="mb-3 h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-900 outline-none
+              transition placeholder:text-slate-400 focus:border-primary focus:ring-4 focus:ring-(--primary-soft)"
             />
-          </div>
-        </section>
 
-        {/* KPI Cards */}
-        <section className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:gap-6">
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-(--primary-light)">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-              Total Tickets
-            </p>
-            <p className="mt-2 text-3xl font-black text-slate-950">
-              {kpis.ticketCount}
-            </p>
-          </div>
-
-          <div className="rounded-3xl border border-emerald-200 bg-emerald-50/50 p-5 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-600/70">
-              Sales
-            </p>
-            <p className="mt-2 text-3xl font-black text-emerald-700">
-              ${kpis.salesAmount.toFixed(2)}
-            </p>
-          </div>
-
-          <div className="rounded-3xl border border-amber-200 bg-amber-50/50 p-5 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-600/70">
-              Refunds
-            </p>
-            <p className="mt-2 text-3xl font-black text-amber-700">
-              ${kpis.refundAmount.toFixed(2)}
-            </p>
-          </div>
-
-          <div className="rounded-3xl border border-red-200 bg-red-50/50 p-5 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-red-600/70">
-              Voids
-            </p>
-            <p className="mt-2 text-3xl font-black text-red-700">
-              ${kpis.voidAmount.toFixed(2)}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 shrink-0">
+                Rate Type
+              </p>
+              <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+                {([
+                  { value: "" as const, label: "All" },
+                  { value: "customRate" as const, label: "Custom Rate" },
+                  { value: "noCharge" as const, label: "No Charge" },
+                ] as const).map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleRateTypeChange(option.value)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                      rateType === option.value
+                        ? "bg-white text-primary shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
