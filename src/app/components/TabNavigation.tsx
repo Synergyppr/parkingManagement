@@ -1,7 +1,5 @@
 "use client";
-import { useEffect } from "react";
 import { TabItem } from "@/app/types";
-import { useSignalR } from "@/app/lib/SignalRProvider";
 import { motion } from "framer-motion";
 import { FaCarSide, FaParking, FaClock, FaCheckCircle } from "react-icons/fa";
 import { Ticket } from "@/app/types";
@@ -17,21 +15,11 @@ export default function TabNavigation({
   selected,
   onSelect,
   unreadTicketIds,
-  setReloadPageData,
 }: {
   selected: string;
   onSelect: (key: string) => void;
   unreadTicketIds: Ticket[];
-  setReloadPageData: (value: boolean) => void;
 }) {
-  const { registerNotificationHandler } = useSignalR();
-
-  useEffect(() => {
-    registerNotificationHandler(() => {
-      setReloadPageData(true);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const handleSelect = (key: string) => {
     onSelect(key);

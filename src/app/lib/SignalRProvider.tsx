@@ -40,6 +40,8 @@ export const SignalRProvider = ({
     useRef<(notification: NotificationHandler) => void | null>(null);
   // Tracks which group we're currently joined to (for leave/rejoin logic)
   const currentGroupRef = useRef<string | null>(null);
+  // Always holds the latest propertyId so the SignalR handler can filter
+  const propertyIdRef = useRef<string | null>(propertyId);
 
   const notificationSoundRef = useRef<HTMLAudioElement | null>(
     typeof Audio !== "undefined" ? new Audio("/notification.mp3") : null
@@ -52,6 +54,11 @@ export const SignalRProvider = ({
     },
     []
   );
+
+  // Keep propertyIdRef in sync with context value
+  useEffect(() => {
+    propertyIdRef.current = propertyId;
+  }, [propertyId]);
 
   // Helper: join a group safely and track it
   const joinGroupSafe = async (
@@ -102,7 +109,25 @@ export const SignalRProvider = ({
       connection.on(
         "UpdateNotification",
         (notification: NotificationHandler) => {
-          console.log("[SignalR] Notification received:", notification?.ticketId, notification?.status);
+          const currentPropertyId = propertyIdRef.current;
+
+          console.log(
+            "[SignalR] Notification received:",
+            notification?.ticketId,
+            notification?.status,
+            "notif.propertyId:", notification?.propertyId,
+            "current:", currentPropertyId
+          );
+
+          // Skip notifications that belong to a different property
+          if (
+            notification?.propertyId &&
+            currentPropertyId &&
+            notification.propertyId !== currentPropertyId
+          ) {
+            console.log("[SignalR] Ignored — different property");
+            return;
+          }
 
           if (notificationSoundRef.current) {
             setTimeout(() => {

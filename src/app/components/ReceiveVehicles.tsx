@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import { useSearchParams } from "next/navigation";
 import { CircleParking, MessageCircleCheck, UserKey } from "lucide-react";
@@ -290,11 +290,38 @@ export default function DashboardClient({
     });
   }, [searchParams, ticketIdFromUrl, vehicles]);
 
+  // Silent refresh: re-fetch ticket data without unmounting the UI
+  const silentRefreshRef = useRef(false);
+
+  const refreshTicketsSilently = useCallback(async () => {
+    if (silentRefreshRef.current || !propertyId) return;
+    silentRefreshRef.current = true;
+
+    try {
+      const result = await fetchTicketsData({
+        propertyId,
+        setLoading: () => {},
+      });
+
+      if (result) {
+        setVehicles(result?.tickets || []);
+        setReadyVehicles(result?.readyTickets || []);
+        setCarBrands(result?.carBrands || []);
+        setVehicleTypes(result?.vehicleTypes || []);
+        setVehicleColors(result?.vehicleColors || []);
+      }
+    } catch (error) {
+      console.error("Silent refresh failed:", error);
+    } finally {
+      silentRefreshRef.current = false;
+    }
+  }, [propertyId]);
+
   useEffect(() => {
     registerNotificationHandler(() => {
-      setReloadPageData(true);
+      refreshTicketsSilently();
     });
-  }, [registerNotificationHandler]);
+  }, [registerNotificationHandler, refreshTicketsSilently]);
 
   useEffect(() => {
     const pageTitle = activeTab === "received" ? "Check In " : "Tickets ";
@@ -530,7 +557,6 @@ export default function DashboardClient({
           selected={activeTab}
           onSelect={handleTabChange}
           unreadTicketIds={unreadRequestedTickets}
-          setReloadPageData={setReloadPageData}
         />
 
         <div className="mx-auto mt-2 w-full max-w-7xl">

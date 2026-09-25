@@ -264,6 +264,7 @@ export interface Property {
 export interface NotificationHandler {
   ticketId: string;
   status: string;
+  propertyId?: string;
   // id: string;
   // title: string;
   // message: string;
