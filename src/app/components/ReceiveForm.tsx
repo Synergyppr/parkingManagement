@@ -18,6 +18,7 @@ import {
   Vehicle,
   VehiclePhoto,
   RateEntry,
+  KeySlot,
 } from "../types";
 import { ReceiveFormProps } from "../types/pagesProps";
 import { useProperty } from "../context/PropertyContext";
@@ -38,6 +39,7 @@ import VehiclePhotoCapture from "./VehiclePhotoCapture";
 import FormInput from "./elements/FormInput";
 import PhoneInputWithAreaCode from "./elements/PhoneInputWithAreaCode";
 import VehicleList from "./VehicleList";
+import KeyBoxSelector from "./KeyBoxSelector";
 
 const frontViewLabelsMap = generateLabelsMap(carParts.frontViewCar);
 const rearViewLabelsMap = generateLabelsMap(carParts.rearViewCar);
@@ -82,6 +84,7 @@ export default function ReceiveForm({
   >([]);
   const [transactionTypes, setTransactionTypes] = useState<RateEntry[]>([]);
   const [locationSelection, setLocationSelection] = useState("");
+  const [selectedKeySlot, setSelectedKeySlot] = useState<KeySlot | null>(null);
   // const [manageModeOn, setManageModeOn] = useState<boolean>(false); // To manage and delete vehicles from the existing vehicles list
   const [, setManageVehicleSettings] = useState({
     patronId: form?.patronId || "",
@@ -294,6 +297,7 @@ export default function ReceiveForm({
       setNoIncident(false);
       setModels([]);
       setSelectedVehiclePhotos([]);
+      setSelectedKeySlot(null);
     };
 
     if (submitted === false) {
@@ -466,24 +470,10 @@ export default function ReceiveForm({
                           name="ticketNumber"
                           placeholder="Ticket Number"
                           value={form?.ticketNumber || ""}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (/^[a-zA-Z0-9]{0,6}$/.test(val)) {
-                              setForm((prev: Partial<Ticket>) => ({
-                                ...prev,
-                                ticketNumber: val,
-                              }));
-                            }
-                          }}
+                          onChange={() => {}}
                           icon={<FaTicketAlt />}
                           required
-                          missing={missingFields.includes("ticketNumber")}
-                          onClear={() =>
-                            setForm((prev) => ({
-                              ...prev,
-                              ticketNumber: "",
-                            }))
-                          }
+                          disabled
                         />
 
                         <PhoneInputWithAreaCode
@@ -626,6 +616,11 @@ export default function ReceiveForm({
                         /> */}
                       </div>
                     </section>
+
+                    <KeyBoxSelector
+                      selectedSlot={selectedKeySlot}
+                      onSelectSlot={setSelectedKeySlot}
+                    />
                   </div>
                 )}
 
@@ -910,7 +905,8 @@ export default function ReceiveForm({
                             passengerViewLabelsMap,
                             driverViewLabelsMap,
                             photos,
-                            setPhotos
+                            setPhotos,
+                            selectedKeySlot?.id
                           );
                         }}
                         className="h-12 rounded-2xl bg-primary px-8 text-sm font-extrabold text-white shadow-sm transition hover:bg-secondary 

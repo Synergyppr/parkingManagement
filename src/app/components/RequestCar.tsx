@@ -742,6 +742,7 @@ const RequestCar = () => {
                 currentStatus={vehicleData?.status as string}
                 createdDateTime={vehicleData?.createdDateTime}
                 lastUpdated={vehicleData?.lastUpdated}
+                canRequestVehicle={vehicleData?.canRequestVehicle !== false}
               />
             </section>
 
@@ -809,7 +810,8 @@ const RequestCar = () => {
               )}
             */}
 
-            {vehicleData?.status !== "ready" &&
+            {vehicleData?.canRequestVehicle !== false &&
+              vehicleData?.status !== "ready" &&
               vehicleData?.status !== "requested" && (
                 <section className="rounded-4xl border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
                   <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-slate-50 p-4">
@@ -832,7 +834,7 @@ const RequestCar = () => {
                   <button
                     disabled={!smsConsent || buttonLoader}
                     onClick={handleRequestCar}
-                    className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--primary-soft)]0 text-sm font-black text-white 
+                    className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--primary-soft)]0 text-sm font-black text-white
                     shadow-[0_16px_36px_color-mix(in_srgb,var(--primary)_32%,transparent)] transition bg-secondary disabled:opacity-50 cursor-pointer"
                   >
                     {buttonLoader ? (

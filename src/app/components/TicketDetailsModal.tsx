@@ -9,7 +9,8 @@ import Log from "./Log";
 import { formatDate, formatPhoneNumber, parseLocationName } from "@/app/lib/clientUtils";
 import { useProperty } from "../context/PropertyContext";
 import { TicketDetailsModalProps } from "../types/pagesProps";
-import { TicketDetails, TicketTransaction } from "../types";
+import { TicketDetails, TicketTransaction, KeySlot, RateEntry } from "../types";
+import KeyBoxSelector from "./KeyBoxSelector";
 import {
   MdClose,
   MdChevronLeft,
@@ -58,6 +59,7 @@ export default function TicketDetailsModal({
   driverViewLabelsMap,
   setHasUnsavedChanges,
   saveClickedRef,
+  onTicketUpdated,
 }: TicketDetailsModalProps) {
   const { propertyId, latitude, longitude } = useProperty();
 
@@ -66,6 +68,36 @@ export default function TicketDetailsModal({
   const [ticketTitleClickCount, setTicketTitleClickCount] = useState(0);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionLabel, setActionLabel] = useState<"Void" | "Refund">("Void");
+
+  // ── Key Slot edit state ──
+  const buildKeySlotFromTicket = (td: TicketDetails | null | undefined): KeySlot | null => {
+    if (!td?.keySlotId || !td?.keySlotLabel) return null;
+    return {
+      id: td.keySlotId,
+      keyHubId: td.keyHubId ?? undefined,
+      slotLabel: td.keySlotLabel,
+      rowOrder: td.keyRowOrder ?? 0,
+      columnOrder: td.keyColumnOrder ?? 0,
+      rowName: td.keyHubName ?? "",
+      isOccupied: true,
+    };
+  };
+
+  const [editingKeySlot, setEditingKeySlot] = useState(false);
+  const [currentKeySlot, setCurrentKeySlot] = useState<KeySlot | null>(buildKeySlotFromTicket(ticketDetails));
+  const [pendingKeySlot, setPendingKeySlot] = useState<KeySlot | null>(null);
+
+  // ── Rate edit state ──
+  const [editingRate, setEditingRate] = useState(false);
+  const [rateAmount, setRateAmount] = useState("");
+  const [rateTransactionTypeId, setRateTransactionTypeId] = useState("");
+  const [ratePin, setRatePin] = useState("");
+  const [showRatePin, setShowRatePin] = useState(false);
+  const [transactionTypes, setTransactionTypes] = useState<RateEntry[]>([]);
+  const [keySlotPin, setKeySlotPin] = useState("");
+  const [showKeySlotPin, setShowKeySlotPin] = useState(false);
+  const [savingKeySlot, setSavingKeySlot] = useState(false);
+  const [savingRate, setSavingRate] = useState(false);
 
   const photos = ticketDetails?.photos || ticketDetails?.vehicle?.photos || [];
   const transactions = ticketDetails?.transactions || [];
@@ -85,10 +117,60 @@ export default function TicketDetailsModal({
     setLightboxIndex((i) => (i !== null ? (i + 1) % photos.length : null));
 
   useEffect(() => {
+    setCurrentKeySlot(buildKeySlotFromTicket(ticketDetails));
+  }, [ticketDetails]);
+
+  useEffect(() => {
+    if (!propertyId) return;
+    const fetchTransactionTypes = async () => {
+      try {
+        const res = await fetch("/api/valetTransaction/types/get", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: propertyId }),
+        });
+        const data = await res.json();
+        if (data?.result?.status === "200") {
+          setTransactionTypes(data?.result?.data || []);
+        }
+      } catch (error) {
+        console.error("Error fetching transaction types:", error);
+      }
+    };
+    fetchTransactionTypes();
+  }, [propertyId]);
+
+  useEffect(() => {
     if (transitionState === "fade-in") {
       setDisplayedTab(detailsActiveTab);
     }
   }, [transitionState, detailsActiveTab]);
+
+  const handleUpdateTicket = async (body: Record<string, unknown>) => {
+    const payload = {
+      ticketId: ticketDetails?.ticketId,
+      propertyId,
+      latitude,
+      longitude,
+      status: ticketDetails?.status || "parked",
+      isUserUpdate: false,
+      ...body,
+    };
+    console.log("[UpdateTicket] Request:", JSON.stringify(payload, null, 2));
+    try {
+      const res = await fetch("/api/vehicleStatus", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      console.log("[UpdateTicket] Response:", JSON.stringify(data, null, 2));
+      return data;
+    } catch (error) {
+      console.error("[UpdateTicket] Error:", error);
+      return null;
+    }
+  };
 
   const handleCloseTicketDetails = () => {
     setIsOpen(false);
@@ -98,6 +180,10 @@ export default function TicketDetailsModal({
     setDescriptions({});
     setNoIncident(false);
     setDetailsActiveTab("Details");
+    setEditingKeySlot(false);
+    setPendingKeySlot(null);
+    setEditingRate(false);
+    setRatePin("");
   };
 
   // When clicking on the Ticket Details label 5 times, copy the ticket ID to the clipboard -- FOR TESTING PURPOSES --
@@ -1682,6 +1768,14 @@ export default function TicketDetailsModal({
                       <p className="text-sm font-extrabold text-slate-900">
                         {parseLocationName(ticketDetails.destination)}
                       </p>
+                      {ticketDetails.price != null && ticketDetails.price > 0 && (() => {
+                        const rateName = transactionTypes.find((t) => t.id === ticketDetails.transactionTypeId)?.name;
+                        return (
+                          <p className="mt-1 text-xs font-bold text-primary">
+                            {rateName ? `${rateName} — ` : ""}${ticketDetails.price!.toFixed(2)}
+                          </p>
+                        );
+                      })()}
                     </div>
                   )}
 
@@ -1701,6 +1795,38 @@ export default function TicketDetailsModal({
                     </div>
                   )}
 
+                  {/* Key Slot card */}
+                  {currentKeySlot && (
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                      <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                        Key Slot
+                      </p>
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                          <svg
+                            className="h-3.5 w-3.5 text-primary"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-extrabold text-slate-900">
+                            Slot {currentKeySlot.slotLabel}
+                          </p>
+                          <p className="text-[11px] font-medium text-slate-500">
+                            {currentKeySlot.rowName}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {ticketDetails?.vehicle?.licensePlate && (
                     <div className="rounded-2xl border border-(--primary-light) bg-(--primary-soft) p-4">
                       <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
@@ -1712,6 +1838,268 @@ export default function TicketDetailsModal({
                     </div>
                   )}
                 </div>
+
+                {/* ── Action buttons ── */}
+                {ticketDetails?.status?.toLowerCase() !== "ready" && (
+                  <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingKeySlot(currentKeySlot);
+                      setKeySlotPin("");
+                      setShowKeySlotPin(false);
+                      setEditingKeySlot(true);
+                      setEditingRate(false);
+                    }}
+                    className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-600 shadow-sm transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                  >
+                    <svg
+                      className="h-3.5 w-3.5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                    </svg>
+                    Edit Key Slot
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRateAmount("");
+                      setRateTransactionTypeId("");
+                      setRatePin("");
+                      setShowRatePin(false);
+                      setEditingRate(true);
+                      setEditingKeySlot(false);
+                    }}
+                    className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-600 shadow-sm transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                  >
+                    <MdPayments className="h-3.5 w-3.5" />
+                    Edit Rate
+                  </button>
+                </div>
+                )}
+
+                {/* ── Inline Key Slot editor ── */}
+                {editingKeySlot && (
+                  <div className="rounded-2xl border border-primary/20 bg-white p-4 shadow-sm">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-xs font-bold uppercase tracking-wider text-primary">
+                        Select New Key Slot
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingKeySlot(false);
+                          setPendingKeySlot(null);
+                        }}
+                        className="cursor-pointer text-xs font-semibold text-slate-400 hover:text-red-500 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+
+                    <KeyBoxSelector
+                      selectedSlot={pendingKeySlot}
+                      onSelectSlot={setPendingKeySlot}
+                    />
+
+                    {/* PIN for Key Slot */}
+                    <div className="mt-3">
+                      <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Authorization PIN
+                        <span className="ml-1 normal-case tracking-normal text-red-400">(required)</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showKeySlotPin ? "text" : "password"}
+                          inputMode="numeric"
+                          maxLength={4}
+                          value={keySlotPin}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^\d{0,4}$/.test(val)) setKeySlotPin(val);
+                          }}
+                          placeholder="4-digit PIN"
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pr-12 text-sm font-medium text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowKeySlotPin(!showKeySlotPin)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-xs font-semibold text-slate-400 hover:text-primary"
+                        >
+                          {showKeySlotPin ? "Hide" : "Show"}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        type="button"
+                        disabled={savingKeySlot || !pendingKeySlot || pendingKeySlot.slotLabel === currentKeySlot?.slotLabel || !keySlotPin || keySlotPin.length !== 4}
+                        onClick={async () => {
+                          if (!pendingKeySlot?.id) return;
+                          setSavingKeySlot(true);
+                          const data = await handleUpdateTicket({ keySlotId: pendingKeySlot.id, pin: keySlotPin });
+                          setSavingKeySlot(false);
+                          if (data?.result?.status === "200") {
+                            setCurrentKeySlot(pendingKeySlot);
+                            setEditingKeySlot(false);
+                            setPendingKeySlot(null);
+                            setKeySlotPin("");
+                            onTicketUpdated?.();
+                            Swal.fire({ icon: "success", title: "Key Slot Updated", timer: 1500, showConfirmButton: false });
+                          } else {
+                            Swal.fire({ icon: "error", title: "Error", text: data?.result?.message || "Failed to update key slot." });
+                          }
+                        }}
+                        className="cursor-pointer rounded-xl bg-primary px-5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {savingKeySlot ? "Saving..." : "Save Key Slot"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Inline Rate editor ── */}
+                {editingRate && (
+                  <div className="rounded-2xl border border-primary/20 bg-white p-4 shadow-sm">
+                    <div className="mb-4 flex items-center justify-between">
+                      <p className="text-xs font-bold uppercase tracking-wider text-primary">
+                        Edit Rate
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setEditingRate(false)}
+                        className="cursor-pointer text-xs font-semibold text-slate-400 hover:text-red-500 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {/* Rate type */}
+                      <div>
+                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          Rate Type
+                        </label>
+                        <select
+                          value={rateTransactionTypeId}
+                          onChange={(e) => {
+                            setRateTransactionTypeId(e.target.value);
+                            if (e.target.value === "other") {
+                              setRateAmount("");
+                            } else {
+                              const selected = transactionTypes.find((t) => String(t.id) === e.target.value);
+                              if (selected) setRateAmount(String(selected.value));
+                            }
+                          }}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                        >
+                          <option value="">Select rate type...</option>
+                          {transactionTypes.filter((t) => t.isActive).map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.name} - ${t.value.toFixed(2)}
+                            </option>
+                          ))}
+                          <option value="other">Other (Custom)</option>
+                        </select>
+                      </div>
+
+                      {/* Amount */}
+                      <div>
+                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          Amount
+                        </label>
+                        <div className="relative">
+                          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">
+                            $
+                          </span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={rateAmount}
+                            onChange={(e) => setRateAmount(e.target.value)}
+                            placeholder="0.00"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-8 pr-4 text-sm font-medium text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                          />
+                        </div>
+                      </div>
+
+                      {/* PIN — Digital Signature */}
+                      <div>
+                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          Authorization PIN
+                          <span className="ml-1 normal-case tracking-normal text-red-400">
+                            (required)
+                          </span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showRatePin ? "text" : "password"}
+                            inputMode="numeric"
+                            maxLength={4}
+                            value={ratePin}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (/^\d{0,4}$/.test(val)) setRatePin(val);
+                            }}
+                            placeholder="4-digit PIN"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pr-12 text-sm font-medium text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowRatePin(!showRatePin)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-xs font-semibold text-slate-400 hover:text-primary"
+                          >
+                            {showRatePin ? "Hide" : "Show"}
+                          </button>
+                        </div>
+                        <p className="mt-1 text-[10px] text-slate-400">
+                          PIN of the employee authorizing this rate change.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        type="button"
+                        disabled={savingRate || !ratePin || ratePin.length !== 4 || !rateTransactionTypeId || !rateAmount}
+                        onClick={async () => {
+                          setSavingRate(true);
+                          const isCustom = rateTransactionTypeId === "other";
+                          const data = await handleUpdateTicket({
+                            transactionTypeId: isCustom ? 0 : parseInt(rateTransactionTypeId),
+                            price: parseFloat(rateAmount),
+                            pin: ratePin,
+                          });
+                          setSavingRate(false);
+                          if (data?.result?.status === "200") {
+                            setTicketDetails((prev) => ({
+                              ...prev,
+                              transactionTypeId: isCustom ? 0 : parseInt(rateTransactionTypeId),
+                              price: parseFloat(rateAmount),
+                            }));
+                            setEditingRate(false);
+                            onTicketUpdated?.();
+                            Swal.fire({ icon: "success", title: "Rate Updated", timer: 1500, showConfirmButton: false });
+                          } else {
+                            Swal.fire({ icon: "error", title: "Error", text: data?.result?.message || "Failed to update rate." });
+                          }
+                        }}
+                        className="cursor-pointer rounded-xl bg-primary px-5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {savingRate ? "Saving..." : "Save Rate Change"}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <p className="text-center text-xs font-medium text-slate-400">
                   Created {formatDate(ticketDetails?.createdDateTime || "")}

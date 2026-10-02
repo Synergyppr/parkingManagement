@@ -26,6 +26,7 @@ export interface Property {
   isActive: boolean;
   primaryColor: string;
   secondaryColor: string;
+  allowCustomerVehicleRequest?: boolean;
 }
 
 interface PropertyFormProps {
@@ -99,6 +100,7 @@ export default function ModalPropertyForm({
         sourceData?.secondaryColor,
         DEFAULT_SECONDARY_COLOR
       ),
+      allowCustomerVehicleRequest: sourceData?.allowCustomerVehicleRequest ?? false,
     }),
     [sourceData, tenantId, latitude, longitude]
   );
@@ -178,6 +180,7 @@ export default function ModalPropertyForm({
           isActive: form.isActive,
           primaryColor: normalizedPrimaryColor,
           secondaryColor: normalizedSecondaryColor,
+          allowCustomerVehicleRequest: form.allowCustomerVehicleRequest,
         }
       : {
           ...form,
@@ -191,6 +194,7 @@ export default function ModalPropertyForm({
           isActive: form.isActive,
           primaryColor: normalizedPrimaryColor,
           secondaryColor: normalizedSecondaryColor,
+          allowCustomerVehicleRequest: form.allowCustomerVehicleRequest,
         };
 
     // console.log("Updating Property", payload);
@@ -368,6 +372,45 @@ export default function ModalPropertyForm({
             </div>
 
             <ThemeSelector form={form} setForm={setForm} />
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-extrabold text-slate-950">
+                Customer Vehicle Request
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                Allow customers to request their vehicle via the link.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              role="switch"
+              aria-checked={form.allowCustomerVehicleRequest}
+              aria-label="Toggle customer vehicle request"
+              onClick={() =>
+                setForm((prev) => ({
+                  ...prev,
+                  allowCustomerVehicleRequest: !prev.allowCustomerVehicleRequest,
+                }))
+              }
+              className={`relative flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full transition-all duration-300 ${
+                form.allowCustomerVehicleRequest ? "bg-primary" : "bg-slate-300"
+              }`}
+            >
+              <span
+                className={`absolute h-6 w-6 rounded-full bg-white shadow-md transition-transform duration-300 ${
+                  form.allowCustomerVehicleRequest ? "translate-x-7" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="mt-3 inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-600">
+            {form.allowCustomerVehicleRequest ? "Enabled" : "Disabled"}
           </div>
         </div>
 

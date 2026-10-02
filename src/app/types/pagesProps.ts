@@ -47,6 +47,7 @@ export interface TicketDetailsModalProps {
   driverViewLabelsMap: Record<string, string[]>;
   setHasUnsavedChanges: React.Dispatch<React.SetStateAction<boolean>>;
   saveClickedRef: React.MutableRefObject<boolean>;
+  onTicketUpdated?: () => void;
 }
 
 // Receive Form Page Props

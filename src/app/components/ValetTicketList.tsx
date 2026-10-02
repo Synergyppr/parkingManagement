@@ -46,6 +46,7 @@ interface ValetTicketListProps {
   setDescriptions: Dispatch<React.SetStateAction<Record<string, string>>>;
   setDamagedParts: Dispatch<React.SetStateAction<CarPart[]>>;
   setShowTicketDetailsModal: Dispatch<React.SetStateAction<boolean>>;
+  canRequestVehicle?: boolean;
 }
 
 interface TransactionFormState {
@@ -120,6 +121,7 @@ export default function ValetTicketList({
   setDescriptions,
   setDamagedParts,
   setShowTicketDetailsModal,
+  canRequestVehicle = true,
 }: ValetTicketListProps) {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -649,13 +651,30 @@ export default function ValetTicketList({
                       </p>
                     </div>
 
-                    {/* Place to visit */}
+                    {/* Key Slot badge */}
+                    {vehicle?.keySlotLabel && (
+                      <div className="mb-2 flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-1.5">
+                        <span className="text-base">🔑</span>
+                        <p className="truncate text-xs font-bold text-amber-700">
+                          Slot {vehicle.keySlotLabel}
+                          {vehicle.keyHubName && (
+                            <span className="ml-1 font-semibold text-amber-500">
+                              · {vehicle.keyHubName}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Place to visit + rate */}
                     {vehicle?.placeToVisit && (
                       <p className="mb-4 truncate px-3 text-xs font-semibold text-slate-400">
-                        📍 {vehicle.placeToVisit.replace(
-                          /^(.+)-(\d+\.?\d*)$/,
-                          (_, left, amount) => `${left} - $${parseFloat(amount).toFixed(2)}`
-                        )}
+                        📍 {vehicle.price != null
+                          ? `${vehicle.placeToVisit.replace(/^(.+)-(\d+\.?\d*)$/, (_, left) => left)} - $${vehicle.price.toFixed(2)}`
+                          : vehicle.placeToVisit.replace(
+                              /^(.+)-(\d+\.?\d*)$/,
+                              (_, left, amount) => `${left} - $${parseFloat(amount).toFixed(2)}`
+                            )}
                       </p>
                     )}
 
@@ -675,7 +694,9 @@ export default function ValetTicketList({
                               activeTab === "received"
                                 ? "parked"
                                 : activeTab === "parked"
-                                ? "requested"
+                                ? canRequestVehicle
+                                  ? "requested"
+                                  : "ready"
                                 : activeTab === "requested"
                                 ? "ready"
                                 : ""
@@ -686,7 +707,9 @@ export default function ValetTicketList({
                           {activeTab === "received"
                             ? "Mark Parked"
                             : activeTab === "parked"
-                            ? "Mark Requested"
+                            ? canRequestVehicle
+                              ? "Mark Requested"
+                              : "Checkout"
                             : "Mark Ready"}
                         </button>
                       )}
@@ -875,6 +898,8 @@ export default function ValetTicketList({
               propertyId={propertyId}
               setReloadPageData={setReloadPageData}
               placeToVisit={vehicles.find((v) => v.id === selectedTicketId)?.placeToVisit}
+              ticketPrice={vehicles.find((v) => v.id === selectedTicketId)?.price}
+              ticketTransactionTypeId={vehicles.find((v) => v.id === selectedTicketId)?.transactionTypeId}
             />
           </div>
         </Modal>

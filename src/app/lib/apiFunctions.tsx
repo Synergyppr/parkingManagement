@@ -76,6 +76,19 @@ const EvertecTerminalUpdateEndpoint =
   process.env.EVERTEC_TERMINAL_UPDATE_ENDPOINT + "";
 const EvertecTerminalDeleteEndpoint =
   process.env.EVERTEC_TERMINAL_DELETE_ENDPOINT + "";
+// KeyHub & KeySlot
+const KeyHubGetByPropertyEndpoint =
+  process.env.KEYHUB_GET_BY_PROPERTY_ENDPOINT + "";
+const KeyHubGetByIdEndpoint = process.env.KEYHUB_GET_BY_ID_ENDPOINT + "";
+const KeyHubCreateEndpoint = process.env.KEYHUB_CREATE_ENDPOINT + "";
+const KeyHubUpdateEndpoint = process.env.KEYHUB_UPDATE_ENDPOINT + "";
+const KeyHubDeleteEndpoint = process.env.KEYHUB_DELETE_ENDPOINT + "";
+const KeySlotGetByKeyHubEndpoint =
+  process.env.KEYSLOT_GET_BY_KEYHUB_ENDPOINT + "";
+const KeySlotGetByIdEndpoint = process.env.KEYSLOT_GET_BY_ID_ENDPOINT + "";
+const KeySlotCreateEndpoint = process.env.KEYSLOT_CREATE_ENDPOINT + "";
+const KeySlotUpdateEndpoint = process.env.KEYSLOT_UPDATE_ENDPOINT + "";
+const KeySlotDeleteEndpoint = process.env.KEYSLOT_DELETE_ENDPOINT + "";
 // Evertec Void, Refund & Journal
 const EvertecVoidEndpoint = process.env.EVERTEC_VOID_ENDPOINT + "";
 const EvertecRefundEndpoint = process.env.EVERTEC_REFUND_ENDPOINT + "";
@@ -279,6 +292,46 @@ const Endpoints = [
   {
     name: "Evertec Journal",
     endpoint: EvertecJournalEndpoint,
+  },
+  {
+    name: "KeyHub Get By Property",
+    endpoint: KeyHubGetByPropertyEndpoint,
+  },
+  {
+    name: "KeyHub Get By Id",
+    endpoint: KeyHubGetByIdEndpoint,
+  },
+  {
+    name: "KeyHub Create",
+    endpoint: KeyHubCreateEndpoint,
+  },
+  {
+    name: "KeyHub Update",
+    endpoint: KeyHubUpdateEndpoint,
+  },
+  {
+    name: "KeyHub Delete",
+    endpoint: KeyHubDeleteEndpoint,
+  },
+  {
+    name: "KeySlot Get By KeyHub",
+    endpoint: KeySlotGetByKeyHubEndpoint,
+  },
+  {
+    name: "KeySlot Get By Id",
+    endpoint: KeySlotGetByIdEndpoint,
+  },
+  {
+    name: "KeySlot Create",
+    endpoint: KeySlotCreateEndpoint,
+  },
+  {
+    name: "KeySlot Update",
+    endpoint: KeySlotUpdateEndpoint,
+  },
+  {
+    name: "KeySlot Delete",
+    endpoint: KeySlotDeleteEndpoint,
   },
 ];
 

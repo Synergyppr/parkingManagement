@@ -3,7 +3,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import { useSearchParams } from "next/navigation";
-import { CircleParking, MessageCircleCheck, UserKey } from "lucide-react";
 
 import {
   Ticket,
@@ -220,6 +219,7 @@ export default function DashboardClient({
   );
 
   const [reloadPageData, setReloadPageData] = useState<boolean>(false);
+  const [canRequestVehicle, setCanRequestVehicle] = useState<boolean>(true);
 
   const [, setHasUnsavedChanges] = useState<boolean>(true);
 
@@ -309,6 +309,7 @@ export default function DashboardClient({
         setCarBrands(result?.carBrands || []);
         setVehicleTypes(result?.vehicleTypes || []);
         setVehicleColors(result?.vehicleColors || []);
+        setCanRequestVehicle(result?.canRequestVehicle ?? true);
       }
     } catch (error) {
       console.error("Silent refresh failed:", error);
@@ -385,6 +386,7 @@ export default function DashboardClient({
         setCarBrands(result?.carBrands || []);
         setVehicleTypes(result?.vehicleTypes || []);
         setVehicleColors(result?.vehicleColors || []);
+        setCanRequestVehicle(result?.canRequestVehicle ?? true);
 
         if (themeWasApplied) {
           requestAnimationFrame(() => {
@@ -512,7 +514,10 @@ export default function DashboardClient({
     setNextStatus(status);
 
     setTimeout(() => {
-      if (activeTab === "requested") {
+      if (
+        activeTab === "requested" ||
+        (activeTab === "parked" && !canRequestVehicle)
+      ) {
         setShowTransactionModal(true);
         return;
       }
@@ -557,6 +562,7 @@ export default function DashboardClient({
           selected={activeTab}
           onSelect={handleTabChange}
           unreadTicketIds={unreadRequestedTickets}
+          canRequestVehicle={canRequestVehicle}
         />
 
         <div className="mx-auto mt-2 w-full max-w-7xl">
@@ -579,76 +585,6 @@ export default function DashboardClient({
                   parkedTickets={vehicles}
                 />
 
-                <div className="mx-auto mb-6 mt-2 grid max-w-248 grid-cols-1 gap-6 md:mx-4 md:grid-cols-3 md:gap-4 lg:mx-auto lg:mt-10">
-                  <div
-                    className="group mx-4 flex min-h-32.5 flex-col items-center gap-5 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm
-                    transition-all duration-300 hover:-translate-y-1 hover:border-(--primary-light)
-                    hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] md:mx-0 lg:flex-row"
-                  >
-                    <div
-                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary
-                      transition-all duration-300 group-hover:bg-primary group-hover:text-white"
-                    >
-                      <UserKey className="text-2xl" />
-                    </div>
-
-                    <div>
-                      <h3 className="text-center text-base font-extrabold text-slate-950 lg:text-left">
-                        Rapid Logging
-                      </h3>
-
-                      <p className="mt-1 text-center text-sm leading-5 text-slate-500 lg:text-left">
-                        Average check-in takes less than 45 seconds.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div
-                    className="group mx-4 flex min-h-32.5 flex-col items-center gap-5 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm
-                    transition-all duration-300 hover:-translate-y-1 hover:border-(--primary-light)
-                    hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] md:mx-0 lg:flex-row"
-                  >
-                    <div
-                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary
-                      transition-all duration-300 group-hover:bg-primary group-hover:text-white"
-                    >
-                      <MessageCircleCheck className="text-2xl" />
-                    </div>
-
-                    <div>
-                      <h3 className="text-center text-base font-extrabold text-slate-950 lg:text-left">
-                        SMS Notifications
-                      </h3>
-
-                      <p className="mt-1 text-center text-sm leading-5 text-slate-500 lg:text-left">
-                        Guests receive a digital ticket instantly via SMS.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div
-                    className="group mx-4 flex min-h-32.5 flex-col items-center gap-5 rounded-4xl border border-slate-200 bg-white p-6 shadow-sm
-                    transition-all duration-300 hover:-translate-y-1 hover:border-(--primary-light)
-                    hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] md:mx-0 lg:flex-row"
-                  >
-                    <div
-                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-primary
-                      transition-all duration-300 group-hover:bg-primary group-hover:text-white"
-                    >
-                      <CircleParking className="text-2xl" />
-                    </div>
-
-                    <div>
-                      <h3 className="text-center text-base font-extrabold text-slate-950 lg:text-left">
-                        Paperless Valet
-                      </h3>
-
-                      <p className="mt-1 text-center text-sm leading-5 text-slate-500 lg:text-left">
-                        Eco-friendly digital receipts and retrieval requests.
-                      </p>
-                    </div>
-                  </div>
-                </div>
               </div>
             )}
 
@@ -681,6 +617,7 @@ export default function DashboardClient({
                   setDescriptions={setDescriptions}
                   setDamagedParts={setDamagedParts}
                   setShowTicketDetailsModal={setShowTicketDetailsModal}
+                  canRequestVehicle={canRequestVehicle}
                 />
               )
             )}
@@ -735,6 +672,7 @@ export default function DashboardClient({
           driverViewLabelsMap={driverViewLabelsMap}
           setHasUnsavedChanges={setHasUnsavedChanges}
           saveClickedRef={saveClickedRef}
+          onTicketUpdated={() => setReloadPageData(true)}
         />
       </section>
     </>

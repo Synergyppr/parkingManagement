@@ -13,10 +13,11 @@ import {
   Property,
   RateEntry,
   PaymentTerminal,
+  KeyHub,
 } from "../types";
 import { FaPencil, FaTrash, FaRegCreditCard } from "react-icons/fa6";
 import { MdTerminal } from "react-icons/md";
-import { FaCar } from "react-icons/fa";
+import { FaCar, FaKey } from "react-icons/fa";
 import { MdOutlineImportantDevices } from "react-icons/md";
 import { PiUsersThreeFill } from "react-icons/pi";
 import { BsFillBuildingsFill } from "react-icons/bs";
@@ -33,6 +34,7 @@ import VehicleManager from "./VehicleManager";
 import DeviceCMS from "./DeviceManager";
 import TransactionTypeManager from "./TransactionTypeManager";
 import TerminalCMS from "./TerminalManager";
+import KeyHubCMS from "./KeyHubManager";
 import PageLoader from "./elements/PageLoader";
 
 const THEME_STORAGE_KEY = "parkey-theme";
@@ -279,6 +281,8 @@ const Tenants = ({ data }: TenantsProps) => {
   const [isTerminalModalOpen, setIsTerminalModalOpen] = useState(false);
   const [terminalsData, setTerminalsData] = useState<PaymentTerminal[]>([]);
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const [isKeyHubModalOpen, setIsKeyHubModalOpen] = useState(false);
+  const [keyHubsData, setKeyHubsData] = useState<KeyHub[]>([]);
   const [isUserFormOpen, setIsUserFormOpen] = useState(false);
   const [isPropertyFormOpen, setIsPropertyFormOpen] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<
@@ -452,6 +456,40 @@ const Tenants = ({ data }: TenantsProps) => {
     }
   };
 
+  const fetchKeyHubs = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/keyhub/getByProperty", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ propertyId }),
+      });
+
+      const result = await response.json();
+
+      if (result?.result?.status == "200") {
+        setKeyHubsData(result?.result?.data || []);
+        setIsKeyHubModalOpen(true);
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to fetch key hubs data.",
+          confirmButtonColor: getPrimaryThemeColor(),
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching key hubs:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenKeyHubModal = () => {
+    if (!propertyId) return;
+    fetchKeyHubs();
+  };
+
   const handleOpenTerminalModal = () => {
     if (!propertyId) return;
     fetchTerminals();
@@ -555,7 +593,7 @@ const Tenants = ({ data }: TenantsProps) => {
             />
             <SummaryCard
               label="Config Modules"
-              value="6"
+              value="7"
               icon={<FaRegCreditCard />}
             />
           </section>
@@ -613,7 +651,7 @@ const Tenants = ({ data }: TenantsProps) => {
                       </p>
                     )}
 
-                    <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                    <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
                       <QuickAction
                         label="Users"
                         icon={<PiUsersThreeFill />}
@@ -676,6 +714,14 @@ const Tenants = ({ data }: TenantsProps) => {
                         onClick={(e) => {
                           e.stopPropagation();
                           handleOpenTransactionModal();
+                        }}
+                      />
+                      <QuickAction
+                        label="Key Hubs"
+                        icon={<FaKey />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenKeyHubModal();
                         }}
                       />
                     </div>
@@ -766,6 +812,16 @@ const Tenants = ({ data }: TenantsProps) => {
           <TransactionTypeManager
             fetchTransactionTypes={fetchTransactionTypes}
             transactionTypes={transactionTypesDropdownData || []}
+          />
+        </Modal>
+
+        <Modal
+          isOpen={isKeyHubModalOpen}
+          onClose={() => setIsKeyHubModalOpen(false)}
+        >
+          <KeyHubCMS
+            fetchKeyHubs={fetchKeyHubs}
+            keyHubs={keyHubsData}
           />
         </Modal>
 

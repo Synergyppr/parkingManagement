@@ -16,6 +16,7 @@ export interface TicketResponseData {
   vehicleTypes: VehicleType[];
   vehicleColors: VehicleColor[];
   statuses: string[];
+  canRequestVehicle?: boolean;
   primaryColor: string;
   secondaryColor: string;
 }
@@ -51,6 +52,14 @@ export interface Ticket {
   placeToVisit?: string;
   damagedParts?: CarPart[];
   photos?: { url: string }[];
+  keySlotId?: string | null;
+  keyHubId?: string | null;
+  keyHubName?: string | null;
+  keySlotLabel?: string | null;
+  keyRowOrder?: number | null;
+  keyColumnOrder?: number | null;
+  transactionTypeId?: number | null;
+  price?: number | null;
 }
 
 export interface CarBrand {
@@ -100,6 +109,7 @@ export interface VehicleData {
   notificationId?: string;
   surveySubmitted?: boolean;
   transactions?: TicketTransaction[];
+  canRequestVehicle?: boolean;
 }
 
 export interface VehiclePhoto {
@@ -150,6 +160,16 @@ export interface TicketDetails {
   licensePlate?: string;
   damagedParts?: CarPart[];
   photos?: { url: string }[];
+  keySlotId?: string | null;
+  keyHubId?: string | null;
+  keyHubName?: string | null;
+  keySlotLabel?: string | null;
+  keyRowOrder?: number | null;
+  keyColumnOrder?: number | null;
+  transactionTypeId?: number | null;
+  price?: number | null;
+  notes?: string | null;
+  status?: string;
 }
 
 export interface TicketTransactionReceipt {
@@ -261,6 +281,26 @@ export interface Property {
 }
 
 /////////////////////////////////////////////////////////////////////////////////
+export interface KeySlot {
+  id?: string;
+  keyHubId?: string;
+  slotLabel: string;
+  rowOrder: number;
+  columnOrder: number;
+  rowName: string;
+  isActive?: boolean;
+  isOccupied: boolean;
+}
+
+export interface KeyHub {
+  id?: string;
+  propertyId: string;
+  name: string;
+  displayOrder: number;
+  isActive?: boolean;
+  slots?: KeySlot[];
+}
+
 export interface NotificationHandler {
   ticketId: string;
   status: string;

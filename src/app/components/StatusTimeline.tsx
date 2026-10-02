@@ -2,6 +2,7 @@ interface StatusTimelineProps {
   currentStatus: string;
   createdDateTime?: string;
   lastUpdated?: string;
+  canRequestVehicle?: boolean;
 }
 
 const formatStepDate = (dateStr?: string): string | null => {
@@ -25,8 +26,11 @@ const StatusTimeline = ({
   currentStatus,
   createdDateTime,
   lastUpdated,
+  canRequestVehicle = true,
 }: StatusTimelineProps) => {
-  const statuses = ["received", "parked", "requested", "ready"];
+  const statuses = canRequestVehicle
+    ? ["received", "parked", "requested", "ready"]
+    : ["received", "parked", "ready"];
   const normalized = currentStatus?.toLowerCase()?.trim() || "";
   // If status is unrecognized or empty, default to "parked" so the patron can request again
   const currentIdx =
@@ -56,7 +60,7 @@ const StatusTimeline = ({
 
   return (
     <div className="mt-5 rounded-4xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="grid grid-cols-4 gap-2">
+      <div className={`grid gap-2 ${statuses.length === 3 ? "grid-cols-3" : "grid-cols-4"}`}>
         {statuses.map((status, i) => {
           const done = i <= currentIdx;
           const active = i === currentIdx;

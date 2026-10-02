@@ -15,11 +15,16 @@ export default function TabNavigation({
   selected,
   onSelect,
   unreadTicketIds,
+  canRequestVehicle = true,
 }: {
   selected: string;
   onSelect: (key: string) => void;
   unreadTicketIds: Ticket[];
+  canRequestVehicle?: boolean;
 }) {
+  const visibleTabs = canRequestVehicle
+    ? tabs
+    : tabs.filter((tab) => tab.key !== "requested");
 
   const handleSelect = (key: string) => {
     onSelect(key);
@@ -31,7 +36,7 @@ export default function TabNavigation({
         className="mx-auto flex w-full max-w-6xl items-center justify-center gap-2 rounded-full border border-(--primary-light) bg-(--primary-soft) p-1 
       shadow-inner transition-colors duration-300"
       >
-        {tabs?.map((tab) => {
+        {visibleTabs?.map((tab) => {
           const isActive = selected === tab?.key;
 
           return (

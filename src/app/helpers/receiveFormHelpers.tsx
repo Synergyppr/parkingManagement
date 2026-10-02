@@ -87,7 +87,8 @@ export const handleParkVehicle = async (
   passengerViewLabelsMap: Record<string, string[]>,
   driverViewLabelsMap: Record<string, string[]>,
   photos: string[] = [],
-  setVehiclePhotoUrls?: React.Dispatch<React.SetStateAction<string[]>>
+  setVehiclePhotoUrls?: React.Dispatch<React.SetStateAction<string[]>>,
+  keySlotId?: string | null
 ) => {
   e.preventDefault();
 
@@ -216,14 +217,13 @@ export const handleParkVehicle = async (
       ticketNumber: form?.ticketNumber || uuidv4().slice(0, 6),
       destination: form?.placeToVisit as string,
       damageStatus,
+      keySlotId: keySlotId || undefined,
       photos: photos.length > 0 ? photos.map((url) => ({ url })) : undefined,
     };
 
 
 
-    // console.log("Submitting form:", sendForm);
-
-    // return; // Uncomment this line to prevent actual submission during development
+    console.log("[CreateTicket] Request payload:", JSON.stringify(sendForm, null, 2));
 
     const willCharge = await Swal.fire({
       title: "Are You Sure?",
@@ -253,6 +253,7 @@ export const handleParkVehicle = async (
       });
 
       const result = await res.json();
+      console.log("[CreateTicket] Response:", JSON.stringify(result, null, 2));
 
       if (result?.status === "200") {
         Swal.fire({

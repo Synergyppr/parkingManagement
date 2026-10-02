@@ -41,6 +41,8 @@ interface TransactionFormProps {
   locationMode?: "live" | "manual";
   propertyId?: string | null;
   placeToVisit?: string;
+  ticketPrice?: number | null;
+  ticketTransactionTypeId?: number | null;
 }
 
 interface TransactionType {
@@ -124,6 +126,8 @@ export default function TransactionForm({
   propertyId,
   setReloadPageData,
   placeToVisit,
+  ticketPrice,
+  ticketTransactionTypeId,
 }: TransactionFormProps) {
   const {
     accountUser,
@@ -172,12 +176,42 @@ export default function TransactionForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-select rate based on placeToVisit when transaction types are loaded
+  // Auto-select rate based on ticket data or placeToVisit when transaction types are loaded
   useEffect(() => {
-    if (!placeToVisit || transactionTypes.length === 0) return;
+    if (transactionTypes.length === 0 || form.paymentMethod) return;
+
+    // Priority 1: Use ticketTransactionTypeId/ticketPrice from API (updated rate)
+    if (ticketTransactionTypeId && ticketPrice != null) {
+      const match = transactionTypes.find((t) => Number(t.id) === ticketTransactionTypeId);
+      if (match) {
+        // If the ticket price differs from the standard rate, use custom rate mode
+        if (Math.abs(match.value - ticketPrice) > 0.01) {
+          setUseCustomRate(true);
+          setOtherName(match.name);
+          setOtherPrice(String(ticketPrice));
+          setShowExistingRates(false);
+        } else {
+          setForm((prev) => ({
+            ...prev,
+            paymentMethod: match.name,
+            transactionTypeId: Number(match.id),
+            value: ticketPrice,
+          }));
+        }
+        return;
+      }
+      // ticketTransactionTypeId not found in types — treat as custom
+      setUseCustomRate(true);
+      setOtherPrice(String(ticketPrice));
+      setShowExistingRates(false);
+      return;
+    }
+
+    // Priority 2: Fallback to placeToVisit parsing
+    if (!placeToVisit) return;
     const locationName = parseLocationName(placeToVisit);
     const match = transactionTypes.find((t) => t.name === locationName);
-    if (match && !form.paymentMethod) {
+    if (match) {
       setForm((prev) => ({
         ...prev,
         paymentMethod: match.name,
@@ -186,7 +220,7 @@ export default function TransactionForm({
       }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactionTypes, placeToVisit]);
+  }, [transactionTypes, placeToVisit, ticketTransactionTypeId, ticketPrice]);
 
   const fetchTransactionTypes = async () => {
     try {
@@ -301,6 +335,8 @@ export default function TransactionForm({
   const executePayment = async (
     payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> => {
+    console.log("[Checkout] Payment body:", JSON.stringify(payload, null, 2));
+
     Swal.fire({
       title: "Processing Payment",
       html: `<p>Sending payment request...</p><p class="text-sm mt-2 font-semibold"</p>`,
@@ -316,6 +352,7 @@ export default function TransactionForm({
     });
 
     const result = await res.json();
+    console.log("[Checkout] Payment response:", JSON.stringify(result, null, 2));
     Swal.close();
     return result;
   };
