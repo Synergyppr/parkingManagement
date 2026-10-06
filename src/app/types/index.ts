@@ -485,3 +485,57 @@ export interface TipsReportResponse {
   activeEmployees: TipsReportEmployee[];
   inactiveEmployees: TipsReportEmployee[];
 }
+
+//////////////////////////////////////////////////////////////////////////////
+
+// ANPR Vehicle Recognition Types (https://anpr.software/docs)
+
+export interface ANPRVehicleResponse {
+  body?: {
+    label?: string;
+    confidence?: number;
+    color?: {
+      name?: string;
+      hex?: string;
+      rgb?: number[];
+    };
+    brand?: {
+      label?: string;
+      confidence?: number;
+    };
+    model?: {
+      label?: string;
+      confidence?: number;
+    };
+    make_model?: {
+      brand?: string;
+      brand_confidence?: number;
+      model?: string;
+      model_full?: string;
+      model_confidence?: number;
+      brand_uncertain?: boolean;
+      decision?: string;
+    };
+  };
+  cost?: number;
+  credits?: number;
+  timestamp?: string;
+}
+
+export interface ANPRMatchResult {
+  makeId: string;
+  modelId: string;
+  typeId: string;
+  colorId: string;
+  confidence: {
+    brand: number | null;
+    model: number | null;
+    type: number | null;
+  };
+  raw: {
+    brand: string;
+    model: string;
+    type: string;
+    color: string;
+  };
+}

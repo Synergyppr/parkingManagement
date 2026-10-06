@@ -1,6 +1,15 @@
 import Swal from "sweetalert2";
 import { v4 as uuidv4 } from "uuid";
-import { CarBrand, CarPart, DropdownOption, Ticket, Vehicle, VehiclePhoto } from "../types";
+import {
+  ANPRMatchResult,
+  ANPRVehicleResponse,
+  CarBrand,
+  CarPart,
+  DropdownOption,
+  Ticket,
+  Vehicle,
+  VehiclePhoto,
+} from "../types";
 import { formatPhoneNumber } from "../lib/clientUtils";
 
 export const generateTicketNumber = ({
@@ -432,4 +441,66 @@ export const fetchUserDataByPhone = async (
   } finally {
     setIsPhoneLookupLoading?.(false);
   }
+};
+
+// ANPR Vehicle Recognition — match API response to existing dropdown options
+const fuzzyMatch = (
+  needle: string,
+  haystack: { id: number; name: string }[]
+): { id: number; name: string } | null => {
+  if (!needle) return null;
+  const lower = needle.toLowerCase();
+  const exact = haystack.find((h) => h.name.toLowerCase() === lower);
+  if (exact) return exact;
+  const contains = haystack.find(
+    (h) =>
+      h.name.toLowerCase().includes(lower) ||
+      lower.includes(h.name.toLowerCase())
+  );
+  return contains || null;
+};
+
+export const matchANPRToDropdowns = (
+  anprData: ANPRVehicleResponse,
+  carBrands: CarBrand[],
+  vehicleTypes: DropdownOption[],
+  vehicleColors: DropdownOption[]
+): ANPRMatchResult => {
+  const body = anprData?.body;
+  const bodyType = body?.label || "";
+  const colorName = body?.color?.name || "";
+  const brandName = body?.make_model?.brand || "";
+  const modelName = body?.make_model?.model || "";
+
+  const matchedType = fuzzyMatch(bodyType, vehicleTypes);
+  const matchedColor = fuzzyMatch(colorName, vehicleColors);
+
+  const brandsFlat = carBrands.map((b) => ({ id: b.id, name: b.name }));
+  const matchedBrand = fuzzyMatch(brandName, brandsFlat);
+
+  let matchedModel: { id: number; name: string } | null = null;
+  if (matchedBrand) {
+    const brand = carBrands.find((b) => b.id === matchedBrand.id);
+    if (brand?.models) {
+      matchedModel = fuzzyMatch(modelName, brand.models);
+    }
+  }
+
+  return {
+    makeId: matchedBrand?.id?.toString() || "",
+    modelId: matchedModel?.id?.toString() || "",
+    typeId: matchedType?.id?.toString() || "",
+    colorId: matchedColor?.id?.toString() || "",
+    confidence: {
+      brand: body?.make_model?.brand_confidence ?? null,
+      model: body?.make_model?.model_confidence ?? null,
+      type: body?.confidence ?? null,
+    },
+    raw: {
+      brand: brandName,
+      model: modelName,
+      type: bodyType,
+      color: colorName,
+    },
+  };
 };

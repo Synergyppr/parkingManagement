@@ -67,6 +67,7 @@ export interface ReceiveFormProps {
   setHasUnsavedChanges: React.Dispatch<React.SetStateAction<boolean>>;
   setReloadPageData: React.Dispatch<React.SetStateAction<boolean>>;
   parkedTickets: Ticket[];
+  quickVehicleWorkflow?: boolean;
 }
 
 // Vehicle List Component Props (All Valet Parking Tickets)

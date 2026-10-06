@@ -19,11 +19,13 @@ interface CapturedPhoto {
 interface VehiclePhotoCaptureProps {
   photos: string[];
   onPhotoUrlsChange: (urls: string[]) => void;
+  onRawPhotoCapture?: (blob: Blob) => void;
 }
 
 export default function VehiclePhotoCapture({
   photos,
   onPhotoUrlsChange,
+  onRawPhotoCapture,
 }: VehiclePhotoCaptureProps) {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [capturedPhotos, setCapturedPhotos] = useState<CapturedPhoto[]>([]);
@@ -105,6 +107,8 @@ export default function VehiclePhotoCapture({
           setCapturing(false);
           return;
         }
+
+        onRawPhotoCapture?.(blob);
 
         const previewUrl = URL.createObjectURL(blob);
         const newPhoto: CapturedPhoto = {

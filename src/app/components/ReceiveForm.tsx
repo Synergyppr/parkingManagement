@@ -19,6 +19,7 @@ import {
   VehiclePhoto,
   RateEntry,
   KeySlot,
+  ANPRMatchResult,
 } from "../types";
 import { ReceiveFormProps } from "../types/pagesProps";
 import { useProperty } from "../context/PropertyContext";
@@ -32,6 +33,7 @@ import {
   fetchUserDataByPhone,
   generateTicketNumber,
   handleParkVehicle,
+  matchANPRToDropdowns,
 } from "../helpers/receiveFormHelpers";
 
 import CarVector from "./CarVector";
@@ -60,6 +62,7 @@ export default function ReceiveForm({
   setHasUnsavedChanges,
   setReloadPageData,
   parkedTickets,
+  quickVehicleWorkflow = false,
 }: ReceiveFormProps) {
   const router = useRouter();
   const { propertyId, locationMode, latitude, longitude } = useProperty();
@@ -101,6 +104,12 @@ export default function ReceiveForm({
     deletes: [],
   }); // Commented out code related to vehicle management for now
 
+  // ANPR Vehicle Recognition state (quick workflow only)
+  const [anprResult, setAnprResult] = useState<ANPRMatchResult | null>(null);
+  const [anprLoading, setAnprLoading] = useState(false);
+  const [anprAnalyzed, setAnprAnalyzed] = useState(false);
+  const [anprError, setAnprError] = useState(false);
+
   useEffect(() => {
     generateTicketNumber({ setForm });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -140,6 +149,62 @@ export default function ReceiveForm({
         placeToVisit: selected,
       }));
     }
+  };
+
+  const analyzeVehiclePhoto = async (blob: Blob) => {
+    if (!quickVehicleWorkflow || anprAnalyzed || anprLoading) return;
+    setAnprLoading(true);
+    setAnprError(false);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", blob, "vehicle.jpg");
+
+      const res = await fetch("/api/vehicleRecognition", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("ANPR analysis failed");
+
+      const data = await res.json();
+      const match = matchANPRToDropdowns(
+        data,
+        carBrands,
+        vehicleTypes,
+        vehicleColors
+      );
+
+      setAnprResult(match);
+
+      setForm((prev) => ({
+        ...prev,
+        make: match.makeId || prev.make || "",
+        model: match.modelId || prev.model || "",
+        type: match.typeId || prev.type || "",
+        color: match.colorId || prev.color || "",
+      }));
+
+      if (match.makeId) {
+        const brand = carBrands.find(
+          (b) => b.id === parseInt(match.makeId)
+        );
+        if (brand) setModels(brand.models);
+      }
+
+      setAnprAnalyzed(true);
+    } catch (error) {
+      console.error("ANPR analysis failed:", error);
+      setAnprError(true);
+    } finally {
+      setAnprLoading(false);
+    }
+  };
+
+  const handleReanalyze = () => {
+    setAnprAnalyzed(false);
+    setAnprResult(null);
+    setAnprError(false);
   };
 
   const handleChange = (
@@ -298,6 +363,9 @@ export default function ReceiveForm({
       setModels([]);
       setSelectedVehiclePhotos([]);
       setSelectedKeySlot(null);
+      setAnprResult(null);
+      setAnprAnalyzed(false);
+      setAnprError(false);
     };
 
     if (submitted === false) {
@@ -345,6 +413,554 @@ export default function ReceiveForm({
     setStep((currentStep) => Math.max(1, currentStep - 1));
   };
 
+  // Shared submit handler for both workflows
+  const handleFormSubmit = (e: React.MouseEvent) => {
+    const normalizedPlate = (form?.licensePlate || "").trim().toLowerCase();
+    const normalizedFirstName = (form?.firstName || "").trim().toLowerCase();
+    const normalizedLastName = (form?.lastName || "").trim().toLowerCase();
+
+    if (normalizedPlate) {
+      const duplicate = parkedTickets?.find(
+        (t) =>
+          t?.status === "parked" &&
+          (t?.licensePlate || t?.vehicles?.licensePlate || "")
+            .trim()
+            .toLowerCase() === normalizedPlate &&
+          (t?.firstName || "").trim().toLowerCase() === normalizedFirstName &&
+          (t?.lastName || "").trim().toLowerCase() === normalizedLastName
+      );
+
+      if (duplicate) {
+        Swal.fire({
+          icon: "warning",
+          title: "Duplicate Vehicle",
+          text: `A vehicle with plate "${form?.licensePlate}" owned by ${form?.firstName} ${form?.lastName} is already parked (Ticket #${duplicate?.ticketNumber}). You cannot park the same vehicle twice.`,
+        });
+        return;
+      }
+    }
+
+    if (!form?.pin) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Please enter the employee pin to park the customer vehicle.",
+      });
+      return;
+    }
+
+    handleParkVehicle(
+      e,
+      form,
+      setForm,
+      incidentParts,
+      descriptions,
+      noIncident,
+      setLoader,
+      locationMode,
+      latitude as number,
+      longitude as number,
+      propertyId,
+      setReloadPageData,
+      router,
+      setSubmitted,
+      setInitialForm,
+      setIncidentParts,
+      setDescriptions,
+      frontViewLabelsMap,
+      rearViewLabelsMap,
+      passengerViewLabelsMap,
+      driverViewLabelsMap,
+      photos,
+      setPhotos,
+      selectedKeySlot?.id
+    );
+  };
+
+  // ─── Quick Vehicle Workflow (single-page with ANPR) ───
+  if (quickVehicleWorkflow) {
+    return (
+      <div className="mb-2 py-6">
+        <div className="mx-auto w-full max-w-5xl px-4">
+          {!submitted ? (
+            <div className="animate-fade-in">
+              {/* Header */}
+              <div className="text-center mb-8">
+                <span className="inline-flex rounded-full border border-(--primary-light) bg-white px-5 py-1 text-[10px] font-semibold text-primary shadow-sm">
+                  Quick Check-in
+                </span>
+
+                <h1 className="mt-3 font-serif text-3xl font-bold text-slate-900 md:text-4xl">
+                  Quick Vehicle Check-in
+                </h1>
+
+                <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
+                  Take a photo to automatically detect vehicle details.
+                </p>
+              </div>
+
+              <div className="relative rounded-4xl border border-slate-200/80 bg-white/80 shadow-sm backdrop-blur-xl overflow-hidden px-5 py-8 md:px-10">
+                <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-(--primary-soft)/80 -z-10" />
+
+                <div className="space-y-9">
+                  {/* Basic Information */}
+                  <section>
+                    <h3 className="mb-5 border-l-4 border-primary pl-3 font-serif text-lg font-bold text-slate-900">
+                      Basic Information
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                      <FormInput
+                        name="ticketNumber"
+                        placeholder="Ticket Number"
+                        value={form?.ticketNumber || ""}
+                        onChange={() => {}}
+                        icon={<FaTicketAlt />}
+                        required
+                        disabled
+                      />
+
+                      <PhoneInputWithAreaCode
+                        areaCode={form?.areaCode || ""}
+                        phoneNumber={form?.phoneNumber || ""}
+                        isLoading={isPhoneLookupLoading}
+                        onAreaCodeChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            areaCode: e.target.value,
+                          }))
+                        }
+                        onPhoneNumberChange={(e) => {
+                          const rawValue = e.target.value.replace(/\D/g, "");
+                          if (rawValue?.length > 10) return;
+                          const formatted = formatPhoneNumber(rawValue);
+                          setForm((prev) => ({
+                            ...prev,
+                            phoneNumber: formatted,
+                          }));
+                          if (rawValue.length === 10)
+                            fetchUserDataByPhone(
+                              form?.areaCode || "+1",
+                              rawValue,
+                              setForm,
+                              setExistingVehicles,
+                              carBrands,
+                              vehicleTypes,
+                              vehicleColors,
+                              setModels,
+                              setIsPhoneLookupLoading,
+                              setSelectedVehiclePhotos
+                            );
+                        }}
+                        onClear={() => {
+                          setForm((prev) => ({
+                            ...prev,
+                            phoneNumber: "",
+                            firstName: "",
+                            lastName: "",
+                            patronId: "",
+                            placeToVisit: "",
+                          }));
+                          setExistingVehicles([]);
+                          setSelectedVehiclePhotos([]);
+                        }}
+                        missing={missingFields?.includes("phoneNumber")}
+                      />
+
+                      <FormInput
+                        name="firstName"
+                        placeholder="First Name"
+                        icon={<FaUser />}
+                        value={form.firstName || ""}
+                        onChange={handleChange}
+                        onClear={() =>
+                          setForm((prev) => ({ ...prev, firstName: "" }))
+                        }
+                      />
+
+                      <FormInput
+                        name="lastName"
+                        placeholder="Last Name"
+                        icon={<FaUser />}
+                        value={form?.lastName || ""}
+                        onChange={handleChange}
+                        onClear={() =>
+                          setForm((prev) => ({ ...prev, lastName: "" }))
+                        }
+                      />
+                    </div>
+                  </section>
+
+                  {/* Visit Logistics */}
+                  <section>
+                    <h3 className="mb-5 border-l-4 border-primary pl-3 font-serif text-lg font-bold text-slate-900">
+                      Visit Logistics
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                      <FormInput
+                        name="placeToVisit"
+                        icon={<MdLocationPin />}
+                        type="select"
+                        value={locationSelection}
+                        onChange={handleLocationChange}
+                        options={[
+                          ...transactionTypes
+                            .filter((t) => t.isActive)
+                            .map((t) => ({
+                              id: `${t.name}-${t.value}`,
+                              name: t.name,
+                            })),
+                          { id: "Other", name: "Other" },
+                        ]}
+                      />
+
+                      {locationSelection === "Other" && (
+                        <FormInput
+                          name="otherLocation"
+                          placeholder="Place to visit (optional)"
+                          icon={<MdLocationPin />}
+                          value={form?.placeToVisit || ""}
+                          onChange={(e) =>
+                            setForm((prev: Partial<Ticket>) => ({
+                              ...prev,
+                              placeToVisit: e.target.value,
+                            }))
+                          }
+                          onClear={() =>
+                            setForm((prev) => ({
+                              ...prev,
+                              placeToVisit: "",
+                            }))
+                          }
+                        />
+                      )}
+                    </div>
+                  </section>
+
+                  {/* Key Slot */}
+                  <KeyBoxSelector
+                    selectedSlot={selectedKeySlot}
+                    onSelectSlot={setSelectedKeySlot}
+                  />
+
+                  {/* Existing Vehicles */}
+                  {existingVehicles?.length > 0 && (
+                    <section>
+                      <VehicleList
+                        existingVehicles={existingVehicles}
+                        vehicleColors={vehicleColors}
+                        vehicleTypes={vehicleTypes}
+                        carBrands={carBrands}
+                        form={form}
+                        showExistingVehicles={showExistingVehicles}
+                        setShowExistingVehicles={setShowExistingVehicles}
+                        handleSelectVehicle={handleSelectVehicle}
+                      />
+                    </section>
+                  )}
+
+                  {/* Vehicle Photos + ANPR Detection */}
+                  <section>
+                    <h3 className="mb-5 border-l-4 border-primary pl-3 font-serif text-lg font-bold text-slate-900">
+                      Vehicle Photos
+                    </h3>
+
+                    {/* Previous photos from patron history */}
+                    {selectedVehiclePhotos.length > 0 && (
+                      <div className="border border-gray-200 rounded-xl bg-gray-50 p-3 mb-3">
+                        <div className="flex items-center gap-2 mb-3">
+                          <IoImagesOutline className="text-primary text-lg" />
+                          <span className="text-sm font-medium text-gray-700">
+                            Previous Photos
+                          </span>
+                          <span className="bg-(--primary-soft) text-primary text-xs rounded-full px-1.5 py-0.5 font-semibold">
+                            {selectedVehiclePhotos.length}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                          {selectedVehiclePhotos.map((photo) => (
+                            <div
+                              key={photo.id}
+                              className="relative rounded-lg overflow-hidden aspect-video bg-black border border-gray-200"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={photo.url}
+                                alt="Previous vehicle photo"
+                                className="w-full h-full object-cover"
+                              />
+                              {photo.createdDateTime && (
+                                <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1.5 py-0.5">
+                                  <p className="text-white text-[9px] truncate">
+                                    {new Date(
+                                      photo.createdDateTime
+                                    ).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <VehiclePhotoCapture
+                      photos={photos}
+                      onPhotoUrlsChange={setPhotos}
+                      onRawPhotoCapture={analyzeVehiclePhoto}
+                    />
+
+                    {/* ANPR Loading */}
+                    {anprLoading && (
+                      <div className="mt-4 flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-300 border-t-blue-600" />
+                        <span className="text-sm font-medium text-blue-700">
+                          Analyzing vehicle...
+                        </span>
+                      </div>
+                    )}
+
+                    {/* ANPR Results */}
+                    {anprResult && !anprLoading && (
+                      <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-sm font-bold text-green-800">
+                            Vehicle Detected
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={handleReanalyze}
+                            className="text-xs font-medium text-green-600 hover:text-green-800 underline cursor-pointer"
+                          >
+                            Re-analyze
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            {
+                              label: "Make",
+                              value: anprResult.raw.brand,
+                              matched: !!anprResult.makeId,
+                              confidence: anprResult.confidence.brand,
+                            },
+                            {
+                              label: "Model",
+                              value: anprResult.raw.model,
+                              matched: !!anprResult.modelId,
+                              confidence: anprResult.confidence.model,
+                            },
+                            {
+                              label: "Type",
+                              value: anprResult.raw.type,
+                              matched: !!anprResult.typeId,
+                              confidence: anprResult.confidence.type,
+                            },
+                            {
+                              label: "Color",
+                              value: anprResult.raw.color,
+                              matched: !!anprResult.colorId,
+                              confidence: null,
+                            },
+                          ].map((item) => (
+                            <div
+                              key={item.label}
+                              className={`rounded-lg px-3 py-2 text-sm ${
+                                item.matched
+                                  ? "bg-green-100 text-green-900"
+                                  : "bg-yellow-100 text-yellow-900"
+                              }`}
+                            >
+                              <span className="block text-[10px] font-bold uppercase tracking-wide opacity-60">
+                                {item.label}
+                              </span>
+                              <span className="font-semibold capitalize">
+                                {item.value || "Not detected"}
+                              </span>
+                              {item.confidence !== null && item.confidence !== undefined && (
+                                <span className="ml-1 text-[10px] opacity-60">
+                                  ({Math.round(item.confidence * 100)}%)
+                                </span>
+                              )}
+                              {!item.matched && item.value && (
+                                <span className="block text-[9px] text-yellow-700 mt-0.5">
+                                  No match found — select manually below
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ANPR Error */}
+                    {anprError && !anprLoading && (
+                      <div className="mt-4 rounded-xl border border-yellow-200 bg-yellow-50 p-4">
+                        <p className="text-sm font-medium text-yellow-800">
+                          Could not detect vehicle details. Please enter them
+                          manually or take another photo.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleReanalyze}
+                          className="mt-2 text-xs font-medium text-yellow-600 hover:text-yellow-800 underline cursor-pointer"
+                        >
+                          Try again with next photo
+                        </button>
+                      </div>
+                    )}
+                  </section>
+
+                  {/* Manual Vehicle Selectors — shown when ANPR didn't match all fields */}
+                  {(anprError ||
+                    (anprAnalyzed &&
+                      anprResult &&
+                      (!anprResult.makeId ||
+                        !anprResult.modelId ||
+                        !anprResult.typeId ||
+                        !anprResult.colorId))) && (
+                    <section>
+                      <h3 className="mb-5 border-l-4 border-yellow-400 pl-3 font-serif text-lg font-bold text-slate-900">
+                        Complete Vehicle Details
+                      </h3>
+                      <p className="text-xs text-slate-500 mb-4">
+                        Some fields could not be auto-detected. Please select
+                        manually.
+                      </p>
+                      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                        {(!anprResult?.makeId || anprError) && (
+                          <FormInput
+                            name="make"
+                            value={form?.make || ""}
+                            onChange={handleChange}
+                            icon={<FaCar />}
+                            type="select"
+                            options={carBrands}
+                          />
+                        )}
+                        {(!anprResult?.modelId || anprError) && (
+                          <FormInput
+                            name="model"
+                            value={form?.model || ""}
+                            onChange={handleChange}
+                            icon={<FaCarRear />}
+                            type="select"
+                            options={models}
+                          />
+                        )}
+                        {(!anprResult?.typeId || anprError) && (
+                          <FormInput
+                            name="type"
+                            value={form?.type || ""}
+                            onChange={handleChange}
+                            icon={<PiCarProfileFill />}
+                            type="select"
+                            options={vehicleTypes}
+                          />
+                        )}
+                        {(!anprResult?.colorId || anprError) && (
+                          <FormInput
+                            name="color"
+                            value={form?.color || ""}
+                            onChange={handleChange}
+                            icon={<BiSolidSprayCan />}
+                            type="select"
+                            options={vehicleColors}
+                          />
+                        )}
+                      </div>
+                    </section>
+                  )}
+
+                  {/* License Plate */}
+                  <section>
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                      <FormInput
+                        name="licensePlate"
+                        placeholder="License Plate"
+                        icon={<MdPin />}
+                        onChange={handleChange}
+                        value={form?.licensePlate || ""}
+                        onClear={() =>
+                          setForm((prev) => ({ ...prev, licensePlate: "" }))
+                        }
+                      />
+
+                      <FormInput
+                        name="pin"
+                        type="password"
+                        inputMode="numeric"
+                        placeholder="Employee PIN"
+                        icon={<MdPassword />}
+                        value={form?.pin || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (/^\d{0,4}$/.test(val)) {
+                            setForm((prev: Partial<Ticket>) => ({
+                              ...prev,
+                              pin: val,
+                            }));
+                          }
+                        }}
+                        showPasswordToggle
+                        showPassword={showPin}
+                        setShowPassword={setShowPin}
+                        onClear={() =>
+                          setForm((prev) => ({ ...prev, pin: "" }))
+                        }
+                      />
+                    </div>
+                  </section>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="mt-8 border-t border-slate-200 pt-6">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <button
+                      type="button"
+                      onClick={() => handleClearForm(true)}
+                      className="md:h-12 h-14 rounded-2xl px-6 text-sm font-semibold text-slate-600 transition hover:bg-primary/50 cursor-pointer border border-primary/50"
+                    >
+                      Reset Form
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={loader || !propertyId}
+                      onClick={handleFormSubmit}
+                      className="h-12 rounded-2xl bg-primary px-8 text-sm font-extrabold text-white shadow-sm transition hover:bg-secondary disabled:opacity-60 cursor-pointer w-full sm:w-auto"
+                    >
+                      {loader ? "Submitting..." : "Submit"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center animate-fade-in flex flex-col items-center justify-center py-16 px-6">
+              <div className="w-20 h-20 bg-secondary/60 rounded-full flex items-center justify-center mx-auto mb-4">
+                <IoCheckmarkOutline className="text-primary w-10 h-10" />
+              </div>
+
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Vehicle Check-In Successful
+              </h3>
+
+              <button
+                onClick={handleSubmitAnother}
+                className="h-11 px-6 bg-primary hover:bg-secondary text-white font-semibold rounded-xl transition-colors text-sm flex items-center gap-2 cursor-pointer"
+              >
+                <CiRedo className="w-4 h-4" />
+                Submit Another Vehicle
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Normal Workflow (3-step stepper) ───
   return (
     <div
       className={`mb-2 ${
@@ -816,7 +1432,7 @@ export default function ReceiveForm({
                     onClick={() =>
                       step === 1 ? handleClearForm(true) : handleBack()
                     }
-                    className="md:h-12 h-14 rounded-2xl px-6 text-sm font-semibold text-slate-600 transition hover:bg-primary/50 disabled:opacity-50 
+                    className="md:h-12 h-14 rounded-2xl px-6 text-sm font-semibold text-slate-600 transition hover:bg-primary/50 disabled:opacity-50
                     cursor-pointer border border-primary/50"
                   >
                     {step === 1 ? "Reset Form" : "Back"}
@@ -836,80 +1452,8 @@ export default function ReceiveForm({
                       <button
                         type="button"
                         disabled={loader || !propertyId}
-                        onClick={(e) => {
-                          const normalizedPlate = (form?.licensePlate || "")
-                            .trim()
-                            .toLowerCase();
-                          const normalizedFirstName = (form?.firstName || "")
-                            .trim()
-                            .toLowerCase();
-                          const normalizedLastName = (form?.lastName || "")
-                            .trim()
-                            .toLowerCase();
-
-                          if (normalizedPlate) {
-                            const duplicate = parkedTickets?.find(
-                              (t) =>
-                                t?.status === "parked" &&
-                                (
-                                  t?.licensePlate ||
-                                  t?.vehicles?.licensePlate ||
-                                  ""
-                                )
-                                  .trim()
-                                  .toLowerCase() === normalizedPlate &&
-                                (t?.firstName || "").trim().toLowerCase() ===
-                                  normalizedFirstName &&
-                                (t?.lastName || "").trim().toLowerCase() ===
-                                  normalizedLastName
-                            );
-
-                            if (duplicate) {
-                              Swal.fire({
-                                icon: "warning",
-                                title: "Duplicate Vehicle",
-                                text: `A vehicle with plate "${form?.licensePlate}" owned by ${form?.firstName} ${form?.lastName} is already parked (Ticket #${duplicate?.ticketNumber}). You cannot park the same vehicle twice.`,
-                              });
-                              return;
-                            }
-                          }
-
-                          if (!form?.pin) {
-                            Swal.fire({
-                              icon: "error",
-                              title: "Error",
-                              text: "Please enter the employee pin to park the customer vehicle.",
-                            });
-                          }
-
-                          handleParkVehicle(
-                            e,
-                            form,
-                            setForm,
-                            incidentParts,
-                            descriptions,
-                            noIncident,
-                            setLoader,
-                            locationMode,
-                            latitude as number,
-                            longitude as number,
-                            propertyId,
-                            setReloadPageData,
-                            router,
-                            setSubmitted,
-                            setInitialForm,
-                            setIncidentParts,
-                            setDescriptions,
-                            frontViewLabelsMap,
-                            rearViewLabelsMap,
-                            passengerViewLabelsMap,
-                            driverViewLabelsMap,
-                            photos,
-                            setPhotos,
-                            selectedKeySlot?.id
-                          );
-                        }}
-                        className="h-12 rounded-2xl bg-primary px-8 text-sm font-extrabold text-white shadow-sm transition hover:bg-secondary 
+                        onClick={handleFormSubmit}
+                        className="h-12 rounded-2xl bg-primary px-8 text-sm font-extrabold text-white shadow-sm transition hover:bg-secondary
                         disabled:opacity-60 cursor-pointer w-full"
                       >
                         {loader ? "Submitting..." : "Submit"}
