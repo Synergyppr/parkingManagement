@@ -343,10 +343,6 @@ export default function DashboardClient({
 
     dashboardRequestIdRef.current = currentRequestId;
 
-    if (locationMode === "live") {
-      requestLocation();
-    }
-
     const fetchingAllTickets = async () => {
       setThemeReady(false);
       setLoading(true);
@@ -446,7 +442,15 @@ export default function DashboardClient({
     };
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [propertyId, locationMode, reloadPageData]);
+  }, [propertyId, reloadPageData]);
+
+  // Re-request GPS when switching back to live mode
+  useEffect(() => {
+    if (locationMode === "live") {
+      requestLocation();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationMode]);
 
   useEffect(() => {
     window.addEventListener("beforeunload", handleBeforeUnload);

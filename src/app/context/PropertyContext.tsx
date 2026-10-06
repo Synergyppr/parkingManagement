@@ -92,7 +92,16 @@ export const PropertyProvider = ({
   const [longitude, setLongitude] = useState<number | null>(null);
   const [radius, ] = useState<number | null>(null);
   const [isActive, ] = useState(true);
-  const [locationMode, setLocationMode] = useState<"live" | "manual">("live");
+  const [locationMode, setLocationModeState] = useState<"live" | "manual">(() => {
+    if (typeof window === "undefined") return "live";
+    const stored = localStorage.getItem("locationMode");
+    return stored === "manual" ? "manual" : "live";
+  });
+
+  const setLocationMode = (mode: "live" | "manual") => {
+    setLocationModeState(mode);
+    localStorage.setItem("locationMode", mode);
+  };
   const [predefinedProperties, setPredefinedProperties] = useState<
     Record<string, Property>
   >({});

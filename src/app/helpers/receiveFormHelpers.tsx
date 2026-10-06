@@ -306,16 +306,14 @@ export const handleParkVehicle = async (
     } finally {
       setLoader(false);
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    (error: unknown) => {
-      console.error("Geolocation error:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Location Error",
-        text: "Unable to retrieve your location. Please allow location access and try again.",
-      });
-      setLoader(false);
-    };
+  }, (error: GeolocationPositionError) => {
+    console.error("Geolocation error:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Location Error",
+      text: "Unable to retrieve your location. Please allow location access and try again.",
+    });
+    setLoader(false);
   });
 };
 

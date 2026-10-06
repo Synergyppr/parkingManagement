@@ -177,10 +177,6 @@ export default function DashboardPage() {
     const currentRequestId = requestIdRef.current + 1;
     requestIdRef.current = currentRequestId;
 
-    if (locationMode === "live") {
-      requestLocation();
-    }
-
     const fetchingAllTickets = async () => {
       /*
        * Do not show the dashboard using the previous property's theme.
@@ -286,7 +282,15 @@ export default function DashboardPage() {
     };
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [propertyId, locationMode, reloadPageData]);
+  }, [propertyId, reloadPageData]);
+
+  // Re-request GPS when switching back to live mode
+  useEffect(() => {
+    if (locationMode === "live") {
+      requestLocation();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationMode]);
 
   const tickets = useMemo(() => data?.tickets || [], [data?.tickets]);
 
