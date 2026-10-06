@@ -143,6 +143,7 @@ const applyThemeColors = ({
 
 export default function DashboardClient({
   initialStatus = null,
+  quickVehicleWorkflow = true,
 }: DashboardProps) {
   const { registerNotificationHandler } = useSignalR();
 
@@ -583,9 +584,7 @@ export default function DashboardClient({
                   setHasUnsavedChanges={setHasUnsavedChanges}
                   setReloadPageData={setReloadPageData}
                   parkedTickets={vehicles}
-                  quickVehicleWorkflow={
-                    process.env.NEXT_PUBLIC_QUICK_VEHICLE_WORKFLOW === "true"
-                  }
+                  quickVehicleWorkflow={quickVehicleWorkflow}
                 />
 
               </div>

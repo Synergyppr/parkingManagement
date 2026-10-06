@@ -17,6 +17,7 @@ import {
 
 export interface DashboardProps {
   initialStatus?: string | null;
+  quickVehicleWorkflow?: boolean;
 }
 
 // Ticket Details Page Props

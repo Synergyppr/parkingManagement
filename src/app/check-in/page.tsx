@@ -18,9 +18,14 @@ export default async function DashboardPage({
     ? params.status[0]
     : params?.status ?? null;
 
+  const quickVehicleWorkflow = process.env.QUICK_VEHICLE_WORKFLOW === "true";
+
   return (
     <Suspense fallback={<PageLoader />}>
-      <ReceiveVehicles initialStatus={statusParam} />
+      <ReceiveVehicles
+        initialStatus={statusParam}
+        quickVehicleWorkflow={quickVehicleWorkflow}
+      />
     </Suspense>
   );
 }
