@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useProperty } from "../context/PropertyContext";
+import { promptManualPropertySelection } from "../helpers/authHelpers";
 import {
   GoogleMap,
   Marker,
@@ -294,11 +295,24 @@ const Location = () => {
         {/* Toggle Mode Button */}
         <div className="mb-4 mx-auto flex justify-between md:min-w-87.5 min-w-112.5">
           <button
-            onClick={() => {
-              const newMode = locationMode === "live" ? "manual" : "live";
-              setLocationMode(newMode);
-              setMessage("Location mode switched to " + newMode);
-              if (newMode === "live") requestLocation();
+            onClick={async () => {
+              if (locationMode === "live") {
+                const selected = await promptManualPropertySelection({
+                  predefinedProperties,
+                  setLocationMode,
+                  setPropertyId,
+                  setPropertyName,
+                  setLatitude,
+                  setLongitude,
+                });
+                if (selected) {
+                  setMessage("Location mode switched to manual");
+                }
+              } else {
+                setLocationMode("live");
+                requestLocation();
+                setMessage("Location mode switched to live");
+              }
             }}
             className="text-lg px-3 py-1 bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600 -mt-0.75 -ml-0.5"
           >

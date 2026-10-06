@@ -10,6 +10,7 @@ import Swal from "sweetalert2";
 
 import { validateUser } from "../auth/userStoreApi";
 import { useProperty } from "../context/PropertyContext";
+import { promptManualPropertySelection } from "../helpers/authHelpers";
 import { joinGroup } from "../lib/SignalRProvider";
 import FloatingLabelInput from "./elements/FloatingLabelInput";
 import PageLoader from "./elements/PageLoader";
@@ -36,8 +37,11 @@ export default function LoginForm() {
   const {
     setPropertyId,
     setPropertyName,
+    setLatitude,
+    setLongitude,
     latitude,
     longitude,
+    predefinedProperties,
     setPredefinedProperties,
     requestLocation,
     locationMode,
@@ -328,19 +332,20 @@ export default function LoginForm() {
 
   const handleLocationMode = async () => {
     if (locationMode === "live") {
-      setLocationMode("manual");
-
-      await Swal.fire({
-        icon: "info",
-        title: "Manual Mode Activated",
-        text: "You can now enter your property details manually.",
+      await promptManualPropertySelection({
+        predefinedProperties,
+        setLocationMode,
+        setPropertyId,
+        setPropertyName,
+        setLatitude,
+        setLongitude,
         confirmButtonColor: getThemeColor(),
       });
-
       return;
     }
 
     setLocationMode("live");
+    requestLocation();
 
     await Swal.fire({
       icon: "info",

@@ -101,6 +101,10 @@ export const PropertyProvider = ({
   const setLocationMode = (mode: "live" | "manual") => {
     setLocationModeState(mode);
     localStorage.setItem("locationMode", mode);
+    if (mode === "live") {
+      localStorage.removeItem("manualLatitude");
+      localStorage.removeItem("manualLongitude");
+    }
   };
   const [predefinedProperties, setPredefinedProperties] = useState<
     Record<string, Property>
@@ -168,6 +172,17 @@ export const PropertyProvider = ({
         setPredefinedProperties(rawArray);
       } catch (error) {
         console.error("Error parsing stored properties:", error);
+      }
+    }
+
+    // Restore manual coordinates on mount if in manual mode
+    const storedMode = localStorage.getItem("locationMode");
+    if (storedMode === "manual") {
+      const manualLat = localStorage.getItem("manualLatitude");
+      const manualLng = localStorage.getItem("manualLongitude");
+      if (manualLat && manualLng) {
+        setLatitude(parseFloat(manualLat));
+        setLongitude(parseFloat(manualLng));
       }
     }
   }, []);
