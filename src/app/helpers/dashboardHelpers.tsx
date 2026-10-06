@@ -214,17 +214,15 @@ export const handlePinSubmit = async ({
 
   setButtonLoader(true);
 
-  navigator.geolocation.getCurrentPosition(async (position) => {
-    const { latitude: userLat, longitude: userLng } = position.coords;
-
+  const submitStatusUpdate = async (resolvedLat: number | null, resolvedLng: number | null) => {
     const sendForm = {
       ticketId: selectedTicketId,
       status: nextStatus,
       isUserUpdate: false,
       pin: pin,
       propertyId: propertyId,
-      latitude: locationMode === "manual" ? latitude : userLat,
-      longitude: locationMode === "manual" ? longitude : userLng,
+      latitude: resolvedLat,
+      longitude: resolvedLng,
     };
 
     try {
@@ -300,18 +298,26 @@ export const handlePinSubmit = async ({
       setSelectedTicketId(null);
       setNextStatus(null);
     }
+  };
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    (error: unknown) => {
-      console.error("Geolocation error:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Location Error",
-        text: "Unable to retrieve your location. Please allow location access and try again.",
-      });
-      setButtonLoader(false);
-    };
-  });
+  if (locationMode === "manual") {
+    await submitStatusUpdate(latitude, longitude);
+  } else {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        await submitStatusUpdate(position.coords.latitude, position.coords.longitude);
+      },
+      (error: GeolocationPositionError) => {
+        console.error("Geolocation error:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Location Error",
+          text: "Unable to retrieve your location. Please allow location access and try again.",
+        });
+        setButtonLoader(false);
+      }
+    );
+  }
 };
 
 export const markAsRead = async ({

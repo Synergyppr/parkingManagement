@@ -202,17 +202,14 @@ export const handleParkVehicle = async (
     damageStatus = {};
   }
 
-  navigator.geolocation.getCurrentPosition(async (position) => {
-    const { latitude: userLat, longitude: userLng } = position.coords;
+  const submitTicket = async (resolvedLat: number, resolvedLng: number) => {
     const rawPhone = (form?.phoneNumber || "").replace(/\D/g, "");
     const last10 = rawPhone.slice(-10); // always keep only 10 digits
     const validAreaCode = form?.areaCode || "+1";
 
     const sendForm = {
-      latitude: locationMode === "manual" ? latitude : userLat,
-      // latitude: 18.426434330459355, //250
-      longitude: locationMode === "manual" ? longitude : userLng,
-      // longitude: -66.05954507209249, //250
+      latitude: resolvedLat,
+      longitude: resolvedLng,
       propertyId: propertyId,
       firstName: form?.firstName,
       lastName: form?.lastName,
@@ -229,8 +226,6 @@ export const handleParkVehicle = async (
       keySlotId: keySlotId || undefined,
       photos: photos.length > 0 ? photos.map((url) => ({ url })) : undefined,
     };
-
-
 
     console.log("[CreateTicket] Request payload:", JSON.stringify(sendForm, null, 2));
 
@@ -306,15 +301,26 @@ export const handleParkVehicle = async (
     } finally {
       setLoader(false);
     }
-  }, (error: GeolocationPositionError) => {
-    console.error("Geolocation error:", error);
-    Swal.fire({
-      icon: "error",
-      title: "Location Error",
-      text: "Unable to retrieve your location. Please allow location access and try again.",
-    });
-    setLoader(false);
-  });
+  };
+
+  if (locationMode === "manual") {
+    await submitTicket(latitude, longitude);
+  } else {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        await submitTicket(position.coords.latitude, position.coords.longitude);
+      },
+      (error: GeolocationPositionError) => {
+        console.error("Geolocation error:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Location Error",
+          text: "Unable to retrieve your location. Please allow location access and try again.",
+        });
+        setLoader(false);
+      }
+    );
+  }
 };
 
 
