@@ -28,7 +28,9 @@ export default function KeyBoxSelector({
         body: JSON.stringify({ propertyId }),
       });
       const result = await response.json();
-      const hubs: KeyHub[] = result?.result?.data || [];
+      const hubs: KeyHub[] = (result?.result?.data || []).filter(
+        (h: KeyHub) => h.isActive !== false
+      );
       setKeyHubs(hubs);
 
       if (hubs.length > 0) {

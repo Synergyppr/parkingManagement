@@ -180,34 +180,39 @@ export default function TransactionForm({
   useEffect(() => {
     if (transactionTypes.length === 0 || form.paymentMethod) return;
 
-    // Priority 1: Use ticketTransactionTypeId/ticketPrice from API (updated rate)
-    if (ticketTransactionTypeId && ticketPrice != null) {
-      const match = transactionTypes.find((t) => Number(t.id) === ticketTransactionTypeId);
-      if (match) {
-        // If the ticket price differs from the standard rate, use custom rate mode
-        if (Math.abs(match.value - ticketPrice) > 0.01) {
-          setUseCustomRate(true);
-          setOtherName(match.name);
-          setOtherPrice(String(ticketPrice));
-          setShowExistingRates(false);
-        } else {
-          setForm((prev) => ({
-            ...prev,
-            paymentMethod: match.name,
-            transactionTypeId: Number(match.id),
-            value: ticketPrice,
-          }));
-        }
-        return;
+    // Priority 1: Ticket has an explicitly set price (from creation or admin update)
+    if (ticketPrice != null) {
+      // Try to find the matching rate type — by ID first, fallback to placeToVisit name
+      const matchById =
+        ticketTransactionTypeId != null && ticketTransactionTypeId !== 0
+          ? transactionTypes.find((t) => Number(t.id) === ticketTransactionTypeId)
+          : null;
+      const matchByName =
+        !matchById && placeToVisit
+          ? transactionTypes.find((t) => t.name === parseLocationName(placeToVisit))
+          : null;
+      const match = matchById || matchByName;
+
+      if (match && Math.abs(match.value - ticketPrice) <= 0.01) {
+        // Price matches standard rate — select normally
+        setForm((prev) => ({
+          ...prev,
+          paymentMethod: match.name,
+          transactionTypeId: Number(match.id),
+          value: ticketPrice,
+        }));
+      } else {
+        // Price differs from standard or no match — custom rate mode
+        setUseCustomRate(true);
+        setOtherName(match?.name || parseLocationName(placeToVisit) || "");
+        setOtherPrice(ticketPrice.toFixed(2));
+        if (match?.taxable != null) setOtherTaxable(!!match.taxable);
+        setShowExistingRates(false);
       }
-      // ticketTransactionTypeId not found in types — treat as custom
-      setUseCustomRate(true);
-      setOtherPrice(String(ticketPrice));
-      setShowExistingRates(false);
       return;
     }
 
-    // Priority 2: Fallback to placeToVisit parsing
+    // Priority 2: Fallback to placeToVisit parsing (no ticketPrice set)
     if (!placeToVisit) return;
     const locationName = parseLocationName(placeToVisit);
     const match = transactionTypes.find((t) => t.name === locationName);

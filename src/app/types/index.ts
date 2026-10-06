@@ -451,3 +451,37 @@ export interface PaymentTerminal {
   is_default: boolean;
   is_active: boolean;
 }
+
+//////////////////////////////////////////////////////////////////////////////
+
+export interface TipsReportTicket {
+  ticketId: string;
+  ticketNumber: string;
+  transactionId: string;
+  date: string;
+  tip: number;
+}
+
+export interface TipsReportEmployee {
+  employeeId: string;
+  employeeName: string;
+  isActive: boolean;
+  totalTips: number;
+  ticketCount: number;
+  tickets: TipsReportTicket[];
+}
+
+export interface TipsReportKPIs {
+  totalTips: number;
+  employeesWithTips: number;
+  transactionsWithTips: number;
+  topEmployee: TipsReportEmployee | null;
+}
+
+export interface TipsReportResponse {
+  startDate: string;
+  endDate: string;
+  kpis: TipsReportKPIs;
+  activeEmployees: TipsReportEmployee[];
+  inactiveEmployees: TipsReportEmployee[];
+}

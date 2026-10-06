@@ -468,7 +468,9 @@ const Tenants = ({ data }: TenantsProps) => {
       const result = await response.json();
 
       if (result?.result?.status == "200") {
-        setKeyHubsData(result?.result?.data || []);
+        setKeyHubsData((result?.result?.data || []).filter(
+          (h: KeyHub) => h.isActive !== false
+        ));
         setIsKeyHubModalOpen(true);
       } else {
         Swal.fire({
@@ -852,17 +854,21 @@ const Tenants = ({ data }: TenantsProps) => {
             if (activeTab === "Inactive") return !user.isActive;
             return true;
           }}
-          renderItem={(user, onEdit) => (
-            <EntityCard
-              title={(user as UserFormType)?.fullName as string}
-              fields={[
-                ["Username", (user as UserFormType)?.userName],
-                ["Gender", (user as UserFormType)?.gender],
-                ["DOB", formatDateOfBirth((user as UserFormType)?.dateOfBirth)],
-              ]}
-              onEdit={() => onEdit(user)}
-            />
-          )}
+          renderItem={(user, onEdit) => {
+            const isSuperAdmin =
+              String((user as UserFormType)?.role).toLowerCase() === "superadmin";
+            return (
+              <EntityCard
+                title={(user as UserFormType)?.fullName as string}
+                fields={[
+                  ["Username", (user as UserFormType)?.userName],
+                  ["Gender", (user as UserFormType)?.gender],
+                  ["DOB", formatDateOfBirth((user as UserFormType)?.dateOfBirth)],
+                ]}
+                onEdit={isSuperAdmin ? undefined : () => onEdit(user)}
+              />
+            );
+          }}
         />
 
         <ListModal
@@ -963,7 +969,7 @@ function EntityCard({
 }: {
   title: string;
   fields: [string, string | undefined | null][];
-  onEdit: () => void;
+  onEdit?: () => void;
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
@@ -978,12 +984,14 @@ function EntityCard({
         ))}
       </div>
 
-      <button
-        onClick={onEdit}
-        className="mt-4 rounded-xl bg-[var(--primary-soft)]0 px-4 py-2 text-xs font-bold text-white transition bg-secondary cursor-pointer"
-      >
-        Edit
-      </button>
+      {onEdit && (
+        <button
+          onClick={onEdit}
+          className="mt-4 rounded-xl bg-[var(--primary-soft)]0 px-4 py-2 text-xs font-bold text-white transition bg-secondary cursor-pointer"
+        >
+          Edit
+        </button>
+      )}
     </div>
   );
 }
