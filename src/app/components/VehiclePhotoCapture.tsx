@@ -6,6 +6,7 @@ import {
   MdDeleteOutline,
   MdFlipCameraAndroid,
   MdClose,
+  MdCheck,
 } from "react-icons/md";
 import { FaSpinner } from "react-icons/fa";
 
@@ -34,6 +35,9 @@ export default function VehiclePhotoCapture({
   );
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
+  const [orientation, setOrientation] = useState<
+    "portrait" | "landscape-left" | "landscape-right"
+  >("portrait");
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -82,6 +86,38 @@ export default function VehiclePhotoCapture({
     }
     return () => stopStream();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraOpen]);
+
+  // Detect device orientation for landscape-aware layout
+  useEffect(() => {
+    if (!cameraOpen) return;
+
+    const updateOrientation = () => {
+      const angle =
+        typeof screen?.orientation?.angle === "number"
+          ? screen.orientation.angle
+          : (window.orientation as number) ?? 0;
+
+      if (angle === 90) setOrientation("landscape-left");
+      else if (angle === -90 || angle === 270) setOrientation("landscape-right");
+      else setOrientation("portrait");
+    };
+
+    updateOrientation();
+
+    if (screen?.orientation) {
+      screen.orientation.addEventListener("change", updateOrientation);
+    }
+    window.addEventListener("orientationchange", updateOrientation);
+    window.addEventListener("resize", updateOrientation);
+
+    return () => {
+      if (screen?.orientation) {
+        screen.orientation.removeEventListener("change", updateOrientation);
+      }
+      window.removeEventListener("orientationchange", updateOrientation);
+      window.removeEventListener("resize", updateOrientation);
+    };
   }, [cameraOpen]);
 
   const handleFlip = () => {
@@ -258,8 +294,8 @@ export default function VehiclePhotoCapture({
       {/* Fullscreen camera — portaled above everything */}
       {cameraOpen &&
         createPortal(
-          <div className="fixed inset-0 z-999999 flex flex-col bg-black">
-            {/* Camera viewfinder */}
+          <div className="fixed inset-0 z-999999 flex bg-black">
+            {/* Main camera area — always fills the screen */}
             <div className="relative flex-1 overflow-hidden">
               {cameraError ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
@@ -281,16 +317,28 @@ export default function VehiclePhotoCapture({
                 <div className="pointer-events-none absolute inset-0 bg-white/60" />
               )}
 
-              {/* Close — top-left */}
+              {/* Close (X) — top-left */}
               <button
                 type="button"
                 onClick={handleClose}
-                className="absolute left-3 top-3 flex cursor-pointer items-center gap-1.5 rounded-full bg-black/50 px-3 py-2 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-black/70"
+                className="absolute left-3 top-3 cursor-pointer rounded-full bg-black/50 p-2.5 text-white backdrop-blur-sm transition hover:bg-black/70"
                 aria-label="Close camera"
               >
                 <MdClose className="text-lg" />
-                Done
               </button>
+
+              {/* Done — top-left, next to close */}
+              {capturedPhotos.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="absolute left-14 top-3 flex cursor-pointer items-center gap-1.5 rounded-full bg-green-600/90 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-green-700"
+                  aria-label="Done"
+                >
+                  <MdCheck className="text-lg" />
+                  Done ({capturedPhotos.length})
+                </button>
+              )}
 
               {/* Flip — top-right */}
               <button
@@ -301,64 +349,72 @@ export default function VehiclePhotoCapture({
               >
                 <MdFlipCameraAndroid className="text-xl" />
               </button>
+
+              {/* Photo preview strip — always overlaid on viewfinder */}
+              {capturedPhotos.length > 0 && (
+                <div className="absolute bottom-2 left-0 right-0 px-3">
+                  <div
+                    ref={previewStripRef}
+                    className="flex gap-2 overflow-x-auto rounded-xl bg-black/50 p-2 backdrop-blur-sm"
+                  >
+                    {capturedPhotos.map((photo) => (
+                      <div
+                        key={photo.previewUrl}
+                        className="relative h-14 w-18 shrink-0 overflow-hidden rounded-lg border-2 border-white/20"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={photo.previewUrl}
+                          alt="Captured"
+                          className="h-full w-full object-cover"
+                        />
+
+                        {photo.uploading && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                            <FaSpinner className="animate-spin text-sm text-white" />
+                          </div>
+                        )}
+
+                        {photo.error && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-red-900/70">
+                            <span className="text-[8px] text-white">!</span>
+                          </div>
+                        )}
+
+                        {!photo.uploading && !photo.error && photo.blobUrl && (
+                          <div className="absolute bottom-0.5 left-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-green-500">
+                            <span className="text-[7px] font-bold text-white">
+                              ✓
+                            </span>
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemove(photo.previewUrl)}
+                          className="absolute right-0.5 top-0.5 cursor-pointer rounded-full bg-red-500/90 p-0.5 transition hover:bg-red-600"
+                          aria-label="Remove photo"
+                        >
+                          <MdDeleteOutline className="text-[10px] text-white" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Photo preview strip */}
-            {capturedPhotos.length > 0 && (
-              <div className="border-t border-white/10 bg-black/90 px-3 py-2">
-                <div
-                  ref={previewStripRef}
-                  className="flex gap-2 overflow-x-auto"
-                >
-                  {capturedPhotos.map((photo) => (
-                    <div
-                      key={photo.previewUrl}
-                      className="relative h-16 w-20 shrink-0 overflow-hidden rounded-lg border-2 border-white/20"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={photo.previewUrl}
-                        alt="Captured"
-                        className="h-full w-full object-cover"
-                      />
-
-                      {photo.uploading && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                          <FaSpinner className="animate-spin text-sm text-white" />
-                        </div>
-                      )}
-
-                      {photo.error && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-red-900/70">
-                          <span className="text-[8px] text-white">!</span>
-                        </div>
-                      )}
-
-                      {!photo.uploading && !photo.error && photo.blobUrl && (
-                        <div className="absolute bottom-0.5 left-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-green-500">
-                          <span className="text-[7px] font-bold text-white">
-                            ✓
-                          </span>
-                        </div>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => handleRemove(photo.previewUrl)}
-                        className="absolute right-0.5 top-0.5 cursor-pointer rounded-full bg-red-500/90 p-0.5 transition hover:bg-red-600"
-                        aria-label="Remove photo"
-                      >
-                        <MdDeleteOutline className="text-[10px] text-white" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Bottom controls */}
-            <div className="safe-area-bottom flex items-center justify-center bg-black px-8 py-5">
-              {/* Shutter button */}
+            {/* Shutter button panel — bottom in portrait, side in landscape */}
+            <div
+              className={
+                orientation === "portrait"
+                  ? "safe-area-bottom absolute bottom-0 left-0 right-0 flex items-center justify-center pb-5 pt-3"
+                  : orientation === "landscape-left"
+                    ? "absolute right-0 top-0 bottom-0 flex w-24 items-center justify-center"
+                    : "absolute left-0 top-0 bottom-0 flex w-24 items-center justify-center"
+              }
+              style={orientation === "portrait" ? { bottom: capturedPhotos.length > 0 ? "5.5rem" : 0 } : undefined}
+            >
               <button
                 type="button"
                 onClick={handleCapture}
@@ -369,16 +425,6 @@ export default function VehiclePhotoCapture({
                 <span className="block h-full w-full rounded-full bg-white" />
               </button>
             </div>
-
-            {/* Photo count badge */}
-            {capturedPhotos.length > 0 && (
-              <div className="absolute bottom-24 left-1/2 -translate-x-1/2">
-                <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
-                  {capturedPhotos.length} photo
-                  {capturedPhotos.length !== 1 ? "s" : ""}
-                </span>
-              </div>
-            )}
           </div>,
           document.body
         )}

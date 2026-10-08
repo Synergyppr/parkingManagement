@@ -651,18 +651,30 @@ export default function ValetTicketList({
                       </p>
                     </div>
 
-                    {/* Key Slot badge */}
-                    {vehicle?.keySlotLabel && (
-                      <div className="mb-2 flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-1.5">
-                        <span className="text-base">🔑</span>
-                        <p className="truncate text-xs font-bold text-amber-700">
-                          Slot {vehicle.keySlotLabel}
-                          {vehicle.keyHubName && (
-                            <span className="ml-1 font-semibold text-amber-500">
-                              · {vehicle.keyHubName}
-                            </span>
-                          )}
-                        </p>
+                    {/* Key Slot badge + Employee name */}
+                    {(vehicle?.keySlotLabel || vehicle?.createdByFullName) && (
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        {vehicle?.keySlotLabel && (
+                          <div className="flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-1.5">
+                            <span className="text-base">🔑</span>
+                            <p className="truncate text-xs font-bold text-amber-700">
+                              Slot {vehicle.keySlotLabel}
+                              {vehicle.keyHubName && (
+                                <span className="ml-1 font-semibold text-amber-500">
+                                  · {vehicle.keyHubName}
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        )}
+                        {vehicle?.createdByFullName && (
+                          <div className="flex items-center gap-1.5 rounded-xl bg-blue-50 px-3 py-1.5">
+                            <span className="text-xs text-blue-400">👤</span>
+                            <p className="truncate text-xs font-semibold capitalize text-blue-600">
+                              {vehicle.createdByFullName}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
 

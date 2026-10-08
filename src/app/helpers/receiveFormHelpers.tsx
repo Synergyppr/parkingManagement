@@ -384,11 +384,23 @@ export const fetchUserDataByPhone = async (
     const vehicles: Vehicle[] = rawVehicles.map(
       (v: Record<string, unknown>) => {
         // Resolve make: prefer makeId, fall back to make (could be name or ID)
-        const makeId = resolveToId(v.makeId ?? v.make, brandsFlat);
+        let makeId = resolveToId(v.makeId ?? v.make, brandsFlat);
 
         // Resolve model: needs brand context to find the correct model list
         const brand = carBrands?.find((b) => b.id === parseInt(makeId || "0"));
-        const modelId = resolveToId(v.modelId ?? v.model, brand?.models);
+        let modelId = resolveToId(v.modelId ?? v.model, brand?.models);
+
+        // Fallback: if model not found under the resolved brand, search all brands
+        if (!modelId && (v.modelId || v.model)) {
+          for (const b of carBrands || []) {
+            const fallback = resolveToId(v.modelId ?? v.model, b.models);
+            if (fallback) {
+              modelId = fallback;
+              makeId = String(b.id);
+              break;
+            }
+          }
+        }
 
         return {
           id: String(v.id || ""),

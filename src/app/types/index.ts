@@ -60,6 +60,7 @@ export interface Ticket {
   keyColumnOrder?: number | null;
   transactionTypeId?: number | null;
   price?: number | null;
+  createdByFullName?: string | null;
 }
 
 export interface CarBrand {

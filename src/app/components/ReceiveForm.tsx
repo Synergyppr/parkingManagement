@@ -109,6 +109,7 @@ export default function ReceiveForm({
   const [anprLoading, setAnprLoading] = useState(false);
   const [anprAnalyzed, setAnprAnalyzed] = useState(false);
   const [anprError, setAnprError] = useState(false);
+  const [manualEntry, setManualEntry] = useState(false);
 
   useEffect(() => {
     generateTicketNumber({ setForm });
@@ -660,159 +661,182 @@ export default function ReceiveForm({
                     </section>
                   )}
 
-                  {/* Vehicle Photos + ANPR Detection */}
+                  {/* Manual Entry Toggle */}
                   <section>
-                    <h3 className="mb-5 border-l-4 border-primary pl-3 font-serif text-lg font-bold text-slate-900">
-                      Vehicle Photos
-                    </h3>
-
-                    {/* Previous photos from patron history */}
-                    {selectedVehiclePhotos.length > 0 && (
-                      <div className="border border-gray-200 rounded-xl bg-gray-50 p-3 mb-3">
-                        <div className="flex items-center gap-2 mb-3">
-                          <IoImagesOutline className="text-primary text-lg" />
-                          <span className="text-sm font-medium text-gray-700">
-                            Previous Photos
-                          </span>
-                          <span className="bg-(--primary-soft) text-primary text-xs rounded-full px-1.5 py-0.5 font-semibold">
-                            {selectedVehiclePhotos.length}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                          {selectedVehiclePhotos.map((photo) => (
-                            <div
-                              key={photo.id}
-                              className="relative rounded-lg overflow-hidden aspect-video bg-black border border-gray-200"
-                            >
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={photo.url}
-                                alt="Previous vehicle photo"
-                                className="w-full h-full object-cover"
-                              />
-                              {photo.createdDateTime && (
-                                <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1.5 py-0.5">
-                                  <p className="text-white text-[9px] truncate">
-                                    {new Date(
-                                      photo.createdDateTime
-                                    ).toLocaleDateString()}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <VehiclePhotoCapture
-                      photos={photos}
-                      onPhotoUrlsChange={setPhotos}
-                      onRawPhotoCapture={analyzeVehiclePhoto}
-                    />
-
-                    {/* ANPR Loading */}
-                    {anprLoading && (
-                      <div className="mt-4 flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-300 border-t-blue-600" />
-                        <span className="text-sm font-medium text-blue-700">
-                          Analyzing vehicle...
+                    <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={manualEntry}
+                        onChange={(e) => setManualEntry(e.target.checked)}
+                        className="h-4 w-4 accent-orange-500"
+                      />
+                      <div>
+                        <span className="text-sm font-semibold text-orange-800">
+                          Enter vehicle info manually
+                        </span>
+                        <span className="block text-[11px] text-orange-600">
+                          Use only if the camera is unavailable
                         </span>
                       </div>
-                    )}
+                    </label>
+                  </section>
 
-                    {/* ANPR Results */}
-                    {anprResult && !anprLoading && (
-                      <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="text-sm font-bold text-green-800">
-                            Vehicle Detected
-                          </h4>
+                  {/* Vehicle Photos + ANPR Detection — hidden when manual entry is on */}
+                  {!manualEntry && (
+                    <section>
+                      <h3 className="mb-5 border-l-4 border-primary pl-3 font-serif text-lg font-bold text-slate-900">
+                        Vehicle Photos
+                      </h3>
+
+                      {/* Previous photos from patron history */}
+                      {selectedVehiclePhotos.length > 0 && (
+                        <div className="border border-gray-200 rounded-xl bg-gray-50 p-3 mb-3">
+                          <div className="flex items-center gap-2 mb-3">
+                            <IoImagesOutline className="text-primary text-lg" />
+                            <span className="text-sm font-medium text-gray-700">
+                              Previous Photos
+                            </span>
+                            <span className="bg-(--primary-soft) text-primary text-xs rounded-full px-1.5 py-0.5 font-semibold">
+                              {selectedVehiclePhotos.length}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                            {selectedVehiclePhotos.map((photo) => (
+                              <div
+                                key={photo.id}
+                                className="relative rounded-lg overflow-hidden aspect-video bg-black border border-gray-200"
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={photo.url}
+                                  alt="Previous vehicle photo"
+                                  className="w-full h-full object-cover"
+                                />
+                                {photo.createdDateTime && (
+                                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1.5 py-0.5">
+                                    <p className="text-white text-[9px] truncate">
+                                      {new Date(
+                                        photo.createdDateTime
+                                      ).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <VehiclePhotoCapture
+                        photos={photos}
+                        onPhotoUrlsChange={setPhotos}
+                        onRawPhotoCapture={analyzeVehiclePhoto}
+                      />
+
+                      {/* ANPR Loading */}
+                      {anprLoading && (
+                        <div className="mt-4 flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+                          <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-300 border-t-blue-600" />
+                          <span className="text-sm font-medium text-blue-700">
+                            Analyzing vehicle...
+                          </span>
+                        </div>
+                      )}
+
+                      {/* ANPR Results */}
+                      {anprResult && !anprLoading && (
+                        <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-sm font-bold text-green-800">
+                              Vehicle Detected
+                            </h4>
+                            <button
+                              type="button"
+                              onClick={handleReanalyze}
+                              className="text-xs font-medium text-green-600 hover:text-green-800 underline cursor-pointer"
+                            >
+                              Re-analyze
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {[
+                              {
+                                label: "Make",
+                                value: anprResult.raw.brand,
+                                matched: !!anprResult.makeId,
+                                confidence: anprResult.confidence.brand,
+                              },
+                              {
+                                label: "Model",
+                                value: anprResult.raw.model,
+                                matched: !!anprResult.modelId,
+                                confidence: anprResult.confidence.model,
+                              },
+                              {
+                                label: "Type",
+                                value: anprResult.raw.type,
+                                matched: !!anprResult.typeId,
+                                confidence: anprResult.confidence.type,
+                              },
+                              {
+                                label: "Color",
+                                value: anprResult.raw.color,
+                                matched: !!anprResult.colorId,
+                                confidence: null,
+                              },
+                            ].map((item) => (
+                              <div
+                                key={item.label}
+                                className={`rounded-lg px-3 py-2 text-sm ${
+                                  item.matched
+                                    ? "bg-green-100 text-green-900"
+                                    : "bg-yellow-100 text-yellow-900"
+                                }`}
+                              >
+                                <span className="block text-[10px] font-bold uppercase tracking-wide opacity-60">
+                                  {item.label}
+                                </span>
+                                <span className="font-semibold capitalize">
+                                  {item.value || "Not detected"}
+                                </span>
+                                {item.confidence !== null && item.confidence !== undefined && (
+                                  <span className="ml-1 text-[10px] opacity-60">
+                                    ({Math.round(item.confidence * 100)}%)
+                                  </span>
+                                )}
+                                {!item.matched && item.value && (
+                                  <span className="block text-[9px] text-yellow-700 mt-0.5">
+                                    No match found — select manually below
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ANPR Error */}
+                      {anprError && !anprLoading && (
+                        <div className="mt-4 rounded-xl border border-yellow-200 bg-yellow-50 p-4">
+                          <p className="text-sm font-medium text-yellow-800">
+                            Could not detect vehicle details. Please enter them
+                            manually or take another photo.
+                          </p>
                           <button
                             type="button"
                             onClick={handleReanalyze}
-                            className="text-xs font-medium text-green-600 hover:text-green-800 underline cursor-pointer"
+                            className="mt-2 text-xs font-medium text-yellow-600 hover:text-yellow-800 underline cursor-pointer"
                           >
-                            Re-analyze
+                            Try again with next photo
                           </button>
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          {[
-                            {
-                              label: "Make",
-                              value: anprResult.raw.brand,
-                              matched: !!anprResult.makeId,
-                              confidence: anprResult.confidence.brand,
-                            },
-                            {
-                              label: "Model",
-                              value: anprResult.raw.model,
-                              matched: !!anprResult.modelId,
-                              confidence: anprResult.confidence.model,
-                            },
-                            {
-                              label: "Type",
-                              value: anprResult.raw.type,
-                              matched: !!anprResult.typeId,
-                              confidence: anprResult.confidence.type,
-                            },
-                            {
-                              label: "Color",
-                              value: anprResult.raw.color,
-                              matched: !!anprResult.colorId,
-                              confidence: null,
-                            },
-                          ].map((item) => (
-                            <div
-                              key={item.label}
-                              className={`rounded-lg px-3 py-2 text-sm ${
-                                item.matched
-                                  ? "bg-green-100 text-green-900"
-                                  : "bg-yellow-100 text-yellow-900"
-                              }`}
-                            >
-                              <span className="block text-[10px] font-bold uppercase tracking-wide opacity-60">
-                                {item.label}
-                              </span>
-                              <span className="font-semibold capitalize">
-                                {item.value || "Not detected"}
-                              </span>
-                              {item.confidence !== null && item.confidence !== undefined && (
-                                <span className="ml-1 text-[10px] opacity-60">
-                                  ({Math.round(item.confidence * 100)}%)
-                                </span>
-                              )}
-                              {!item.matched && item.value && (
-                                <span className="block text-[9px] text-yellow-700 mt-0.5">
-                                  No match found — select manually below
-                                </span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                      )}
+                    </section>
+                  )}
 
-                    {/* ANPR Error */}
-                    {anprError && !anprLoading && (
-                      <div className="mt-4 rounded-xl border border-yellow-200 bg-yellow-50 p-4">
-                        <p className="text-sm font-medium text-yellow-800">
-                          Could not detect vehicle details. Please enter them
-                          manually or take another photo.
-                        </p>
-                        <button
-                          type="button"
-                          onClick={handleReanalyze}
-                          className="mt-2 text-xs font-medium text-yellow-600 hover:text-yellow-800 underline cursor-pointer"
-                        >
-                          Try again with next photo
-                        </button>
-                      </div>
-                    )}
-                  </section>
-
-                  {/* Manual Vehicle Selectors — shown when ANPR didn't match all fields */}
-                  {(anprError ||
+                  {/* Manual Vehicle Selectors — shown when manual entry is on OR ANPR didn't match all fields */}
+                  {(manualEntry ||
+                    anprError ||
                     (anprAnalyzed &&
                       anprResult &&
                       (!anprResult.makeId ||
@@ -820,15 +844,17 @@ export default function ReceiveForm({
                         !anprResult.typeId ||
                         !anprResult.colorId))) && (
                     <section>
-                      <h3 className="mb-5 border-l-4 border-yellow-400 pl-3 font-serif text-lg font-bold text-slate-900">
-                        Complete Vehicle Details
+                      <h3 className={`mb-5 border-l-4 pl-3 font-serif text-lg font-bold text-slate-900 ${manualEntry ? "border-orange-400" : "border-yellow-400"}`}>
+                        {manualEntry ? "Vehicle Details" : "Complete Vehicle Details"}
                       </h3>
-                      <p className="text-xs text-slate-500 mb-4">
-                        Some fields could not be auto-detected. Please select
-                        manually.
-                      </p>
+                      {!manualEntry && (
+                        <p className="text-xs text-slate-500 mb-4">
+                          Some fields could not be auto-detected. Please select
+                          manually.
+                        </p>
+                      )}
                       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                        {(!anprResult?.makeId || anprError) && (
+                        {(manualEntry || !anprResult?.makeId || anprError) && (
                           <FormInput
                             name="make"
                             value={form?.make || ""}
@@ -838,7 +864,7 @@ export default function ReceiveForm({
                             options={carBrands}
                           />
                         )}
-                        {(!anprResult?.modelId || anprError) && (
+                        {(manualEntry || !anprResult?.modelId || anprError) && (
                           <FormInput
                             name="model"
                             value={form?.model || ""}
@@ -848,7 +874,7 @@ export default function ReceiveForm({
                             options={models}
                           />
                         )}
-                        {(!anprResult?.typeId || anprError) && (
+                        {(manualEntry || !anprResult?.typeId || anprError) && (
                           <FormInput
                             name="type"
                             value={form?.type || ""}
@@ -858,7 +884,7 @@ export default function ReceiveForm({
                             options={vehicleTypes}
                           />
                         )}
-                        {(!anprResult?.colorId || anprError) && (
+                        {(manualEntry || !anprResult?.colorId || anprError) && (
                           <FormInput
                             name="color"
                             value={form?.color || ""}

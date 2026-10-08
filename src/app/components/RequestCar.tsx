@@ -91,6 +91,16 @@ const RequestCar = () => {
   // const [onlineTip, setOnlineTip] = useState(0);
   const paymentVerifiedRef = useRef(false);
 
+  // Hidden rate editor state (triple-tap on status badge)
+  const [editingRate, setEditingRate] = useState(false);
+  const [rateAmount, setRateAmount] = useState("");
+  const [rateTransactionTypeId, setRateTransactionTypeId] = useState("");
+  const [ratePin, setRatePin] = useState("");
+  const [showRatePin, setShowRatePin] = useState(false);
+  const [savingRate, setSavingRate] = useState(false);
+  const statusTapCountRef = useRef(0);
+  const statusTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const idFromUrl = searchParams.get("ticket");
   const paymentReturn = searchParams.get("payment");
   const { registerNotificationHandler } = useSignalR();
@@ -487,6 +497,81 @@ const RequestCar = () => {
   //   }
   // };
 
+  const handleStatusTap = () => {
+    const status = vehicleData?.status;
+    if (status !== "parked" && status !== "requested") return;
+
+    statusTapCountRef.current += 1;
+
+    if (statusTapTimerRef.current) clearTimeout(statusTapTimerRef.current);
+
+    statusTapTimerRef.current = setTimeout(() => {
+      statusTapCountRef.current = 0;
+    }, 1200);
+
+    if (statusTapCountRef.current >= 3) {
+      statusTapCountRef.current = 0;
+      setRateAmount("");
+      setRateTransactionTypeId("");
+      setRatePin("");
+      setShowRatePin(false);
+      setEditingRate((prev) => !prev);
+    }
+  };
+
+  const handleSaveRate = async () => {
+    setSavingRate(true);
+    const isCustom = rateTransactionTypeId === "other";
+
+    const payload = {
+      ticketId,
+      propertyId: vehicleData?.propertyId || propertyId || "",
+      latitude: 0,
+      longitude: 0,
+      status: vehicleData?.status || "parked",
+      isUserUpdate: false,
+      transactionTypeId: isCustom ? 0 : parseInt(rateTransactionTypeId),
+      price: parseFloat(rateAmount),
+      pin: ratePin,
+    };
+
+    try {
+      const res = await fetch("/api/vehicleStatus", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (data?.result?.status === "200") {
+        setEditingRate(false);
+        Swal.fire({
+          icon: "success",
+          title: "Rate Updated",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: data?.result?.message || "Failed to update rate.",
+          confirmButtonColor: "var(--primary)",
+        });
+      }
+    } catch (error) {
+      console.error("Rate update error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Something went wrong. Please try again.",
+        confirmButtonColor: "var(--primary)",
+      });
+    } finally {
+      setSavingRate(false);
+    }
+  };
+
   const handleMouseEnter = (starIndex: number) => {
     if (submitted) return;
     setHoveredStars(starIndex + 1);
@@ -733,7 +818,10 @@ const RequestCar = () => {
                   </h3>
                 </div>
 
-                <span className="rounded-full bg-(--primary-soft) px-3 py-1 text-xs font-extrabold capitalize text-primary ring-1 ring-(--primary-light)">
+                <span
+                  onClick={handleStatusTap}
+                  className="cursor-default select-none rounded-full bg-(--primary-soft) px-3 py-1 text-xs font-extrabold capitalize text-primary ring-1 ring-(--primary-light)"
+                >
                   {vehicleData?.status}
                 </span>
               </div>
@@ -744,6 +832,129 @@ const RequestCar = () => {
                 lastUpdated={vehicleData?.lastUpdated}
                 canRequestVehicle={vehicleData?.canRequestVehicle !== false}
               />
+
+              {/* Hidden rate editor — triple-tap on status badge */}
+              {editingRate && (
+                <div className="mt-4 rounded-2xl border border-primary/20 bg-white p-4 shadow-sm">
+                  <div className="mb-4 flex items-center justify-between">
+                    <p className="text-xs font-bold uppercase tracking-wider text-primary">
+                      Edit Rate
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setEditingRate(false)}
+                      className="cursor-pointer text-xs font-semibold text-slate-400 hover:text-red-500 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {/* Rate type */}
+                    <div>
+                      <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Rate Type
+                      </label>
+                      <select
+                        value={rateTransactionTypeId}
+                        onChange={(e) => {
+                          setRateTransactionTypeId(e.target.value);
+                          if (e.target.value === "other") {
+                            setRateAmount("");
+                          } else {
+                            const selected = transactionTypes.find(
+                              (t) => String(t.id) === e.target.value
+                            );
+                            if (selected)
+                              setRateAmount(String(selected.value));
+                          }
+                        }}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                      >
+                        <option value="">Select rate type...</option>
+                        {transactionTypes.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name} - ${Number(t.value).toFixed(2)}
+                          </option>
+                        ))}
+                        <option value="other">Other (Custom)</option>
+                      </select>
+                    </div>
+
+                    {/* Amount */}
+                    <div>
+                      <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Amount
+                      </label>
+                      <div className="relative">
+                        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">
+                          $
+                        </span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={rateAmount}
+                          onChange={(e) => setRateAmount(e.target.value)}
+                          placeholder="0.00"
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-8 pr-4 text-sm font-medium text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                        />
+                      </div>
+                    </div>
+
+                    {/* PIN */}
+                    <div>
+                      <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Authorization PIN
+                        <span className="ml-1 normal-case tracking-normal text-red-400">
+                          (required)
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showRatePin ? "text" : "password"}
+                          inputMode="numeric"
+                          maxLength={4}
+                          value={ratePin}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^\d{0,4}$/.test(val)) setRatePin(val);
+                          }}
+                          placeholder="4-digit PIN"
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pr-12 text-sm font-medium text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowRatePin(!showRatePin)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-xs font-semibold text-slate-400 hover:text-primary"
+                        >
+                          {showRatePin ? "Hide" : "Show"}
+                        </button>
+                      </div>
+                      <p className="mt-1 text-[10px] text-slate-400">
+                        PIN of the employee authorizing this rate change.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex justify-end">
+                    <button
+                      type="button"
+                      disabled={
+                        savingRate ||
+                        !ratePin ||
+                        ratePin.length !== 4 ||
+                        !rateTransactionTypeId ||
+                        !rateAmount
+                      }
+                      onClick={handleSaveRate}
+                      className="cursor-pointer rounded-xl bg-primary px-5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {savingRate ? "Saving..." : "Save Rate Change"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </section>
 
             {/* Payment Result — temporarily disabled
