@@ -2295,12 +2295,12 @@ export default function TicketDetailsModal({
                           </div>
                           <p className="text-sm font-extrabold text-slate-950">
                             ${trx.amount?.toFixed(2) ?? "0.00"}
-                            {detail?.tipAmount ? (
-                              <span className="ml-2 text-xs font-semibold text-slate-500">
-                                + ${detail.tipAmount.toFixed(2)} tip
-                              </span>
-                            ) : null}
                           </p>
+                          {(trx.tip ?? detail?.tipAmount) ? (
+                            <p className="mt-1 text-xs font-semibold text-slate-500">
+                              + ${(trx.tip ?? detail?.tipAmount ?? 0).toFixed(2)} tip
+                            </p>
+                          ) : null}
                         </div>
                       </div>
 

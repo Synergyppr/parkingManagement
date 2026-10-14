@@ -202,6 +202,7 @@ export interface TicketTransaction {
   id?: string;
   transaction_type?: string;
   amount?: number;
+  tip?: number;
   payment_method?: string;
   transaction_date_time?: string;
   application_id?: string;
