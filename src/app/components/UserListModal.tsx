@@ -10,6 +10,7 @@ import { formatDateOfBirth } from "../lib/clientUtils";
 
 interface Props {
   tenantId?: string;
+  propertyId?: string;
   users: UserForm[] | null;
   onClose: () => void;
   isOpen: boolean;
@@ -18,6 +19,7 @@ interface Props {
 
 export default function UserListModal({
   tenantId,
+  propertyId,
   users,
   isOpen,
   onClose,
@@ -237,6 +239,7 @@ export default function UserListModal({
       >
         <UserFormComponent
           tenantId={tenantId as string}
+          propertyId={propertyId as string}
           data={selectedUser as UserForm}
           setModalOpen={(isOpen) => {
             if (!isOpen) handleCloseModal();
