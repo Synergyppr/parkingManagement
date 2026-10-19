@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { GoDotFill } from "react-icons/go";
 import { BiCurrentLocation } from "react-icons/bi";
-import { PiWarningDiamondBold } from "react-icons/pi";
+
 import { MdClose } from "react-icons/md";
 
 import useAuthRedirect from "../hooks/loginHook";
@@ -246,7 +246,6 @@ export default function Header() {
     propertyName,
     setPropertyName,
     locationMode,
-    requestLocation,
     primaryColor,
     setPrimaryColor,
     secondaryColor,
@@ -258,7 +257,7 @@ export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openLocationModal, setOpenLocationModal] = useState(false);
-  const [isOutOfArea, setIsOutOfArea] = useState(false);
+
   const [showLocationToggle, setShowLocationToggle] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [accountIdentity, setAccountIdentity] = useState<AccountIdentity>(
@@ -384,15 +383,6 @@ export default function Header() {
     };
   }, [isAccountMenuOpen]);
 
-  useEffect(() => {
-    setIsOutOfArea(!propertyId);
-  }, [propertyId, propertyName, locationMode]);
-
-  useEffect(() => {
-    requestLocation();
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     const keysPressed: string[] = [];
@@ -907,29 +897,6 @@ export default function Header() {
           document.body
         )}
 
-      {!openLocationModal && isOutOfArea && (
-        <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-slate-950/75 p-4 text-center text-white backdrop-blur-sm">
-          <div
-            className="pointer-events-auto w-full max-w-md rounded-4xl border border-white/10 bg-white/10 px-6 py-8 shadow-[0_30px_90px_rgba(0,0,0,0.35)]
-            backdrop-blur-xl sm:px-8 sm:py-10"
-          >
-            <div
-              className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--primary)_18%,transparent)] ring-1
-              ring-[color-mix(in_srgb,var(--primary-light)_42%,transparent)] transition-colors duration-300 sm:h-20 sm:w-20"
-            >
-              <PiWarningDiamondBold className="h-9 w-9 text-(--primary-light) transition-colors duration-300 sm:h-11 sm:w-11" />
-            </div>
-
-            <h2 className="mb-2 font-serif text-xl font-bold sm:text-2xl">
-              You are not inside any of our properties
-            </h2>
-
-            <p className="text-sm leading-6 text-slate-200">
-              Please return to the designated property location.
-            </p>
-          </div>
-        </div>
-      )}
     </>
   );
 }

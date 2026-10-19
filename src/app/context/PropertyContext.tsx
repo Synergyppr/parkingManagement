@@ -1,6 +1,7 @@
 // PropertyContext.tsx
 
 "use client";
+import { getPropertyById } from "../lib/propertyMap";
 import {
   createContext,
   useContext,
@@ -69,7 +70,7 @@ const PropertyContext = createContext<PropertyContextType>({
   setLongitude: () => {},
   setPredefinedProperties: () => {},
   setIsOutOfArea: () => {},
-  locationMode: "live",
+  locationMode: "manual",
   setLocationMode: () => {},
   requestLocation: () => {},
   accountUser: undefined,
@@ -90,22 +91,8 @@ export const PropertyProvider = ({
   const [propertyName, setPropertyName] = useState<string | null>(null);
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
-  const [radius, ] = useState<number | null>(null);
-  const [isActive, ] = useState(true);
-  const [locationMode, setLocationModeState] = useState<"live" | "manual">(() => {
-    if (typeof window === "undefined") return "live";
-    const stored = localStorage.getItem("locationMode");
-    return stored === "manual" ? "manual" : "live";
-  });
-
-  const setLocationMode = (mode: "live" | "manual") => {
-    setLocationModeState(mode);
-    localStorage.setItem("locationMode", mode);
-    if (mode === "live") {
-      localStorage.removeItem("manualLatitude");
-      localStorage.removeItem("manualLongitude");
-    }
-  };
+  const [radius] = useState<number | null>(null);
+  const [isActive] = useState(true);
   const [predefinedProperties, setPredefinedProperties] = useState<
     Record<string, Property>
   >({});
@@ -117,7 +104,6 @@ export const PropertyProvider = ({
     if (typeof window === "undefined") return "";
     return localStorage.getItem("themeColors_secondary") || "";
   });
-  const [isOutOfArea, setIsOutOfArea] = useState<boolean>(false);
 
   // Persist colors to localStorage so the inline script in layout.tsx
   // can restore them before React hydrates (prevents color flash)
@@ -141,7 +127,7 @@ export const PropertyProvider = ({
         lng: prop.lng,
         radius: prop.radius,
         primaryColor: prop.primaryColor,
-        secondaryColor: prop.secondaryColor
+        secondaryColor: prop.secondaryColor,
       };
       return acc;
     }, {} as Record<string, Property>);
@@ -163,7 +149,14 @@ export const PropertyProvider = ({
     const storedRole =
       sessionStorage.getItem("userRole") || localStorage.getItem("userRole");
     if (storedRole) setUserRole(storedRole);
-    if (storedId) setPropertyId(storedId);
+    if (storedId) {
+      setPropertyId(storedId);
+      const config = getPropertyById(storedId);
+      if (config) {
+        setLatitude(config.latitude);
+        setLongitude(config.longitude);
+      }
+    }
     if (storedName) setPropertyName(storedName);
 
     if (storedProperties) {
@@ -174,39 +167,10 @@ export const PropertyProvider = ({
         console.error("Error parsing stored properties:", error);
       }
     }
-
-    // Restore manual coordinates on mount if in manual mode
-    const storedMode = localStorage.getItem("locationMode");
-    if (storedMode === "manual") {
-      const manualLat = localStorage.getItem("manualLatitude");
-      const manualLng = localStorage.getItem("manualLongitude");
-      if (manualLat && manualLng) {
-        setLatitude(parseFloat(manualLat));
-        setLongitude(parseFloat(manualLng));
-      }
-    }
   }, []);
 
   const requestLocation = () => {
-    // console.log("[GEO-DEBUG] requestLocation called");
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          // console.log("[GEO-DEBUG] Browser position received:", {
-          //   latitude: position.coords.latitude,
-          //   longitude: position.coords.longitude,
-          //   accuracy: position.coords.accuracy,
-          // });
-          setLatitude(position.coords.latitude);
-          setLongitude(position.coords.longitude);
-        },
-        (error) => {
-          console.error("[GEO-DEBUG] Geolocation error:", error.code, error.message);
-        }
-      );
-    } else {
-      console.error("[GEO-DEBUG] navigator.geolocation NOT available");
-    }
+    // No-op: coordinates are resolved from the property map
   };
 
   const handlePropertyId = (id: string | null) => {
@@ -214,6 +178,11 @@ export const PropertyProvider = ({
     if (id) {
       localStorage.setItem("propertyId", id);
       sessionStorage.setItem("propertyId", id);
+      const config = getPropertyById(id);
+      if (config) {
+        setLatitude(config.latitude);
+        setLongitude(config.longitude);
+      }
     } else {
       localStorage.removeItem("propertyId");
       sessionStorage.removeItem("propertyId");
@@ -231,16 +200,6 @@ export const PropertyProvider = ({
     }
   };
 
-  const handleSetIsOutOfArea = (value: boolean) => {
-    setIsOutOfArea(value);
-    // if (value) {
-    //   localStorage.removeItem("propertyId");
-    //   sessionStorage.removeItem("propertyId");
-    //   setPropertyId(null);
-    //   setPropertyName(null);
-    // }
-  };
-
   return (
     <PropertyContext.Provider
       value={{
@@ -256,15 +215,15 @@ export const PropertyProvider = ({
         setPrimaryColor,
         secondaryColor,
         setSecondaryColor,
-        isOutOfArea,
+        isOutOfArea: false,
         setPropertyId: handlePropertyId,
         setPropertyName: handlePropertyName,
         setLatitude,
         setLongitude,
         setPredefinedProperties: handleSetPredefinedProperties,
-        setIsOutOfArea: handleSetIsOutOfArea,
-        locationMode,
-        setLocationMode,
+        setIsOutOfArea: () => {},
+        locationMode: "manual",
+        setLocationMode: () => {},
         requestLocation,
         accountUser,
         setAccountUser,

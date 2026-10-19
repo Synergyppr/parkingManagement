@@ -157,15 +157,23 @@ export default function TransactionForm({
   const [splitPhase, setSplitPhase] = useState<"first" | "second" | "done">("first");
   const [splitFirstPaid, setSplitFirstPaid] = useState(0);
 
-  // Custom rate state
-  const isOtherCheckout = placeToVisit != null && parseLocationValue(placeToVisit) === null;
-  const [useCustomRate, setUseCustomRate] = useState(isOtherCheckout);
+  // Room Charge detection
+  const isRoomChargeCheckout =
+    placeToVisit != null &&
+    parseLocationName(placeToVisit).toLowerCase().startsWith("room charge");
+  const [roomChargeLoading, setRoomChargeLoading] = useState(false);
+
+  // Custom rate state — Room Charge also enters custom rate mode (pre-filled with $0)
+  const isOtherCheckout =
+    placeToVisit != null &&
+    parseLocationValue(placeToVisit) === null;
+  const [useCustomRate, setUseCustomRate] = useState(isOtherCheckout || isRoomChargeCheckout);
   const [otherName, setOtherName] = useState(() =>
     parseLocationName(placeToVisit) || ""
   );
   const [otherPrice, setOtherPrice] = useState("0.00");
   const [otherTaxable, setOtherTaxable] = useState(false);
-  const [showExistingRates, setShowExistingRates] = useState(!isOtherCheckout);
+  const [showExistingRates, setShowExistingRates] = useState(!isOtherCheckout && !isRoomChargeCheckout);
 
   // True when the user is using the custom rate card (either from "Other" or manually switched)
   const effectiveOther = useCustomRate;
@@ -176,9 +184,29 @@ export default function TransactionForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Matches a rate by parsed location name, with fallback for "Room Charge #305" → "Room Charge"
+  const findRateByLocationName = (name: string) => {
+    const direct = transactionTypes.find((t) => t.name === name);
+    if (direct) return direct;
+    if (name.includes(" #")) {
+      const baseName = name.split(" #")[0];
+      return transactionTypes.find((t) => t.name === baseName) || null;
+    }
+    return null;
+  };
+
   // Auto-select rate based on ticket data or placeToVisit when transaction types are loaded
   useEffect(() => {
     if (transactionTypes.length === 0 || form.paymentMethod) return;
+
+    // Room Charge: set up custom rate mode with pre-filled values
+    if (isRoomChargeCheckout) {
+      setUseCustomRate(true);
+      setOtherName(parseLocationName(placeToVisit) || "Room Charge");
+      setOtherPrice("0.00");
+      setShowExistingRates(false);
+      return;
+    }
 
     // Priority 1: Ticket has an explicitly set price (from creation or admin update)
     if (ticketPrice != null) {
@@ -189,7 +217,7 @@ export default function TransactionForm({
           : null;
       const matchByName =
         !matchById && placeToVisit
-          ? transactionTypes.find((t) => t.name === parseLocationName(placeToVisit))
+          ? findRateByLocationName(parseLocationName(placeToVisit))
           : null;
       const match = matchById || matchByName;
 
@@ -215,7 +243,7 @@ export default function TransactionForm({
     // Priority 2: Fallback to placeToVisit parsing (no ticketPrice set)
     if (!placeToVisit) return;
     const locationName = parseLocationName(placeToVisit);
-    const match = transactionTypes.find((t) => t.name === locationName);
+    const match = findRateByLocationName(locationName);
     if (match) {
       setForm((prev) => ({
         ...prev,
@@ -541,7 +569,7 @@ export default function TransactionForm({
         });
         return;
       }
-      if (parsed === 0 && (!form.notes || !form.notes.trim())) {
+      if (parsed === 0 && !isRoomChargeCheckout && (!form.notes || !form.notes.trim())) {
         Swal.fire({
           icon: "warning",
           title: "Notes Required",
@@ -560,7 +588,7 @@ export default function TransactionForm({
       return;
     }
 
-    if (!selectedPaymentMethod) {
+    if (!isRoomChargeCheckout && !selectedPaymentMethod) {
       Swal.fire({
         icon: "warning",
         title: "Missing Information",
@@ -587,6 +615,12 @@ export default function TransactionForm({
         text: "Ticket ID is missing. Please try again.",
         confirmButtonColor: getPrimaryThemeColor(),
       });
+      return;
+    }
+
+    // Room Charge: route through courtesy endpoint (no payment needed)
+    if (isRoomChargeCheckout) {
+      await handleRoomCharge();
       return;
     }
 
@@ -819,6 +853,90 @@ export default function TransactionForm({
     }
   };
 
+  const handleRoomCharge = async () => {
+    if (!form?.pin || form.pin.length !== 4) {
+      Swal.fire({
+        icon: "warning",
+        title: "PIN Required",
+        text: "Please enter your 4-digit PIN before continuing.",
+        confirmButtonColor: getPrimaryThemeColor(),
+      });
+      return;
+    }
+
+    const roomInfo = parseLocationName(placeToVisit) || "Room Charge";
+
+    const { isConfirmed } = await Swal.fire({
+      title: "Confirm Room Charge",
+      html: `<p class="text-sm text-gray-600">This ticket will be processed as <strong>${roomInfo}</strong>.</p>
+             <p class="text-sm text-gray-600 mt-2">No payment will be charged at the valet station.</p>`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Confirm Room Charge",
+      confirmButtonColor: getPrimaryThemeColor(),
+      cancelButtonText: "Cancel",
+    });
+
+    if (!isConfirmed) return;
+
+    setRoomChargeLoading(true);
+
+    try {
+      const resolvedLat = locationMode === "manual" ? latitude : ctxLatitude;
+      const resolvedLng = locationMode === "manual" ? longitude : ctxLongitude;
+
+      const res = await fetch("/api/valetTransaction/courtesy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ticketId,
+          reason: roomInfo,
+          givenBy: accountUser || "Unknown",
+          givenAt: new Date().toISOString(),
+          propertyId,
+          pin: form?.pin,
+          latitude: resolvedLat ?? 0,
+          longitude: resolvedLng ?? 0,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (result?.result?.status === "200") {
+        setOpen(false);
+        setReloadPageData(true);
+
+        Swal.fire({
+          icon: "success",
+          title: "Room Charge Applied",
+          html: `<p>${roomInfo}</p>
+                 <p class="text-sm text-gray-500 mt-1">Processed by: <strong>${accountUser || "Unknown"}</strong></p>`,
+          showConfirmButton: false,
+          timer: 3000,
+        });
+
+        resetForm();
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Room Charge Failed",
+          text: result?.result?.message || "Could not process room charge. Please try again.",
+          confirmButtonColor: getPrimaryThemeColor(),
+        });
+      }
+    } catch (error) {
+      console.error("Room Charge error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Something went wrong.",
+        confirmButtonColor: getPrimaryThemeColor(),
+      });
+    } finally {
+      setRoomChargeLoading(false);
+    }
+  };
+
   return (
     <div className="overflow-hidden bg-white">
       <form className="space-y-7 p-6" onSubmit={(e) => e.preventDefault()}>
@@ -860,7 +978,7 @@ export default function TransactionForm({
 
             {effectiveOther && (
               <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-extrabold text-amber-700">
-                Other
+                {isRoomChargeCheckout ? "Room Charge" : "Other"}
               </span>
             )}
           </div>
@@ -1282,7 +1400,7 @@ export default function TransactionForm({
         <section>
           <h3 className="mb-3 flex items-center gap-2 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-700">
             Internal Notes
-            {effectiveOther && otherPriceNum === 0 && (
+            {effectiveOther && otherPriceNum === 0 && !isRoomChargeCheckout && (
               <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-red-600 ring-1 ring-red-200">
                 Required
               </span>
@@ -1296,12 +1414,12 @@ export default function TransactionForm({
               setForm((prev) => ({ ...prev, notes: e.target.value }))
             }
             placeholder={
-              effectiveOther && otherPriceNum === 0
+              effectiveOther && otherPriceNum === 0 && !isRoomChargeCheckout
                 ? "Required — document why this ticket has no cost..."
                 : "Add any special handling instructions or transaction notes..."
             }
             className={`h-24 w-full resize-none rounded-2xl border bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-(--primary-soft) ${
-              effectiveOther && otherPriceNum === 0 && (!form.notes || !form.notes.trim())
+              effectiveOther && otherPriceNum === 0 && !isRoomChargeCheckout && (!form.notes || !form.notes.trim())
                 ? "border-red-300"
                 : "border-slate-200"
             }`}
@@ -1401,21 +1519,24 @@ export default function TransactionForm({
               type="button"
               disabled={
                 loader ||
+                roomChargeLoading ||
                 !propertyId ||
-                (!effectiveOther && !form?.paymentMethod) ||
-                !selectedPaymentMethod ||
+                (!isRoomChargeCheckout && !effectiveOther && !form?.paymentMethod) ||
+                (!isRoomChargeCheckout && !selectedPaymentMethod) ||
                 !form?.pin ||
                 form.pin.length !== 4
               }
               className="h-14 cursor-pointer rounded-2xl bg-primary px-10 text-sm font-extrabold text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition-all duration-300 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loader
+              {loader || roomChargeLoading
                 ? "Processing..."
-                : splitEnabled && splitPhase === "second"
-                  ? "Submit 2nd Payment"
-                  : splitEnabled && splitPhase === "first"
-                    ? "Submit 1st Payment"
-                    : "Submit Payment"}
+                : isRoomChargeCheckout
+                  ? "Submit Room Charge"
+                  : splitEnabled && splitPhase === "second"
+                    ? "Submit 2nd Payment"
+                    : splitEnabled && splitPhase === "first"
+                      ? "Submit 1st Payment"
+                      : "Submit Payment"}
             </button>
           </div>
         </div>

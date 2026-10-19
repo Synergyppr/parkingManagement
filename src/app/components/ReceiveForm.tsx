@@ -87,6 +87,7 @@ export default function ReceiveForm({
   >([]);
   const [transactionTypes, setTransactionTypes] = useState<RateEntry[]>([]);
   const [locationSelection, setLocationSelection] = useState("");
+  const [roomNumber, setRoomNumber] = useState("");
   const [selectedKeySlot, setSelectedKeySlot] = useState<KeySlot | null>(null);
   // const [manageModeOn, setManageModeOn] = useState<boolean>(false); // To manage and delete vehicles from the existing vehicles list
   const [, setManageVehicleSettings] = useState({
@@ -141,8 +142,9 @@ export default function ReceiveForm({
   ) => {
     const selected = e.target.value;
     setLocationSelection(selected);
+    setRoomNumber("");
 
-    if (selected === "Other") {
+    if (selected === "Other" || selected === "Room Charge") {
       setForm((prev: Partial<Ticket>) => ({ ...prev, placeToVisit: "" }));
     } else {
       setForm((prev: Partial<Ticket>) => ({
@@ -150,6 +152,19 @@ export default function ReceiveForm({
         placeToVisit: selected,
       }));
     }
+  };
+
+  const isRoomChargeSelected = locationSelection === "Room Charge";
+
+  const handleRoomNumberChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const room = e.target.value;
+    setRoomNumber(room);
+    setForm((prev: Partial<Ticket>) => ({
+      ...prev,
+      placeToVisit: room ? `Room Charge #${room}` : "",
+    }));
   };
 
   const analyzeVehiclePhoto = async (blob: Blob) => {
@@ -441,6 +456,15 @@ export default function ReceiveForm({
       }
     }
 
+    if (isRoomChargeSelected && !roomNumber.trim()) {
+      Swal.fire({
+        icon: "error",
+        title: "Room Number Required",
+        text: "Please enter the room number for Room Charge.",
+      });
+      return;
+    }
+
     if (!form?.pin) {
       Swal.fire({
         icon: "error",
@@ -613,6 +637,7 @@ export default function ReceiveForm({
                               name: t.name,
                             })),
                           { id: "Other", name: "Other" },
+                          { id: "Room Charge", name: "Room Charge" },
                         ]}
                       />
 
@@ -634,6 +659,23 @@ export default function ReceiveForm({
                               placeToVisit: "",
                             }))
                           }
+                        />
+                      )}
+
+                      {isRoomChargeSelected && (
+                        <FormInput
+                          name="roomNumber"
+                          placeholder="Room Number *"
+                          icon={<MdLocationPin />}
+                          value={roomNumber}
+                          onChange={handleRoomNumberChange}
+                          onClear={() => {
+                            setRoomNumber("");
+                            setForm((prev: Partial<Ticket>) => ({
+                              ...prev,
+                              placeToVisit: locationSelection,
+                            }));
+                          }}
                         />
                       )}
                     </div>
@@ -1230,6 +1272,23 @@ export default function ReceiveForm({
                                 placeToVisit: "",
                               }))
                             }
+                          />
+                        )}
+
+                        {isRoomChargeSelected && (
+                          <FormInput
+                            name="roomNumber"
+                            placeholder="Room Number *"
+                            icon={<MdLocationPin />}
+                            value={roomNumber}
+                            onChange={handleRoomNumberChange}
+                            onClear={() => {
+                              setRoomNumber("");
+                              setForm((prev: Partial<Ticket>) => ({
+                                ...prev,
+                                placeToVisit: locationSelection,
+                              }));
+                            }}
                           />
                         )}
 

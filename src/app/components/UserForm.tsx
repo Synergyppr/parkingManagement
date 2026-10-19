@@ -49,12 +49,14 @@ const fields: FormFieldConfig[] = [
 
 export default function UserFormWrapper({
   tenantId,
+  propertyId,
   originalData,
   data,
   refresh,
   setModalOpen = () => {},
 }: {
   tenantId: string;
+  propertyId: string;
   originalData?: UserForm;
   data?: UserForm;
   refresh: (id: string) => void;
@@ -122,6 +124,7 @@ export default function UserFormWrapper({
         setMissingFields,
         setButtonLoader,
         tenantId,
+        propertyId,
         setModalOpen,
         refresh
       );

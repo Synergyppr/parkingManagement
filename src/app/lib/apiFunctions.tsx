@@ -6,6 +6,8 @@ const CreateAndUpdateTenantEndpoint =
 const DeleteTenantEndpoint = process.env.DELETE_TENANT_ENDPOINT + "";
 // Users
 const GetUsersByTenantEndpoint = process.env.GET_USERS_BY_TENANT_ENDPOINT + "";
+const GetAllAppUsersByPropertyEndpoint =
+  process.env.GET_ALL_APP_USERS_BY_PROPERTY_ENDPOINT + "";
 const GetAppUserByIdEndpoint = process.env.GET_APP_USER_BY_ID_ENDPOINT + "";
 const CreateAndUpdateAppUserByEndpoint =
   process.env.CREATE_AND_UPDATE_APP_USER_BY_ENDPOINT + "";
@@ -118,6 +120,10 @@ const Endpoints = [
   {
     name: "Get Users By Tenant",
     endpoint: GetUsersByTenantEndpoint,
+  },
+  {
+    name: "Get All App Users By Property",
+    endpoint: GetAllAppUsersByPropertyEndpoint,
   },
   {
     name: "Get App User By ID",

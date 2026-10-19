@@ -271,7 +271,7 @@ const Report = () => {
   const [endDate, setEndDate] = useState(getPuertoRicoToday);
   const [kpis, setKpis] = useState<ReportKPIs>(DEFAULT_KPIS);
   const [allJournals, setAllJournals] = useState<JournalEntry[]>([]);
-  const [rateType, setRateType] = useState<"" | "customRate" | "noCharge">("");
+  const [rateType, setRateType] = useState<"" | "customRate" | "courtesy" | "roomCharge">("");
   const [activeTab, setActiveTab] = useState<"tickets" | "journals">(
     "tickets"
   );
@@ -314,7 +314,16 @@ const Report = () => {
       : journalTotalPages;
   const report = allTickets; // already paginated by server
 
+  const isRoomCharge = (entry: ReportEntry) =>
+    entry.placeToVisit?.toLowerCase().startsWith("room charge");
+
   const getReportData = async () => {
+    // Both "courtesy" and "roomCharge" are subsets of backend's "noCharge"
+    const apiRateType =
+      rateType === "courtesy" || rateType === "roomCharge"
+        ? "noCharge"
+        : rateType;
+
     const sendForm = {
       propertyId,
       startDate,
@@ -323,7 +332,7 @@ const Report = () => {
       pageSize,
       filters: {
         search: search?.trim() as string,
-        ...(rateType && { rateType }),
+        ...(apiRateType && { rateType: apiRateType }),
       },
     };
 
@@ -337,13 +346,31 @@ const Report = () => {
     const result = data?.result?.data;
 
     if (result) {
-      setAllTickets(result.tickets || []);
+      let tickets: ReportEntry[] = result.tickets || [];
+
+      // Client-side split: courtesy excludes Room Charge, roomCharge only includes Room Charge
+      if (rateType === "courtesy") {
+        tickets = tickets.filter((t) => !isRoomCharge(t));
+      } else if (rateType === "roomCharge") {
+        tickets = tickets.filter((t) => isRoomCharge(t));
+      }
+
+      setAllTickets(tickets);
       setAllJournals(result.journals || []);
       setKpis(result.kpis || DEFAULT_KPIS);
-      setServerPagination({
-        totalEntries: result.pagination?.totalEntries ?? 0,
-        totalPages: result.pagination?.totalPages ?? 1,
-      });
+
+      // Adjust pagination counts for client-filtered results
+      if (rateType === "courtesy" || rateType === "roomCharge") {
+        setServerPagination({
+          totalEntries: tickets.length,
+          totalPages: 1,
+        });
+      } else {
+        setServerPagination({
+          totalEntries: result.pagination?.totalEntries ?? 0,
+          totalPages: result.pagination?.totalPages ?? 1,
+        });
+      }
     } else {
       setAllTickets([]);
       setAllJournals([]);
@@ -383,7 +410,7 @@ const Report = () => {
     if (pageNumber < totalPages) setPageNumber(pageNumber + 1);
   };
 
-  const handleRateTypeChange = (value: "" | "customRate" | "noCharge") => {
+  const handleRateTypeChange = (value: "" | "customRate" | "courtesy" | "roomCharge") => {
     setRateType(value);
     setPageNumber(1);
   };
@@ -550,7 +577,9 @@ const Report = () => {
                   Results
                 </p>
                 <p className="text-xl font-black text-primary lg:text-2xl">
-                  {kpis.ticketCount}
+                  {rateType === "courtesy" || rateType === "roomCharge"
+                    ? serverPagination.totalEntries
+                    : kpis.ticketCount}
                 </p>
               </div>
             </div>
@@ -573,7 +602,8 @@ const Report = () => {
                 {([
                   { value: "" as const, label: "All" },
                   { value: "customRate" as const, label: "Custom Rate" },
-                  { value: "noCharge" as const, label: "No Charge" },
+                  { value: "courtesy" as const, label: "Courtesy" },
+                  { value: "roomCharge" as const, label: "Room Charge" },
                 ] as const).map((option) => (
                   <button
                     key={option.value}

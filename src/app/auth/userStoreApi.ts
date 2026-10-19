@@ -71,6 +71,7 @@ export const createAndUpdateUser = async (
   setMissingFields: React.Dispatch<React.SetStateAction<string[]>>,
   setButtonLoader: React.Dispatch<React.SetStateAction<boolean>>,
   tenantId: string,
+  propertyId: string,
   setModalOpen: (isOpen: boolean) => void,
   refresh: (tenantId: string) => void
 ) => {
@@ -115,6 +116,7 @@ export const createAndUpdateUser = async (
   const payload = {
     id: formData?.id || null,
     tenantId: tenantId || "",
+    propertyId: propertyId || "",
     role: formData?.role || 1,
     userName: formData?.userName?.trim(),
     pin: formData?.pin,

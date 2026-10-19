@@ -204,6 +204,42 @@ export const getUsersByTenant = async (
   }
 };
 
+export const getUsersByProperty = async (
+  propertyId: string,
+  setLoading: (loading: boolean) => void,
+  setInitialUsers: (users: UserFormType[]) => void,
+  setUsers: (users: UserFormType[]) => void,
+  setIsUserModalOpen: (isOpen: boolean) => void
+) => {
+  setLoading(true);
+  try {
+    const res = await fetch("/api/users/getUsersByProperty", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ propertyId }),
+    });
+
+    const data = await res.json();
+
+    const result = data?.result?.data;
+
+    setInitialUsers(result || []);
+    setUsers(result || []);
+    setIsUserModalOpen(true);
+    setLoading(false);
+  } catch (error) {
+    console.error("Error fetching users by property:", error);
+    setLoading(false);
+    Swal.fire({
+      icon: "error",
+      title: "Failed to fetch users",
+      text: "Please try again later.",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
 export const getUserById = async (
   userId: string,
   setLoading: (loading: boolean) => void,

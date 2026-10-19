@@ -1,5 +1,11 @@
 import jsPDF from "jspdf";
-import { ReportEntry, JournalEntry, ReportKPIs } from "../types";
+import {
+  ReportEntry,
+  JournalEntry,
+  ReportKPIs,
+  TipsReportEmployee,
+  TipsReportKPIs,
+} from "../types";
 import { parseLocationName } from "../lib/clientUtils";
 
 const PR_TIMEZONE = "America/Puerto_Rico";
@@ -378,4 +384,223 @@ export const exportTransactionsPdf = (
   }
 
   doc.save(`transaction-report_${startDate}_${endDate}.pdf`);
+};
+
+// ── Tips PDF ───────────────────────────────────────────────────────────────
+
+const drawTipsHeader = (
+  doc: jsPDF,
+  propertyName: string,
+  startDate: string,
+  endDate: string,
+  exportTimestamp: string,
+  kpis: TipsReportKPIs
+): number => {
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  // Title bar
+  doc.setFillColor(15, 23, 42);
+  doc.rect(0, 0, pageWidth, 36, "F");
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.text("Tips Report", MARGIN, 14);
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.text(propertyName, MARGIN, 24);
+
+  doc.text(`Exported: ${exportTimestamp}`, pageWidth - MARGIN, 14, {
+    align: "right",
+  });
+  doc.text(`Date Range: ${startDate} to ${endDate}`, pageWidth - MARGIN, 24, {
+    align: "right",
+  });
+
+  let y = 44;
+
+  const avgTip =
+    kpis.transactionsWithTips > 0
+      ? kpis.totalTips / kpis.transactionsWithTips
+      : 0;
+
+  // KPI row
+  const kpiWidth = (pageWidth - MARGIN * 2) / 4;
+  const kpiData = [
+    {
+      label: "TOTAL TIPS",
+      value: `$${kpis.totalTips.toFixed(2)}`,
+      color: [5, 150, 105],
+    },
+    {
+      label: "EMPLOYEES",
+      value: String(kpis.employeesWithTips),
+      color: [15, 23, 42],
+    },
+    {
+      label: "TRANSACTIONS",
+      value: String(kpis.transactionsWithTips),
+      color: [37, 99, 235],
+    },
+    {
+      label: "AVG TIP / TXN",
+      value: `$${avgTip.toFixed(2)}`,
+      color: [124, 58, 237],
+    },
+  ];
+
+  for (let i = 0; i < kpiData.length; i++) {
+    const kx = MARGIN + i * kpiWidth;
+
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.rect(kx + 2, y, kpiWidth - 4, 22, "FD");
+
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(100, 116, 139);
+    doc.text(kpiData[i].label, kx + 8, y + 9);
+
+    doc.setFontSize(12);
+    doc.setTextColor(
+      kpiData[i].color[0],
+      kpiData[i].color[1],
+      kpiData[i].color[2]
+    );
+    doc.text(kpiData[i].value, kx + 8, y + 18);
+  }
+
+  y += 30;
+  return y;
+};
+
+export const exportTipsPdf = (
+  employees: TipsReportEmployee[],
+  kpis: TipsReportKPIs,
+  propertyName: string,
+  startDate: string,
+  endDate: string
+) => {
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const exportTimestamp = getExportTimestamp();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  const columns: TableColumn[] = [
+    { header: "TICKET #", width: 35 },
+    { header: "DATE", width: 65 },
+    { header: "TIP", width: 30 },
+  ];
+
+  let y = drawTipsHeader(
+    doc,
+    propertyName,
+    startDate,
+    endDate,
+    exportTimestamp,
+    kpis
+  );
+
+  const rowHeight = 8;
+  const employeeHeaderHeight = 14;
+
+  for (const employee of employees) {
+    const avgTip =
+      employee.ticketCount > 0
+        ? employee.totalTips / employee.ticketCount
+        : 0;
+
+    // Check if employee header + at least one row fits on current page
+    if (y + employeeHeaderHeight + rowHeight > pageHeight - 15) {
+      doc.addPage();
+      y = 15;
+    }
+
+    // Employee header bar
+    doc.setFillColor(15, 23, 42);
+    doc.rect(MARGIN, y, pageWidth - MARGIN * 2, employeeHeaderHeight, "F");
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text(employee.employeeName, MARGIN + 5, y + 6);
+
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.text(
+      `${employee.ticketCount} ticket${employee.ticketCount !== 1 ? "s" : ""}  ·  Avg $${avgTip.toFixed(2)}`,
+      MARGIN + 5,
+      y + 11.5
+    );
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text(
+      `$${employee.totalTips.toFixed(2)}`,
+      pageWidth - MARGIN - 5,
+      y + 9,
+      { align: "right" }
+    );
+
+    y += employeeHeaderHeight;
+
+    // Table header for tickets
+    y = drawTableHeader(doc, columns, y);
+
+    // Tickets
+    for (let i = 0; i < employee.tickets.length; i++) {
+      if (y + rowHeight > pageHeight - 15) {
+        doc.addPage();
+        y = 15;
+        y = drawTableHeader(doc, columns, y);
+      }
+
+      if (i % 2 === 1) {
+        doc.setFillColor(250, 250, 252);
+        doc.rect(MARGIN, y, pageWidth - MARGIN * 2, rowHeight, "F");
+      }
+
+      doc.setDrawColor(241, 245, 249);
+      doc.line(MARGIN, y + rowHeight, pageWidth - MARGIN, y + rowHeight);
+
+      const t = employee.tickets[i];
+      let x = MARGIN + 4;
+
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(15, 23, 42);
+      doc.text(`#${t.ticketNumber}`, x, y + 5.5);
+      x += columns[0].width;
+
+      doc.setFont("helvetica", "normal");
+      const dateStr = new Date(t.date).toLocaleString("en-US", {
+        timeZone: PR_TIMEZONE,
+        month: "numeric",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+      doc.text(dateStr, x, y + 5.5);
+      x += columns[1].width;
+
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(5, 150, 105);
+      doc.text(`$${t.tip.toFixed(2)}`, x, y + 5.5);
+
+      y += rowHeight;
+    }
+
+    y += 6; // spacing between employees
+  }
+
+  const totalPages = doc.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    drawPageFooter(doc, p, totalPages);
+  }
+
+  doc.save(`tips-report_${startDate}_${endDate}.pdf`);
 };

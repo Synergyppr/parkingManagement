@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import {
   handleTenantDelete,
-  getUsersByTenant,
+  getUsersByProperty,
   getPropertiesByTenant,
 } from "../helpers/propertyHelpers";
 import {
@@ -314,12 +314,11 @@ const Tenants = ({ data }: TenantsProps) => {
     );
   };
 
-  const refreshUsers = (id: string) => {
-    if (!id) return;
-    getUsersByTenant(
-      id,
+  const refreshUsers = () => {
+    if (!propertyId) return;
+    getUsersByProperty(
+      propertyId,
       setLoading,
-      setSelectedTenantId,
       setInitialUsers,
       setUsers,
       setIsUserModalOpen
@@ -660,10 +659,10 @@ const Tenants = ({ data }: TenantsProps) => {
                         onClick={(e) => {
                           e.stopPropagation();
                           if (!propertyId || loading) return;
-                          getUsersByTenant(
-                            tenant?.id as string,
+                          setSelectedTenantId(tenant?.id as string);
+                          getUsersByProperty(
+                            propertyId,
                             setLoading,
-                            setSelectedTenantId,
                             setInitialUsers,
                             setUsers,
                             setIsUserModalOpen
@@ -843,6 +842,7 @@ const Tenants = ({ data }: TenantsProps) => {
           FormComponent={({ originalData, data }) => (
             <UserForm
               tenantId={selectedTenantId as string}
+              propertyId={propertyId as string}
               originalData={originalData as UserFormType | undefined}
               data={(data as UserFormType) || null}
               refresh={refreshUsers}

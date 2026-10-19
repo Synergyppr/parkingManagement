@@ -18,6 +18,7 @@ import { handleFetchTicketDetails } from "../helpers/dashboardHelpers";
 import {
   getPuertoRicoToday,
   getDateOffset,
+  exportTipsPdf,
 } from "../helpers/reportExportHelpers";
 
 import TicketDetailsModal from "./TicketDetailsModal";
@@ -319,29 +320,62 @@ const TipsReport = () => {
           </section>
         )}
 
-        {/* Tabs */}
-        <section className="flex gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1 shadow-sm w-fit">
+        {/* Tabs + Export */}
+        <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1 shadow-sm w-fit">
+            <button
+              type="button"
+              onClick={() => setActiveTab("active")}
+              className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${
+                activeTab === "active"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              Active ({activeEmployees.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("inactive")}
+              className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${
+                activeTab === "inactive"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              Inactive ({inactiveEmployees.length})
+            </button>
+          </div>
+
           <button
             type="button"
-            onClick={() => setActiveTab("active")}
-            className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${
-              activeTab === "active"
-                ? "bg-white text-primary shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
+            onClick={() =>
+              exportTipsPdf(
+                currentEmployees,
+                kpis,
+                propertyName || "Property",
+                startDate,
+                endDate
+              )
+            }
+            disabled={currentEmployees.length === 0}
+            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700
+            shadow-sm transition hover:border-(--primary-light) hover:text-primary disabled:opacity-40 disabled:pointer-events-none"
           >
-            Active ({activeEmployees.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("inactive")}
-            className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${
-              activeTab === "inactive"
-                ? "bg-white text-primary shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            Inactive ({inactiveEmployees.length})
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            Export Tips
           </button>
         </section>
 
