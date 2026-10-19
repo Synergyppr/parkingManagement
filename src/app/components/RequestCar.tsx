@@ -9,6 +9,8 @@ import { FaTicketAlt } from "react-icons/fa";
 // import {FaCheckCircle } from "react-icons/fa";
 // import { MdPayment } from "react-icons/md";
 
+import { QRCodeSVG } from "qrcode.react";
+
 import { useSignalR, joinGroup, leaveGroup } from "../lib/SignalRProvider";
 import { useProperty } from "../context/PropertyContext";
 import { parseLocationName } from "../lib/clientUtils";
@@ -802,6 +804,35 @@ const RequestCar = () => {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
+                </p>
+              </div>
+            </section>
+
+            {/* QR Code for staff scanning */}
+            <section className="rounded-4xl border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+              <div className="text-center">
+                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">
+                  Show to Staff
+                </p>
+                <h3 className="mt-1 font-serif text-xl font-bold text-slate-950">
+                  Scan for Service
+                </h3>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  Present this QR code to your server or valet attendant for
+                  faster service.
+                </p>
+
+                <div className="mt-4 inline-flex rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <QRCodeSVG
+                    value={`${typeof window !== "undefined" ? window.location.origin : ""}/scan?ticket=${ticketId}`}
+                    size={180}
+                    level="M"
+                    marginSize={0}
+                  />
+                </div>
+
+                <p className="mt-3 font-mono text-xs font-bold tracking-wide text-slate-400">
+                  #{vehicleData?.ticketNumber}
                 </p>
               </div>
             </section>
