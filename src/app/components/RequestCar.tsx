@@ -103,6 +103,8 @@ const RequestCar = () => {
   const statusTapCountRef = useRef(0);
   const statusTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [scanUrl, setScanUrl] = useState("");
+
   const idFromUrl = searchParams.get("ticket");
   const paymentReturn = searchParams.get("payment");
   const { registerNotificationHandler } = useSignalR();
@@ -145,6 +147,13 @@ const RequestCar = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, idFromUrl]);
+
+  // Build QR URL client-side only (avoids SSR mismatch with window.location)
+  useEffect(() => {
+    if (ticketId) {
+      setScanUrl(`${window.location.origin}/scan?ticket=${ticketId}`);
+    }
+  }, [ticketId]);
 
   useEffect(() => {
     if (
@@ -205,6 +214,23 @@ const RequestCar = () => {
         if (!validStatuses.includes(rawStatus)) {
           vehicleResult.status = "parked";
         }
+
+        // Fetch logoUrl from ticket details endpoint
+        try {
+          const detailsRes = await fetch("/api/getTicketDetails", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: ticketId }),
+          });
+          const detailsData = await detailsRes.json();
+          console.log("[RequestCar] Ticket details response:", detailsData);
+          if (detailsData?.data?.logoUrl) {
+            vehicleResult.logoUrl = detailsData.data.logoUrl;
+          }
+        } catch {
+          // Logo is non-critical, continue without it
+        }
+
         setVehicleData(vehicleResult);
         setVehicleNotFound(false);
         setPropertyId(vehicleResult?.propertyId);
@@ -674,21 +700,32 @@ const RequestCar = () => {
       <div className="relative mx-auto flex min-h-screen max-w-md flex-col px-4 py-8">
         {/* Brand */}
         <div className="mb-8 text-center">
-          <div
-            onClick={() => (window.location.href = "/check-in")}
-            className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-(--primary-light) to-primary text-white 
-          shadow-[0_18px_45px_color-mix(in_srgb,var(--primary)_35%,transparent)] cursor-pointer"
-          >
-            <KeySquare className="h-6 w-6" />
-          </div>
+          {vehicleData?.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={vehicleData.logoUrl}
+              alt="Property Logo"
+              className="mx-auto h-20 w-auto object-contain"
+            />
+          ) : (
+            <>
+              <div
+                onClick={() => (window.location.href = "/check-in")}
+                className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-(--primary-light) to-primary text-white
+              shadow-[0_18px_45px_color-mix(in_srgb,var(--primary)_35%,transparent)] cursor-pointer"
+              >
+                <KeySquare className="h-6 w-6" />
+              </div>
 
-          <h1 className="mt-4 font-serif text-4xl font-bold text-slate-950">
-            Parkey Valet
-          </h1>
+              <h1 className="mt-4 font-serif text-4xl font-bold text-slate-950">
+                Parkey Valet
+              </h1>
 
-          <p className="mt-2 text-xs font-extrabold uppercase tracking-[0.25em] text-primary">
-            Premium Vehicle Retrieval
-          </p>
+              <p className="mt-2 text-xs font-extrabold uppercase tracking-[0.25em] text-primary">
+                Premium Vehicle Retrieval
+              </p>
+            </>
+          )}
         </div>
 
         {!idFromUrl ? (
@@ -823,12 +860,14 @@ const RequestCar = () => {
                 </p>
 
                 <div className="mt-4 inline-flex rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <QRCodeSVG
-                    value={`${typeof window !== "undefined" ? window.location.origin : ""}/scan?ticket=${ticketId}`}
-                    size={180}
-                    level="M"
-                    marginSize={0}
-                  />
+                  {scanUrl && (
+                    <QRCodeSVG
+                      value={scanUrl}
+                      size={180}
+                      level="M"
+                      marginSize={0}
+                    />
+                  )}
                 </div>
 
                 <p className="mt-3 font-mono text-xs font-bold tracking-wide text-slate-400">

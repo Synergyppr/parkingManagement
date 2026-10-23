@@ -111,6 +111,7 @@ export interface VehicleData {
   surveySubmitted?: boolean;
   transactions?: TicketTransaction[];
   canRequestVehicle?: boolean;
+  logoUrl?: string;
 }
 
 export interface VehiclePhoto {
