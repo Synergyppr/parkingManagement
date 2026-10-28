@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect } from "react";
+import { LogEntry, RateChangeAudit } from "../types";
 
 export const useClickOutside = (
   ref: React.RefObject<HTMLElement>,
@@ -143,6 +144,29 @@ export function isWithinRadius(
   return R * c <= radiusMeters;
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Ticket log descriptions that identify a rate / price change
+const RATE_CHANGE_LOG_PATTERN = /price|rate|amount|transaction type/i;
+
+// Returns who made the most recent rate/price change on a ticket, if logged
+export const findLatestRateChange = (
+  logs: LogEntry[] | null | undefined
+): RateChangeAudit | null => {
+  const latest = (logs || [])
+    .filter((log) => RATE_CHANGE_LOG_PATTERN.test(log?.description || ""))
+    .sort(
+      (a, b) =>
+        new Date(b.createdDateTime).getTime() -
+        new Date(a.createdDateTime).getTime()
+    )[0];
+
+  if (!latest) return null;
+
+  return {
+    changedBy: latest.loggedBy || null,
+    changedAt: latest.createdDateTime || null,
+  };
+};
 
 // Parses "1A-3" → "1A" (strips the rate value suffix for display)
 export const parseLocationName = (

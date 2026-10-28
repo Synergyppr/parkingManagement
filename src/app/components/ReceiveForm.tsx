@@ -65,7 +65,7 @@ export default function ReceiveForm({
   quickVehicleWorkflow = false,
 }: ReceiveFormProps) {
   const router = useRouter();
-  const { propertyId, locationMode, latitude, longitude } = useProperty();
+  const { propertyId, locationMode, latitude, longitude, primaryColor } = useProperty();
   const saveClickedRef = useRef(false);
   const [step, setStep] = useState<number>(1);
   const [models, setModels] = useState<DropdownOption[]>([]);
@@ -498,7 +498,8 @@ export default function ReceiveForm({
       driverViewLabelsMap,
       photos,
       setPhotos,
-      selectedKeySlot?.id
+      selectedKeySlot?.id,
+      primaryColor
     );
   };
 

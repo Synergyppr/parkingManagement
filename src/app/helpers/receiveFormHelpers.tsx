@@ -97,9 +97,12 @@ export const handleParkVehicle = async (
   driverViewLabelsMap: Record<string, string[]>,
   photos: string[] = [],
   setVehiclePhotoUrls?: React.Dispatch<React.SetStateAction<string[]>>,
-  keySlotId?: string | null
+  keySlotId?: string | null,
+  primaryColor?: string
 ) => {
   e.preventDefault();
+
+  const confirmButtonColor = primaryColor || "#d6a800";
 
   if (!form?.areaCode) {
     setForm((prev) => ({ ...prev, areaCode: "+1" }));
@@ -124,6 +127,7 @@ export const handleParkVehicle = async (
     if (!form?.pin) missingFields.push("PIN");
 
     Swal.fire({
+      confirmButtonColor,
       icon: "warning",
       title: "Incomplete Form",
       text: `Please fill all required fields: ${missingFields.join(", ")}`,
@@ -137,6 +141,7 @@ export const handleParkVehicle = async (
 
   if (!hasIncidentData && !noIncident) {
     Swal.fire({
+      confirmButtonColor,
       icon: "warning",
       title: "Incident Report Required",
       text: "Please complete the vehicle incident report by marking damaged parts, taking photos, or checking 'No Incident'.",
@@ -147,6 +152,7 @@ export const handleParkVehicle = async (
   const rawPhone = (form?.phoneNumber || "").replace(/\D/g, "");
   if (rawPhone?.length < 10) {
     Swal.fire({
+      confirmButtonColor,
       icon: "warning",
       title: "Invalid Phone Number",
       text: "Please enter a valid phone number with at least 10 digits.",
@@ -180,6 +186,7 @@ export const handleParkVehicle = async (
 
   if (Number(missingDescriptions?.length) > 0 && !noIncident) {
     Swal.fire({
+      confirmButtonColor,
       icon: "warning",
       title: "Missing Descriptions",
       text: "Please provide a description for all marked damages before submitting.",
@@ -229,26 +236,6 @@ export const handleParkVehicle = async (
 
     console.log("[CreateTicket] Request payload:", JSON.stringify(sendForm, null, 2));
 
-    const willCharge = await Swal.fire({
-      title: "Are You Sure?",
-      html: `
-        <p>This form submission will trigger a text message to the visitor.</p>
-        <p><strong>You may incur a small charge.</strong></p>
-        <p class="mt-2 text-gray-500 text-sm">Do you wish to proceed?</p>
-      `,
-      icon: "info",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, submit",
-      cancelButtonText: "Cancel",
-    });
-
-    if (!willCharge.isConfirmed) {
-      setLoader(false);
-      return;
-    }
-
     try {
       const res = await fetch("/api/vehicleCheckIn", {
         method: "POST",
@@ -261,6 +248,7 @@ export const handleParkVehicle = async (
 
       if (result?.status === "200") {
         Swal.fire({
+          confirmButtonColor,
           title: "Form Sent",
           icon: "success",
           text: "Vehicle checked in successfully!",
@@ -279,21 +267,16 @@ export const handleParkVehicle = async (
       } else {
         console.log("Error: Unexpected response:", result);
         Swal.fire({
+          confirmButtonColor,
           icon: "error",
           title: "Submission Failed",
           text: result?.message || "Something went wrong. Please try again.",
-          html: `<p>${
-            result?.message || "Something went wrong. Please try again."
-          }</p><pre style="text-align: left; white-space: pre-wrap; background: #f5f5f5; padding: 6px; border-radius: 4px;">${JSON.stringify(
-            sendForm,
-            null,
-            2
-          )}</pre>`,
         });
       }
     } catch (error) {
       console.error("Error submitting form:", error);
       Swal.fire({
+        confirmButtonColor,
         icon: "error",
         title: "Submission Failed",
         text: "Something went wrong. Please try again.",
@@ -313,6 +296,7 @@ export const handleParkVehicle = async (
       (error: GeolocationPositionError) => {
         console.error("Geolocation error:", error);
         Swal.fire({
+          confirmButtonColor,
           icon: "error",
           title: "Location Error",
           text: "Unable to retrieve your location. Please allow location access and try again.",

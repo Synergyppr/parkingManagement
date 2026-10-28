@@ -13,9 +13,15 @@ import {
   MdPayment,
 } from "react-icons/md";
 import { RiSecurePaymentFill } from "react-icons/ri";
-import { parseLocationName, parseLocationValue } from "../lib/clientUtils";
+import {
+  findLatestRateChange,
+  formatDate,
+  formatHour,
+  parseLocationName,
+  parseLocationValue,
+} from "../lib/clientUtils";
 
-import { PaymentTerminal } from "../types";
+import { PaymentTerminal, RateChangeAudit } from "../types";
 import { useProperty } from "../context/PropertyContext";
 
 import FormInput from "./elements/FormInput";
@@ -163,6 +169,15 @@ export default function TransactionForm({
     parseLocationName(placeToVisit).toLowerCase().startsWith("room charge");
   const [roomChargeLoading, setRoomChargeLoading] = useState(false);
 
+  // Courtesy detection — rate was set to $0.00 without a standard rate type
+  // (e.g. via the QR "Update Rate" page) before reaching checkout
+  const isCourtesyCheckout =
+    !isRoomChargeCheckout && ticketPrice === 0 && !ticketTransactionTypeId;
+  const isNoChargeCheckout = isRoomChargeCheckout || isCourtesyCheckout;
+  const [courtesyAudit, setCourtesyAudit] = useState<RateChangeAudit | null>(
+    null,
+  );
+
   // Custom rate state — Room Charge also enters custom rate mode (pre-filled with $0)
   const isOtherCheckout =
     placeToVisit != null &&
@@ -183,6 +198,28 @@ export default function TransactionForm({
     fetchTerminals();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (isCourtesyCheckout && ticketId) fetchCourtesyAudit(ticketId);
+  }, [isCourtesyCheckout, ticketId]);
+
+  const fetchCourtesyAudit = async (id: string) => {
+    try {
+      const res = await fetch("/api/getTicketDetails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+
+      const data = await res.json();
+
+      if (data?.status === "200") {
+        setCourtesyAudit(findLatestRateChange(data?.data?.ticketLogs));
+      }
+    } catch (error) {
+      console.error("Error fetching courtesy audit:", error);
+    }
+  };
 
   // Matches a rate by parsed location name, with fallback for "Room Charge #305" → "Room Charge"
   const findRateByLocationName = (name: string) => {
@@ -569,7 +606,7 @@ export default function TransactionForm({
         });
         return;
       }
-      if (parsed === 0 && !isRoomChargeCheckout && (!form.notes || !form.notes.trim())) {
+      if (parsed === 0 && !isNoChargeCheckout && (!form.notes || !form.notes.trim())) {
         Swal.fire({
           icon: "warning",
           title: "Notes Required",
@@ -588,7 +625,7 @@ export default function TransactionForm({
       return;
     }
 
-    if (!isRoomChargeCheckout && !selectedPaymentMethod) {
+    if (!isNoChargeCheckout && !selectedPaymentMethod) {
       Swal.fire({
         icon: "warning",
         title: "Missing Information",
@@ -621,6 +658,12 @@ export default function TransactionForm({
     // Room Charge: route through courtesy endpoint (no payment needed)
     if (isRoomChargeCheckout) {
       await handleRoomCharge();
+      return;
+    }
+
+    // Pre-authorized courtesy: close through courtesy endpoint (no payment needed)
+    if (isCourtesyCheckout) {
+      await handleAuthorizedCourtesy();
       return;
     }
 
@@ -747,6 +790,84 @@ export default function TransactionForm({
     }
   };
 
+  // Shared request for every flow that closes a ticket without payment
+  const submitCourtesyRequest = async (
+    reason: string,
+    authorizedBy?: string,
+  ) => {
+    const resolvedLat = locationMode === "manual" ? latitude : ctxLatitude;
+    const resolvedLng = locationMode === "manual" ? longitude : ctxLongitude;
+
+    const res = await fetch("/api/valetTransaction/courtesy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ticketId,
+        reason,
+        givenBy: accountUser || "Unknown",
+        authorizedBy,
+        givenAt: formatDate(new Date()),
+        propertyId,
+        pin: form?.pin,
+        latitude: resolvedLat ?? 0,
+        longitude: resolvedLng ?? 0,
+      }),
+    });
+
+    return res.json();
+  };
+
+  const handleAuthorizedCourtesy = async () => {
+    const authorizedBy = courtesyAudit?.changedBy || "Unknown";
+    const reason = form.notes?.trim() || "";
+
+    setCourtesyLoading(true);
+
+    try {
+      const result = await submitCourtesyRequest(reason, authorizedBy);
+
+      if (result?.result?.status === "200") {
+        setOpen(false);
+        setReloadPageData(true);
+
+        Swal.fire({
+          icon: "success",
+          title: "Courtesy Applied",
+          html: `
+            <p>The valet fee has been waived.</p>
+            <p class="mt-2 text-sm text-gray-500">Authorized by: <strong>${authorizedBy}</strong></p>
+            <p class="text-sm text-gray-500">Processed by: <strong>${
+              accountUser || "Unknown"
+            }</strong></p>
+          `,
+          showConfirmButton: false,
+          timer: 3000,
+        });
+
+        resetForm();
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Courtesy Failed",
+          text:
+            result?.result?.message ||
+            "Could not apply courtesy. Please try again.",
+          confirmButtonColor: getPrimaryThemeColor(),
+        });
+      }
+    } catch (error) {
+      console.error("Courtesy error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Something went wrong.",
+        confirmButtonColor: getPrimaryThemeColor(),
+      });
+    } finally {
+      setCourtesyLoading(false);
+    }
+  };
+
   const handleCourtesy = async () => {
     if (!form?.pin || form.pin.length !== 4) {
       Swal.fire({
@@ -791,25 +912,7 @@ export default function TransactionForm({
     setCourtesyLoading(true);
 
     try {
-      const resolvedLat = locationMode === "manual" ? latitude : ctxLatitude;
-      const resolvedLng = locationMode === "manual" ? longitude : ctxLongitude;
-
-      const res = await fetch("/api/valetTransaction/courtesy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ticketId,
-          reason,
-          givenBy: accountUser || "Unknown",
-          givenAt: new Date().toISOString(),
-          propertyId,
-          pin: form?.pin,
-          latitude: resolvedLat ?? 0,
-          longitude: resolvedLng ?? 0,
-        }),
-      });
-
-      const result = await res.json();
+      const result = await submitCourtesyRequest(reason);
 
       if (result?.result?.status === "200") {
         setOpen(false);
@@ -882,25 +985,7 @@ export default function TransactionForm({
     setRoomChargeLoading(true);
 
     try {
-      const resolvedLat = locationMode === "manual" ? latitude : ctxLatitude;
-      const resolvedLng = locationMode === "manual" ? longitude : ctxLongitude;
-
-      const res = await fetch("/api/valetTransaction/courtesy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ticketId,
-          reason: roomInfo,
-          givenBy: accountUser || "Unknown",
-          givenAt: new Date().toISOString(),
-          propertyId,
-          pin: form?.pin,
-          latitude: resolvedLat ?? 0,
-          longitude: resolvedLng ?? 0,
-        }),
-      });
-
-      const result = await res.json();
+      const result = await submitCourtesyRequest(roomInfo);
 
       if (result?.result?.status === "200") {
         setOpen(false);
@@ -952,7 +1037,9 @@ export default function TransactionForm({
               </h2>
 
               <p className="mt-1 text-sm font-medium text-slate-500">
-                Select rate, verify PIN, and complete the valet transaction.
+                {isCourtesyCheckout
+                  ? "Verify PIN to close this courtesy ticket."
+                  : "Select rate, verify PIN, and complete the valet transaction."}
               </p>
             </div>
 
@@ -962,8 +1049,37 @@ export default function TransactionForm({
           </div>
         </div>
 
-        {/* TRANSACTION TYPE / RATE SELECTION — hidden once the first split payment is done */}
-        {!(splitEnabled && splitPhase === "second") && <section>
+        {/* PRE-AUTHORIZED COURTESY NOTICE */}
+        {isCourtesyCheckout && (
+          <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+            <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-emerald-700">
+              <MdCardGiftcard className="h-4 w-4" />
+              Courtesy Applied
+            </p>
+
+            <p className="mt-2 text-sm font-medium text-slate-700">
+              This ticket&apos;s rate was set to <strong>$0.00</strong>. No
+              payment will be charged.
+            </p>
+
+            <p className="mt-2 text-xs font-semibold text-slate-500">
+              Authorized by{" "}
+              <span className="font-extrabold text-slate-800">
+                {courtesyAudit?.changedBy || "Not recorded"}
+              </span>
+              {courtesyAudit?.changedAt && (
+                <>
+                  {" · "}
+                  {formatDate(courtesyAudit.changedAt)?.split(" ")[0]}{" "}
+                  {formatHour(courtesyAudit.changedAt)}
+                </>
+              )}
+            </p>
+          </section>
+        )}
+
+        {/* TRANSACTION TYPE / RATE SELECTION — hidden once the first split payment is done or for a pre-authorized courtesy */}
+        {!isCourtesyCheckout && !(splitEnabled && splitPhase === "second") && <section>
           <div className="mb-3 flex items-center justify-between gap-3">
             <h3 className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-700">
               <MdOutlineReceiptLong className="text-primary transition-colors duration-300" />
@@ -978,7 +1094,11 @@ export default function TransactionForm({
 
             {effectiveOther && (
               <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-extrabold text-amber-700">
-                {isRoomChargeCheckout ? "Room Charge" : "Other"}
+                {isRoomChargeCheckout
+                  ? "Room Charge"
+                  : isCourtesyCheckout
+                    ? "Courtesy"
+                    : "Other"}
               </span>
             )}
           </div>
@@ -1144,8 +1264,8 @@ export default function TransactionForm({
           )}
         </section>}
 
-        {/* PAYMENT METHOD */}
-        <section>
+        {/* PAYMENT METHOD — not needed for a pre-authorized courtesy */}
+        {!isCourtesyCheckout && <section>
           <h3 className="mb-3 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-700">
             Payment Method
           </h3>
@@ -1256,10 +1376,11 @@ export default function TransactionForm({
               </div>
             </div>
           )}
-        </section>
+        </section>}
 
         {/* TERMINAL SELECTION — only for card/athm */}
-        {(selectedPaymentMethod === "ecr" ||
+        {!isCourtesyCheckout &&
+          (selectedPaymentMethod === "ecr" ||
           selectedPaymentMethod === "athm") && (
           <section>
             <h3 className="mb-3 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-700">
@@ -1400,7 +1521,7 @@ export default function TransactionForm({
         <section>
           <h3 className="mb-3 flex items-center gap-2 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-700">
             Internal Notes
-            {effectiveOther && otherPriceNum === 0 && !isRoomChargeCheckout && (
+            {effectiveOther && otherPriceNum === 0 && !isNoChargeCheckout && (
               <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-red-600 ring-1 ring-red-200">
                 Required
               </span>
@@ -1414,20 +1535,20 @@ export default function TransactionForm({
               setForm((prev) => ({ ...prev, notes: e.target.value }))
             }
             placeholder={
-              effectiveOther && otherPriceNum === 0 && !isRoomChargeCheckout
+              effectiveOther && otherPriceNum === 0 && !isNoChargeCheckout
                 ? "Required — document why this ticket has no cost..."
                 : "Add any special handling instructions or transaction notes..."
             }
             className={`h-24 w-full resize-none rounded-2xl border bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-primary focus:ring-4 focus:ring-(--primary-soft) ${
-              effectiveOther && otherPriceNum === 0 && !isRoomChargeCheckout && (!form.notes || !form.notes.trim())
+              effectiveOther && otherPriceNum === 0 && !isNoChargeCheckout && (!form.notes || !form.notes.trim())
                 ? "border-red-300"
                 : "border-slate-200"
             }`}
           />
         </section>
 
-        {/* COURTESY — ADMIN ONLY */}
-        {isAdmin && (
+        {/* COURTESY — ADMIN ONLY (already applied on a pre-authorized courtesy) */}
+        {isAdmin && !isCourtesyCheckout && (
           <section className="rounded-2xl border border-(--primary-light) bg-(--primary-soft) p-4 transition-colors duration-300">
             <button
               type="button"
@@ -1501,7 +1622,9 @@ export default function TransactionForm({
             <span className="ml-2 text-xs font-medium text-slate-500 font-serif float-right">
               {splitEnabled
                 ? `of $${displayTotal.toFixed(2)} total`
-                : `${(effectiveOther ? otherTaxable : selectedTransactionType?.taxable) ? "incl. tax" : "flat rate"}${tip > 0 ? " + tip" : ""}`}
+                : isCourtesyCheckout
+                  ? "courtesy"
+                  : `${(effectiveOther ? otherTaxable : selectedTransactionType?.taxable) ? "incl. tax" : "flat rate"}${tip > 0 ? " + tip" : ""}`}
             </span>
           </div>
 
@@ -1520,19 +1643,22 @@ export default function TransactionForm({
               disabled={
                 loader ||
                 roomChargeLoading ||
+                courtesyLoading ||
                 !propertyId ||
-                (!isRoomChargeCheckout && !effectiveOther && !form?.paymentMethod) ||
-                (!isRoomChargeCheckout && !selectedPaymentMethod) ||
+                (!isNoChargeCheckout && !effectiveOther && !form?.paymentMethod) ||
+                (!isNoChargeCheckout && !selectedPaymentMethod) ||
                 !form?.pin ||
                 form.pin.length !== 4
               }
               className="h-14 cursor-pointer rounded-2xl bg-primary px-10 text-sm font-extrabold text-white shadow-[0_14px_32px_color-mix(in_srgb,var(--primary)_28%,transparent)] transition-all duration-300 hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loader || roomChargeLoading
+              {loader || roomChargeLoading || courtesyLoading
                 ? "Processing..."
                 : isRoomChargeCheckout
                   ? "Submit Room Charge"
-                  : splitEnabled && splitPhase === "second"
+                  : isCourtesyCheckout
+                    ? "Submit Courtesy"
+                    : splitEnabled && splitPhase === "second"
                     ? "Submit 2nd Payment"
                     : splitEnabled && splitPhase === "first"
                       ? "Submit 1st Payment"

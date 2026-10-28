@@ -352,6 +352,12 @@ export interface LogEntry {
   newValue?: string;
 }
 
+// Who changed a ticket's rate/price and when, derived from the ticket logs
+export interface RateChangeAudit {
+  changedBy: string | null;
+  changedAt: string | null;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 
 export interface ReportEntry {
@@ -404,7 +410,8 @@ export interface CourtesyRecord {
   ticketId: string;
   reason: string;
   givenBy: string; // accountUser (email/username)
-  givenAt: string; // ISO datetime string
+  authorizedBy?: string; // employee who pre-authorized the courtesy (from ticket logs)
+  givenAt: string; // local datetime formatted via formatDate (M/D/YYYY h:mm AM/PM)
   propertyId: string;
   pin: string;
 }
