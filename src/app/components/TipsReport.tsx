@@ -19,6 +19,7 @@ import {
   getPuertoRicoToday,
   getDateOffset,
   exportTipsPdf,
+  exportTipsByEmployeeZip,
 } from "../helpers/reportExportHelpers";
 
 import TicketDetailsModal from "./TicketDetailsModal";
@@ -63,6 +64,7 @@ const TipsReport = () => {
     TipsReportEmployee[]
   >([]);
   const [loading, setLoading] = useState(false);
+  const [exportingByEmployee, setExportingByEmployee] = useState(false);
 
   // Tab state
   const [activeTab, setActiveTab] = useState<"active" | "inactive">("active");
@@ -150,6 +152,20 @@ const TipsReport = () => {
 
   const currentEmployees =
     activeTab === "active" ? activeEmployees : inactiveEmployees;
+
+  const handleExportByEmployee = async () => {
+    setExportingByEmployee(true);
+    try {
+      await exportTipsByEmployeeZip(
+        currentEmployees,
+        propertyName || "Property",
+        startDate,
+        endDate
+      );
+    } finally {
+      setExportingByEmployee(false);
+    }
+  };
 
   const avgTipPerTransaction =
     kpis.transactionsWithTips > 0
@@ -347,36 +363,60 @@ const TipsReport = () => {
             </button>
           </div>
 
-          <button
-            type="button"
-            onClick={() =>
-              exportTipsPdf(
-                currentEmployees,
-                kpis,
-                propertyName || "Property",
-                startDate,
-                endDate
-              )
-            }
-            disabled={currentEmployees.length === 0}
-            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700
-            shadow-sm transition hover:border-(--primary-light) hover:text-primary disabled:opacity-40 disabled:pointer-events-none"
-          >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                exportTipsPdf(
+                  currentEmployees,
+                  kpis,
+                  propertyName || "Property",
+                  startDate,
+                  endDate
+                )
+              }
+              disabled={currentEmployees.length === 0}
+              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700
+              shadow-sm transition hover:border-(--primary-light) hover:text-primary disabled:opacity-40 disabled:pointer-events-none"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            Export Tips
-          </button>
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              Export Tips
+            </button>
+            <button
+              type="button"
+              onClick={handleExportByEmployee}
+              disabled={currentEmployees.length === 0 || exportingByEmployee}
+              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700
+              shadow-sm transition hover:border-(--primary-light) hover:text-primary disabled:opacity-40 disabled:pointer-events-none"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7zm9 3v5m0 0l-2-2m2 2l2-2"
+                />
+              </svg>
+              {exportingByEmployee ? "Generating..." : "Tips by Employee"}
+            </button>
+          </div>
         </section>
 
         {/* Loading State */}

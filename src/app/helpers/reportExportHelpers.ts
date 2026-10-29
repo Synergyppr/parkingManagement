@@ -1,10 +1,12 @@
 import jsPDF from "jspdf";
+import JSZip from "jszip";
 import {
   ReportEntry,
   JournalEntry,
   ReportKPIs,
   TipsReportEmployee,
   TipsReportKPIs,
+  TipsReportTicket,
 } from "../types";
 import { parseLocationName } from "../lib/clientUtils";
 
@@ -59,18 +61,22 @@ interface PdfHeaderParams {
   kpis: ReportKPIs;
 }
 
-const drawHeader = ({
-  doc,
-  title,
-  propertyName,
-  startDate,
-  endDate,
-  exportTimestamp,
-  kpis,
-}: PdfHeaderParams): number => {
+interface PdfKpi {
+  label: string;
+  value: string;
+  color: [number, number, number];
+}
+
+const drawTitleBar = (
+  doc: jsPDF,
+  title: string,
+  subtitle: string,
+  startDate: string,
+  endDate: string,
+  exportTimestamp: string
+) => {
   const pageWidth = doc.internal.pageSize.getWidth();
 
-  // Title bar
   doc.setFillColor(15, 23, 42);
   doc.rect(0, 0, pageWidth, 36, "F");
 
@@ -81,7 +87,7 @@ const drawHeader = ({
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text(propertyName, MARGIN, 24);
+  doc.text(subtitle, MARGIN, 24);
 
   doc.text(`Exported: ${exportTimestamp}`, pageWidth - MARGIN, 14, {
     align: "right",
@@ -89,29 +95,11 @@ const drawHeader = ({
   doc.text(`Date Range: ${startDate} to ${endDate}`, pageWidth - MARGIN, 24, {
     align: "right",
   });
+};
 
-  let y = 44;
-
-  // KPI row
-  const kpiWidth = (pageWidth - MARGIN * 2) / 4;
-  const kpiData = [
-    { label: "TICKETS", value: String(kpis.ticketCount), color: [15, 23, 42] },
-    {
-      label: "SALES",
-      value: `$${kpis.salesAmount.toFixed(2)}`,
-      color: [5, 150, 105],
-    },
-    {
-      label: "REFUNDS",
-      value: `$${kpis.refundAmount.toFixed(2)}`,
-      color: [217, 119, 6],
-    },
-    {
-      label: "VOIDS",
-      value: `$${kpis.voidAmount.toFixed(2)}`,
-      color: [220, 38, 38],
-    },
-  ];
+const drawKpiRow = (doc: jsPDF, kpiData: PdfKpi[], y: number): number => {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const kpiWidth = (pageWidth - MARGIN * 2) / kpiData.length;
 
   for (let i = 0; i < kpiData.length; i++) {
     const kx = MARGIN + i * kpiWidth;
@@ -126,16 +114,46 @@ const drawHeader = ({
     doc.text(kpiData[i].label, kx + 8, y + 9);
 
     doc.setFontSize(12);
-    doc.setTextColor(
-      kpiData[i].color[0],
-      kpiData[i].color[1],
-      kpiData[i].color[2]
-    );
+    doc.setTextColor(...kpiData[i].color);
     doc.text(kpiData[i].value, kx + 8, y + 18);
   }
 
-  y += 30;
-  return y;
+  return y + 30;
+};
+
+const drawHeader = ({
+  doc,
+  title,
+  propertyName,
+  startDate,
+  endDate,
+  exportTimestamp,
+  kpis,
+}: PdfHeaderParams): number => {
+  drawTitleBar(doc, title, propertyName, startDate, endDate, exportTimestamp);
+
+  return drawKpiRow(
+    doc,
+    [
+      { label: "TICKETS", value: String(kpis.ticketCount), color: [15, 23, 42] },
+      {
+        label: "SALES",
+        value: `$${kpis.salesAmount.toFixed(2)}`,
+        color: [5, 150, 105],
+      },
+      {
+        label: "REFUNDS",
+        value: `$${kpis.refundAmount.toFixed(2)}`,
+        color: [217, 119, 6],
+      },
+      {
+        label: "VOIDS",
+        value: `$${kpis.voidAmount.toFixed(2)}`,
+        color: [220, 38, 38],
+      },
+    ],
+    44
+  );
 };
 
 const drawTableHeader = (
@@ -176,6 +194,14 @@ const drawPageFooter = (
   doc.text(`Page ${pageNum} of ${totalPages}`, pageWidth / 2, pageHeight - 8, {
     align: "center",
   });
+};
+
+const applyPageFooters = (doc: jsPDF) => {
+  const totalPages = doc.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    drawPageFooter(doc, p, totalPages);
+  }
 };
 
 // ── Tickets PDF ─────────────────────────────────────────────────────────────
@@ -254,11 +280,7 @@ export const exportTicketsPdf = (
     y += rowHeight;
   }
 
-  const totalPages = doc.getNumberOfPages();
-  for (let p = 1; p <= totalPages; p++) {
-    doc.setPage(p);
-    drawPageFooter(doc, p, totalPages);
-  }
+  applyPageFooters(doc);
 
   doc.save(`ticket-report_${startDate}_${endDate}.pdf`);
 };
@@ -377,16 +399,34 @@ export const exportTransactionsPdf = (
     y += rowHeight;
   }
 
-  const totalPages = doc.getNumberOfPages();
-  for (let p = 1; p <= totalPages; p++) {
-    doc.setPage(p);
-    drawPageFooter(doc, p, totalPages);
-  }
+  applyPageFooters(doc);
 
   doc.save(`transaction-report_${startDate}_${endDate}.pdf`);
 };
 
 // ── Tips PDF ───────────────────────────────────────────────────────────────
+
+const TIPS_COLUMNS: TableColumn[] = [
+  { header: "TICKET #", width: 35 },
+  { header: "DATE", width: 65 },
+  { header: "TIP", width: 30 },
+];
+
+const TIPS_ROW_HEIGHT = 8;
+
+const getAverageTip = (totalTips: number, count: number) =>
+  count > 0 ? totalTips / count : 0;
+
+const formatPrDateTime = (date: string) =>
+  new Date(date).toLocaleString("en-US", {
+    timeZone: PR_TIMEZONE,
+    month: "numeric",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
 
 const drawTipsHeader = (
   doc: jsPDF,
@@ -396,82 +436,91 @@ const drawTipsHeader = (
   exportTimestamp: string,
   kpis: TipsReportKPIs
 ): number => {
+  drawTitleBar(
+    doc,
+    "Tips Report",
+    propertyName,
+    startDate,
+    endDate,
+    exportTimestamp
+  );
+
+  const avgTip = getAverageTip(kpis.totalTips, kpis.transactionsWithTips);
+
+  return drawKpiRow(
+    doc,
+    [
+      {
+        label: "TOTAL TIPS",
+        value: `$${kpis.totalTips.toFixed(2)}`,
+        color: [5, 150, 105],
+      },
+      {
+        label: "EMPLOYEES",
+        value: String(kpis.employeesWithTips),
+        color: [15, 23, 42],
+      },
+      {
+        label: "TRANSACTIONS",
+        value: String(kpis.transactionsWithTips),
+        color: [37, 99, 235],
+      },
+      {
+        label: "AVG TIP / TXN",
+        value: `$${avgTip.toFixed(2)}`,
+        color: [124, 58, 237],
+      },
+    ],
+    44
+  );
+};
+
+/** Draws the ticket/tip table for one employee, paginating as needed. */
+const drawTipsTicketTable = (
+  doc: jsPDF,
+  tickets: TipsReportTicket[],
+  startY: number
+): number => {
   const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
 
-  // Title bar
-  doc.setFillColor(15, 23, 42);
-  doc.rect(0, 0, pageWidth, 36, "F");
+  let y = drawTableHeader(doc, TIPS_COLUMNS, startY);
 
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(16);
-  doc.setFont("helvetica", "bold");
-  doc.text("Tips Report", MARGIN, 14);
+  for (let i = 0; i < tickets.length; i++) {
+    if (y + TIPS_ROW_HEIGHT > pageHeight - 15) {
+      doc.addPage();
+      y = 15;
+      y = drawTableHeader(doc, TIPS_COLUMNS, y);
+    }
 
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.text(propertyName, MARGIN, 24);
+    if (i % 2 === 1) {
+      doc.setFillColor(250, 250, 252);
+      doc.rect(MARGIN, y, pageWidth - MARGIN * 2, TIPS_ROW_HEIGHT, "F");
+    }
 
-  doc.text(`Exported: ${exportTimestamp}`, pageWidth - MARGIN, 14, {
-    align: "right",
-  });
-  doc.text(`Date Range: ${startDate} to ${endDate}`, pageWidth - MARGIN, 24, {
-    align: "right",
-  });
+    doc.setDrawColor(241, 245, 249);
+    doc.line(MARGIN, y + TIPS_ROW_HEIGHT, pageWidth - MARGIN, y + TIPS_ROW_HEIGHT);
 
-  let y = 44;
+    const t = tickets[i];
+    let x = MARGIN + 4;
 
-  const avgTip =
-    kpis.transactionsWithTips > 0
-      ? kpis.totalTips / kpis.transactionsWithTips
-      : 0;
-
-  // KPI row
-  const kpiWidth = (pageWidth - MARGIN * 2) / 4;
-  const kpiData = [
-    {
-      label: "TOTAL TIPS",
-      value: `$${kpis.totalTips.toFixed(2)}`,
-      color: [5, 150, 105],
-    },
-    {
-      label: "EMPLOYEES",
-      value: String(kpis.employeesWithTips),
-      color: [15, 23, 42],
-    },
-    {
-      label: "TRANSACTIONS",
-      value: String(kpis.transactionsWithTips),
-      color: [37, 99, 235],
-    },
-    {
-      label: "AVG TIP / TXN",
-      value: `$${avgTip.toFixed(2)}`,
-      color: [124, 58, 237],
-    },
-  ];
-
-  for (let i = 0; i < kpiData.length; i++) {
-    const kx = MARGIN + i * kpiWidth;
-
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(226, 232, 240);
-    doc.rect(kx + 2, y, kpiWidth - 4, 22, "FD");
-
-    doc.setFontSize(7);
+    doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(100, 116, 139);
-    doc.text(kpiData[i].label, kx + 8, y + 9);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`#${t.ticketNumber}`, x, y + 5.5);
+    x += TIPS_COLUMNS[0].width;
 
-    doc.setFontSize(12);
-    doc.setTextColor(
-      kpiData[i].color[0],
-      kpiData[i].color[1],
-      kpiData[i].color[2]
-    );
-    doc.text(kpiData[i].value, kx + 8, y + 18);
+    doc.setFont("helvetica", "normal");
+    doc.text(formatPrDateTime(t.date), x, y + 5.5);
+    x += TIPS_COLUMNS[1].width;
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(5, 150, 105);
+    doc.text(`$${t.tip.toFixed(2)}`, x, y + 5.5);
+
+    y += TIPS_ROW_HEIGHT;
   }
 
-  y += 30;
   return y;
 };
 
@@ -487,12 +536,6 @@ export const exportTipsPdf = (
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  const columns: TableColumn[] = [
-    { header: "TICKET #", width: 35 },
-    { header: "DATE", width: 65 },
-    { header: "TIP", width: 30 },
-  ];
-
   let y = drawTipsHeader(
     doc,
     propertyName,
@@ -502,17 +545,13 @@ export const exportTipsPdf = (
     kpis
   );
 
-  const rowHeight = 8;
   const employeeHeaderHeight = 14;
 
   for (const employee of employees) {
-    const avgTip =
-      employee.ticketCount > 0
-        ? employee.totalTips / employee.ticketCount
-        : 0;
+    const avgTip = getAverageTip(employee.totalTips, employee.ticketCount);
 
     // Check if employee header + at least one row fits on current page
-    if (y + employeeHeaderHeight + rowHeight > pageHeight - 15) {
+    if (y + employeeHeaderHeight + TIPS_ROW_HEIGHT > pageHeight - 15) {
       doc.addPage();
       y = 15;
     }
@@ -544,63 +583,165 @@ export const exportTipsPdf = (
     );
 
     y += employeeHeaderHeight;
-
-    // Table header for tickets
-    y = drawTableHeader(doc, columns, y);
-
-    // Tickets
-    for (let i = 0; i < employee.tickets.length; i++) {
-      if (y + rowHeight > pageHeight - 15) {
-        doc.addPage();
-        y = 15;
-        y = drawTableHeader(doc, columns, y);
-      }
-
-      if (i % 2 === 1) {
-        doc.setFillColor(250, 250, 252);
-        doc.rect(MARGIN, y, pageWidth - MARGIN * 2, rowHeight, "F");
-      }
-
-      doc.setDrawColor(241, 245, 249);
-      doc.line(MARGIN, y + rowHeight, pageWidth - MARGIN, y + rowHeight);
-
-      const t = employee.tickets[i];
-      let x = MARGIN + 4;
-
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(15, 23, 42);
-      doc.text(`#${t.ticketNumber}`, x, y + 5.5);
-      x += columns[0].width;
-
-      doc.setFont("helvetica", "normal");
-      const dateStr = new Date(t.date).toLocaleString("en-US", {
-        timeZone: PR_TIMEZONE,
-        month: "numeric",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
-      doc.text(dateStr, x, y + 5.5);
-      x += columns[1].width;
-
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(5, 150, 105);
-      doc.text(`$${t.tip.toFixed(2)}`, x, y + 5.5);
-
-      y += rowHeight;
-    }
-
+    y = drawTipsTicketTable(doc, employee.tickets, y);
     y += 6; // spacing between employees
   }
 
-  const totalPages = doc.getNumberOfPages();
-  for (let p = 1; p <= totalPages; p++) {
-    doc.setPage(p);
-    drawPageFooter(doc, p, totalPages);
-  }
+  applyPageFooters(doc);
 
   doc.save(`tips-report_${startDate}_${endDate}.pdf`);
+};
+
+// ── Tips by Employee (ZIP of one PDF per employee) ─────────────────────────
+
+const SIGNATURE_BLOCK_HEIGHT = 40;
+
+/** Total row + signature lines so the printed sheet can be handed to the employee. */
+const drawTipsAcknowledgement = (
+  doc: jsPDF,
+  totalTips: number,
+  startY: number
+) => {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  let y = startY;
+  if (y + SIGNATURE_BLOCK_HEIGHT > pageHeight - 15) {
+    doc.addPage();
+    y = 15;
+  }
+
+  // Total row
+  doc.setFillColor(236, 253, 245);
+  doc.rect(MARGIN, y, pageWidth - MARGIN * 2, 10, "F");
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text("TOTAL TIPS", MARGIN + 4, y + 6.5);
+  doc.setTextColor(5, 150, 105);
+  doc.text(`$${totalTips.toFixed(2)}`, pageWidth - MARGIN - 4, y + 6.5, {
+    align: "right",
+  });
+
+  // Signature lines
+  y += 30;
+  const lineWidth = 70;
+  doc.setDrawColor(148, 163, 184);
+  doc.line(MARGIN, y, MARGIN + lineWidth, y);
+  doc.line(pageWidth - MARGIN - lineWidth, y, pageWidth - MARGIN, y);
+
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(100, 116, 139);
+  doc.text("Employee Signature", MARGIN, y + 5);
+  doc.text("Date", pageWidth - MARGIN - lineWidth, y + 5);
+};
+
+const buildEmployeeTipsPdf = (
+  employee: TipsReportEmployee,
+  propertyName: string,
+  startDate: string,
+  endDate: string,
+  exportTimestamp: string
+): jsPDF => {
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+  drawTitleBar(
+    doc,
+    employee.employeeName,
+    `Tips Statement  ·  ${propertyName}`,
+    startDate,
+    endDate,
+    exportTimestamp
+  );
+
+  const highestTip = employee.tickets.reduce(
+    (max, t) => Math.max(max, t.tip),
+    0
+  );
+
+  let y = drawKpiRow(
+    doc,
+    [
+      {
+        label: "TOTAL TIPS",
+        value: `$${employee.totalTips.toFixed(2)}`,
+        color: [5, 150, 105],
+      },
+      {
+        label: "TICKETS",
+        value: String(employee.ticketCount),
+        color: [15, 23, 42],
+      },
+      {
+        label: "AVG TIP",
+        value: `$${getAverageTip(employee.totalTips, employee.ticketCount).toFixed(2)}`,
+        color: [124, 58, 237],
+      },
+      {
+        label: "HIGHEST TIP",
+        value: `$${highestTip.toFixed(2)}`,
+        color: [37, 99, 235],
+      },
+    ],
+    44
+  );
+
+  y = drawTipsTicketTable(doc, employee.tickets, y);
+  drawTipsAcknowledgement(doc, employee.totalTips, y + 6);
+  applyPageFooters(doc);
+
+  return doc;
+};
+
+const toSafeFileName = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-zA-Z0-9-_ ]/g, "")
+    .trim()
+    .replace(/\s+/g, "_") || "employee";
+
+const downloadBlob = (blob: Blob, fileName: string) => {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+};
+
+export const exportTipsByEmployeeZip = async (
+  employees: TipsReportEmployee[],
+  propertyName: string,
+  startDate: string,
+  endDate: string
+) => {
+  const exportTimestamp = getExportTimestamp();
+  const folderName = `tips-by-employee_${toSafeFileName(propertyName)}_${startDate}_${endDate}`;
+  const zip = new JSZip();
+  const folder = zip.folder(folderName) ?? zip;
+  const usedNames = new Map<string, number>();
+
+  for (const employee of employees) {
+    const baseName = toSafeFileName(employee.employeeName);
+    const occurrence = (usedNames.get(baseName) ?? 0) + 1;
+    usedNames.set(baseName, occurrence);
+    const fileName =
+      occurrence > 1 ? `${baseName}_${occurrence}.pdf` : `${baseName}.pdf`;
+
+    const doc = buildEmployeeTipsPdf(
+      employee,
+      propertyName,
+      startDate,
+      endDate,
+      exportTimestamp
+    );
+    folder.file(fileName, doc.output("arraybuffer"));
+  }
+
+  const blob = await zip.generateAsync({ type: "blob" });
+  downloadBlob(blob, `${folderName}.zip`);
 };
