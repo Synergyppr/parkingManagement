@@ -406,6 +406,14 @@ export interface RateEntry {
   cityTaxRate?: number; // percentage e.g. 1.0  (IVU Municipal - Puerto Rico)
 }
 
+/** Ticket fields sent to /api/vehicleStatus when an employee changes the rate. */
+export interface RateUpdateFields {
+  transactionTypeId: number;
+  price: number;
+  pin: string;
+  placeToVisit?: string;
+}
+
 export interface CourtesyRecord {
   ticketId: string;
   reason: string;

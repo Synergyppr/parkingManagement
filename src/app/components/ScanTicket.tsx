@@ -6,6 +6,12 @@ import Swal from "sweetalert2";
 import { useProperty } from "../context/PropertyContext";
 import { parseLocationName } from "../lib/clientUtils";
 import { VehicleData } from "../types";
+import {
+  RATE_OPTION,
+  buildRateUpdateFields,
+  canSaveRate,
+  getRateAmountForSelection,
+} from "../helpers/rateEditorHelpers";
 
 import PageLoader from "./elements/PageLoader";
 import FormInput from "./elements/FormInput";
@@ -42,8 +48,8 @@ const ScanTicket = () => {
   const tapCountRef = useRef(0);
   const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const isCourtesy = rateTransactionTypeId === "courtesy";
-  const isRoomCharge = rateTransactionTypeId === "roomCharge";
+  const isCourtesy = rateTransactionTypeId === RATE_OPTION.COURTESY;
+  const isRoomCharge = rateTransactionTypeId === RATE_OPTION.ROOM_CHARGE;
 
   const handleTripleTap = () => {
     tapCountRef.current += 1;
@@ -141,7 +147,6 @@ const ScanTicket = () => {
     }
 
     setSavingRate(true);
-    const isCustom = rateTransactionTypeId === "other";
 
     const payload: Record<string, unknown> = {
       ticketId,
@@ -150,18 +155,13 @@ const ScanTicket = () => {
       longitude: longitude || 0,
       status: vehicleData?.status || "parked",
       isUserUpdate: false,
-      transactionTypeId:
-        isCourtesy || isRoomCharge || isCustom
-          ? 0
-          : parseInt(rateTransactionTypeId),
-      price: parseFloat(rateAmount),
-      pin: ratePin,
+      ...buildRateUpdateFields({
+        selection: rateTransactionTypeId,
+        amount: rateAmount,
+        pin: ratePin,
+        roomNumber,
+      }),
     };
-
-    // Room Charge: set placeToVisit so report filters pick it up correctly
-    if (isRoomCharge) {
-      payload.placeToVisit = `Room Charge #${roomNumber.trim()}`;
-    }
 
     try {
       const res = await fetch("/api/vehicleStatus", {
@@ -400,17 +400,11 @@ const ScanTicket = () => {
                       const val = e.target.value;
                       setRateTransactionTypeId(val);
                       setRoomNumber("");
-
-                      if (val === "courtesy" || val === "roomCharge") {
-                        setRateAmount("0.00");
-                      } else if (val === "other") {
-                        setRateAmount("");
-                      } else {
-                        const selected = transactionTypes.find(
-                          (t) => String(t.id) === val
-                        );
-                        if (selected) setRateAmount(String(selected.value));
-                      }
+                      const amount = getRateAmountForSelection(
+                        val,
+                        transactionTypes
+                      );
+                      if (amount !== null) setRateAmount(amount);
                     }}
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                   >
@@ -420,9 +414,9 @@ const ScanTicket = () => {
                         {t.name} - ${Number(t.value).toFixed(2)}
                       </option>
                     ))}
-                    <option value="courtesy">Courtesy - $0.00</option>
-                    <option value="roomCharge">Room Charge - $0.00</option>
-                    <option value="other">Other (Custom)</option>
+                    <option value={RATE_OPTION.COURTESY}>Courtesy - $0.00</option>
+                    <option value={RATE_OPTION.ROOM_CHARGE}>Room Charge - $0.00</option>
+                    <option value={RATE_OPTION.OTHER}>Other (Custom)</option>
                   </select>
                 </div>
 
@@ -505,11 +499,12 @@ const ScanTicket = () => {
                 type="button"
                 disabled={
                   savingRate ||
-                  !ratePin ||
-                  ratePin.length !== 4 ||
-                  !rateTransactionTypeId ||
-                  !rateAmount ||
-                  (isRoomCharge && !roomNumber.trim())
+                  !canSaveRate({
+                    selection: rateTransactionTypeId,
+                    amount: rateAmount,
+                    pin: ratePin,
+                    roomNumber,
+                  })
                 }
                 onClick={handleSaveRate}
                 className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-secondary text-sm font-black text-white shadow-[0_16px_36px_color-mix(in_srgb,var(--primary)_32%,transparent)] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"

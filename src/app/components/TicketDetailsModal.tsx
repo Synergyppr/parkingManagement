@@ -12,6 +12,13 @@ import { TicketDetailsModalProps } from "../types/pagesProps";
 import { TicketDetails, TicketTransaction, KeySlot, RateEntry } from "../types";
 import KeyBoxSelector from "./KeyBoxSelector";
 import {
+  RATE_OPTION,
+  buildRateUpdateFields,
+  canSaveRate,
+  getRateAmountForSelection,
+  isNoChargeRateOption,
+} from "../helpers/rateEditorHelpers";
+import {
   MdClose,
   MdChevronLeft,
   MdChevronRight,
@@ -92,7 +99,10 @@ export default function TicketDetailsModal({
   const [rateAmount, setRateAmount] = useState("");
   const [rateTransactionTypeId, setRateTransactionTypeId] = useState("");
   const [ratePin, setRatePin] = useState("");
+  const [rateRoomNumber, setRateRoomNumber] = useState("");
   const [showRatePin, setShowRatePin] = useState(false);
+  const isRoomChargeRate = rateTransactionTypeId === RATE_OPTION.ROOM_CHARGE;
+  const isNoChargeRate = isNoChargeRateOption(rateTransactionTypeId);
   const [transactionTypes, setTransactionTypes] = useState<RateEntry[]>([]);
   const [keySlotPin, setKeySlotPin] = useState("");
   const [showKeySlotPin, setShowKeySlotPin] = useState(false);
@@ -1872,6 +1882,7 @@ export default function TicketDetailsModal({
                     onClick={() => {
                       setRateAmount("");
                       setRateTransactionTypeId("");
+                      setRateRoomNumber("");
                       setRatePin("");
                       setShowRatePin(false);
                       setEditingRate(true);
@@ -1991,13 +2002,11 @@ export default function TicketDetailsModal({
                         <select
                           value={rateTransactionTypeId}
                           onChange={(e) => {
-                            setRateTransactionTypeId(e.target.value);
-                            if (e.target.value === "other") {
-                              setRateAmount("");
-                            } else {
-                              const selected = transactionTypes.find((t) => String(t.id) === e.target.value);
-                              if (selected) setRateAmount(String(selected.value));
-                            }
+                            const val = e.target.value;
+                            setRateTransactionTypeId(val);
+                            setRateRoomNumber("");
+                            const amount = getRateAmountForSelection(val, transactionTypes);
+                            if (amount !== null) setRateAmount(amount);
                           }}
                           className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                         >
@@ -2007,9 +2016,30 @@ export default function TicketDetailsModal({
                               {t.name} - ${t.value.toFixed(2)}
                             </option>
                           ))}
-                          <option value="other">Other (Custom)</option>
+                          <option value={RATE_OPTION.COURTESY}>Courtesy - $0.00</option>
+                          <option value={RATE_OPTION.ROOM_CHARGE}>Room Charge - $0.00</option>
+                          <option value={RATE_OPTION.OTHER}>Other (Custom)</option>
                         </select>
                       </div>
+
+                      {/* Room Number (only for Room Charge) */}
+                      {isRoomChargeRate && (
+                        <div>
+                          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Room Number
+                            <span className="ml-1 normal-case tracking-normal text-red-400">
+                              (required)
+                            </span>
+                          </label>
+                          <input
+                            type="text"
+                            value={rateRoomNumber}
+                            onChange={(e) => setRateRoomNumber(e.target.value)}
+                            placeholder="e.g. 303"
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                          />
+                        </div>
+                      )}
 
                       {/* Amount */}
                       <div>
@@ -2027,7 +2057,10 @@ export default function TicketDetailsModal({
                             value={rateAmount}
                             onChange={(e) => setRateAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-8 pr-4 text-sm font-medium text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                            readOnly={isNoChargeRate}
+                            className={`w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-8 pr-4 text-sm font-medium text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 ${
+                              isNoChargeRate ? "opacity-60" : ""
+                            }`}
                           />
                         </div>
                       </div>
@@ -2070,22 +2103,33 @@ export default function TicketDetailsModal({
                     <div className="mt-4 flex justify-end">
                       <button
                         type="button"
-                        disabled={savingRate || !ratePin || ratePin.length !== 4 || !rateTransactionTypeId || !rateAmount}
+                        disabled={
+                          savingRate ||
+                          !canSaveRate({
+                            selection: rateTransactionTypeId,
+                            amount: rateAmount,
+                            pin: ratePin,
+                            roomNumber: rateRoomNumber,
+                          })
+                        }
                         onClick={async () => {
                           setSavingRate(true);
-                          const isCustom = rateTransactionTypeId === "other";
-                          const data = await handleUpdateTicket({
-                            transactionTypeId: isCustom ? 0 : parseInt(rateTransactionTypeId),
-                            price: parseFloat(rateAmount),
+                          const rateFields = buildRateUpdateFields({
+                            selection: rateTransactionTypeId,
+                            amount: rateAmount,
                             pin: ratePin,
+                            roomNumber: rateRoomNumber,
                           });
+                          const data = await handleUpdateTicket({ ...rateFields });
                           setSavingRate(false);
                           if (data?.result?.status === "200") {
                             setTicketDetails((prev) => ({
                               ...prev,
-                              transactionTypeId: isCustom ? 0 : parseInt(rateTransactionTypeId),
-                              price: parseFloat(rateAmount),
+                              transactionTypeId: rateFields.transactionTypeId,
+                              price: rateFields.price,
+                              ...(rateFields.placeToVisit && { placeToVisit: rateFields.placeToVisit }),
                             }));
+                            setRatePin("");
                             setEditingRate(false);
                             onTicketUpdated?.();
                             Swal.fire({ icon: "success", title: "Rate Updated", timer: 1500, showConfirmButton: false });
