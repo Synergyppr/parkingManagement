@@ -74,7 +74,6 @@ const PAYMENT_METHODS = [
   // },
   // { key: "cash", label: "Cash", icon: <MdPayment className="h-4 w-4" /> },
 ];
-
 // const RECEIPT_OPTIONS = [
 //   { key: "both", label: "POS + Digital" },
 //   { key: "pos", label: "POS Only" },
@@ -349,6 +348,13 @@ export default function TransactionForm({
   const displayTotal = effectiveOther
     ? otherPriceNum
     : calcDisplayTotal(basePrice, selectedTransactionType?.taxable);
+
+  // A selected rate whose total is $0.00 (e.g. a property-defined free/validated rate,
+  // or a custom $0 rate) has nothing to charge — close the ticket without a terminal.
+  const isZeroRateCheckout =
+    !isNoChargeCheckout &&
+    (effectiveOther || !!selectedTransactionType) &&
+    displayTotal === 0;
 
   const splitSecondAmount = splitEnabled
     ? roundToTwo(displayTotal - splitFirstPaid)
@@ -625,7 +631,7 @@ export default function TransactionForm({
       return;
     }
 
-    if (!isNoChargeCheckout && !selectedPaymentMethod) {
+    if (!isNoChargeCheckout && !isZeroRateCheckout && !selectedPaymentMethod) {
       Swal.fire({
         icon: "warning",
         title: "Missing Information",
@@ -664,6 +670,12 @@ export default function TransactionForm({
     // Pre-authorized courtesy: close through courtesy endpoint (no payment needed)
     if (isCourtesyCheckout) {
       await handleAuthorizedCourtesy();
+      return;
+    }
+
+    // $0.00 rate: nothing to charge — skip terminal, tip and split payment
+    if (isZeroRateCheckout) {
+      await handleZeroRateCheckout();
       return;
     }
 
@@ -790,10 +802,70 @@ export default function TransactionForm({
     }
   };
 
+  // Closes a ticket whose selected rate is $0.00 through the no-charge (courtesy)
+  // endpoint so the POS terminal is bypassed. The rate name, employee and time
+  // are recorded in the transaction notes.
+  const handleZeroRateCheckout = async () => {
+    const rateName = effectiveOther
+      ? otherName || parseLocationName(placeToVisit) || "Custom Rate"
+      : selectedTransactionType?.name || "Unknown Rate";
+
+    setLoader(true);
+
+    try {
+      const result = await submitCourtesyRequest(
+        form.notes?.trim() || "",
+        undefined,
+        rateName,
+      );
+
+      if (result?.result?.status === "200" || result?.result?.status === 200) {
+        setOpen(false);
+        setReloadPageData(true);
+
+        Swal.fire({
+          icon: "success",
+          title: "Checkout Complete",
+          html: `
+            <p>Rate: <strong>${rateName}</strong> ($0.00)</p>
+            <p class="mt-2 text-sm text-gray-500">Processed by: <strong>${
+              accountUser || "Unknown"
+            }</strong></p>
+          `,
+          showConfirmButton: false,
+          timer: 2500,
+        });
+
+        resetForm();
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Checkout Failed",
+          text:
+            result?.result?.message ||
+            "Could not close the ticket. Please try again.",
+          confirmButtonColor: getPrimaryThemeColor(),
+        });
+      }
+    } catch (error) {
+      console.error("Error submitting $0 rate checkout:", error);
+      Swal.close();
+      Swal.fire({
+        icon: "error",
+        title: "Checkout Error",
+        text: "Something went wrong. Please try again.",
+        confirmButtonColor: getPrimaryThemeColor(),
+      });
+    } finally {
+      setLoader(false);
+    }
+  };
+
   // Shared request for every flow that closes a ticket without payment
   const submitCourtesyRequest = async (
     reason: string,
     authorizedBy?: string,
+    rateName?: string,
   ) => {
     const resolvedLat = locationMode === "manual" ? latitude : ctxLatitude;
     const resolvedLng = locationMode === "manual" ? longitude : ctxLongitude;
@@ -806,6 +878,7 @@ export default function TransactionForm({
         reason,
         givenBy: accountUser || "Unknown",
         authorizedBy,
+        rateName,
         givenAt: formatDate(new Date()),
         propertyId,
         pin: form?.pin,
@@ -1264,8 +1337,8 @@ export default function TransactionForm({
           )}
         </section>}
 
-        {/* PAYMENT METHOD — not needed for a pre-authorized courtesy */}
-        {!isCourtesyCheckout && <section>
+        {/* PAYMENT METHOD — not needed for a pre-authorized courtesy or a $0.00 rate */}
+        {!isCourtesyCheckout && !isZeroRateCheckout && <section>
           <h3 className="mb-3 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-700">
             Payment Method
           </h3>
@@ -1380,6 +1453,7 @@ export default function TransactionForm({
 
         {/* TERMINAL SELECTION — only for card/athm */}
         {!isCourtesyCheckout &&
+          !isZeroRateCheckout &&
           (selectedPaymentMethod === "ecr" ||
           selectedPaymentMethod === "athm") && (
           <section>
@@ -1658,6 +1732,8 @@ export default function TransactionForm({
                   ? "Submit Room Charge"
                   : isCourtesyCheckout
                     ? "Submit Courtesy"
+                    : isZeroRateCheckout
+                    ? "Complete Checkout ($0.00)"
                     : splitEnabled && splitPhase === "second"
                     ? "Submit 2nd Payment"
                     : splitEnabled && splitPhase === "first"
